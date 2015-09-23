@@ -1,0 +1,14 @@
+#!/usr/bin/python
+
+import sys
+import re
+
+
+def parse_alignment(stream = sys.stdin):    
+    with stream as f:
+        for l in f:
+            sub = re.sub('[,]','',l)
+            sub = re.sub('[\[\].x:<a-bd-mo-z()]',' ',sub)    
+            lst = sub.split()[:-1]
+            if len(lst) == 9:
+                yield [lst[2]] + map(int, lst[0:2] + lst[3:])
