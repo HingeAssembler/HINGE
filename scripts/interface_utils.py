@@ -10,13 +10,15 @@ from parse_alignment import *
 #readarg = sys.argv[2]
 
 def get_reads(filename, readlist):
-    stream = subprocess.Popen(["DBshow", filename , ' '.join(map(str,readlist))],
+    stream = subprocess.Popen(["DBshow", filename] + map(str,readlist),
                                       stdout=subprocess.PIPE,bufsize=1)
     reads = parse_read(stream.stdout) # generator
     return reads
+  
+  
 
 def get_alignments(filename, readlist):
-    stream = subprocess.Popen(["LAshow", filename,filename , ' '.join(map(str,readlist))],
+    stream = subprocess.Popen(["LAshow", filename,filename]+ map(str,readlist),
                                       stdout=subprocess.PIPE,bufsize=1)
     alignments = parse_alignment(stream.stdout) # generator
     return alignments
@@ -33,6 +35,15 @@ def get_all_alignments(filename):
     alignments = parse_alignment(stream.stdout) # generator
     return alignments
 
+def get_all_reads_in_alignment_with_one(filename,read):
+    this_read = get_reads(filename,[read])
+    alignments = list(get_alignments(filename,[read]))
+    readlist = map(lambda x:x[2],alignments)
+    print readlist
+    other_reads = get_reads(filename,readlist)
+    
+    return [list(this_read), list(other_reads), alignments] # note that this is not a generator
+
 
 # test   
 #for item in get_reads('G',[1]):
@@ -43,3 +54,10 @@ def get_all_alignments(filename):
 
 #for item in get_all_alignments('G'):
 #    print item
+
+#for item in get_all_reads_in_alignment_with_one('G',1):
+#    print item
+
+#for item in get_reads('G', [1,2,3]):
+#    print item
+
