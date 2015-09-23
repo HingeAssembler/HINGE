@@ -1,0 +1,6 @@
+[submodule "DALIGNER"]
+	path = DALIGNER
+	url = https://github.com/Eureka22/DALIGNER.git
+[submodule "DAZZ_DB"]
+	path = DAZZ_DB
+	url = https://github.com/Eureka22/DAZZ_DB.git
