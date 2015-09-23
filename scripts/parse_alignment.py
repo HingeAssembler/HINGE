@@ -7,7 +7,7 @@ import re
 def parse_alignment(stream = sys.stdin):    
     with stream as f:
         for l in f:
-            sub = re.sub('[\[\].x:<difstraep()]','',l.strip())    
+            sub = re.sub('[\[\].x:<difstraep()]',' ',l.strip())    
             sub = re.sub(',','',sub)
             lst = sub.split()[:-1]
             if len(lst) == 9:
