@@ -15,7 +15,6 @@ def get_reads(filename, readlist):
     reads = parse_read(stream.stdout) # generator
     return reads
   
-  
 
 def get_alignments(filename, readlist):
     stream = subprocess.Popen(["LAshow", filename,filename]+ map(str,readlist),
