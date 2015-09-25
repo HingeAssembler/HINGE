@@ -10,6 +10,13 @@ add_executable(DBshow DBshow)
 target_link_libraries(DBshow DB)
 target_link_libraries(LA DB)
 
+add_executable(simulator simulator)
+target_link_libraries(simulator DB)
+
+add_executable(fasta2DB fasta2DB.c)
+target_link_libraries(fasta2DB DB)
+
+
 add_executable(LAshow LAshow.c)
 target_link_libraries(LAshow LA DB)
 
