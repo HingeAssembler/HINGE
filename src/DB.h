@@ -334,6 +334,9 @@ int Open_DB(char *path, HITS_DB *db);
   //   of the current DB partition.  Reallocate smaller memory blocks for the information kept
   //   for the retained reads.
 
+
+
+
 void Trim_DB(HITS_DB *db);
 
   // Shut down an open 'db' by freeing all associated space, including tracks and QV structures,

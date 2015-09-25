@@ -77,10 +77,11 @@ static int ORDER(const void *l, const void *r)
 
 int main(int argc, char *argv[])
 {
+	LAInterface la;
 	std::cout<<"hello"<<std::endl;
 	
 	
-	
+	la.OpenDB("G");
 	
 	
 	return 0;

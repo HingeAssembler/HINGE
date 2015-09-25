@@ -281,8 +281,12 @@ int main(int argc, char *argv[])
               exit (1);
             }
 
+
+		
           qsort(pts,reps/2,sizeof(int64),ORDER);
 
+		  
+		  
           b = 0;
           for (c = 0; c < reps; c += 2)
             if (b > 0 && pts[b-1] >= pts[c]-1) 
@@ -301,6 +305,10 @@ int main(int argc, char *argv[])
           pts[reps++] = INT32_MAX;
         }
     }
+	
+  //for (int i = 0; i < reps; i++)
+  //    printf("%d\n",pts[i]);
+  
 
   //  Initiate file reading and read (novl, tspace) header
   
