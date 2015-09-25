@@ -21,6 +21,14 @@ public:
 };
 
 
+class LAlignment { // because class Alignment is taken
+	
+public:
+	LAlignment() {};
+	
+	
+};
+
 
 
 class LAInterface {
@@ -30,13 +38,30 @@ public:
 	HITS_DB   _db2, *db2 = &_db2; 
 	Overlap   _ovl, *ovl = &_ovl;
 	Alignment _aln, *aln = &_aln;
+	
 	char ** flist = NULL;
 	int * findx = NULL; 
 	int nfiles = 0;
+	
+    FILE   *input;
+    int64   novl;
+    int     tspace, tbytes, small;
+    int     reps, *pts;
+    int     input_pts;
+	
+
 	LAInterface() {};
 	int OpenDB2(std::string filename);
+	
 	int OpenDB(std::string filename);
+	
+	int OpenAlignment(std::string filename);
+	
 	void showRead(int from,int to);
+	
+	void showAlignment(int from, int to);
+	
+	
 	Read * getRead(int number);
 	int CloseDB();
 	int CloseDB2();

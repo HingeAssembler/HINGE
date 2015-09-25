@@ -31,12 +31,15 @@ int main(int argc, char *argv[])
 	Read * test_read;
 	
 	la.OpenDB("G");
-	la.showRead(0,1); //show read [0,1)
+	la.showRead(1,2); //show read [1,2)
 	
-	test_read = la.getRead(0);
-	test_read->showRead();
+	test_read = la.getRead(0); //get read 0
+	test_read->showRead(); // show read 0 
 	
+	la.OpenAlignment("G.1.las");
+	la.showAlignment(0,2); // show alignments of read [0,2) 
 	
+	//tbd
 	
 	la.CloseDB();
 	return 0;
