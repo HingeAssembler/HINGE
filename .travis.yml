@@ -6,6 +6,6 @@ install: brew update
       && brew unlink cmake
       && brew install cmake
     
-script: ./build.sh
+script: ./build.sh && ./test.sh
 
 os: osx

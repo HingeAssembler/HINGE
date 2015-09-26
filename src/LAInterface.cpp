@@ -1196,8 +1196,8 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
 
         //  Display it
 
-        if (ALIGN || CARTOON || REFERENCE)
-            printf("\n");
+        //if (ALIGN || CARTOON || REFERENCE)
+        //    printf("\n");
         if (FLIP) {
             Flip_Alignment(aln, 0);
             //Print_Number((int64) ovl->bread+1,ar_wide+1,stdout);
@@ -1540,8 +1540,8 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
 
         //  Display it
 
-        if (ALIGN || CARTOON || REFERENCE)
-            printf("\n");
+        //if (ALIGN || CARTOON || REFERENCE)
+            //printf("\n");
         if (FLIP) {
             Flip_Alignment(aln, 0);
             //Print_Number((int64) ovl->bread+1,ar_wide+1,stdout);
@@ -1624,17 +1624,17 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
                 }
             }
             if (CARTOON) {
-                printf("  (");
-                Print_Number(tps, tp_wide, stdout);
-                printf(" trace pts)\n\n");
-                Alignment_Cartoon(stdout, aln, INDENT, mx_wide);
+                //printf("  (");
+                //Print_Number(tps, tp_wide, stdout);
+                //printf(" trace pts)\n\n");
+                //Alignment_Cartoon(stdout, aln, INDENT, mx_wide);
             }
             else {
-                printf(" :   = ");
-                Print_Number((int64) ovl->path.diffs, mn_wide, stdout);
-                printf(" diffs  (");
-                Print_Number(tps, tp_wide, stdout);
-                printf(" trace pts)\n");
+                //printf(" :   = ");
+                //Print_Number((int64) ovl->path.diffs, mn_wide, stdout);
+                //printf(" diffs  (");
+                //Print_Number(tps, tp_wide, stdout);
+                //printf(" trace pts)\n");
             }
             if (REFERENCE)
                 Print_Reference(stdout, aln, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
