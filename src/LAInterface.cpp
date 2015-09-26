@@ -1071,8 +1071,8 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
     //if (pts!=NULL) free(pts);
     //pts = NULL;
     pts = new int[4];
-    pts[0] = from + 1;
-    pts[1] = to;
+    pts[0] = from + 2;
+    pts[1] = to + 1;
     pts[2] = INT32_MAX;
 
     npt = pts[0];
@@ -1383,8 +1383,8 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
     //if (pts!=NULL) free(pts);
     //pts = NULL;
     pts = new int[4];
-    pts[0] = from + 1;
-    pts[1] = from + 1;
+    pts[0] = from + 2;
+    pts[1] = to + 1;
     pts[2] = INT32_MAX;
 
     npt = pts[0];
