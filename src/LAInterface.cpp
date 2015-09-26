@@ -11,6 +11,7 @@
 #include <iostream>
 #include "LAInterface.h"
 #include "align.h"
+#include "DB.h"
 
 
 void Read::showRead() {
@@ -1599,8 +1600,8 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
                 aseq = Load_Subread(db1, ovl->aread, amin, amax, abuffer, 0);
                 bseq = Load_Subread(db2, ovl->bread, bmin, bmax, bbuffer, 0);
 
-                new_al->aseq = std::string(aseq);
-                new_al->bseq = std::string(bseq);
+                //new_al->aseq = std::string(aseq);
+                //new_al->bseq = std::string(bseq);
 
 
                 aln->aseq = aseq - amin;
@@ -1660,3 +1661,12 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
 
 }
 
+int LAInterface::getReadNumber() {
+    return db1->nreads;
+}
+
+int64 LAInterface::getAlignmentNumber() {
+    resetAlignment();
+    return novl;
+
+}

@@ -10,6 +10,9 @@ The python scripts take advantage of stdout to process large input and output. F
 
 ## Usage
 
+
+### Python Interface:
+
 ```bash
 cd scripts
 source setup.sh # setup the interface globally
@@ -46,5 +49,28 @@ Alignments:
 ...
 ```
 
+### C++ Interface
 
+####Setup:
+CMakeLists.txt file example
+
+````cmake
+cmake_minimum_required(VERSION 3.2)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -std=gnu++11")
+
+add_library(DB DB.h DB.c QV.h QV.c)
+add_library(LA align.h align.c)
+
+add_library(LAInterface LAInterface.cpp LAInterface.h)
+target_link_libraries(LAInterface LA DB)
+
+add_executable(LAInterface_test LAInterface_test)
+target_link_libraries(LAInterface_test LAInterface)
+
+````
+
+#### Using:
+
+See `LAInterface_test.cpp` for examples.
 
