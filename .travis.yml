@@ -1,0 +1,8 @@
+language: cpp
+
+
+install: true
+
+
+script:
+	./build.sh

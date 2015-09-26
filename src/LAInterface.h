@@ -25,7 +25,16 @@ class LAlignment { // because class Alignment is taken
 	
 public:
 	LAlignment() {};
-	
+	std::string aseq;
+	std::string bseq;
+	int alen;
+	int blen;
+	void     *trace;
+	int       tlen;
+	int       diffs;
+	int       abpos, bbpos;
+	int       aepos, bepos;
+	int flags;	
 	
 };
 
@@ -52,20 +61,16 @@ public:
 
 	LAInterface() {};
 	int OpenDB2(std::string filename);
-	
 	int OpenDB(std::string filename);
-	
 	int OpenAlignment(std::string filename);
-	
 	void showRead(int from,int to);
-	
 	void showAlignment(int from, int to);
-	
-	
 	Read * getRead(int number);
+	void getRead(std::vector<Read *> reads, int from, int to);	
+	void getAlignment(std::vector<int> &, int n);
+	
 	int CloseDB();
 	int CloseDB2();
-	
 	
 };
 
