@@ -4,5 +4,4 @@ language: cpp
 install: true
 
 
-script:
-	./build.sh
+script: ./build.sh
