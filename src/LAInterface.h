@@ -29,6 +29,7 @@ public:
     LAlignment() { };
     std::string aseq;
     std::string bseq;
+	void show() {printf("%d %d %d [%d...%d] x [%d...%d] %d diffs\n",aid,bid,flags,abpos,aepos,bbpos,bepos,diffs); };
     int aid;
     int bid;
     int alen;
@@ -46,6 +47,7 @@ public:
 class LOverlap {
 public:
     LOverlap() { };
+	void show() {printf("%d %d %d [%d...%d] x [%d...%d] %d diffs\n",aid,bid,flags,abpos,aepos,bbpos,bepos,diffs); };
     int aid, bid;
     int alen;
     int blen;

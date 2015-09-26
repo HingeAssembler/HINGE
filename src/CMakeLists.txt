@@ -5,35 +5,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -std=gnu++11")
 add_library(DB DB.h DB.c QV.h QV.c)
 add_library(LA align.h align.c)
 
-#add_executable(DBshow DBshow)
-#target_link_libraries(DBshow DB)
-#
-#add_executable(simulator simulator)
-#target_link_libraries(simulator DB)
-#
-#add_executable(fasta2DB fasta2DB.c)
-#target_link_libraries(fasta2DB DB)
-#
-#add_executable(LAshow LAshow.c)
-#target_link_libraries(LAshow LA DB)
-#
-#add_library(filter filter.c)
-#target_link_libraries(filter LA DB)
-#
-#add_executable(LAsort LAsort.c)
-#target_link_libraries(LAsort LA DB)
-#
-#add_executable(LAmerge LAmerge.c)
-#target_link_libraries(LAmerge LA DB)
-#
-#add_executable(daligner daligner.c)
-#target_link_libraries(daligner LA DB filter)
-#
-#
-#add_executable(HPCdaligner HPCdaligner.c)
-#target_link_libraries(HPCdaligner LA DB filter)
-
-
 add_library(LAInterface LAInterface.cpp LAInterface.h)
 target_link_libraries(LAInterface LA DB)
 

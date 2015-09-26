@@ -43,15 +43,21 @@ int main(int argc, char *argv[]) {
         printf("%d ", i);
     printf("\n");
 
-
     std::vector<LOverlap *> res1;
     la.resetAlignment();
     la.getOverlap(res1, 3, 5);
+	
+	for (auto i:res1)
+		i->show();
+	printf("\n");
 
     std::vector<LAlignment *> res2;
     la.resetAlignment();
     la.getAlignment(res2, 3, 5);
 
+	for (auto i:res2)
+		i->show();
+	printf("\n");
 
     la.CloseDB();
     return 0;
