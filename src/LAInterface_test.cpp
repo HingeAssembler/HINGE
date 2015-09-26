@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 
     std::vector<LAlignment *> res2;
     la.resetAlignment();
-    la.getAlignment(res2, 3, 5);// get alignment for reads [3,5)
+    la.getAlignment(res2, 0, 3);// get alignment for reads [0,3)
 
 	for (auto i:res2)
 		i->show();

@@ -516,9 +516,9 @@ void LAInterface::showAlignment(int from, int to) {
             Print_Number((int64) ovl->aread + 1, br_wide + 1, stdout);
         }
         else {
-            Print_Number((int64) ovl->aread + 1, ar_wide + 1, stdout);
+            Print_Number((int64) ovl->aread , ar_wide + 1, stdout);
             printf("  ");
-            Print_Number((int64) ovl->bread + 1, br_wide + 1, stdout);
+            Print_Number((int64) ovl->bread , br_wide + 1, stdout);
         }
         if (COMP(ovl->flags))
             printf(" c");
@@ -1071,8 +1071,8 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
     //if (pts!=NULL) free(pts);
     //pts = NULL;
     pts = new int[4];
-    pts[0] = from + 2;
-    pts[1] = to + 1;
+    pts[0] = from + 1;
+    pts[1] = to + 0;
     pts[2] = INT32_MAX;
 
     npt = pts[0];
@@ -1383,8 +1383,8 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
     //if (pts!=NULL) free(pts);
     //pts = NULL;
     pts = new int[4];
-    pts[0] = from + 2;
-    pts[1] = to + 1;
+    pts[0] = from + 1;
+    pts[1] = to ;
     pts[2] = INT32_MAX;
 
     npt = pts[0];
