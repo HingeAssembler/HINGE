@@ -39,8 +39,8 @@ int main(int argc, char *argv[]) {
     std::vector<LOverlap *> aln;
     la.getOverlap(aln,0,n_aln);
 	
-	std::map<std::pair<int,int>, int> idx;
-	std::map<int, std::vector<int>> idx2;
+	std::map<std::pair<int,int>, int> idx; //from (aid, bid) to alignment id
+	std::map<int, std::vector<int>> idx2; // from (aid) to alignment id in a vector
 	 
 	for (int i = 0; i < n_read; i++ )
 	{
@@ -57,7 +57,6 @@ int main(int argc, char *argv[]) {
 	/****
 	get the best overlap for each read and form a graph
 	****/
-	
 	
 	
 	
