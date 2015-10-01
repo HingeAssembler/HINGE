@@ -11,3 +11,8 @@ target_link_libraries(LAInterface LA DB)
 add_executable(LAInterface_test LAInterface_test)
 target_link_libraries(LAInterface_test LAInterface)
 
+add_executable(LA4Falcon LA4Falcon)
+target_link_libraries(LA4Falcon LA DB)
+
+add_executable(Falcon kmer_lookup.c falcon.c DW_banded.c )
+
