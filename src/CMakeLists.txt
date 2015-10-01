@@ -16,3 +16,5 @@ target_link_libraries(LA4Falcon LA DB)
 
 add_executable(Falcon kmer_lookup.c falcon.c DW_banded.c )
 
+add_executable(Greedy_best_ovl Greedy_best_ovl)
+target_link_libraries(Greedy_best_ovl LAInterface)

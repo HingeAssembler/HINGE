@@ -1017,9 +1017,9 @@ void LAInterface::resetAlignment() {
         tbytes = sizeof(uint16);
     }
 
-    printf("\n%s: ", "read again");
-    Print_Number(novl, 0, stdout);
-    printf(" records\n");
+    //printf("\n%s: ", "read again");
+    //Print_Number(novl, 0, stdout);
+    //printf(" records\n");
 
 
 }
