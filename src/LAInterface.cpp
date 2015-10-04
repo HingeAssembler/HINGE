@@ -1118,7 +1118,6 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
     for (j = 0; j < novl; j++)
 
         //  Read it in
-
     {
         //printf("j:%d/%d\n",j,novl);
         Read_Overlap(input, ovl);
@@ -1157,7 +1156,6 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
             continue;
 
         //  If -o check display only overlaps
-
         aln->alen = db1->reads[ovl->aread].rlen;
         aln->blen = db2->reads[ovl->bread].rlen;
         aln->flags = ovl->flags;
@@ -1198,38 +1196,41 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
         //  Display it
 
         //if (ALIGN || CARTOON || REFERENCE)
-            //printf("\n");
+        printf("\n");
         if (FLIP) {
             Flip_Alignment(aln, 0);
-            //Print_Number((int64) ovl->bread+1,ar_wide+1,stdout);
-            //printf("  ");
-            //Print_Number((int64) ovl->aread+1,br_wide+1,stdout);
+            Print_Number((int64) ovl->bread+1,ar_wide+1,stdout);
+            printf("  ");
+            Print_Number((int64) ovl->aread+1,br_wide+1,stdout);
         }
         else { //Print_Number((int64) ovl->aread+1,ar_wide+1,stdout);
-            //printf("  ");
-            //Print_Number((int64) ovl->bread+1,br_wide+1,stdout);
+            printf("  ");
+            Print_Number((int64) ovl->bread+1,br_wide+1,stdout);
             new_ovl->aid = ovl->aread;
             new_ovl->bid = ovl->bread;
         }
         if (COMP(ovl->flags))
-        { //printf(" c");
+        {   printf(" c");
             new_ovl->flags = 1;
         }
-        else
+        else {
             new_ovl->flags = 0;
-        //printf(" n");
-        //printf("   [");
-        //Print_Number((int64) ovl->path.abpos,ai_wide,stdout);
+            printf(" n");
+        }
+        printf("   [");
+        Print_Number((int64) ovl->path.abpos,ai_wide,stdout);
         new_ovl->abpos = ovl->path.abpos;
-        //printf("..");
-        //Print_Number((int64) ovl->path.aepos,ai_wide,stdout);
+        printf("..");
+        Print_Number((int64) ovl->path.aepos,ai_wide,stdout);
         new_ovl->aepos = ovl->path.aepos;
-        //printf("] x [");
-        //Print_Number((int64) ovl->path.bbpos,bi_wide,stdout);
-        //printf("..");
-        //Print_Number((int64) ovl->path.bepos,bi_wide,stdout);
-        //printf("]");
-        //printf("%d",aln->blen);
+        printf("] x [");
+        Print_Number((int64) ovl->path.bbpos,bi_wide,stdout);
+        printf("..");
+        Print_Number((int64) ovl->path.bepos,bi_wide,stdout);
+        printf("]");
+        printf("%d",aln->blen);
+
+
         new_ovl->bbpos = ovl->path.bbpos;
         new_ovl->bepos = ovl->path.bepos;
         new_ovl->alen = aln->alen;
