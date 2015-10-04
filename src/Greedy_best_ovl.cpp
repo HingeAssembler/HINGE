@@ -11,6 +11,9 @@
 #include "DB.h"
 #include "align.h"
 #include "LAInterface.h"
+#include "OverlapGraph.h"
+#include <algorithm>
+#include <fstream>
 
 #include <iostream>
 
@@ -22,6 +25,14 @@ static int ORDER(const void *l, const void *r) {
     int y = *((int32 *) r);
     return (x - y);
 }
+
+
+bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
+    return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
+
+}
+
+
 
 int main(int argc, char *argv[]) {
     LAInterface la;
@@ -38,29 +49,74 @@ int main(int argc, char *argv[]) {
 	int n_read = la.getReadNumber();
     std::vector<LOverlap *> aln;
     la.getOverlap(aln,0,n_aln);
-	
-	std::map<std::pair<int,int>, int> idx; //from (aid, bid) to alignment id
-	std::map<int, std::vector<int>> idx2; // from (aid) to alignment id in a vector
-	 
-	for (int i = 0; i < n_read; i++ )
-	{
-		idx2[i] = std::vector<int>();
+
+
+
+	std::map<std::pair<int,int>, int> idx; //map from (aid, bid) to alignment id
+	std::map<int, std::vector<LOverlap*>> idx2; //map from (aid) to alignment id in a vector
+
+    std::vector< std::pair<Node, Node> > edgelist;
+
+	for (int i = 0; i < n_read; i++ ) {
+		idx2[i] = std::vector< LOverlap * >(); // initialize idx2
 	}
-	
 	
 	for (int i = 0; i < aln.size(); i++) {
 		idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )] = i;
-		idx2[aln[i]->aid].push_back(i);
+		idx2[aln[i]->aid].push_back(aln[i]);
 	}
-	
-	
-	/****
+
+    //sort the reads
+
+    for (int i = 0; i < n_read; i++ ) {
+        std::sort( idx2[i].begin(), idx2[i].end(), compare_overlap );
+    }
+
+    /****
 	get the best overlap for each read and form a graph
 	****/
-	
-	
-	
-	
+
+    for (int i = 0; i < idx2.size(); i++) {
+        int cf = 0;
+        int cb = 0;
+        for (int j = 0; j< idx2[i].size(); j++) {
+            //idx2[i][j]->show();
+            if ((idx2[i][j]->aln_type == FORWARD) and (cf == 0)) {
+                cf = 1;
+                //add edge
+                if (idx2[i][j]->flags == 1) { // n = 0, c = 1
+                    edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,0),Node(idx2[i][j]->bid,1)));
+                } else {
+                    edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,0),Node(idx2[i][j]->bid,0)));
+                }
+            }
+
+            if ((idx2[i][j]->aln_type == BACKWARD) and (cb == 0)) {
+                cb = 1;
+                //add edge
+                if (idx2[i][j]->flags == 1) {
+                    edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,1),Node(idx2[i][j]->bid,0)));
+                } else {
+                    edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,1),Node(idx2[i][j]->bid,1)));
+                }
+            }
+            if ((cf == 1) and (cb == 1)) break;
+        }
+    }
+
+    std::ofstream out  (argv[3], std::ofstream::out);
+
+
+    //print edges list
+    for (int i = 0; i < edgelist.size(); i++){
+        edgelist[i].first.show(out);
+        out<<"->";
+        edgelist[i].second.show(out);
+        out<<std::endl;
+    }
+
+
+
 	//for (int i=0; i <idx2[1500].size(); i++) {
 	//	printf("%d\n",idx2[1500][i]);
 	//}
@@ -105,8 +161,8 @@ int main(int argc, char *argv[]) {
 	for (auto i:res2)
 		i->show();
 	printf("\n");
-
-    la.CloseDB(); //close database*/
+    */
+    la.CloseDB(); //close database
     return 0;
 }
 

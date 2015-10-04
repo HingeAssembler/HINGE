@@ -22,6 +22,9 @@ public:
     void showRead();
 };
 
+enum aligntype {
+    FORWARD, BACKWARD, COVERING, COVERED
+} ;
 
 class LAlignment { // because class Alignment is taken
 
@@ -41,13 +44,13 @@ public:
     int aepos, bepos; // end position of read a and b
     int flags; // flag = 1 : 'c', flag = 0 : 'n'
     int tps;
-
+    aligntype aln_type;
 };
 
 class LOverlap { // LOverlap is a simplified version of LAlignment, no trace
 public:
     LOverlap() { };
-	void show() {printf("%d %d %d [%d...%d] x [%d...%d] %d diffs\n",aid,bid,flags,abpos,aepos,bbpos,bepos,diffs); };
+	void show() {printf("%d %d %d [%d...%d]/%d x [%d...%d]/%d %d diffs, %d type\n",aid,bid,flags,abpos,aepos,alen,bbpos,bepos,blen,diffs,aln_type); };
     int aid, bid;
     int alen;
     int blen;
@@ -57,6 +60,9 @@ public:
     int aepos, bepos;
     int tps;
     int flags;
+    aligntype aln_type;
+    void addtype();
+
 };
 
 

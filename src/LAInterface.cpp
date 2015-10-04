@@ -1235,9 +1235,8 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
         new_ovl->diffs = ovl->path.diffs;
         new_ovl->tlen = ovl->path.tlen;
         new_ovl->tps = tps;
-
+        new_ovl->addtype();
         result_vec.push_back(new_ovl);
-
         if ((ALIGN || CARTOON || REFERENCE) && false) {
             if (ALIGN || REFERENCE) {
                 char *aseq, *bseq;
@@ -1668,5 +1667,24 @@ int LAInterface::getReadNumber() {
 int64 LAInterface::getAlignmentNumber() {
     resetAlignment();
     return novl;
+
+}
+
+void LOverlap::addtype() {
+    if ((abpos == 0) and (aepos == alen) ) {
+        if (blen > alen) aln_type = COVERED;
+    }
+
+    else if ((abpos > 0) and (aepos == alen) ) {
+        aln_type = FORWARD;
+    }
+
+    else if ( (abpos == 0) and (aepos < alen)) {
+        aln_type = BACKWARD;
+    }
+
+    else if ((bbpos == 0) and (bepos == blen) ) {
+        if (alen > blen) aln_type = COVERING;
+    }
 
 }
