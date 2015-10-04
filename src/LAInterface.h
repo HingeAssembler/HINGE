@@ -62,6 +62,7 @@ public:
     int flags;
     aligntype aln_type;
     void addtype();
+    static const int CHI_THRESHOLD = 300;
 
 };
 

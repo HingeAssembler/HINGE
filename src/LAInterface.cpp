@@ -1671,19 +1671,19 @@ int64 LAInterface::getAlignmentNumber() {
 }
 
 void LOverlap::addtype() {
-    if ((abpos == 0) and (aepos == alen) ) {
+    if ((abpos < CHI_THRESHOLD) and (aepos > alen - CHI_THRESHOLD) ) {
         if (blen > alen) aln_type = COVERED;
     }
 
-    else if ((abpos > 0) and (aepos == alen) ) {
+    else if ((abpos > 0) and (aepos > alen - CHI_THRESHOLD) ) {
         aln_type = FORWARD;
     }
 
-    else if ( (abpos == 0) and (aepos < alen)) {
+    else if ( ( abpos < CHI_THRESHOLD) and (aepos < alen)) {
         aln_type = BACKWARD;
     }
 
-    else if ((bbpos == 0) and (bepos == blen) ) {
+    else if ((bbpos < CHI_THRESHOLD) and (bepos > blen - CHI_THRESHOLD) ) {
         if (alen > blen) aln_type = COVERING;
     }
 
