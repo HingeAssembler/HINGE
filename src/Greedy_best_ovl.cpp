@@ -41,16 +41,14 @@ int main(int argc, char *argv[]) {
 	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.OpenDB(name_db);
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
-	
+
     la.OpenAlignment(name_las);
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
-    
+
 	int n_aln = la.getAlignmentNumber();
 	int n_read = la.getReadNumber();
     std::vector<LOverlap *> aln;
     la.getOverlap(aln,0,n_aln);
-
-
 
 	std::map<std::pair<int,int>, int> idx; //map from (aid, bid) to alignment id
 	std::map<int, std::vector<LOverlap*>> idx2; //map from (aid) to alignment id in a vector
@@ -60,7 +58,7 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < n_read; i++ ) {
 		idx2[i] = std::vector< LOverlap * >(); // initialize idx2
 	}
-	
+
 	for (int i = 0; i < aln.size(); i++) {
 		idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )] = i;
 		idx2[aln[i]->aid].push_back(aln[i]);
@@ -120,7 +118,7 @@ int main(int argc, char *argv[]) {
 	//for (int i=0; i <idx2[1500].size(); i++) {
 	//	printf("%d\n",idx2[1500][i]);
 	//}
-	
+
 	/*std::cout << "hello" << std::endl;
     Read *test_read;
 
@@ -149,7 +147,7 @@ int main(int argc, char *argv[]) {
     std::vector<LOverlap *> res1;
     la.resetAlignment();
     la.getOverlap(res1, 3, 5); // get alignment(overlap) for reads [3,5)
-	
+
 	for (auto i:res1)
 		i->show();
 	printf("\n");

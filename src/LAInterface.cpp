@@ -1042,7 +1042,7 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
     bool ALIGN = false;
     bool REFERENCE = false;
     bool CARTOON = false;
-    bool OVERLAP = true;
+    bool OVERLAP = false;
     bool FLIP = false;
     bool UPPERCASE = false;
     bool MAP = false;
@@ -1198,7 +1198,7 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
         //  Display it
 
         //if (ALIGN || CARTOON || REFERENCE)
-        //    printf("\n");
+            //printf("\n");
         if (FLIP) {
             Flip_Alignment(aln, 0);
             //Print_Number((int64) ovl->bread+1,ar_wide+1,stdout);
@@ -1212,8 +1212,9 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
             new_ovl->bid = ovl->bread;
         }
         if (COMP(ovl->flags))
-            //printf(" c");
+        { //printf(" c");
             new_ovl->flags = 1;
+        }
         else
             new_ovl->flags = 0;
         //printf(" n");
@@ -1228,6 +1229,7 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
         //printf("..");
         //Print_Number((int64) ovl->path.bepos,bi_wide,stdout);
         //printf("]");
+        //printf("%d",aln->blen);
         new_ovl->bbpos = ovl->path.bbpos;
         new_ovl->bepos = ovl->path.bepos;
         new_ovl->alen = aln->alen;
@@ -1235,7 +1237,7 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
         new_ovl->diffs = ovl->path.diffs;
         new_ovl->tlen = ovl->path.tlen;
         new_ovl->tps = tps;
-        new_ovl->addtype();
+        //new_ovl->addtype();
         result_vec.push_back(new_ovl);
         if ((ALIGN || CARTOON || REFERENCE) && false) {
             if (ALIGN || REFERENCE) {
