@@ -40,15 +40,20 @@ int main(int argc, char *argv[]) {
 	char * name_las = argv[2];
 	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.OpenDB(name_db);
+	la.OpenDB2(name_db);
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
 
     la.OpenAlignment(name_las);
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
-
+	//la.resetAlignment();
+	//la.showOverlap(0,1);
+	
 	int n_aln = la.getAlignmentNumber();
 	int n_read = la.getReadNumber();
     std::vector<LOverlap *> aln;
+	la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
+	
 
 	std::map<std::pair<int,int>, int> idx; //map from (aid, bid) to alignment id
 	std::map<int, std::vector<LOverlap*>> idx2; //map from (aid) to alignment id in a vector
@@ -63,13 +68,15 @@ int main(int argc, char *argv[]) {
 		idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )] = i;
 		idx2[aln[i]->aid].push_back(aln[i]);
 	}
+	
+	for (int j = 0; j< idx2[1].size(); j++)
+		idx2[1][j]->show();
 
     //sort the reads
-
     for (int i = 0; i < n_read; i++ ) {
         std::sort( idx2[i].begin(), idx2[i].end(), compare_overlap );
     }
-
+	
     /****
 	get the best overlap for each read and form a graph
 	****/
@@ -101,6 +108,8 @@ int main(int argc, char *argv[]) {
             if ((cf == 1) and (cb == 1)) break;
         }
     }
+	
+
 
     std::ofstream out  (argv[3], std::ofstream::out);
 
@@ -112,8 +121,6 @@ int main(int argc, char *argv[]) {
         edgelist[i].second.show(out);
         out<<std::endl;
     }
-
-
 
 	//for (int i=0; i <idx2[1500].size(); i++) {
 	//	printf("%d\n",idx2[1500][i]);

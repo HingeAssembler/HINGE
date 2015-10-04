@@ -528,11 +528,11 @@ void LAInterface::showAlignment(int from, int to) {
         Print_Number((int64) ovl->path.abpos, ai_wide, stdout);
         printf("..");
         Print_Number((int64) ovl->path.aepos, ai_wide, stdout);
-        printf("] x [");
+        printf("]%d x [",aln->alen);
         Print_Number((int64) ovl->path.bbpos, bi_wide, stdout);
         printf("..");
         Print_Number((int64) ovl->path.bepos, bi_wide, stdout);
-        printf("]");
+        printf("]%d", aln->blen);
 
         if (ALIGN || CARTOON || REFERENCE) {
             if (ALIGN || REFERENCE) {
@@ -1157,11 +1157,11 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
 
         //  If -o check display only overlaps
         aln->alen = db1->reads[ovl->aread].rlen;
-        aln->blen = db2->reads[ovl->bread].rlen;
+        aln->blen = db1->reads[ovl->bread].rlen;
         aln->flags = ovl->flags;
         tps = ovl->path.tlen / 2;
         LOverlap *new_ovl = new LOverlap();
-
+/*
         if (OVERLAP) {
             if (ovl->path.abpos != 0 && ovl->path.bbpos != 0)
                 continue;
@@ -1192,45 +1192,46 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
                 continue;
             match = 1;
         }
-
+*/
         //  Display it
 
         //if (ALIGN || CARTOON || REFERENCE)
-        printf("\n");
+        //printf("\n");
+        //printf(" %d ",j);
         if (FLIP) {
             Flip_Alignment(aln, 0);
-            Print_Number((int64) ovl->bread+1,ar_wide+1,stdout);
-            printf("  ");
-            Print_Number((int64) ovl->aread+1,br_wide+1,stdout);
+            //Print_Number((int64) ovl->bread+1,ar_wide+1,stdout);
+            //printf("  ");
+            //Print_Number((int64) ovl->aread+1,br_wide+1,stdout);
         }
-        else { //Print_Number((int64) ovl->aread+1,ar_wide+1,stdout);
-            printf("  ");
-            Print_Number((int64) ovl->bread+1,br_wide+1,stdout);
+        else { 
+			//Print_Number((int64) ovl->aread+1,ar_wide+1,stdout);
+            //printf("  ");
+            //Print_Number((int64) ovl->bread+1,br_wide+1,stdout);
             new_ovl->aid = ovl->aread;
             new_ovl->bid = ovl->bread;
         }
         if (COMP(ovl->flags))
-        {   printf(" c");
+        {   //printf(" c");
             new_ovl->flags = 1;
         }
         else {
             new_ovl->flags = 0;
-            printf(" n");
+            //printf(" n");
         }
-        printf("   [");
-        Print_Number((int64) ovl->path.abpos,ai_wide,stdout);
+        //printf("   [");
+        //Print_Number((int64) ovl->path.abpos,ai_wide,stdout);
+        //printf("..");
+        //Print_Number((int64) ovl->path.aepos,ai_wide,stdout);
+        //printf("] x [");
+        //Print_Number((int64) ovl->path.bbpos,bi_wide,stdout);
+        //printf("..");
+        //Print_Number((int64) ovl->path.bepos,bi_wide,stdout);
+        //printf("]");
+        //printf("%d",aln->blen);
+
         new_ovl->abpos = ovl->path.abpos;
-        printf("..");
-        Print_Number((int64) ovl->path.aepos,ai_wide,stdout);
-        new_ovl->aepos = ovl->path.aepos;
-        printf("] x [");
-        Print_Number((int64) ovl->path.bbpos,bi_wide,stdout);
-        printf("..");
-        Print_Number((int64) ovl->path.bepos,bi_wide,stdout);
-        printf("]");
-        printf("%d",aln->blen);
-
-
+		new_ovl->aepos = ovl->path.aepos;
         new_ovl->bbpos = ovl->path.bbpos;
         new_ovl->bepos = ovl->path.bepos;
         new_ovl->alen = aln->alen;
@@ -1238,7 +1239,7 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
         new_ovl->diffs = ovl->path.diffs;
         new_ovl->tlen = ovl->path.tlen;
         new_ovl->tps = tps;
-        //new_ovl->addtype();
+        new_ovl->addtype();
         result_vec.push_back(new_ovl);
         if ((ALIGN || CARTOON || REFERENCE) && false) {
             if (ALIGN || REFERENCE) {
@@ -1355,8 +1356,8 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
     int blast, match, seen, lhalf, rhalf;
     bool ALIGN = false;
     bool REFERENCE = false;
-    bool CARTOON = true;
-    bool OVERLAP = true;
+    bool CARTOON = false;
+    bool OVERLAP = false;
     bool FLIP = false;
     bool UPPERCASE = false;
     bool MAP = false;
@@ -1677,17 +1678,315 @@ void LOverlap::addtype() {
     if ((abpos < CHI_THRESHOLD) and (aepos > alen - CHI_THRESHOLD) ) {
         if (blen > alen) aln_type = COVERED;
     }
+	/**
+	 A:   ==========>
+	 B: ===============>
+	**/
 
     else if ((abpos > 0) and (aepos > alen - CHI_THRESHOLD) ) {
-        aln_type = FORWARD;
+        if (bbpos < CHI_THRESHOLD) aln_type = FORWARD;
     }
+	/**
+	 A:   ==========>
+	 B:        ==========>
+	**/
 
     else if ( ( abpos < CHI_THRESHOLD) and (aepos < alen)) {
-        aln_type = BACKWARD;
+        if (bepos >  blen - CHI_THRESHOLD ) aln_type = BACKWARD;
     }
-
+	/**
+	 A:     ==========>
+	 B:  ==========>
+	**/
     else if ((bbpos < CHI_THRESHOLD) and (bepos > blen - CHI_THRESHOLD) ) {
         if (alen > blen) aln_type = COVERING;
     }
 
 }
+
+
+
+void LAInterface::showOverlap(int from, int to) {
+	int        j;
+	    uint16    *trace;
+	    Work_Data *work;
+	    int        tmax;
+	    int        in, npt, idx, ar;
+	    int64      tps;
+
+	    char      *abuffer, *bbuffer;
+	    int        ar_wide, br_wide;
+	    int        ai_wide, bi_wide;
+	    int        mn_wide, mx_wide;
+	    int        tp_wide;
+	    int        blast, match, seen, lhalf, rhalf;
+	    bool ALIGN = false;
+	    bool REFERENCE = false;
+	    bool CARTOON = false;
+	    bool OVERLAP = false;
+	    bool FLIP = false;
+	    bool UPPERCASE = false;
+	    bool MAP = false;
+	    int INDENT = 4;
+	    int WIDTH = 100;
+	    int BORDER = 10;
+
+	    aln->path = &(ovl->path);
+	    if (ALIGN || REFERENCE)
+	      { work = New_Work_Data();
+	        abuffer = New_Read_Buffer(db1);
+	        bbuffer = New_Read_Buffer(db2);
+	      }
+	    else
+	      { abuffer = NULL;
+	        bbuffer = NULL;
+	        work = NULL;
+	      }
+
+	    tmax  = 1000;
+	    trace = (uint16 *) Malloc(sizeof(uint16)*tmax,"Allocating trace vector");
+	    if (trace == NULL)
+	      exit (1);
+
+	    in  = 0;
+	    npt = pts[0];
+	    idx = 1;
+
+	    ar_wide = Number_Digits((int64) db1->nreads);
+	    br_wide = Number_Digits((int64) db2->nreads);
+	    ai_wide = Number_Digits((int64) db1->maxlen);
+	    bi_wide = Number_Digits((int64) db2->maxlen);
+	    if (db1->maxlen < db2->maxlen)
+	      { mn_wide = ai_wide;
+	        mx_wide = bi_wide;
+	        tp_wide = Number_Digits((int64) db1->maxlen/tspace+2);
+	      }
+	    else
+	      { mn_wide = bi_wide;
+	        mx_wide = ai_wide;
+	        tp_wide = Number_Digits((int64) db2->maxlen/tspace+2);
+	      }
+	    ar_wide += (ar_wide-1)/3;
+	    br_wide += (br_wide-1)/3;
+	    ai_wide += (ai_wide-1)/3;
+	    bi_wide += (bi_wide-1)/3;
+	    mn_wide += (mn_wide-1)/3;
+	    tp_wide += (tp_wide-1)/3;
+
+	    if (FLIP)
+	      { int x;
+	        x = ar_wide; ar_wide = br_wide; br_wide = x;
+	        x = ai_wide; ai_wide = bi_wide; bi_wide = x;
+	      }
+
+	    //  For each record do
+
+	    blast = -1;
+	    match = 0;
+	    seen  = 0;
+	    lhalf = rhalf = 0;
+		
+		
+	    pts = new int[4];
+	    pts[0] = from + 1;
+	    pts[1] = to ;
+	    pts[2] = INT32_MAX;
+
+	    npt = pts[0];
+	    idx = 1;
+		
+	    for (j = 0; j < novl; j++)
+
+	       //  Read it in
+
+	      { Read_Overlap(input,ovl);
+	        if (ovl->path.tlen > tmax)
+	          { tmax = ((int) 1.2*ovl->path.tlen) + 100;
+	            trace = (uint16 *) Realloc(trace,sizeof(uint16)*tmax,"Allocating trace vector");
+	            if (trace == NULL)
+	              exit (1);
+	          }
+	        ovl->path.trace = (void *) trace;
+	        Read_Trace(input,ovl,tbytes);
+
+	        //  Determine if it should be displayed
+
+	        ar = ovl->aread+1;
+	        if (in)
+	          { while (ar > npt)
+	              { npt = pts[idx++];
+	                if (ar < npt)
+	                  { in = 0;
+	                    break;
+	                  }
+	                npt = pts[idx++];
+	              }
+	          }
+	        else
+	          { while (ar >= npt)
+	              { npt = pts[idx++];
+	                if (ar <= npt)
+	                  { in = 1;
+	                    break;
+	                  }
+	                npt = pts[idx++];
+	              }
+	          }
+	        if (!in)
+	          continue;
+
+	        //  If -o check display only overlaps
+
+	        aln->alen  = db1->reads[ovl->aread].rlen;
+	        aln->blen  = db2->reads[ovl->bread].rlen;
+	        aln->flags = ovl->flags;
+	        tps        = ovl->path.tlen/2;
+
+	        if (OVERLAP)
+	          { if (ovl->path.abpos != 0 && ovl->path.bbpos != 0)
+	              continue;
+	            if (ovl->path.aepos != aln->alen && ovl->path.bepos != aln->blen)
+	              continue;
+	          }
+
+	        //  If -M option then check the completeness of the implied mapping
+
+	        if (MAP)
+	          { while (ovl->bread != blast)
+	              { if (!match && seen && !(lhalf && rhalf))
+	                  { printf("Missing ");
+	                    Print_Number((int64) blast+1,br_wide+1,stdout);
+	                    printf(" %d ->%lld\n",db2->reads[blast].rlen,db2->reads[blast].coff);
+	                  }
+	                match = 0;
+	                seen  = 0; 
+	                lhalf = rhalf = 0;
+	                blast += 1;
+	              }
+	            seen = 1;
+	            if (ovl->path.abpos == 0)
+	              rhalf = 1;
+	            if (ovl->path.aepos == aln->alen)
+	              lhalf = 1;
+	            if (ovl->path.bbpos != 0 || ovl->path.bepos != aln->blen)
+	              continue;
+	            match = 1;
+	          }
+
+	        //  Display it
+            
+	        if (ALIGN || CARTOON || REFERENCE)
+	          printf("\n");
+	        if (FLIP)
+	          { Flip_Alignment(aln,0);
+	            Print_Number((int64) ovl->bread+1,ar_wide+1,stdout);
+	            printf("  ");
+	            Print_Number((int64) ovl->aread+1,br_wide+1,stdout);
+	          }
+	        else
+	          { Print_Number((int64) ovl->aread+1,ar_wide+1,stdout);
+	            printf("  ");
+	            Print_Number((int64) ovl->bread+1,br_wide+1,stdout);
+	          }
+	        if (COMP(ovl->flags))
+	          printf(" c");
+	        else
+	          printf(" n");
+	        printf("   [");
+	        Print_Number((int64) ovl->path.abpos,ai_wide,stdout);
+	        printf("..");
+	        Print_Number((int64) ovl->path.aepos,ai_wide,stdout);
+	        printf("] x [");
+	        Print_Number((int64) ovl->path.bbpos,bi_wide,stdout);
+	        printf("..");
+	        Print_Number((int64) ovl->path.bepos,bi_wide,stdout);
+	        printf("]%d",aln->blen);
+
+	        if (ALIGN || CARTOON || REFERENCE)
+	          { if (ALIGN || REFERENCE)
+	              { char *aseq, *bseq;
+	                int   amin,  amax;
+	                int   bmin,  bmax;
+
+	                if (FLIP)
+	                  Flip_Alignment(aln,0);
+	                if (small)
+	                  Decompress_TraceTo16(ovl);
+
+	                amin = ovl->path.abpos - BORDER;
+	                if (amin < 0) amin = 0;
+	                amax = ovl->path.aepos + BORDER;
+	                if (amax > aln->alen) amax = aln->alen;
+	                if (COMP(aln->flags))
+	                  { bmin = (aln->blen-ovl->path.bepos) - BORDER;
+	                    if (bmin < 0) bmin = 0;
+	                    bmax = (aln->blen-ovl->path.bbpos) + BORDER;
+	                    if (bmax > aln->blen) bmax = aln->blen;
+	                  }
+	                else
+	                  { bmin = ovl->path.bbpos - BORDER;
+	                    if (bmin < 0) bmin = 0;
+	                    bmax = ovl->path.bepos + BORDER;
+	                    if (bmax > aln->blen) bmax = aln->blen;
+	                  }
+
+	                aseq = Load_Subread(db1,ovl->aread,amin,amax,abuffer,0);
+	                bseq = Load_Subread(db2,ovl->bread,bmin,bmax,bbuffer,0);
+
+	                aln->aseq = aseq - amin;
+	                if (COMP(aln->flags))
+	                  { Complement_Seq(bseq,bmax-bmin);
+	                    aln->bseq = bseq - (aln->blen - bmax);
+	                  }
+	                else
+	                  aln->bseq = bseq - bmin;
+
+	                Compute_Trace_PTS(aln,work,tspace);
+
+	                if (FLIP)
+	                  { if (COMP(aln->flags))
+	                      { Complement_Seq(aseq,amax-amin);
+	                        Complement_Seq(bseq,bmax-bmin);
+	                        aln->aseq = aseq - (aln->alen - amax);
+	                        aln->bseq = bseq - bmin;
+	                      }
+	                    Flip_Alignment(aln,1);
+	                  }
+	              }
+	            if (CARTOON)
+	              { printf("  (");
+	                Print_Number(tps,tp_wide,stdout);
+	                printf(" trace pts)\n\n");
+	                Alignment_Cartoon(stdout,aln,INDENT,mx_wide);
+	              }
+	            else
+	              { printf(" :   = ");
+	                Print_Number((int64) ovl->path.diffs,mn_wide,stdout);
+	                printf(" diffs  (");
+	                Print_Number(tps,tp_wide,stdout);
+	                printf(" trace pts)\n");
+	              }
+	            if (REFERENCE)
+	              Print_Reference(stdout,aln,work,INDENT,WIDTH,BORDER,UPPERCASE,mx_wide);
+	            if (ALIGN)
+	              Print_Alignment(stdout,aln,work,INDENT,WIDTH,BORDER,UPPERCASE,mx_wide);
+	          }
+	        else
+	          { printf(" :   < ");
+	            Print_Number((int64) ovl->path.diffs,mn_wide,stdout);
+	            printf(" diffs  (");
+	            Print_Number(tps,tp_wide,stdout);
+	            printf(" trace pts)\n");
+	          }
+	      }
+
+	    free(trace);
+	    if (ALIGN)
+	      { free(bbuffer-1);
+	        free(abuffer-1);
+	        Free_Work_Data(work);
+	      }
+	  
+		  return;
+}
+

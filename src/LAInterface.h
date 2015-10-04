@@ -23,7 +23,7 @@ public:
 };
 
 enum aligntype {
-    FORWARD, BACKWARD, COVERING, COVERED
+    FORWARD, BACKWARD, COVERING, COVERED, UNDIFINED
 } ;
 
 class LAlignment { // because class Alignment is taken
@@ -60,7 +60,7 @@ public:
     int aepos, bepos;
     int tps;
     int flags;
-    aligntype aln_type;
+    aligntype aln_type = UNDIFINED;
     void addtype();
     static const int CHI_THRESHOLD = 300;
 
@@ -97,6 +97,8 @@ public:
     void showRead(int from, int to); // show reads in a range
 
     void showAlignment(int from, int to); // show alignment with 'A read' in a range
+
+    void showOverlap(int from, int to); // show alignment with 'A read' in a range
 
     void resetAlignment(); // rewind the file, need to be called every time before obtaining alignments
 
