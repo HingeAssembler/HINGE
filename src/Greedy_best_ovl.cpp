@@ -29,7 +29,6 @@ static int ORDER(const void *l, const void *r) {
 
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
     return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
-
 }
 
 
@@ -47,13 +46,57 @@ int main(int argc, char *argv[]) {
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
 	//la.resetAlignment();
 	//la.showOverlap(0,1);
-	
+
 	int n_aln = la.getAlignmentNumber();
 	int n_read = la.getReadNumber();
     std::vector<LOverlap *> aln;
 	la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
+
+	int covered = 0, forward = 0, backward = 0, covering = 0, undefined = 0;
+	int pcovered = 0, pforward = 0, pbackward = 0, pcovering = 0, pundefined = 0;
+	for (int i = 0; i < aln.size(); i++) {
+		int CHI_THRESHOLD = 300;
+		
+		    if ((aln[i]->abpos > 0) and (aln[i]->aepos > aln[i]->alen - CHI_THRESHOLD) ) {
+		        forward ++; 
+		    }
+
+		    else if ( ( aln[i]->abpos < CHI_THRESHOLD) and (aln[i]->aepos < aln[i]->alen)) {
+		        backward ++ ;
+		    }
+			
+			else if ((aln[i]->abpos < CHI_THRESHOLD) and (aln[i]->aepos > aln[i]->alen - CHI_THRESHOLD) ) {
+			        if (aln[i]->blen > aln[i]->alen) covered ++ ;
+			}
+		    
+			else if ((aln[i]->bbpos < CHI_THRESHOLD) and (aln[i]->bepos > aln[i]->blen - CHI_THRESHOLD) ) {
+		        if (aln[i]->alen >aln[i]-> blen) covering ++; 
+		    }
+			else undefined ++;
+		
+		
+		if ((aln[i]->abpos > 0) and (aln[i]->aepos == aln[i]->alen) ) {
+		        pforward ++;
+		    }
+
+		    else if 
+			( ( aln[i]->abpos == 0) and (aln[i]->aepos < aln[i]->alen)) {
+					        pbackward ++; 
+			}
+
+		    else if ((aln[i]->abpos  == 0) and (aln[i]->aepos == aln[i]->alen) ) {
+		        if (aln[i]->blen > aln[i]->alen) pcovered ++; 
+		    }
+			
+		    else if ((aln[i]->bbpos == 0) and (aln[i]->bepos == aln[i]->blen) ) {
+		        if (aln[i]->alen > aln[i]->blen) pcovering ++;
+		    }	
+			else pundefined ++;
+	}
 	
+	printf("covered %d forward %d backward %d covering %d undefined %d\ncovered %d forward %d backward %d covering %d undefined %d\n",covered, forward, backward, covering, undefined, pcovered, pforward, pbackward, pcovering, pundefined);
+
 
 	std::map<std::pair<int,int>, int> idx; //map from (aid, bid) to alignment id
 	std::map<int, std::vector<LOverlap*>> idx2; //map from (aid) to alignment id in a vector
@@ -65,10 +108,14 @@ int main(int argc, char *argv[]) {
 	}
 
 	for (int i = 0; i < aln.size(); i++) {
+    if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.22 ) {
+
 		idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )] = i;
 		idx2[aln[i]->aid].push_back(aln[i]);
-	}
-	
+
+	    }
+    }
+
 	for (int j = 0; j< idx2[1].size(); j++)
 		idx2[1][j]->show();
 
@@ -76,7 +123,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++ ) {
         std::sort( idx2[i].begin(), idx2[i].end(), compare_overlap );
     }
-	
+
     /****
 	get the best overlap for each read and form a graph
 	****/
@@ -108,7 +155,6 @@ int main(int argc, char *argv[]) {
             if ((cf == 1) and (cb == 1)) break;
         }
     }
-	
 
 
     std::ofstream out  (argv[3], std::ofstream::out);

@@ -12,7 +12,7 @@ source setup.sh
 mkdir $pwd/data
 cd $pwd/data
 
-rm -rf *
+#rm -rf *
 simulator 1.0 -c20. >G.fasta
 fasta2DB G G.fasta 
 HPCdaligner -mdust -t5 G | csh -v 
