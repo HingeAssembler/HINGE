@@ -23,7 +23,7 @@ public:
 };
 
 enum aligntype {
-    FORWARD, BACKWARD, COVERING, COVERED, UNDIFINED
+    FORWARD, BACKWARD, COVERING, COVERED, MISMATCH_LEFT, MISMATCH_RIGHT, UNDIFINED
 } ;
 
 class LAlignment { // because class Alignment is taken
@@ -45,6 +45,7 @@ public:
     int flags; // flag = 1 : 'c', flag = 0 : 'n'
     int tps;
     aligntype aln_type;
+	bool active;
 };
 
 class LOverlap { // LOverlap is a simplified version of LAlignment, no trace
@@ -63,6 +64,7 @@ public:
     aligntype aln_type = UNDIFINED;
     void addtype();
     static const int CHI_THRESHOLD = 300;
+	bool active = true;
 
 };
 

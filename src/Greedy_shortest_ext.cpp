@@ -55,18 +55,6 @@ int main(int argc, char *argv[]) {
 
 	int covered = 0, forward = 0, backward = 0, covering = 0, undefined = 0;
 	int pcovered = 0, pforward = 0, pbackward = 0, pcovering = 0, pundefined = 0;
-	
-	/**
-	filter reads
-	**/
-	
-	int LENGTH_THRESHOLD = 12000;
-	for (int i = 0; i < aln.size(); i++) {
-		if ((aln[i]->alen < LENGTH_THRESHOLD) or (aln[i]->blen < LENGTH_THRESHOLD)) aln[i]->active = false;
-	}
-	
-	
-	
 	for (int i = 0; i < aln.size(); i++) {
 		int CHI_THRESHOLD = 300;
 		
@@ -143,62 +131,29 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < idx2.size(); i++) {
         int cf = 0;
         int cb = 0;
-		
-        for (int j = 0; j< idx2[i].size(); j++) {
-        	    //idx2[i][j]->show();
-			if (idx2[i][j]->active) {
-        	    if ((idx2[i][j]->aln_type == FORWARD) and (cf == 0)) {
-        	        cf = 1;
-        	        //add edge
-        	        if (idx2[i][j]->flags == 1) { // n = 0, c = 1
-        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,0),Node(idx2[i][j]->bid,1)));
-        	        } else {
-        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,0),Node(idx2[i][j]->bid,0)));
-        	        }
-        	    }
-        	
-        	    if ((idx2[i][j]->aln_type == BACKWARD) and (cb == 0)) {
-        	        cb = 1;
-        	        //add edge
-        	        if (idx2[i][j]->flags == 1) {
-        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,1),Node(idx2[i][j]->bid,0)));
-        	        } else {
-        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,1),Node(idx2[i][j]->bid,1)));
-        	        }
-        	    }
-			}
-        	if ((cf == 1) and (cb == 1)) break;
-        	
-		}
-		
-		
         for (int j = 0; j< idx2[i].size(); j++) {
             //idx2[i][j]->show();
-            if (idx2[i][j]->active) {
-				if ((idx2[i][j]->aln_type == MISMATCH_RIGHT) and (cf == 0)) {
-            	    cf = 1;
-            	    //add edge
-            	    if (idx2[i][j]->flags == 1) { // n = 0, c = 1
-            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,0),Node(idx2[i][j]->bid,1)));
-            	    } else {
-            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,0),Node(idx2[i][j]->bid,0)));
-            	    }
-            	}
-            	
-            	if ((idx2[i][j]->aln_type == MISMATCH_LEFT) and (cb == 0)) {
-            	    cb = 1;
-            	    //add edge
-            	    if (idx2[i][j]->flags == 1) {
-            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,1),Node(idx2[i][j]->bid,0)));
-            	    } else {
-            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,1),Node(idx2[i][j]->bid,1)));
-            	    }
-            	}
-			}
+            if ((idx2[i][j]->aln_type == FORWARD) and (cf == 0)) {
+                cf = 1;
+                //add edge
+                if (idx2[i][j]->flags == 1) { // n = 0, c = 1
+                    edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,0),Node(idx2[i][j]->bid,1)));
+                } else {
+                    edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,0),Node(idx2[i][j]->bid,0)));
+                }
+            }
+
+            if ((idx2[i][j]->aln_type == BACKWARD) and (cb == 0)) {
+                cb = 1;
+                //add edge
+                if (idx2[i][j]->flags == 1) {
+                    edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,1),Node(idx2[i][j]->bid,0)));
+                } else {
+                    edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,1),Node(idx2[i][j]->bid,1)));
+                }
+            }
             if ((cf == 1) and (cb == 1)) break;
         }
-		
-		
     }
 
 

@@ -1701,7 +1701,22 @@ void LOverlap::addtype() {
     else if ((bbpos < CHI_THRESHOLD) and (bepos > blen - CHI_THRESHOLD) ) {
         if (alen > blen) aln_type = COVERING;
     }
-
+	
+	else if ((abpos > 0) and (bbpos<CHI_THRESHOLD)) {
+		aln_type = MISMATCH_RIGHT;
+	}
+	/**
+	 A:   ======..xxxx>
+	 B:      ===..xxxx===>
+	**/
+	
+	else if ((aepos < alen) and (bepos > blen - CHI_THRESHOLD)) {
+		aln_type = MISMATCH_LEFT;
+	}
+	/**
+	 A:   		xxxx..===>
+	 B:     ====xxxx..=>
+	**/
 }
 
 
