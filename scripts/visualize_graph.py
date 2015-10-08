@@ -15,4 +15,4 @@ with open(filename,'r') as f:
 
 print nx.info(g)
 nx.write_graphml(g, filename.split('.')[0]+'.graphml')
-print(list(nx.dfs_edges(g,sys.argv[2])))
+#print(list(nx.dfs_edges(g,sys.argv[2])))

@@ -143,7 +143,11 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < idx2.size(); i++) {
         int cf = 0;
         int cb = 0;
-		
+
+		/*
+		 * For each read, if there is exact right match (type FORWARD), choose the one with longest alignment with read A
+		 * same for BACKWARD,
+		 */
         for (int j = 0; j< idx2[i].size(); j++) {
         	    //idx2[i][j]->show();
 			if (idx2[i][j]->active) {
@@ -170,8 +174,11 @@ int main(int argc, char *argv[]) {
         	if ((cf == 1) and (cb == 1)) break;
         	
 		}
-		
-		
+		/*
+		 * For each read, if there is no exact right or left match, choose that one with a chimeric end, but still choose
+		 * the one with longest alignment, same for BACKWARD
+		 */
+
         for (int j = 0; j< idx2[i].size(); j++) {
             //idx2[i][j]->show();
             if (idx2[i][j]->active) {
@@ -197,10 +204,7 @@ int main(int argc, char *argv[]) {
 			}
             if ((cf == 1) and (cb == 1)) break;
         }
-		
-		
     }
-
 
     std::ofstream out  (argv[3], std::ofstream::out);
 
@@ -213,51 +217,7 @@ int main(int argc, char *argv[]) {
         out<<std::endl;
     }
 
-	//for (int i=0; i <idx2[1500].size(); i++) {
-	//	printf("%d\n",idx2[1500][i]);
-	//}
 
-	/*std::cout << "hello" << std::endl;
-    Read *test_read;
-
-    la.OpenDB("G");
-    std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
-
-    la.showRead(1, 3); //show read [1,3)
-
-
-    test_read = la.getRead(0); //get read 0
-    test_read->showRead(); // show read 0
-
-    la.OpenAlignment("G.1.las");
-    la.showAlignment(0, 2); // show alignments of read [0,2)
-
-    std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
-
-
-    la.resetAlignment();
-    std::vector<int> res;
-    la.getAlignmentB(res, 1); //get alignment for read 1
-    for (auto i:res)
-        printf("%d ", i);
-    printf("\n");
-
-    std::vector<LOverlap *> res1;
-    la.resetAlignment();
-    la.getOverlap(res1, 3, 5); // get alignment(overlap) for reads [3,5)
-
-	for (auto i:res1)
-		i->show();
-	printf("\n");
-
-    std::vector<LAlignment *> res2;
-    la.resetAlignment();
-    la.getAlignment(res2, 0, 3);// get alignment for reads [0,3)
-
-	for (auto i:res2)
-		i->show();
-	printf("\n");
-    */
     la.CloseDB(); //close database
     return 0;
 }

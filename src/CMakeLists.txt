@@ -20,3 +20,7 @@ add_executable(Greedy_best_ovl Greedy_best_ovl)
 target_link_libraries(Greedy_best_ovl LAInterface)
 
 add_library(OverlapGraph OverlapGraph.cpp)
+
+
+add_executable(Draft_assembly Draft_assembly)
+target_link_libraries(Draft_assembly LAInterface)

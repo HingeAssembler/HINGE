@@ -23,7 +23,9 @@ public:
     int id;
     int strand;
     Node(int id, int strand): id(id), strand(strand) {};
+    Node() {};
     void show(std::ofstream & out ) { out<<id; if (strand == 1) out<<"\'";}
+    void show() { std::cout<<id; if (strand == 1) std::cout<<"\'";}
 };
 
 
