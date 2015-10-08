@@ -12,3 +12,15 @@ def parse_alignment(stream = sys.stdin):
             lst = sub.split()[:-1]
             if len(lst) == 9:
                 yield [lst[2]] + map(int, lst[0:2] + lst[3:])
+                
+                
+def parse_alignment2(stream = sys.stdin):    
+    with stream as f:
+        for l in f:
+            
+            sub = re.sub('[\[\].x:<difstraep()/]',' ',l.strip())    
+            sub = re.sub(',','',sub)
+            lst = sub.split()[:-1]
+            if len(lst) == 11:
+                yield [lst[2]] + map(int, lst[0:2] + lst[3:])
+                

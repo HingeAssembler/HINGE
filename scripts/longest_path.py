@@ -46,6 +46,18 @@ degree_sequence=sorted(nx.degree(g).values(),reverse=True)
 print Counter(degree_sequence)
 
 
+def rev(string):
+    if string[-1] == '\'':
+        return string[:-1]
+    else:
+        return string+'\''
+
+for edge in g.edges():
+    g.add_edge(rev(edge[1]), rev(edge[0]))
+    #print edge
+    #print rev(edge[1]), rev(edge[0])
+
+print nx.info(g)
 nx.write_graphml(g, filename.split('.')[0]+'.graphml')
 #print(list(nx.dfs_edges(g,sys.argv[2])))
 #p=nx.shortest_path(g)
