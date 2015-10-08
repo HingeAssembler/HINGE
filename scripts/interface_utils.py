@@ -41,6 +41,12 @@ def get_all_alignments(filename):
     alignments = parse_alignment(stream.stdout) # generator
     return alignments
 
+def get_all_alignments2(filename, alignmentname):
+    stream = subprocess.Popen(["LA4Awesome", filename, filename, alignmentname ],
+                                      stdout=subprocess.PIPE,bufsize=1)
+    alignments = parse_alignment2(stream.stdout) # generator
+    return alignments
+
 def get_all_reads_in_alignment_with_one(filename,read):
     this_read = get_reads(filename,[read])
     alignments = list(get_alignments(filename,[read]))
