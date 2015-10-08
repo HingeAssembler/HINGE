@@ -122,28 +122,22 @@ int main(int argc, char ** argv) {
      */
 
     std::string sequence = "";
-    Node lastnode;
+    Node lastnode = edgelist[0].first;
     LOverlap * lastoverlap = NULL;
-
+    std::vector<std::string> contigs;
     for (int i = 0; i < edgelist.size(); i++){
-        //edgelist[i].first.show();
-        //std::cout<<"->";
-        //edgelist[i].second.show();
-        //std::cout<<std::endl;
         if (edgelist[i].first.id != lastnode.id) {
-            //std::cout<<std::endl;
-            //edgelist[i].first.show();
-            //std::cout<<"->";
             /**
              * start a new "sequence"
              */
+            contigs.push_back(sequence);
+            sequence = "";
+
             if (edgelist[i].first.strand == 0)
                 sequence.append(reads[edgelist[i].first.id]->bases);
             else
                 sequence.append(reverse_complement(reads[edgelist[i].first.id]->bases));
         }
-        //edgelist[i].second.show();
-        //std::cout<<"->";
         LOverlap * currentaln = NULL;
         lastnode = edgelist[i].second;
         if (idx.find(std::pair<int,int>(edgelist[i].first.id, edgelist[i].second.id)) != idx.end()) {
@@ -161,20 +155,6 @@ int main(int argc, char ** argv) {
         else
             current_seq = reverse_complement(reads[edgelist[i].second.id]->bases);
 
-
-        /*
-        std::cout<< "seq " << (currentaln->alen - currentaln->aepos) << std::endl;
-        sequence.erase(sequence.end() - (currentaln->alen - currentaln->aepos), sequence.end());
-
-
-        current_seq = current_seq.substr(currentaln->bepos);
-
-        std::cout<<"next " << current_seq.size() << " " << (currentaln->blen - currentaln->bepos) << std::endl;
-
-        */
-        //if ((currentaln->bbpos > 0) and (current_seq.size() > currentaln->bbpos))
-        //    current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->bbpos);
-
         if (edgelist[i].first.strand == 0) {
             sequence.erase(sequence.end() - (currentaln->alen - currentaln->aepos), sequence.end());
             current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->bepos);
@@ -185,17 +165,20 @@ int main(int argc, char ** argv) {
             current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->blen - currentaln->bbpos);
             sequence.append(current_seq);
         }
-        //std::cout<<current_seq<<std::endl;
         lastoverlap = currentaln;
     }
 
+    int sum = 0;
+    for (int i = 0; i < contigs.size(); i++) sum += contigs[i].size();
 
-    //std::cout<<sequence<<std::endl;
-    std::cout<<sequence.size()<<std::endl;
+
+    std::cout<<"length " << sum <<std::endl;
 
     std::ofstream out(argv[4]);
-    out << "> draft assembly" <<std::endl;
-    out << sequence;
+    for (int i = 0; i<contigs.size(); i++) {
+        out << ">draftassembly_" << i << std::endl;
+        out << contigs[i]<<std::endl;
+    }
     la.CloseDB(); //close database
     return 0;
 }
