@@ -38,6 +38,15 @@ std::vector<std::string> split(const std::string &s, char delim) {
 }
 
 
+std::string reverse_complement(std::string seq) {
+    static std::map<char, char> m = {{'a','t'}, {'c','g'}, {'g','c'}, {'t','a'}, {'A','T'}, {'C','G'}, {'T','A'}, {'G','C'}, {'n','n'}, {'N', 'N'}};
+    std::reverse(seq.begin(), seq.end());
+    for (int i = 0; i < seq.size(); i++) {
+        seq[i] = m[seq[i]];
+    }
+    return seq;
+}
+
 int main(int argc, char ** argv) {
 
     std::cout<<"hello world"<<std::endl;
@@ -61,6 +70,19 @@ int main(int argc, char ** argv) {
     la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
 
+    std::map<std::pair<int,int>, LOverlap *> idx; //map from (aid, bid) to alignment id
+    std::map<int, std::vector<LOverlap*>> idx2; //map from (aid) to alignment id in a vector
+
+    for (int i = 0; i < n_read; i++ ) {
+        idx2[i] = std::vector< LOverlap * >(); // initialize idx2
+    }
+
+    for (int i = 0; i < aln.size(); i++) {
+        if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.5 ) {
+            idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )] = aln[i];
+            idx2[aln[i]->aid].push_back(aln[i]);
+        }
+    }
 
     std::vector<Read *> reads;
     la.getRead(reads,0,n_read);
@@ -99,18 +121,81 @@ int main(int argc, char ** argv) {
      * Use DFS edges to generate assembly
      */
 
-    std::string sequence;
-    for (int i = 0; i < edgelist.size(); i++){
-        edgelist[i].first.show();
-        std::cout<<"->";
-        edgelist[i].second.show();
-        std::cout<<std::endl;
+    std::string sequence = "";
+    Node lastnode;
+    LOverlap * lastoverlap = NULL;
 
+    for (int i = 0; i < edgelist.size(); i++){
+        //edgelist[i].first.show();
+        //std::cout<<"->";
+        //edgelist[i].second.show();
+        //std::cout<<std::endl;
+        if (edgelist[i].first.id != lastnode.id) {
+            //std::cout<<std::endl;
+            //edgelist[i].first.show();
+            //std::cout<<"->";
+            /**
+             * start a new "sequence"
+             */
+            if (edgelist[i].first.strand == 0)
+                sequence.append(reads[edgelist[i].first.id]->bases);
+            else
+                sequence.append(reverse_complement(reads[edgelist[i].first.id]->bases));
+        }
+        //edgelist[i].second.show();
+        //std::cout<<"->";
+        LOverlap * currentaln = NULL;
+        lastnode = edgelist[i].second;
+        if (idx.find(std::pair<int,int>(edgelist[i].first.id, edgelist[i].second.id)) != idx.end()) {
+            currentaln = idx[std::pair<int,int>(edgelist[i].first.id, edgelist[i].second.id)];
+        }
+
+        if (currentaln == NULL) std::cout<<"Warning, cannot find alignment!\n";
+        /***
+         * play with current alignment
+         */
+        std::string current_seq;
+
+        if (edgelist[i].second.strand == 0)
+            current_seq = reads[edgelist[i].second.id]->bases;
+        else
+            current_seq = reverse_complement(reads[edgelist[i].second.id]->bases);
+
+
+        /*
+        std::cout<< "seq " << (currentaln->alen - currentaln->aepos) << std::endl;
+        sequence.erase(sequence.end() - (currentaln->alen - currentaln->aepos), sequence.end());
+
+
+        current_seq = current_seq.substr(currentaln->bepos);
+
+        std::cout<<"next " << current_seq.size() << " " << (currentaln->blen - currentaln->bepos) << std::endl;
+
+        */
+        //if ((currentaln->bbpos > 0) and (current_seq.size() > currentaln->bbpos))
+        //    current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->bbpos);
+
+        if (edgelist[i].first.strand == 0) {
+            sequence.erase(sequence.end() - (currentaln->alen - currentaln->aepos), sequence.end());
+            current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->bepos);
+            sequence.append(current_seq);
+        }
+        else {
+            sequence.erase(sequence.end() - (currentaln->abpos), sequence.end());
+            current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->blen - currentaln->bbpos);
+            sequence.append(current_seq);
+        }
+        //std::cout<<current_seq<<std::endl;
+        lastoverlap = currentaln;
     }
 
 
+    //std::cout<<sequence<<std::endl;
+    std::cout<<sequence.size()<<std::endl;
 
-
+    std::ofstream out(argv[4]);
+    out << "> draft assembly" <<std::endl;
+    out << sequence;
     la.CloseDB(); //close database
     return 0;
 }

@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 	filter reads
 	**/
 	
-	int LENGTH_THRESHOLD = 12000;
+	int LENGTH_THRESHOLD = 5000;
 	for (int i = 0; i < aln.size(); i++) {
 		if ((aln[i]->alen < LENGTH_THRESHOLD) or (aln[i]->blen < LENGTH_THRESHOLD)) aln[i]->active = false;
 	}

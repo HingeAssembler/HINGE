@@ -13,7 +13,7 @@ mkdir $pwd/data
 cd $pwd/data
 
 #rm -rf *
-simulator 1.0 -c20. >G.fasta
+simulator 1.0 -c50. >G.fasta
 fasta2DB G G.fasta 
 HPCdaligner -mdust -t5 G | csh -v 
 
