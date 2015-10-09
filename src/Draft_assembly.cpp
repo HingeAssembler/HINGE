@@ -47,6 +47,10 @@ std::string reverse_complement(std::string seq) {
     return seq;
 }
 
+bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
+    return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) < (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
+}
+
 int main(int argc, char ** argv) {
 
     std::cout<<"hello world"<<std::endl;
@@ -70,6 +74,7 @@ int main(int argc, char ** argv) {
     la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
 
+    std::sort( aln.begin(), aln.end(), compare_overlap );
     std::map<std::pair<int,int>, LOverlap *> idx; //map from (aid, bid) to alignment id
     std::map<int, std::vector<LOverlap*>> idx2; //map from (aid) to alignment id in a vector
 
