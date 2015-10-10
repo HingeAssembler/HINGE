@@ -79,4 +79,4 @@ for i,item in enumerate(aln):
         polygon2 = plt.Polygon(points_start,fc = 'g', ec = 'none')
         plt.gca().add_patch(polygon2)
     
-    plt.savefig('figures/aln' + str(n)+ '.pdf')
+plt.savefig('figures/aln' + str(n)+ '.pdf')

@@ -74,7 +74,7 @@ int main(int argc, char ** argv) {
     la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
 
-    std::sort( aln.begin(), aln.end(), compare_overlap );
+    //std::sort( aln.begin(), aln.end(), compare_overlap );
     std::map<std::pair<int,int>, LOverlap *> idx; //map from (aid, bid) to alignment id
     std::map<int, std::vector<LOverlap*>> idx2; //map from (aid) to alignment id in a vector
 
@@ -84,10 +84,20 @@ int main(int argc, char ** argv) {
 
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.5 ) {
-            idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )] = aln[i];
+            //idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )] = aln[i];
             idx2[aln[i]->aid].push_back(aln[i]);
         }
     }
+	
+    for (int i = 0; i < n_read; i++ ) {
+        std::sort(idx2[i].begin(), idx2[i].end(), compare_overlap);
+    }
+	
+	for (int i = 0; i < n_read; i++) 
+		for (int j = 0; j<idx2[i].size(); j++) {
+			idx[std::pair<int,int>(idx2[i][j]->aid, idx2[i][j]->bid )] = idx2[i][j];
+		}
+	
 
     std::vector<Read *> reads;
     la.getRead(reads,0,n_read);

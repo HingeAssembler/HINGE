@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Bash version ${BASH_VERSION}..."
-for i in $(seq 1 1 4000)
+for i in $(seq 4000 1 20000)
   do
      echo drawing read $i
      num1=$(ps -ef | grep 'python draw.py' | wc -l)
@@ -15,5 +15,5 @@ for i in $(seq 1 1 4000)
              num2=$(ps -ef | grep 'LA4Awesome' | wc -l)
              num=$(( $num1 + $num2 ))             
          done
-     python draw.py $i &
+     python draw2.py $i &
  done
