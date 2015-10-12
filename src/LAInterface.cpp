@@ -53,8 +53,8 @@ int LAInterface::OpenDB(std::string filename) {
         exit(1);
     }
 
-    //this->db2 = this->db1;
-    //Trim_DB(db1);
+    this->db2 = this->db1;
+    Trim_DB(db1);
 
     FILE *dstub;
 

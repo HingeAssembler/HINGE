@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 	char * name_las = argv[2];
 	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.OpenDB(name_db);
-	la.OpenDB2(name_db);
+	//la.OpenDB2(name_db); // changed this on Oct 12, may case problem, xf1280@gmail.com
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
 
     la.OpenAlignment(name_las);

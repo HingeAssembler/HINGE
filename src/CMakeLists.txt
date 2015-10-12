@@ -21,6 +21,8 @@ target_link_libraries(Greedy_best_ovl LAInterface)
 
 add_library(OverlapGraph OverlapGraph.cpp)
 
-
 add_executable(Draft_assembly Draft_assembly)
 target_link_libraries(Draft_assembly LAInterface)
+
+add_executable(SwissCheeseScrubber Swiss_cheese_scrubber.cpp)
+target_link_libraries(SwissCheeseScrubber LAInterface)
