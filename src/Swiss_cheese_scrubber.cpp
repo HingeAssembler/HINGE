@@ -60,9 +60,8 @@ int main(int argc, char ** argv) {
     char * name_las = argv[2];
     printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.OpenDB(name_db);
-    la.OpenDB2(name_db);
+    //la.OpenDB2(name_db);
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
-
     la.OpenAlignment(name_las);
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
     //la.resetAlignment();
@@ -74,7 +73,6 @@ int main(int argc, char ** argv) {
     la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
 
-    //std::sort( aln.begin(), aln.end(), compare_overlap );
     std::map<std::pair<int,int>, std::vector<LOverlap *> > idx; //map from (aid, bid) to alignment id
     std::map<int, std::vector<LOverlap*>> idx2; //map from (aid) to alignment id in a vector
 
@@ -84,7 +82,6 @@ int main(int argc, char ** argv) {
 
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.5 ) {
-            //idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )] = aln[i];
             idx2[aln[i]->aid].push_back(aln[i]);
         }
     }
@@ -100,16 +97,20 @@ int main(int argc, char ** argv) {
 
             idx[std::pair<int,int>(idx2[i][j]->aid, idx2[i][j]->bid )].push_back(idx2[i][j]);
 		}
-	
 
     std::vector<Read *> reads;
     la.getRead(reads,0,n_read);
 
+
+
+
+    /*
     std::vector< std::pair<Node, Node> > edgelist;
     char * name_edges = argv[3];
 
     std::string edge_line;
     std::ifstream edges_file(name_edges);
+
     while (!edges_file.eof()) {
         std::getline(edges_file,edge_line);
         std::vector<std::string> tokens = split(edge_line, ' ');
@@ -133,7 +134,7 @@ int main(int argc, char ** argv) {
             }
             edgelist.push_back(std::pair<Node,Node>(node0,node1));
         }
-    }
+    }*/
 
 
     la.CloseDB(); //close database

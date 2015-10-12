@@ -6,7 +6,7 @@ make clean && make -j 8
 cd $pwd/DALIGNER
 make clean && make -j 8
 
-cd $pwd/scripts
+cd $pwd
 source setup.sh
 
 mkdir $pwd/data
