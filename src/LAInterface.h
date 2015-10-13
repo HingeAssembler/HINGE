@@ -23,7 +23,17 @@ public:
 };
 
 enum aligntype {
-    FORWARD, BACKWARD, COVERING, COVERED, MISMATCH_LEFT, MISMATCH_RIGHT, UNDIFINED
+    FORWARD, BACKWARD, COVERING, COVERED, MISMATCH_LEFT, MISMATCH_RIGHT, UNDIFINED // different type of alignment
+/**
+ * FORWARD: Alignment and extend to the right
+ * BACKWARD: extend to the left
+ * COVERING: read a covering read b
+ * COVERED: read a covered by read b
+ * MISMATCH_LEFT: read a has a chimeric section on the left, and read b align with the rest of read a and extend it to the left
+ * MISMATCH_RIGHT: read a has a chimeric section on the right, read b align with the rest of read a and extend it to the right
+ * UNDIFIEND: any other exceptions
+**/
+
 } ;
 
 class LAlignment { // because class Alignment is taken
@@ -53,17 +63,17 @@ public:
     LOverlap() { };
 	void show() {printf("%d %d %d [%d...%d]/%d x [%d...%d]/%d %d diffs, %d type\n",aid,bid,flags,abpos,aepos,alen,bbpos,bepos,blen,diffs,aln_type); };
     int aid, bid;
-    int alen;
-    int blen;
+    int alen; // length of read a
+    int blen; // length of read b
     int tlen;
-    int diffs;
-    int abpos, bbpos;
-    int aepos, bepos;
+    int diffs; //differences
+    int abpos, bbpos; // starting position and ending position of alignment in read a
+    int aepos, bepos; // starting position and ending position of alignment in read b
     int tps;
-    int flags;
+    int flags; //flags, reverse complement = 1, same direction = 0
     aligntype aln_type = UNDIFINED;
     void addtype();
-    static const int CHI_THRESHOLD = 300;
+    static const int CHI_THRESHOLD = 300; // threshold for chimeric/adaptor at the begining
 	bool active = true;
 
 };
@@ -72,14 +82,14 @@ public:
 class LAInterface {
 public:
 
-    HITS_DB _db1, *db1 = &_db1;
-    HITS_DB _db2, *db2 = &_db2;
-    Overlap _ovl, *ovl = &_ovl;
-    Alignment _aln, *aln = &_aln;
+    HITS_DB _db1, *db1 = &_db1; // data base 1
+    HITS_DB _db2, *db2 = &_db2; // data base 2
+    Overlap _ovl, *ovl = &_ovl; // overlaps
+    Alignment _aln, *aln = &_aln; // alignments, those are data structures required to read the data base
 
     char **flist = NULL;
     int *findx = NULL;
-    int nfiles = 0;
+    int nfiles = 0; // n blocks of the read database
 
     FILE *input;
     int64 novl;

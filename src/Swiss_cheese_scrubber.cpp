@@ -62,9 +62,9 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals)
         ret.push_back(std::pair<int,int>(intervals[0]->abpos,intervals[0]->aepos));
     }
 
-    sort(intervals.begin(),intervals.end(),compare_overlap); //首先按照区间的左端点进行排序
+    sort(intervals.begin(),intervals.end(),compare_overlap); //sort according to left
 
-    int left=intervals[0]->abpos, right = intervals[0]->aepos; //left, right表示当前区间的可能的最大范围
+    int left=intervals[0]->abpos, right = intervals[0]->aepos; //left, right means maximal possible interval now
 
     for(int i=1;i<n;++i)
     {
@@ -140,8 +140,9 @@ int main(int argc, char ** argv) {
     for (int i = 0; i < n_read; i++ ) {
         std::vector<std::pair<int,int> > covered_region;
         covered_region = Merge(idx2[i]);
-        
-    }
+    } // find all covered regions, could help remove adaptors
+
+
 
 
     /*

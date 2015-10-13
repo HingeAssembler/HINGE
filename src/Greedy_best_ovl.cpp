@@ -59,13 +59,16 @@ int main(int argc, char *argv[]) {
 	/**
 	filter reads
 	**/
-	
+
+
+	/**
+	 * Remove reads shorter than length threshold
+	 */
 	int LENGTH_THRESHOLD = 5000;
 	for (int i = 0; i < aln.size(); i++) {
 		if ((aln[i]->alen < LENGTH_THRESHOLD) or (aln[i]->blen < LENGTH_THRESHOLD)) aln[i]->active = false;
 	}
-	
-	
+/* try and see the numbers of different types
 	
 	for (int i = 0; i < aln.size(); i++) {
 		int CHI_THRESHOLD = 300;
@@ -108,12 +111,11 @@ int main(int argc, char *argv[]) {
 	}
 	
 	printf("covered %d forward %d backward %d covering %d undefined %d\ncovered %d forward %d backward %d covering %d undefined %d\n",covered, forward, backward, covering, undefined, pcovered, pforward, pbackward, pcovering, pundefined);
+*/
 
-
-	std::map<std::pair<int,int>, int> idx; //map from (aid, bid) to alignment id
-	std::map<int, std::vector<LOverlap*>> idx2; //map from (aid) to alignment id in a vector
-
-    std::vector< std::pair<Node, Node> > edgelist;
+	std::map<std::pair<int,int>, int> idx; //map from (aid, bid) to alignments in a vector
+	std::map<int, std::vector<LOverlap*>> idx2; //map from (aid) to alignments in a vector
+    std::vector< std::pair<Node, Node> > edgelist; // save output to edgelist
 
 	for (int i = 0; i < n_read; i++ ) {
 		idx2[i] = std::vector< LOverlap * >(); // initialize idx2
@@ -124,7 +126,6 @@ int main(int argc, char *argv[]) {
 
 		idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )] = i;
 		idx2[aln[i]->aid].push_back(aln[i]);
-
 	    }
     }
 
