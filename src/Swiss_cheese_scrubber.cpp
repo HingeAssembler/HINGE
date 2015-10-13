@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <limits>
 #include <iostream>
 
 std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
@@ -50,6 +51,40 @@ std::string reverse_complement(std::string seq) {
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
     return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) < (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
 }
+
+
+//merge intervals
+std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals)
+{
+    std::vector<std::pair<int, int > > ret;
+    const int n = intervals.size();
+    if(n == 1) {
+        ret.push_back(std::pair<int,int>(intervals[0]->abpos,intervals[0]->aepos));
+    }
+
+    sort(intervals.begin(),intervals.end(),compare_overlap); //首先按照区间的左端点进行排序
+
+    int left=intervals[0]->abpos, right = intervals[0]->aepos; //left, right表示当前区间的可能的最大范围
+
+    for(int i=1;i<n;++i)
+    {
+        if(intervals[i]->abpos <= right)
+        {
+            right=std::max(right,intervals[i]->aepos);
+        }
+        else
+        {
+            ret.push_back(std::pair<int, int>(left,right));
+            left = intervals[i]->abpos;
+            right = intervals[i]->aepos;
+        }
+    }
+    ret.push_back(std::pair<int, int>(left,right));
+    return ret;
+}
+
+
+
 
 int main(int argc, char ** argv) {
 
@@ -102,6 +137,11 @@ int main(int argc, char ** argv) {
     la.getRead(reads,0,n_read);
 
 
+    for (int i = 0; i < n_read; i++ ) {
+        std::vector<std::pair<int,int> > covered_region;
+        covered_region = Merge(idx2[i]);
+        
+    }
 
 
     /*
