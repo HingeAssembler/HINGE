@@ -32,7 +32,7 @@ bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
     return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
 }
 
-bool compare_sum_overlaps(std::vector<LOverlap * > & ovl1, std::vector<LOverlap *> & ovl2) {
+bool compare_sum_overlaps(std::vector<LOverlap * >  ovl1, std::vector<LOverlap *>  ovl2) {
     int sum1 = 0;
     int sum2 = 0;
     for (int i = 0; i < ovl1.size(); i++) sum1 += ovl1[i]->aepos - ovl1[i]->abpos + ovl1[i]->bepos - ovl1[i]->bbpos;
