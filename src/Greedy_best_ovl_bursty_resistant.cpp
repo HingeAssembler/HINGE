@@ -32,7 +32,7 @@ bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
     return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
 }
 
-bool compare_sum_overlaps(std::vector<LOverlap * >  ovl1, std::vector<LOverlap *>  ovl2) {
+bool compare_sum_overlaps(const std::vector<LOverlap * > & ovl1, const std::vector<LOverlap *> & ovl2) {
     int sum1 = 0;
     int sum2 = 0;
     for (int i = 0; i < ovl1.size(); i++) sum1 += ovl1[i]->aepos - ovl1[i]->abpos + ovl1[i]->bepos - ovl1[i]->bbpos;
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 	/**
 	 * Remove reads shorter than length threshold
 	 */
-	int LENGTH_THRESHOLD = 5000;
+	int LENGTH_THRESHOLD = 12000;
 	for (int i = 0; i < aln.size(); i++) {
 		if ((aln[i]->alen < LENGTH_THRESHOLD) or (aln[i]->blen < LENGTH_THRESHOLD)) aln[i]->active = false;
 	}
@@ -135,15 +135,13 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < aln.size(); i++) {
         //printf("%d,%d\n",aln[i]->aid, aln[i]->bid);
-        if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.22 ) {
+        if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.23 ) {
             idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )] = std::vector< LOverlap *> ();
         }
     }
 
-
-
     for (int i = 0; i < aln.size(); i++) {
-    if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.22 ) {
+    if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.23 ) {
 		idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )].push_back(aln[i]);
         has_overlap[aln[i]->aid].insert(aln[i]->bid);
 	    }
@@ -165,6 +163,19 @@ int main(int argc, char *argv[]) {
         std::sort( idx2[i].begin(), idx2[i].end(), compare_sum_overlaps );
     }
 
+    /*
+    for (int i = 0; i < n_read; i++ ) {
+        printf("read:%d\n",i);
+        for (int j = 0; j<idx2[i].size(); j++) {
+            int sum = 0;
+            for (int k = 0; k < idx2[i][j].size(); k++) {
+                sum +=  idx2[i][j][k]->aepos + idx2[i][j][k]->bepos - idx2[i][j][k]->abpos - idx2[i][j][k]->bbpos;
+            }
+
+            sum /= 2;
+            printf("sum:%d\n",sum);
+        }
+    }*/
 
     /*
      * Debug output
@@ -178,7 +189,6 @@ int main(int argc, char *argv[]) {
             }
         }
     }*/
-
 
 
     //from the list, find the first one that can extend read A to the right, this will form a graph
@@ -198,7 +208,7 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j< idx2[i].size(); j++) {
         	    //idx2[i][j]->show();
 			if (idx2[i][j][0]->active) {
-        	    if ((idx2[i][j][0]->aln_type == FORWARD) and (cf == 0)) {
+        	    if ((idx2[i][j].front()->aln_type == FORWARD) and (cf == 0)) {
         	        cf = 1;
         	        //add edge
         	        if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
@@ -208,7 +218,7 @@ int main(int argc, char *argv[]) {
         	        }
         	    }
 
-        	    if ((idx2[i][j][0]->aln_type == BACKWARD) and (cb == 0)) {
+        	    if ((idx2[i][j].back()->aln_type == BACKWARD) and (cb == 0)) {
         	        cb = 1;
         	        //add edge
         	        if (idx2[i][j][0]->flags == 1) {
@@ -228,7 +238,7 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j< idx2[i].size(); j++) {
             //idx2[i][j]->show();
             if (idx2[i][j][0]->active) {
-				if ((idx2[i][j][0]->aln_type == MISMATCH_RIGHT) and (cf == 0)) {
+				if ((idx2[i][j].front()->aln_type == MISMATCH_RIGHT) and (cf == 0)) {
             	    cf = 1;
             	    //add edge
             	    if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
@@ -238,7 +248,7 @@ int main(int argc, char *argv[]) {
             	    }
             	}
 
-            	if ((idx2[i][j][0]->aln_type == MISMATCH_LEFT) and (cb == 0)) {
+            	if ((idx2[i][j].back()->aln_type == MISMATCH_LEFT) and (cb == 0)) {
             	    cb = 1;
             	    //add edge
             	    if (idx2[i][j][0]->flags == 1) {
@@ -251,6 +261,7 @@ int main(int argc, char *argv[]) {
             if ((cf == 1) and (cb == 1)) break;
         }
     }
+
     std::ofstream out  (argv[3], std::ofstream::out);
     //print edges list
     for (int i = 0; i < edgelist.size(); i++){
