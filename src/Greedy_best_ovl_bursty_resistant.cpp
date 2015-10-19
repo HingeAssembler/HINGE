@@ -72,7 +72,6 @@ int main(int argc, char *argv[]) {
 	filter reads
 	**/
 
-
 	/**
 	 * Remove reads shorter than length threshold
 	 */
@@ -185,93 +184,81 @@ int main(int argc, char *argv[]) {
     //from the list, find the first one that can extend read A to the right, this will form a graph
 
 
+    /****
+	get the best overlap for each read and form a graph
+	****/
 
+    for (int i = 0; i < idx2.size(); i++) {
+        int cf = 0;
+        int cb = 0;
+		/*
+		 * For each read, if there is exact right match (type FORWARD), choose the one with longest alignment with read A
+		 * same for BACKWARD,
+		 */
+        for (int j = 0; j< idx2[i].size(); j++) {
+        	    //idx2[i][j]->show();
+			if (idx2[i][j][0]->active) {
+        	    if ((idx2[i][j][0]->aln_type == FORWARD) and (cf == 0)) {
+        	        cf = 1;
+        	        //add edge
+        	        if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
+        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,1)));
+        	        } else {
+        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,0)));
+        	        }
+        	    }
 
+        	    if ((idx2[i][j][0]->aln_type == BACKWARD) and (cb == 0)) {
+        	        cb = 1;
+        	        //add edge
+        	        if (idx2[i][j][0]->flags == 1) {
+        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,0)));
+        	        } else {
+        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,1)));
+        	        }
+        	    }
+			}
+        	if ((cf == 1) and (cb == 1)) break;
 
+		}
+		/*
+		 * For each read, if there is no exact right or left match, choose that one with a chimeric end, but still choose
+		 * the one with longest alignment, same for BACKWARD
+		 */
+        for (int j = 0; j< idx2[i].size(); j++) {
+            //idx2[i][j]->show();
+            if (idx2[i][j][0]->active) {
+				if ((idx2[i][j][0]->aln_type == MISMATCH_RIGHT) and (cf == 0)) {
+            	    cf = 1;
+            	    //add edge
+            	    if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
+            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,1)));
+            	    } else {
+            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,0)));
+            	    }
+            	}
 
-
-
-//  /****
-//	get the best overlap for each read and form a graph
-//	****/
-//
-//    for (int i = 0; i < idx2.size(); i++) {
-//        int cf = 0;
-//        int cb = 0;
-//
-//		/*
-//		 * For each read, if there is exact right match (type FORWARD), choose the one with longest alignment with read A
-//		 * same for BACKWARD,
-//		 */
-//        for (int j = 0; j< idx2[i].size(); j++) {
-//        	    //idx2[i][j]->show();
-//			if (idx2[i][j]->active) {
-//        	    if ((idx2[i][j]->aln_type == FORWARD) and (cf == 0)) {
-//        	        cf = 1;
-//        	        //add edge
-//        	        if (idx2[i][j]->flags == 1) { // n = 0, c = 1
-//        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,0),Node(idx2[i][j]->bid,1)));
-//        	        } else {
-//        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,0),Node(idx2[i][j]->bid,0)));
-//        	        }
-//        	    }
-//
-//        	    if ((idx2[i][j]->aln_type == BACKWARD) and (cb == 0)) {
-//        	        cb = 1;
-//        	        //add edge
-//        	        if (idx2[i][j]->flags == 1) {
-//        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,1),Node(idx2[i][j]->bid,0)));
-//        	        } else {
-//        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,1),Node(idx2[i][j]->bid,1)));
-//        	        }
-//        	    }
-//			}
-//        	if ((cf == 1) and (cb == 1)) break;
-//
-//		}
-//		/*
-//		 * For each read, if there is no exact right or left match, choose that one with a chimeric end, but still choose
-//		 * the one with longest alignment, same for BACKWARD
-//		 */
-//
-//        for (int j = 0; j< idx2[i].size(); j++) {
-//            //idx2[i][j]->show();
-//            if (idx2[i][j]->active) {
-//				if ((idx2[i][j]->aln_type == MISMATCH_RIGHT) and (cf == 0)) {
-//            	    cf = 1;
-//            	    //add edge
-//            	    if (idx2[i][j]->flags == 1) { // n = 0, c = 1
-//            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,0),Node(idx2[i][j]->bid,1)));
-//            	    } else {
-//            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,0),Node(idx2[i][j]->bid,0)));
-//            	    }
-//            	}
-//
-//            	if ((idx2[i][j]->aln_type == MISMATCH_LEFT) and (cb == 0)) {
-//            	    cb = 1;
-//            	    //add edge
-//            	    if (idx2[i][j]->flags == 1) {
-//            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,1),Node(idx2[i][j]->bid,0)));
-//            	    } else {
-//            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j]->aid,1),Node(idx2[i][j]->bid,1)));
-//            	    }
-//            	}
-//			}
-//            if ((cf == 1) and (cb == 1)) break;
-//        }
-//    }
-//
-//    std::ofstream out  (argv[3], std::ofstream::out);
-//
-//
-//    //print edges list
-//    for (int i = 0; i < edgelist.size(); i++){
-//        edgelist[i].first.show(out);
-//        out<<"->";
-//        edgelist[i].second.show(out);
-//        out<<std::endl;
-//    }
-
+            	if ((idx2[i][j][0]->aln_type == MISMATCH_LEFT) and (cb == 0)) {
+            	    cb = 1;
+            	    //add edge
+            	    if (idx2[i][j][0]->flags == 1) {
+            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,0)));
+            	    } else {
+            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,1)));
+            	    }
+            	}
+			}
+            if ((cf == 1) and (cb == 1)) break;
+        }
+    }
+    std::ofstream out  (argv[3], std::ofstream::out);
+    //print edges list
+    for (int i = 0; i < edgelist.size(); i++){
+        edgelist[i].first.show(out);
+        out<<"->";
+        edgelist[i].second.show(out);
+        out<<std::endl;
+    }
 
     la.CloseDB(); //close database
     return 0;
