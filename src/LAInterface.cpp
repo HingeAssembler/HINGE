@@ -350,7 +350,7 @@ void LAInterface::showAlignment(int from, int to) {
     int mn_wide, mx_wide;
     int tp_wide;
     int blast, match, seen, lhalf, rhalf;
-    bool ALIGN = false;
+    bool ALIGN = true;
     bool REFERENCE = false;
     bool CARTOON = false;
     bool OVERLAP = true;
