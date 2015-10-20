@@ -1675,15 +1675,7 @@ int64 LAInterface::getAlignmentNumber() {
 }
 
 void LOverlap::addtype() {
-    if ((abpos < CHI_THRESHOLD) and (aepos > alen - CHI_THRESHOLD) and (blen > alen) ) {
-        aln_type = COVERED;
-    }
-	/**
-	 A:    =========>
-	 B: ===============>
-	**/
-
-    else if ((abpos > 0) and (aepos > aee - CHI_THRESHOLD) and (bbpos < bes + CHI_THRESHOLD)) {
+    if ((abpos > 0) and (aepos > aee - CHI_THRESHOLD) /*and (bbpos < bes + CHI_THRESHOLD)*/) {
         aln_type = FORWARD;
     }
 	/**
@@ -1691,7 +1683,7 @@ void LOverlap::addtype() {
 	 B:        ==========>
 	**/
 
-    else if ( ( abpos < aes + CHI_THRESHOLD) and (aepos < alen) and (bepos >  bee - CHI_THRESHOLD )) {
+    else if (( abpos < aes + CHI_THRESHOLD) and (aepos < alen) /*and (bepos >  bee - CHI_THRESHOLD )*/) {
          aln_type = BACKWARD;
     }
 	/**
@@ -1701,6 +1693,14 @@ void LOverlap::addtype() {
     else if ((bbpos < CHI_THRESHOLD) and (bepos > blen - CHI_THRESHOLD) and (alen > blen) ) {
         aln_type = COVERING;
     }
+    else if ((abpos < CHI_THRESHOLD) and (aepos > alen - CHI_THRESHOLD) and (blen > alen) ) {
+        aln_type = COVERED;
+    }
+        /**
+         A:    =========>
+         B: ===============>
+        **/
+
 	
 	//else if ((abpos > 0) and (bbpos<CHI_THRESHOLD)) {
 	//	aln_type = MISMATCH_RIGHT;
