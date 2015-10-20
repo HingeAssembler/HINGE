@@ -1679,11 +1679,11 @@ void LOverlap::addtype() {
         aln_type = COVERED;
     }
 	/**
-	 A:   ==========>
+	 A:    =========>
 	 B: ===============>
 	**/
 
-    else if ((abpos > 0) and (aepos > alen - CHI_THRESHOLD) and (bbpos < CHI_THRESHOLD)) {
+    else if ((abpos > 0) and (aepos > aee - CHI_THRESHOLD) and (bbpos < bes + CHI_THRESHOLD)) {
         aln_type = FORWARD;
     }
 	/**
@@ -1691,35 +1691,35 @@ void LOverlap::addtype() {
 	 B:        ==========>
 	**/
 
-    else if ( ( abpos < CHI_THRESHOLD) and (aepos < alen) and (bepos >  blen - CHI_THRESHOLD )) {
+    else if ( ( abpos < aes + CHI_THRESHOLD) and (aepos < alen) and (bepos >  bee - CHI_THRESHOLD )) {
          aln_type = BACKWARD;
     }
 	/**
-	 A:     ==========>
+	 A:       ==========>
 	 B:  ==========>
 	**/
     else if ((bbpos < CHI_THRESHOLD) and (bepos > blen - CHI_THRESHOLD) and (alen > blen) ) {
         aln_type = COVERING;
     }
 	
-	else if ((abpos > 0) and (bbpos<CHI_THRESHOLD)) {
-		aln_type = MISMATCH_RIGHT;
-	}
-	/**
-	 A:   ======..xxxx>
-	 B:      ===..xxxx===>
-	**/
-	
-	else if ((aepos < alen) and (bepos > blen - CHI_THRESHOLD)) {
-		aln_type = MISMATCH_LEFT;
-	}
-	/**
-	 A:   		xxxx..===>
-	 B:     ====xxxx..=>
-	**/
-    else if ((bbpos > 0) and (bepos < blen)) {
-        aln_type = MIDDLE;
-    }
+	//else if ((abpos > 0) and (bbpos<CHI_THRESHOLD)) {
+	//	aln_type = MISMATCH_RIGHT;
+	//}
+	///**
+	// A:   ======..xxxx>
+	// B:      ===..xxxx===>
+	//**/
+	//
+	//else if ((aepos < alen) and (bepos > blen - CHI_THRESHOLD)) {
+	//	aln_type = MISMATCH_LEFT;
+	//}
+	///**
+	// A:   		xxxx..===>
+	// B:     ====xxxx..=>
+	//**/
+    //else if ((bbpos > 0) and (bepos < blen)) {
+    //    aln_type = MIDDLE;
+    //}
 }
 
 

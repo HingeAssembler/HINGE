@@ -76,6 +76,7 @@ public:
     int aepos, bepos; // starting position and ending position of alignment in read b
     int tps;
     int flags; //flags, reverse complement = 1, same direction = 0
+    int aes,aee,bes,bee;
     aligntype aln_type = UNDIFINED;
     void addtype();
     static const int CHI_THRESHOLD = 300; // threshold for chimeric/adaptor at the begining

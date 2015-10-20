@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
      **/
 
     for (int i = 0; i < n_read; i++) {
-        if ((reads[i]->len < LENGTH_THRESHOLD) or (reads[i]->len - reads[i]->effective_end > CHI_THRESHOLD) or (reads[i]->effective_start > CHI_THRESHOLD)
+        if ((reads[i]->len < LENGTH_THRESHOLD) /*or (reads[i]->len - reads[i]->effective_end > CHI_THRESHOLD) or (reads[i]->effective_start > CHI_THRESHOLD)*/
                 or (reads[i]->intervals.size() != 1))
             reads[i]->active = false;
     }
@@ -221,14 +221,24 @@ int main(int argc, char *argv[]) {
     }
 
     int num_active_aln = 0;
+
+    std::cout<<"num active alignments " << num_active_aln << std::endl;
+
+    for (int i = 0; i < n_aln; i++) {
+        if (aln[i]->active) {
+            aln[i]->aes = reads[aln[i]->aid]->effective_start;
+            aln[i]->aee = reads[aln[i]->aid]->effective_end;
+            aln[i]->bes = reads[aln[i]->bid]->effective_start;
+            aln[i]->bee = reads[aln[i]->bid]->effective_end;
+        }
+    }
+
     for (int i = 0; i < n_aln; i++) {
         if (aln[i]->active) {
             num_active_aln ++;
             aln[i]->addtype();
         }
     }
-    std::cout<<"num active alignments " << num_active_aln << std::endl;
-
     /*for (int i = 0; i < n_read; i++) {
     printf("\n read %d:", i);
     for (int j = 0; j < covered_region[i].size(); j++) {
