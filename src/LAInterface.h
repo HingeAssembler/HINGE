@@ -79,7 +79,7 @@ public:
     int aes,aee,bes,bee;
     aligntype aln_type = UNDIFINED;
     void addtype();
-    static const int CHI_THRESHOLD = 300; // threshold for chimeric/adaptor at the begining
+    static const int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
 	bool active = true;
 
 };
