@@ -23,7 +23,7 @@ public:
 };
 
 enum aligntype {
-    FORWARD, BACKWARD, COVERING, COVERED, MISMATCH_LEFT, MISMATCH_RIGHT, UNDIFINED // different type of alignment
+    FORWARD, BACKWARD, COVERING, COVERED, MISMATCH_LEFT, MISMATCH_RIGHT, UNDIFINED, MIDDLE // different type of alignment
 /**
  * FORWARD: Alignment and extend to the right
  * BACKWARD: extend to the left

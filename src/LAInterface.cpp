@@ -1675,31 +1675,31 @@ int64 LAInterface::getAlignmentNumber() {
 }
 
 void LOverlap::addtype() {
-    if ((abpos < CHI_THRESHOLD) and (aepos > alen - CHI_THRESHOLD) ) {
-        if (blen > alen) aln_type = COVERED;
+    if ((abpos < CHI_THRESHOLD) and (aepos > alen - CHI_THRESHOLD) and (blen > alen) ) {
+        aln_type = COVERED;
     }
 	/**
 	 A:   ==========>
 	 B: ===============>
 	**/
 
-    else if ((abpos > 0) and (aepos > alen - CHI_THRESHOLD) ) {
-        if (bbpos < CHI_THRESHOLD) aln_type = FORWARD;
+    else if ((abpos > 0) and (aepos > alen - CHI_THRESHOLD) and (bbpos < CHI_THRESHOLD)) {
+        aln_type = FORWARD;
     }
 	/**
 	 A:   ==========>
 	 B:        ==========>
 	**/
 
-    else if ( ( abpos < CHI_THRESHOLD) and (aepos < alen)) {
-        if (bepos >  blen - CHI_THRESHOLD ) aln_type = BACKWARD;
+    else if ( ( abpos < CHI_THRESHOLD) and (aepos < alen) and (bepos >  blen - CHI_THRESHOLD )) {
+         aln_type = BACKWARD;
     }
 	/**
 	 A:     ==========>
 	 B:  ==========>
 	**/
-    else if ((bbpos < CHI_THRESHOLD) and (bepos > blen - CHI_THRESHOLD) ) {
-        if (alen > blen) aln_type = COVERING;
+    else if ((bbpos < CHI_THRESHOLD) and (bepos > blen - CHI_THRESHOLD) and (alen > blen) ) {
+        aln_type = COVERING;
     }
 	
 	else if ((abpos > 0) and (bbpos<CHI_THRESHOLD)) {
@@ -1717,6 +1717,9 @@ void LOverlap::addtype() {
 	 A:   		xxxx..===>
 	 B:     ====xxxx..=>
 	**/
+    else if ((bbpos > 0) and (bepos < blen)) {
+        aln_type = MIDDLE;
+    }
 }
 
 
