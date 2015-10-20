@@ -19,7 +19,11 @@ public:
     std::string qv; // qv currently not available
     std::vector<Interval> intervals;
     int effective_start,effective_end;
+    int len;
+    Read(int id, int length, std::string name, std::string bases) : id(id), bases(bases), name(name), len(length) { };
     Read(int id, std::string name, std::string bases) : id(id), bases(bases), name(name) { };
+
+    bool active = true;
     void showRead();
 };
 
@@ -36,8 +40,6 @@ enum aligntype {
 **/
 
 } ;
-
-
 
 class LAlignment { // because class Alignment is taken
 
@@ -58,7 +60,7 @@ public:
     int flags; // flag = 1 : 'c', flag = 0 : 'n'
     int tps;
     aligntype aln_type;
-	bool active;
+	bool active = true;
 };
 
 class LOverlap { // LOverlap is a simplified version of LAlignment, no trace

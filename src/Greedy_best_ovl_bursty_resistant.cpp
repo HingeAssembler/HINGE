@@ -134,14 +134,12 @@ int main(int argc, char *argv[]) {
 	/**
 	 * Remove reads shorter than length threshold
 	 */
-	int LENGTH_THRESHOLD = 12000;
+	int LENGTH_THRESHOLD = 10000;
     double QUALITY_THRESHOLD = 0.23;
+    int CHI_THRESHOLD = 300; // threshold for chimeric/adaptor at the begining
 
-	for (int i = 0; i < aln.size(); i++) {
-		if ((aln[i]->alen < LENGTH_THRESHOLD) or (aln[i]->blen < LENGTH_THRESHOLD)) aln[i]->active = false;
-	}
 
-	std::map<std::pair<int,int>, std::vector<LOverlap *> > idx; //map from (aid, bid) to alignments in a vector
+    std::map<std::pair<int,int>, std::vector<LOverlap *> > idx; //map from (aid, bid) to alignments in a vector
 	std::map<int, std::vector<std::vector<LOverlap*>> > idx2; //map from (aid) to alignments in a vector
     std::vector< std::pair<Node, Node> > edgelist; // save output to edgelist
     std::map<int, std::vector <LOverlap * > >idx3; // this is the pileup
@@ -153,14 +151,12 @@ int main(int argc, char *argv[]) {
         idx3[i] = std::vector<LOverlap *>();
     }
 
-    for (int i = 0; i < aln.size(); i++) {
-        if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < QUALITY_THRESHOLD ) {
-            idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )] = std::vector< LOverlap *> ();
-        }
-    }
+    for (int i = 0; i < aln.size(); i++)
+        if (aln[i]->active)
+            idx[std::pair<int, int>(aln[i]->aid, aln[i]->bid)] = std::vector<LOverlap *>();
 
     for (int i = 0; i < aln.size(); i++) {
-    if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < QUALITY_THRESHOLD ) {
+    if (aln[i]->active) {
 		idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )].push_back(aln[i]);
         has_overlap[aln[i]->aid].insert(aln[i]->bid);
 	    idx3[aln[i]->aid].push_back(aln[i]);
@@ -197,21 +193,48 @@ int main(int argc, char *argv[]) {
         }
     } // find all covered regions, could help remove adaptors
 
+    //for (int i = 0; i < n_read; i++) {
+    //    printf("read %d [%d %d]/%d\n", i, reads[i]->effective_start, reads[i]->effective_end, reads[i]->len);
+    //}
+
+    /**Filtering
+     *
+     **/
+
     for (int i = 0; i < n_read; i++) {
-        printf("read %d [%d %d]\n", i, reads[i]->effective_start, reads[i]->effective_end);
+        if ((reads[i]->len < LENGTH_THRESHOLD) or (reads[i]->len - reads[i]->effective_end > CHI_THRESHOLD) or (reads[i]->effective_start > CHI_THRESHOLD)
+                or (reads[i]->intervals.size() != 1))
+            reads[i]->active = false;
     }
 
-    /*for (int i = 0; i < n_read; i++) {
-        printf("\n read %d:", i);
-        for (int j = 0; j < covered_region[i].size(); j++) {
-            printf("[%d, %d] ",covered_region[i][j].first, covered_region[i][j].second);
-        }
-    }*/
+    int num_active = 0;
+    for (int i = 0; i < n_read; i++ ) {
+        if (reads[i]->active)
+            num_active ++;
+    }
+    std::cout<<"num active reads " << num_active << std::endl;
+
 
     for (int i = 0; i < n_aln; i++) {
-        if ((covered_region[aln[i]->aid].size() != 1) or (covered_region[aln[i]->bid].size() != 1))
-            aln[i]->active = 0;
+        if ((not reads[aln[i]->aid]->active) or (not reads[aln[i]->bid]->active) or (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) > QUALITY_THRESHOLD ))
+            aln[i]->active = false;
     }
+
+    int num_active_aln = 0;
+    for (int i = 0; i < n_aln; i++) {
+        if (aln[i]->active) {
+            num_active_aln ++;
+            aln[i]->addtype();
+        }
+    }
+    std::cout<<"num active alignments " << num_active_aln << std::endl;
+
+    /*for (int i = 0; i < n_read; i++) {
+    printf("\n read %d:", i);
+    for (int j = 0; j < covered_region[i].size(); j++) {
+        printf("[%d, %d] ",covered_region[i][j].first, covered_region[i][j].second);
+    }
+    }*/
 
     /*
     for (int i = 0; i < n_read; i++ ) {
@@ -281,7 +304,7 @@ int main(int argc, char *argv[]) {
 		 * For each read, if there is no exact right or left match, choose that one with a chimeric end, but still choose
 		 * the one with longest alignment, same for BACKWARD
 		 */
-        for (int j = 0; j< idx2[i].size(); j++) {
+       /* for (int j = 0; j< idx2[i].size(); j++) {
             //idx2[i][j]->show();
             if (idx2[i][j][0]->active) {
 				if ((idx2[i][j].front()->aln_type == MISMATCH_RIGHT) and (cf < 1)) {
@@ -306,6 +329,7 @@ int main(int argc, char *argv[]) {
 			}
             if ((cf == 1) and (cb == 1)) break;
         }
+        */
     }
 
     std::ofstream out  (argv[3], std::ofstream::out);

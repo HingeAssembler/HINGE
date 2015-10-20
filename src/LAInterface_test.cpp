@@ -32,7 +32,6 @@ int main(int argc, char *argv[]) {
 
     la.showRead(1, 3); //show read [1,3)
 
-
     test_read = la.getRead(0); //get read 0
     test_read->showRead(); // show read 0
 
@@ -40,7 +39,6 @@ int main(int argc, char *argv[]) {
     la.showAlignment(0, 2); // show alignments of read [0,2)
 
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
-
 
     la.resetAlignment();
     std::vector<int> res;

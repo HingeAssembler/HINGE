@@ -994,7 +994,7 @@ void LAInterface::getRead(std::vector<Read *> &reads_vec, int from, int to) {
         read_bases = std::string(read);
         fst = 0;
         lst = len;
-        Read *new_r = new Read(i, read_name, read_bases);
+        Read *new_r = new Read(i, len, read_name, read_bases);
         reads_vec.push_back(new_r);
 
     }
