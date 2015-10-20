@@ -164,20 +164,16 @@ int main(int argc, char *argv[]) {
     }
 
     //sort each a,b pair according to abpos:
-    for (int i = 0; i < n_read; i++)
+    /*for (int i = 0; i < n_read; i++)
         for (std::set<int>::iterator j = has_overlap[i].begin(); j != has_overlap[i].end(); j++) {
             std::sort(idx[std::pair<int,int>(i, *j)].begin(), idx[std::pair<int,int>(i, *j)].end(), compare_pos);
         }
-
+    */
     for (int i = 0; i < n_read; i++)
         for (std::set<int>::iterator j = has_overlap[i].begin(); j != has_overlap[i].end(); j++) {
             idx2[i].push_back(idx[std::pair<int,int>(i, *j)]);
         }
 
-    //sort the reads
-    for (int i = 0; i < n_read; i++ ) {
-        std::sort( idx2[i].begin(), idx2[i].end(), compare_sum_overlaps );
-    }
 
     std::map<int,std::vector<Interval> > covered_region;
 
@@ -255,6 +251,12 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
+    //sort the reads
+    for (int i = 0; i < n_read; i++ ) {
+        std::sort( idx2[i].begin(), idx2[i].end(), compare_sum_overlaps );
+    }
+
     /*for (int i = 0; i < n_read; i++) {
     printf("\n read %d:", i);
     for (int j = 0; j < covered_region[i].size(); j++) {
