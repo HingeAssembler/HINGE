@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
      **/
 
     for (int i = 0; i < n_read; i++) {
-        if ((reads[i]->len < LENGTH_THRESHOLD) /*or (reads[i]->len - reads[i]->effective_end > CHI_THRESHOLD) or (reads[i]->effective_start > CHI_THRESHOLD)*/
+        if ((reads[i]->effective_end - reads[i]->effective_start < LENGTH_THRESHOLD) /*or (reads[i]->len - reads[i]->effective_end > CHI_THRESHOLD) or (reads[i]->effective_start > CHI_THRESHOLD)*/
                 or (reads[i]->intervals.size() != 1))
             reads[i]->active = false;
     }
@@ -312,6 +312,12 @@ int main(int argc, char *argv[]) {
 			}
         	if ((cf == 1) and (cb == 1)) break;
 		}
+		
+		if (reads[i]->active)
+		{
+			if (cf == 0) printf("%d has no out-going edges\n", i);
+			if (cb == 0) printf("%d has no in-coming edges\n", i);
+		}
 		/*
 		 * For each read, if there is no exact right or left match, choose that one with a chimeric end, but still choose
 		 * the one with longest alignment, same for BACKWARD
@@ -344,7 +350,7 @@ int main(int argc, char *argv[]) {
         */
     }
 
-    std::ofstream out  (argv[3], std::ofstream::out);
+    std::ofstream out(argv[3], std::ofstream::out);
     //print edges list
     for (int i = 0; i < edgelist.size(); i++){
         edgelist[i].first.show(out);
