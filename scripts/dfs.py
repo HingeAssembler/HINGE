@@ -35,7 +35,7 @@ print nx.info(g)
 degree_sequence=sorted(nx.degree(g).values(),reverse=True)
 print Counter(degree_sequence)
 
-for i in range(10):
+for i in range(15):
     for node in g.nodes():
         if g.in_degree(node) == 0:
             g.remove_node(node)

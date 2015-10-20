@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
         	    //idx2[i][j]->show();
 			if (idx2[i][j][0]->active) {
         	    if ((idx2[i][j].front()->aln_type == FORWARD) and (cf == 0)) {
-        	        cf = 1;
+        	        cf += 1;
         	        //add edge
         	        if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
         	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,1)));
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
         	    }
 
         	    if ((idx2[i][j].back()->aln_type == BACKWARD) and (cb == 0)) {
-        	        cb = 1;
+        	        cb += 1;
         	        //add edge
         	        if (idx2[i][j][0]->flags == 1) {
         	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,0)));
@@ -228,8 +228,7 @@ int main(int argc, char *argv[]) {
         	        }
         	    }
 			}
-        	if ((cf == 1) and (cb == 1)) break;
-
+        	if ((cf == 2) and (cb == 2)) break;
 		}
 		/*
 		 * For each read, if there is no exact right or left match, choose that one with a chimeric end, but still choose
@@ -239,7 +238,7 @@ int main(int argc, char *argv[]) {
             //idx2[i][j]->show();
             if (idx2[i][j][0]->active) {
 				if ((idx2[i][j].front()->aln_type == MISMATCH_RIGHT) and (cf == 0)) {
-            	    cf = 1;
+            	    cf += 1;
             	    //add edge
             	    if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
             	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,1)));
@@ -249,7 +248,7 @@ int main(int argc, char *argv[]) {
             	}
 
             	if ((idx2[i][j].back()->aln_type == MISMATCH_LEFT) and (cb == 0)) {
-            	    cb = 1;
+            	    cb += 1;
             	    //add edge
             	    if (idx2[i][j][0]->flags == 1) {
             	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,0)));
@@ -258,7 +257,7 @@ int main(int argc, char *argv[]) {
             	    }
             	}
 			}
-            if ((cf == 1) and (cb == 1)) break;
+            if ((cf == 2) and (cb == 2)) break;
         }
     }
 
