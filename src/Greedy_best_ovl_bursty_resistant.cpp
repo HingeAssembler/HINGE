@@ -28,6 +28,25 @@ static int ORDER(const void *l, const void *r) {
 }
 
 
+std::ostream& operator<<(std::ostream& out, const aligntype value){
+    static std::map<aligntype, std::string> strings;
+    if (strings.size() == 0){
+#define INSERT_ELEMENT(p) strings[p] = #p
+        INSERT_ELEMENT(FORWARD);
+        INSERT_ELEMENT(BACKWARD);
+        INSERT_ELEMENT(MISMATCH_LEFT);
+        INSERT_ELEMENT(MISMATCH_RIGHT);
+        INSERT_ELEMENT(COVERED);
+        INSERT_ELEMENT(COVERING);
+        INSERT_ELEMENT(UNDIFINED);
+#undef INSERT_ELEMENT
+    }
+
+    return out << strings[value];
+}
+
+
+
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
     return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
 }
@@ -243,15 +262,15 @@ int main(int argc, char *argv[]) {
     /*
      * Debug output
      */
-    /*for (int i = 0; i < n_read; i++) {
+    for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < idx2[i].size(); j++) {
             printf("%d,%d,%d\n",i, idx2[i].size(),idx2[i][j].size() );
 
             for (int k = 0; k<idx2[i][j].size(); k++) {
-                printf(" -%d\n",idx2[i][j][k]->abpos);
+                std::cout<<" "<< "["<<idx2[i][j][k]->abpos<<","<<idx2[i][j][k]->aepos <<"]/" <<idx2[i][j][k]->alen <<" "<<"["<<idx2[i][j][k]->bbpos<<","<<idx2[i][j][k]->bepos <<"]/" <<idx2[i][j][k]->blen<<" "<<idx2[i][j][k]->aln_type << std::endl;
             }
         }
-    }*/
+    }
 
 
     //from the list, find the first one that can extend read A to the right, this will form a graph

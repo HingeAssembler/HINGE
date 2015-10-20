@@ -36,6 +36,7 @@ enum aligntype {
 
 } ;
 
+
 class LAlignment { // because class Alignment is taken
 
 public:
