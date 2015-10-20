@@ -230,22 +230,22 @@ int main(int argc, char *argv[]) {
         std::sort( idx2[i].begin(), idx2[i].end(), compare_sum_overlaps );
     }
 
-    std::cout<<"here" << std::endl;
+   // std::cout<<"here" << std::endl;
 
     std::map<int,std::vector<std::pair<int,int> > > covered_region;
     for (int i = 0; i < n_read; i++ ) {
         covered_region[i] = Merge(idx3[i]);
     } // find all covered regions, could help remove adaptors
 
-    std::cout<<"here2" << std::endl;
-
+    //std::cout<<"here2" << std::endl;
+    /*
     for (int i = 0; i < n_read; i++) {
         printf("\n read %d:", i);
         for (int j = 0; j < covered_region[i].size(); j++) {
             printf("[%d, %d] ",covered_region[i][j].first, covered_region[i][j].second);
         }
     }
-
+    */
 
     /*
     for (int i = 0; i < n_read; i++ ) {
@@ -264,14 +264,14 @@ int main(int argc, char *argv[]) {
     /*
      * Debug output
      */
-    for (int i = 0; i < n_read; i++) {
+    /*for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < idx2[i].size(); j++) {
             printf("%d,%d,%d,%d\n",i, idx2[i].size(),j,idx2[i][j].size() );
             for (int k = 0; k<idx2[i][j].size(); k++) {
                 std::cout<<" "<<idx2[i][j][k]->active << " "<< "["<<idx2[i][j][k]->abpos<<","<<idx2[i][j][k]->aepos <<"]/" <<idx2[i][j][k]->alen <<" "<<"["<<idx2[i][j][k]->bbpos<<","<<idx2[i][j][k]->bepos <<"]/" <<idx2[i][j][k]->blen<<" "<<idx2[i][j][k]->aln_type << std::endl;
             }
         }
-    }
+    }*/
 
 
     //from the list, find the first one that can extend read A to the right, this will form a graph
@@ -291,7 +291,7 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j< idx2[i].size(); j++) {
         	    //idx2[i][j]->show();
 			if (idx2[i][j][0]->active) {
-        	    if (((idx2[i][j].front()->aln_type == FORWARD) or idx2[i][j].front()->aln_type == MIDDLE) and (cf < 1)) {
+        	    if ((idx2[i][j].front()->blen - idx2[i][j].front()->bepos > idx2[i][j].front()->alen - idx2[i][j].front()->aepos) and (cf < 1)) {
         	        cf += 1;
         	        //add edge
         	        if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
@@ -301,7 +301,7 @@ int main(int argc, char *argv[]) {
         	        }
         	    }
 
-        	    if ((idx2[i][j].back()->aln_type == BACKWARD) and (cb < 1)) {
+        	    if ((idx2[i][j].back()->abpos < idx2[i][j].back()->bbpos) and (cb < 1)) {
         	        cb += 1;
         	        //add edge
         	        if (idx2[i][j][0]->flags == 1) {
@@ -313,35 +313,7 @@ int main(int argc, char *argv[]) {
 			}
         	if ((cf == 1) and (cb == 1)) break;
 		}
-		/*
-		 * For each read, if there is no exact right or left match, choose that one with a chimeric end, but still choose
-		 * the one with longest alignment, same for BACKWARD
-		 */
-        for (int j = 0; j< idx2[i].size(); j++) {
-            //idx2[i][j]->show();
-            if (idx2[i][j][0]->active) {
-				if ((idx2[i][j].front()->aln_type == MISMATCH_RIGHT) and (cf < 1)) {
-            	    cf += 1;
-            	    //add edge
-            	    if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
-            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,1)));
-            	    } else {
-            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,0)));
-            	    }
-            	}
 
-            	if ((idx2[i][j].back()->aln_type == MISMATCH_LEFT) and (cb < 1)) {
-            	    cb += 1;
-            	    //add edge
-            	    if (idx2[i][j][0]->flags == 1) {
-            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,0)));
-            	    } else {
-            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,1)));
-            	    }
-            	}
-			}
-            if ((cf == 1) and (cb == 1)) break;
-        }
     }
 
     std::ofstream out  (argv[3], std::ofstream::out);
