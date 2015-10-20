@@ -291,7 +291,7 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j< idx2[i].size(); j++) {
         	    //idx2[i][j]->show();
 			if (idx2[i][j][0]->active) {
-        	    if ((idx2[i][j].front()->aln_type == FORWARD) and (cf < 1)) {
+        	    if (((idx2[i][j].front()->aln_type == FORWARD) or idx2[i][j].front()->aln_type == MIDDLE) and (cf < 1)) {
         	        cf += 1;
         	        //add edge
         	        if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
