@@ -124,9 +124,9 @@ int main(int argc, char *argv[]) {
 	la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
 
-	int covered = 0, forward = 0, backward = 0, covering = 0, undefined = 0;
-	int pcovered = 0, pforward = 0, pbackward = 0, pcovering = 0, pundefined = 0;
-	
+    std::vector<Read *> reads;
+    la.getRead(reads,0,n_read);
+
 	/**
 	filter reads
 	**/
@@ -135,63 +135,16 @@ int main(int argc, char *argv[]) {
 	 * Remove reads shorter than length threshold
 	 */
 	int LENGTH_THRESHOLD = 12000;
+    double QUALITY_THRESHOLD = 0.23;
+
 	for (int i = 0; i < aln.size(); i++) {
 		if ((aln[i]->alen < LENGTH_THRESHOLD) or (aln[i]->blen < LENGTH_THRESHOLD)) aln[i]->active = false;
 	}
 
-
-
-
-
-/* try and see the numbers of different types
-	
-	for (int i = 0; i < aln.size(); i++) {
-		int CHI_THRESHOLD = 300;
-		
-		    if ((aln[i]->abpos > 0) and (aln[i]->aepos > aln[i]->alen - CHI_THRESHOLD) ) {
-		        forward ++; 
-		    }
-
-		    else if ( ( aln[i]->abpos < CHI_THRESHOLD) and (aln[i]->aepos < aln[i]->alen)) {
-		        backward ++ ;
-		    }
-			
-			else if ((aln[i]->abpos < CHI_THRESHOLD) and (aln[i]->aepos > aln[i]->alen - CHI_THRESHOLD) ) {
-			        if (aln[i]->blen > aln[i]->alen) covered ++ ;
-			}
-		    
-			else if ((aln[i]->bbpos < CHI_THRESHOLD) and (aln[i]->bepos > aln[i]->blen - CHI_THRESHOLD) ) {
-		        if (aln[i]->alen >aln[i]-> blen) covering ++; 
-		    }
-			else undefined ++;
-		
-		
-		if ((aln[i]->abpos > 0) and (aln[i]->aepos == aln[i]->alen) ) {
-		        pforward ++;
-		    }
-
-		    else if 
-			( ( aln[i]->abpos == 0) and (aln[i]->aepos < aln[i]->alen)) {
-					        pbackward ++; 
-			}
-
-		    else if ((aln[i]->abpos  == 0) and (aln[i]->aepos == aln[i]->alen) ) {
-		        if (aln[i]->blen > aln[i]->alen) pcovered ++; 
-		    }
-			
-		    else if ((aln[i]->bbpos == 0) and (aln[i]->bepos == aln[i]->blen) ) {
-		        if (aln[i]->alen > aln[i]->blen) pcovering ++;
-		    }	
-			else pundefined ++;
-	}
-	
-	printf("covered %d forward %d backward %d covering %d undefined %d\ncovered %d forward %d backward %d covering %d undefined %d\n",covered, forward, backward, covering, undefined, pcovered, pforward, pbackward, pcovering, pundefined);
-*/
-
 	std::map<std::pair<int,int>, std::vector<LOverlap *> > idx; //map from (aid, bid) to alignments in a vector
 	std::map<int, std::vector<std::vector<LOverlap*>> > idx2; //map from (aid) to alignments in a vector
     std::vector< std::pair<Node, Node> > edgelist; // save output to edgelist
-    std::map<int, std::vector <LOverlap * > >idx3;
+    std::map<int, std::vector <LOverlap * > >idx3; // this is the pileup
 
     std::map< int, std::set<int> > has_overlap;
 
@@ -199,15 +152,15 @@ int main(int argc, char *argv[]) {
         has_overlap[i] = std::set<int>();
         idx3[i] = std::vector<LOverlap *>();
     }
+
     for (int i = 0; i < aln.size(); i++) {
-        //printf("%d,%d\n",aln[i]->aid, aln[i]->bid);
-        if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.23 ) {
+        if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < QUALITY_THRESHOLD ) {
             idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )] = std::vector< LOverlap *> ();
         }
     }
 
     for (int i = 0; i < aln.size(); i++) {
-    if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.23 ) {
+    if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < QUALITY_THRESHOLD ) {
 		idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )].push_back(aln[i]);
         has_overlap[aln[i]->aid].insert(aln[i]->bid);
 	    idx3[aln[i]->aid].push_back(aln[i]);
@@ -230,14 +183,23 @@ int main(int argc, char *argv[]) {
         std::sort( idx2[i].begin(), idx2[i].end(), compare_sum_overlaps );
     }
 
-    //std::cout<<"here" << std::endl;
+    std::map<int,std::vector<Interval> > covered_region;
 
-    std::map<int,std::vector<std::pair<int,int> > > covered_region;
     for (int i = 0; i < n_read; i++ ) {
         covered_region[i] = Merge(idx3[i]);
+        reads[i]->intervals = covered_region[i];
+        if (reads[i]->intervals.empty()) {
+            reads[i]->effective_start = 0;
+            reads[i]->effective_end = 0;
+        } else {
+            reads[i]->effective_start = reads[i]->intervals.front().first;
+            reads[i]->effective_end = reads[i]->intervals.back().second;
+        }
     } // find all covered regions, could help remove adaptors
 
-    //std::cout<<"here2" << std::endl;
+    for (int i = 0; i < n_read; i++) {
+        printf("read %d [%d %d]\n", i, reads[i]->effective_start, reads[i]->effective_end);
+    }
 
     /*for (int i = 0; i < n_read; i++) {
         printf("\n read %d:", i);
@@ -277,13 +239,11 @@ int main(int argc, char *argv[]) {
         }
     }*/
 
-
     //from the list, find the first one that can extend read A to the right, this will form a graph
 
-
-    /****
-	get the best overlap for each read and form a graph
-	****/
+    /**
+	 **    get the best overlap for each read and form a graph
+	 **/
 
     for (int i = 0; i < idx2.size(); i++) {
         int cf = 0;

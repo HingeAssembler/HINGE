@@ -9,6 +9,7 @@ extern "C" {
 #include "DB.h"
 #include "align.h"
 }
+typedef std::pair<int,int> Interval;
 
 class Read { // read class
 public:
@@ -16,9 +17,9 @@ public:
     std::string name; // read name
     std::string bases; // read bases
     std::string qv; // qv currently not available
-
+    std::vector<Interval> intervals;
+    int effective_start,effective_end;
     Read(int id, std::string name, std::string bases) : id(id), bases(bases), name(name) { };
-
     void showRead();
 };
 
@@ -35,6 +36,7 @@ enum aligntype {
 **/
 
 } ;
+
 
 
 class LAlignment { // because class Alignment is taken
