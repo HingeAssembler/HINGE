@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j< idx2[i].size(); j++) {
         	    //idx2[i][j]->show();
 			if (idx2[i][j][0]->active) {
-        	    if ((idx2[i][j].front()->aln_type == FORWARD) and (cf == 0)) {
+        	    if ((idx2[i][j].front()->aln_type == FORWARD) and (cf < 2)) {
         	        cf += 1;
         	        //add edge
         	        if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
         	        }
         	    }
 
-        	    if ((idx2[i][j].back()->aln_type == BACKWARD) and (cb == 0)) {
+        	    if ((idx2[i][j].back()->aln_type == BACKWARD) and (cb < 2)) {
         	        cb += 1;
         	        //add edge
         	        if (idx2[i][j][0]->flags == 1) {
@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j< idx2[i].size(); j++) {
             //idx2[i][j]->show();
             if (idx2[i][j][0]->active) {
-				if ((idx2[i][j].front()->aln_type == MISMATCH_RIGHT) and (cf == 0)) {
+				if ((idx2[i][j].front()->aln_type == MISMATCH_RIGHT) and (cf < 2)) {
             	    cf += 1;
             	    //add edge
             	    if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
             	    }
             	}
 
-            	if ((idx2[i][j].back()->aln_type == MISMATCH_LEFT) and (cb == 0)) {
+            	if ((idx2[i][j].back()->aln_type == MISMATCH_LEFT) and (cb < 2)) {
             	    cb += 1;
             	    //add edge
             	    if (idx2[i][j][0]->flags == 1) {
