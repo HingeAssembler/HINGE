@@ -44,6 +44,44 @@ bool compare_pos(LOverlap * ovl1, LOverlap * ovl2) {
     return (ovl1->abpos) > (ovl2->abpos);
 }
 
+bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
+    return ovl1->abpos < ovl2->abpos;
+}
+
+std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals)
+{
+    //std::cout<<"Merge"<<std::endl;
+    std::vector<std::pair<int, int > > ret;
+    int n = intervals.size();
+    if (n == 0) return ret;
+
+    if(n == 1) {
+        ret.push_back(std::pair<int,int>(intervals[0]->abpos,intervals[0]->aepos));
+        return ret;
+    }
+
+    sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
+
+    int left=intervals[0]->abpos, right = intervals[0]->aepos; //left, right means maximal possible interval now
+
+    for(int i = 1; i < n; i++)
+    {
+        if(intervals[i]->abpos <= right)
+        {
+            right=std::max(right,intervals[i]->aepos);
+        }
+        else
+        {
+            ret.push_back(std::pair<int, int>(left,right));
+            left = intervals[i]->abpos;
+            right = intervals[i]->aepos;
+        }
+    }
+    ret.push_back(std::pair<int, int>(left,right));
+    return ret;
+}
+
+
 
 int main(int argc, char *argv[]) {
     LAInterface la;
@@ -79,6 +117,10 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < aln.size(); i++) {
 		if ((aln[i]->alen < LENGTH_THRESHOLD) or (aln[i]->blen < LENGTH_THRESHOLD)) aln[i]->active = false;
 	}
+
+
+
+
 
 /* try and see the numbers of different types
 	
@@ -128,11 +170,14 @@ int main(int argc, char *argv[]) {
 	std::map<std::pair<int,int>, std::vector<LOverlap *> > idx; //map from (aid, bid) to alignments in a vector
 	std::map<int, std::vector<std::vector<LOverlap*>> > idx2; //map from (aid) to alignments in a vector
     std::vector< std::pair<Node, Node> > edgelist; // save output to edgelist
+    std::map<int, std::vector <LOverlap * > >idx3;
 
     std::map< int, std::set<int> > has_overlap;
 
-    for (int i = 0; i< n_read; i++) has_overlap[i] = std::set<int> ();
-
+    for (int i = 0; i< n_read; i++) {
+        has_overlap[i] = std::set<int>();
+        idx3[i] = std::vector<LOverlap *>();
+    }
     for (int i = 0; i < aln.size(); i++) {
         //printf("%d,%d\n",aln[i]->aid, aln[i]->bid);
         if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.23 ) {
@@ -144,7 +189,8 @@ int main(int argc, char *argv[]) {
     if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.23 ) {
 		idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )].push_back(aln[i]);
         has_overlap[aln[i]->aid].insert(aln[i]->bid);
-	    }
+	    idx3[aln[i]->aid].push_back(aln[i]);
+        }
     }
 
     //sort each a,b pair according to abpos:
@@ -162,6 +208,23 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++ ) {
         std::sort( idx2[i].begin(), idx2[i].end(), compare_sum_overlaps );
     }
+
+    std::cout<<"here" << std::endl;
+
+    std::map<int,std::vector<std::pair<int,int> > > covered_region;
+    for (int i = 0; i < n_read; i++ ) {
+        covered_region[i] = Merge(idx3[i]);
+    } // find all covered regions, could help remove adaptors
+
+    std::cout<<"here2" << std::endl;
+
+    for (int i = 0; i < n_read; i++) {
+        printf("\n read %d:", i);
+        for (int j = 0; j < covered_region[i].size(); j++) {
+            printf("[%d, %d] ",covered_region[i][j].first, covered_region[i][j].second);
+        }
+    }
+
 
     /*
     for (int i = 0; i < n_read; i++ ) {
@@ -208,7 +271,7 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j< idx2[i].size(); j++) {
         	    //idx2[i][j]->show();
 			if (idx2[i][j][0]->active) {
-        	    if ((idx2[i][j].front()->aln_type == FORWARD) and (cf < 2)) {
+        	    if ((idx2[i][j].front()->aln_type == FORWARD) and (cf < 1)) {
         	        cf += 1;
         	        //add edge
         	        if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
@@ -218,7 +281,7 @@ int main(int argc, char *argv[]) {
         	        }
         	    }
 
-        	    if ((idx2[i][j].back()->aln_type == BACKWARD) and (cb < 2)) {
+        	    if ((idx2[i][j].back()->aln_type == BACKWARD) and (cb < 1)) {
         	        cb += 1;
         	        //add edge
         	        if (idx2[i][j][0]->flags == 1) {
@@ -228,7 +291,7 @@ int main(int argc, char *argv[]) {
         	        }
         	    }
 			}
-        	if ((cf == 2) and (cb == 2)) break;
+        	if ((cf == 1) and (cb == 1)) break;
 		}
 		/*
 		 * For each read, if there is no exact right or left match, choose that one with a chimeric end, but still choose
@@ -237,7 +300,7 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j< idx2[i].size(); j++) {
             //idx2[i][j]->show();
             if (idx2[i][j][0]->active) {
-				if ((idx2[i][j].front()->aln_type == MISMATCH_RIGHT) and (cf < 2)) {
+				if ((idx2[i][j].front()->aln_type == MISMATCH_RIGHT) and (cf < 1)) {
             	    cf += 1;
             	    //add edge
             	    if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
@@ -247,7 +310,7 @@ int main(int argc, char *argv[]) {
             	    }
             	}
 
-            	if ((idx2[i][j].back()->aln_type == MISMATCH_LEFT) and (cb < 2)) {
+            	if ((idx2[i][j].back()->aln_type == MISMATCH_LEFT) and (cb < 1)) {
             	    cb += 1;
             	    //add edge
             	    if (idx2[i][j][0]->flags == 1) {
@@ -257,7 +320,7 @@ int main(int argc, char *argv[]) {
             	    }
             	}
 			}
-            if ((cf == 2) and (cb == 2)) break;
+            if ((cf == 1) and (cb == 1)) break;
         }
     }
 
