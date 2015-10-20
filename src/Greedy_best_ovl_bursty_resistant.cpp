@@ -136,8 +136,8 @@ int main(int argc, char *argv[]) {
 	 */
 	int LENGTH_THRESHOLD = 5000;
     double QUALITY_THRESHOLD = 0.23;
-    int CHI_THRESHOLD = 300; // threshold for chimeric/adaptor at the begining
-
+    int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
+    int N_ITER = 2;
 
     std::map<std::pair<int,int>, std::vector<LOverlap *> > idx; //map from (aid, bid) to alignments in a vector
 	std::map<int, std::vector<std::vector<LOverlap*>> > idx2; //map from (aid) to alignments in a vector
@@ -181,17 +181,6 @@ int main(int argc, char *argv[]) {
 
     std::map<int,std::vector<Interval> > covered_region;
 
-    for (int i = 0; i < n_read; i++ ) {
-        covered_region[i] = Merge(idx3[i]);
-        reads[i]->intervals = covered_region[i];
-        if (reads[i]->intervals.empty()) {
-            reads[i]->effective_start = 0;
-            reads[i]->effective_end = 0;
-        } else {
-            reads[i]->effective_start = reads[i]->intervals.front().first;
-            reads[i]->effective_end = reads[i]->intervals.back().second;
-        }
-    } // find all covered regions, could help remove adaptors
 
     //for (int i = 0; i < n_read; i++) {
     //    printf("read %d [%d %d]/%d\n", i, reads[i]->effective_start, reads[i]->effective_end, reads[i]->len);
@@ -201,46 +190,71 @@ int main(int argc, char *argv[]) {
      *
      **/
 
-    for (int i = 0; i < n_read; i++) {
-        if ((reads[i]->effective_end - reads[i]->effective_start < LENGTH_THRESHOLD) /*or (reads[i]->len - reads[i]->effective_end > CHI_THRESHOLD) or (reads[i]->effective_start > CHI_THRESHOLD)*/
+    for (int n_iter = 0; n_iter < N_ITER; n_iter ++) {
+
+        for (int i = 0; i < n_read; i++) {
+            if (reads[i]->active) {
+                covered_region[i] = Merge(idx3[i]);
+                reads[i]->intervals = covered_region[i];
+                if (reads[i]->intervals.empty()) {
+                    reads[i]->effective_start = 0;
+                    reads[i]->effective_end = 0;
+                } else {
+                    reads[i]->effective_start = reads[i]->intervals.front().first;
+                    reads[i]->effective_end = reads[i]->intervals.back().second;
+                }
+            }
+        } // find all covered regions, could help remove adaptors
+
+        for (int i = 0; i < n_read; i++) {
+            if (reads[i]->active)
+            if ((reads[i]->effective_end - reads[i]->effective_start <
+                 LENGTH_THRESHOLD) /*or (reads[i]->len - reads[i]->effective_end > CHI_THRESHOLD) or (reads[i]->effective_start > CHI_THRESHOLD)*/
                 or (reads[i]->intervals.size() != 1))
-            reads[i]->active = false;
-    }
-
-    int num_active = 0;
-    for (int i = 0; i < n_read; i++ ) {
-        if (reads[i]->active)
-            num_active ++;
-    }
-    std::cout<<"num active reads " << num_active << std::endl;
+                reads[i]->active = false;
+        } // filter according to effective length, and interval size
 
 
-    for (int i = 0; i < n_aln; i++) {
-        if ((not reads[aln[i]->aid]->active) or (not reads[aln[i]->bid]->active) or (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) > QUALITY_THRESHOLD ))
-            aln[i]->active = false;
-    }
+        int num_active = 0;
+        for (int i = 0; i < n_read; i++) {
+            if (reads[i]->active)
+                num_active++;
+        }
+        std::cout << "num active reads " << num_active << std::endl;
 
+        for (int i = 0; i < n_aln; i++) {
+            if (aln[i]->active)
+            if ((not reads[aln[i]->aid]->active) or (not reads[aln[i]->bid]->active) or
+                (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) >
+                 QUALITY_THRESHOLD))
+                aln[i]->active = false;
+        }
 
+        for (int i = 0; i < n_aln; i++) {
+            if (aln[i]->active) {
+                aln[i]->aes = reads[aln[i]->aid]->effective_start;
+                aln[i]->aee = reads[aln[i]->aid]->effective_end;
+                aln[i]->bes = reads[aln[i]->bid]->effective_start;
+                aln[i]->bee = reads[aln[i]->bid]->effective_end;
+            }
+        }
 
-    for (int i = 0; i < n_aln; i++) {
-        if (aln[i]->active) {
-            aln[i]->aes = reads[aln[i]->aid]->effective_start;
-            aln[i]->aee = reads[aln[i]->aid]->effective_end;
-            aln[i]->bes = reads[aln[i]->bid]->effective_start;
-            aln[i]->bee = reads[aln[i]->bid]->effective_end;
+        int num_active_aln = 0;
+        for (int i = 0; i < n_aln; i++) {
+            if (aln[i]->active) {
+                num_active_aln++;
+                aln[i]->addtype();
+            }
+        }
+        std::cout << "num active alignments " << num_active_aln << std::endl;
+
+        idx3.clear();
+        for (int i = 0; i < aln.size(); i++) {
+            if (aln[i]->active) {
+                idx3[aln[i]->aid].push_back(aln[i]);
+            }
         }
     }
-
-
-    int num_active_aln = 0;
-    for (int i = 0; i < n_aln; i++) {
-        if (aln[i]->active) {
-            num_active_aln ++;
-            aln[i]->addtype();
-        }
-    }
-    std::cout<<"num active alignments " << num_active_aln << std::endl;
-
     /*for (int i = 0; i < n_read; i++) {
     printf("\n read %d:", i);
     for (int j = 0; j < covered_region[i].size(); j++) {
@@ -280,13 +294,14 @@ int main(int argc, char *argv[]) {
 	 **    get the best overlap for each read and form a graph
 	 **/
 
-    for (int i = 0; i < idx2.size(); i++) {
+    for (int i = 0; i < n_read; i++) {
         int cf = 0;
         int cb = 0;
 		/*
 		 * For each read, if there is exact right match (type FORWARD), choose the one with longest alignment with read A
 		 * same for BACKWARD,
 		 */
+        if (reads[i]->active)
         for (int j = 0; j< idx2[i].size(); j++) {
         	    //idx2[i][j]->show();
 			if (idx2[i][j][0]->active) {
