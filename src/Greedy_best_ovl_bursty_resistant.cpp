@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
 	/**
 	 * Remove reads shorter than length threshold
 	 */
-	int LENGTH_THRESHOLD = 10000;
+	int LENGTH_THRESHOLD = 5000;
     double QUALITY_THRESHOLD = 0.23;
     int CHI_THRESHOLD = 300; // threshold for chimeric/adaptor at the begining
 
@@ -220,9 +220,7 @@ int main(int argc, char *argv[]) {
             aln[i]->active = false;
     }
 
-    int num_active_aln = 0;
 
-    std::cout<<"num active alignments " << num_active_aln << std::endl;
 
     for (int i = 0; i < n_aln; i++) {
         if (aln[i]->active) {
@@ -233,12 +231,16 @@ int main(int argc, char *argv[]) {
         }
     }
 
+
+    int num_active_aln = 0;
     for (int i = 0; i < n_aln; i++) {
         if (aln[i]->active) {
             num_active_aln ++;
             aln[i]->addtype();
         }
     }
+    std::cout<<"num active alignments " << num_active_aln << std::endl;
+
     /*for (int i = 0; i < n_read; i++) {
     printf("\n read %d:", i);
     for (int j = 0; j < covered_region[i].size(); j++) {
