@@ -334,31 +334,32 @@ int main(int argc, char *argv[]) {
                     //idx2[i][j]->show();
                     if (idx2[i][j][0]->active) {
                         for (int kk = 0; kk < idx2[i][j].size(); kk++) {
+                            if (reads[idx2[i][j][kk]->bid]->active)
                             if ((idx2[i][j][kk]->aln_type == FORWARD) and (cf < 1)) {
                                 cf += 1;
                                 //add edge
-                                if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
+                                if (idx2[i][j][kk]->flags == 1) { // n = 0, c = 1
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node(idx2[i][j][0]->aid, 0),
-                                                                  Node(idx2[i][j][0]->bid, 1)));
+                                            std::pair<Node, Node>(Node(idx2[i][j][kk]->aid, 0),
+                                                                  Node(idx2[i][j][kk]->bid, 1)));
                                 } else {
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node(idx2[i][j][0]->aid, 0),
-                                                                  Node(idx2[i][j][0]->bid, 0)));
+                                            std::pair<Node, Node>(Node(idx2[i][j][kk]->aid, 0),
+                                                                  Node(idx2[i][j][kk]->bid, 0)));
                                 }
                             }
-
+                            if (reads[idx2[i][j][kk]->bid]->active)
                             if ((idx2[i][j][kk]->aln_type == BACKWARD) and (cb < 1)) {
                                 cb += 1;
                                 //add edge
-                                if (idx2[i][j][0]->flags == 1) {
+                                if (idx2[i][j][kk]->flags == 1) {
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node(idx2[i][j][0]->aid, 1),
-                                                                  Node(idx2[i][j][0]->bid, 0)));
+                                            std::pair<Node, Node>(Node(idx2[i][j][kk]->aid, 1),
+                                                                  Node(idx2[i][j][kk]->bid, 0)));
                                 } else {
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node(idx2[i][j][0]->aid, 1),
-                                                                  Node(idx2[i][j][0]->bid, 1)));
+                                            std::pair<Node, Node>(Node(idx2[i][j][kk]->aid, 1),
+                                                                  Node(idx2[i][j][kk]->bid, 1)));
                                 }
                             }
                             if ((cf >= 1) and (cb >= 1)) break;
