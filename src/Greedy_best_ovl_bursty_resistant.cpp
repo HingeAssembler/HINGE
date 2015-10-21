@@ -325,19 +325,16 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < n_read; i++) {
             int cf = 0;
             int cb = 0;
-
-        /*
-         * For each read, if there is exact right match (type FORWARD), choose the one with longest alignment with read A
-         * same for BACKWARD,
-         */
+            /*
+             * For each read, if there is exact right match (type FORWARD), choose the one with longest alignment with read A
+             * same for BACKWARD,
+             */
             if (reads[i]->active)
                 for (int j = 0; j < idx2[i].size(); j++) {
                     //idx2[i][j]->show();
                     if (idx2[i][j][0]->active) {
-                        for (int k = 0; k < idx2[i][j].size(); k++) {
-
-
-                            if ((idx2[i][j][k]->aln_type == FORWARD) and (cf < 1)) {
+                        for (int kk = 0; kk < idx2[i][j].size(); kk++) {
+                            if ((idx2[i][j][kk]->aln_type == FORWARD) and (cf < 1)) {
                                 cf += 1;
                                 //add edge
                                 if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
@@ -351,7 +348,7 @@ int main(int argc, char *argv[]) {
                                 }
                             }
 
-                            if ((idx2[i][j][k]->aln_type == BACKWARD) and (cb < 1)) {
+                            if ((idx2[i][j][kk]->aln_type == BACKWARD) and (cb < 1)) {
                                 cb += 1;
                                 //add edge
                                 if (idx2[i][j][0]->flags == 1) {
@@ -364,16 +361,15 @@ int main(int argc, char *argv[]) {
                                                                   Node(idx2[i][j][0]->bid, 1)));
                                 }
                             }
+                            if ((cf >= 1) and (cb >= 1)) break;
                         }
-                        if ((cf == 1) and (cb == 1)) break;
                     }
-                    if ((cf == 1) and (cb == 1)) break;
+                    if ((cf >= 1) and (cb >= 1)) break;
                 }
 
-
                 if (reads[i]->active) {
-                    //if (cf == 0) printf("%d has no out-going edges\n", i);
-                    //if (cb == 0) printf("%d has no in-coming edges\n", i);
+                    if (cf == 0) printf("%d has no out-going edges\n", i);
+                    if (cb == 0) printf("%d has no in-coming edges\n", i);
                     /*if ((cf == 0) or (cb == 0))
                         for (int j = 0; j < idx2[i].size(); j++) {
                             printf("%d,%d,%d,%d\n", i, idx2[i].size(), j, idx2[i][j].size());
@@ -400,6 +396,15 @@ int main(int argc, char *argv[]) {
             if ((not reads[aln[ii]->aid]->active) or (not reads[aln[ii]->bid]->active))
                 aln[ii]->active = false;
             }
+
+            int num_active_aln = 0;
+            for (int i = 0; i < n_aln; i++) {
+                if (aln[i]->active) {
+                    num_active_aln++;
+                    aln[i]->addtype();
+                }
+            }
+            std::cout << "num active alignments " << num_active_aln << std::endl;
 
 		/*
 		 * For each read, if there is no exact right or left match, choose that one with a chimeric end, but still choose
