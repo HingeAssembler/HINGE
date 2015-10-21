@@ -19,6 +19,7 @@
 #include <set>
 
 
+
 #define LAST_READ_SYMBOL  '$'
 
 static int ORDER(const void *l, const void *r) {
@@ -69,6 +70,10 @@ bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
     return ovl1->abpos < ovl2->abpos;
 }
 
+bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
+    return ovl1->abpos > ovl2->abpos;
+}
+
 std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals)
 {
     //std::cout<<"Merge"<<std::endl;
@@ -102,6 +107,21 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals)
     return ret;
 }
 
+Interval Effective_length(std::vector<LOverlap *> & intervals) {
+    Interval ret;
+    sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
+
+    if (intervals.size() > 5) {
+        ret.first = intervals[5]->abpos;
+    } else
+        ret.first = 0;
+    sort(intervals.begin(),intervals.end(),compare_overlap_aepos); //sort according to left
+    if (intervals.size() > 5) {
+        ret.second = intervals[5]->aepos;
+    } else
+        ret.second = 0;
+    return ret;
+}
 
 
 int main(int argc, char *argv[]) {
@@ -192,13 +212,17 @@ int main(int argc, char *argv[]) {
             if (reads[i]->active) {
                 covered_region[i] = Merge(idx3[i]);
                 reads[i]->intervals = covered_region[i];
-                if (reads[i]->intervals.empty()) {
+                /*if (reads[i]->intervals.empty()) {
                     reads[i]->effective_start = 0;
                     reads[i]->effective_end = 0;
                 } else {
                     reads[i]->effective_start = reads[i]->intervals.front().first;
                     reads[i]->effective_end = reads[i]->intervals.back().second;
-                }
+                }*/
+                Interval cov = Effective_length(idx3[i]);
+                reads[i]->effective_start = cov.first;
+                reads[i]->effective_end = cov.second;
+
             }
         } // find all covered regions, could help remove adaptors
 
@@ -209,7 +233,6 @@ int main(int argc, char *argv[]) {
                 or (reads[i]->intervals.size() != 1))
                 reads[i]->active = false;
         } // filter according to effective length, and interval size
-
 
         int num_active = 0;
         for (int i = 0; i < n_read; i++) {
