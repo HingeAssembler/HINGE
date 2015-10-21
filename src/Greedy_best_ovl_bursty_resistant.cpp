@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < n_read; i++) {
             int cf = 0;
             int cb = 0;
-
+            edgelist.clear();
         /*
          * For each read, if there is exact right match (type FORWARD), choose the one with longest alignment with read A
          * same for BACKWARD,
