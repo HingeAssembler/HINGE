@@ -357,6 +357,13 @@ int main(int argc, char *argv[]) {
 		{
 			if (cf == 0) printf("%d has no out-going edges\n", i);
 			if (cb == 0) printf("%d has no in-coming edges\n", i);
+            if ((cf == 0) or (cb ==0))
+                for (int j = 0; j < idx2[i].size(); j++) {
+                    printf("%d,%d,%d,%d\n",i, idx2[i].size(),j,idx2[i][j].size() );
+                    for (int k = 0; k<idx2[i][j].size(); k++) {
+                        std::cout<<" "<<idx2[i][j][k]->active << " "<< "["<<idx2[i][j][k]->abpos<<","<<idx2[i][j][k]->aepos <<"]/" <<idx2[i][j][k]->alen <<" "<<"["<<idx2[i][j][k]->bbpos<<","<<idx2[i][j][k]->bepos <<"]/" <<idx2[i][j][k]->blen<<" "<<idx2[i][j][k]->aln_type << std::endl;
+                    }
+                }
 		}
 		/*
 		 * For each read, if there is no exact right or left match, choose that one with a chimeric end, but still choose
