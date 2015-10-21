@@ -319,52 +319,83 @@ int main(int argc, char *argv[]) {
 	 **    get the best overlap for each read and form a graph
 	 **/
 
-    for (int i = 0; i < n_read; i++) {
+    for (int n_iter = 0; n_iter < 3; n_iter ++) {
+        for (int i = 0; i < n_read; i++) {
         int cf = 0;
         int cb = 0;
-		/*
-		 * For each read, if there is exact right match (type FORWARD), choose the one with longest alignment with read A
-		 * same for BACKWARD,
-		 */
+        /*
+         * For each read, if there is exact right match (type FORWARD), choose the one with longest alignment with read A
+         * same for BACKWARD,
+         */
         if (reads[i]->active)
-        for (int j = 0; j< idx2[i].size(); j++) {
-        	    //idx2[i][j]->show();
-			if (idx2[i][j][0]->active) {
-        	    if ((idx2[i][j].front()->aln_type == FORWARD) and (cf < 1)) {
-        	        cf += 1;
-        	        //add edge
-        	        if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
-        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,1)));
-        	        } else {
-        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,0)));
-        	        }
-        	    }
+            for (int j = 0; j < idx2[i].size(); j++) {
+                //idx2[i][j]->show();
+                if (idx2[i][j][0]->active) {
+                    for (int k = 0; k < idx2[i][j].size(); k++) {
 
-        	    if ((idx2[i][j].back()->aln_type == BACKWARD) and (cb < 1)) {
-        	        cb += 1;
-        	        //add edge
-        	        if (idx2[i][j][0]->flags == 1) {
-        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,0)));
-        	        } else {
-        	            edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,1)));
-        	        }
-        	    }
-			}
-        	if ((cf == 1) and (cb == 1)) break;
-		}
-		
-		if (reads[i]->active)
-		{
-			if (cf == 0) printf("%d has no out-going edges\n", i);
-			if (cb == 0) printf("%d has no in-coming edges\n", i);
-            if ((cf == 0) or (cb ==0))
-                for (int j = 0; j < idx2[i].size(); j++) {
-                    printf("%d,%d,%d,%d\n",i, idx2[i].size(),j,idx2[i][j].size() );
-                    for (int k = 0; k<idx2[i][j].size(); k++) {
-                        std::cout<<" "<<idx2[i][j][k]->active << " "<< "["<<idx2[i][j][k]->abpos<<","<<idx2[i][j][k]->aepos <<"]/" <<idx2[i][j][k]->alen <<" "<<"["<<idx2[i][j][k]->bbpos<<","<<idx2[i][j][k]->bepos <<"]/" <<idx2[i][j][k]->blen<<" "<<idx2[i][j][k]->aln_type << std::endl;
+
+                        if ((idx2[i][j][k]->aln_type == FORWARD) and (cf < 1)) {
+                            cf += 1;
+                            //add edge
+                            if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
+                                edgelist.push_back(
+                                        std::pair<Node, Node>(Node(idx2[i][j][0]->aid, 0),
+                                                              Node(idx2[i][j][0]->bid, 1)));
+                            } else {
+                                edgelist.push_back(
+                                        std::pair<Node, Node>(Node(idx2[i][j][0]->aid, 0),
+                                                              Node(idx2[i][j][0]->bid, 0)));
+                            }
+                        }
+
+                        if ((idx2[i][j][k]->aln_type == BACKWARD) and (cb < 1)) {
+                            cb += 1;
+                            //add edge
+                            if (idx2[i][j][0]->flags == 1) {
+                                edgelist.push_back(
+                                        std::pair<Node, Node>(Node(idx2[i][j][0]->aid, 1),
+                                                              Node(idx2[i][j][0]->bid, 0)));
+                            } else {
+                                edgelist.push_back(
+                                        std::pair<Node, Node>(Node(idx2[i][j][0]->aid, 1),
+                                                              Node(idx2[i][j][0]->bid, 1)));
+                            }
+                        }
                     }
+                    if ((cf == 1) and (cb == 1)) break;
                 }
-		}
+                if ((cf == 1) and (cb == 1)) break;
+            }
+
+            int no_edge = 0;
+            if (reads[i]->active) {
+                //if (cf == 0) printf("%d has no out-going edges\n", i);
+                //if (cb == 0) printf("%d has no in-coming edges\n", i);
+                /*if ((cf == 0) or (cb == 0))
+                    for (int j = 0; j < idx2[i].size(); j++) {
+                        printf("%d,%d,%d,%d\n", i, idx2[i].size(), j, idx2[i][j].size());
+                        for (int k = 0; k < idx2[i][j].size(); k++) {
+                            std::cout << " " << idx2[i][j][k]->active << " " << "[" << idx2[i][j][k]->abpos << "," <<
+                            idx2[i][j][k]->aepos << "]/" << idx2[i][j][k]->alen << " " << "[" << idx2[i][j][k]->bbpos <<
+                            "," << idx2[i][j][k]->bepos << "]/" << idx2[i][j][k]->blen << " " << idx2[i][j][k]->aln_type <<
+                            std::endl;
+                        }
+                    }
+                    */
+                if ((cf == 0) or (cb ==0)) {
+                    no_edge++;
+                    reads[i]->active = false;
+                }
+            }
+            printf("no_edge nodes:%d\n",no_edge);
+
+            for (int ii = 0; ii < n_aln; ii++) {
+                if (aln[ii]->active)
+                if ((not reads[aln[ii]->aid]->active) or (not reads[aln[ii]->bid]->active))
+                    aln[i]->active = false;
+            }
+
+    }
 		/*
 		 * For each read, if there is no exact right or left match, choose that one with a chimeric end, but still choose
 		 * the one with longest alignment, same for BACKWARD
