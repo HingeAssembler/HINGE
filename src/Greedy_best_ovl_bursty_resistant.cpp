@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < n_read; i++) {
             if (reads[i]->active)
             if ((reads[i]->effective_end - reads[i]->effective_start <
-                 LENGTH_THRESHOLD) /*or (reads[i]->len - reads[i]->effective_end > CHI_THRESHOLD) or (reads[i]->effective_start > CHI_THRESHOLD)*/
+                 LENGTH_THRESHOLD) or (reads[i]->len - reads[i]->effective_end > CHI_THRESHOLD) or (reads[i]->effective_start > CHI_THRESHOLD)
                 or (reads[i]->intervals.size() != 1))
                 reads[i]->active = false;
         } // filter according to effective length, and interval size
