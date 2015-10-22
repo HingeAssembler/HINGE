@@ -88,19 +88,19 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals)
 
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
 
-    int left=intervals[0]->abpos, right = intervals[0]->aepos; //left, right means maximal possible interval now
+    int left=intervals[0]->abpos + 200, right = intervals[0]->aepos -200; //left, right means maximal possible interval now
 
     for(int i = 1; i < n; i++)
     {
-        if(intervals[i]->abpos <= right)
+        if(intervals[i]->abpos + 200 <= right)
         {
-            right=std::max(right,intervals[i]->aepos);
+            right=std::max(right,intervals[i]->aepos - 200);
         }
         else
         {
             ret.push_back(std::pair<int, int>(left,right));
-            left = intervals[i]->abpos;
-            right = intervals[i]->aepos;
+            left = intervals[i]->abpos + 200;
+            right = intervals[i]->aepos - 200;
         }
     }
     ret.push_back(std::pair<int, int>(left,right));
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
 	/**
 	 * Remove reads shorter than length threshold
 	 */
-	int LENGTH_THRESHOLD = 5000;
+	int LENGTH_THRESHOLD = 8500;
     double QUALITY_THRESHOLD = 0.23;
     int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
     int N_ITER = 2;

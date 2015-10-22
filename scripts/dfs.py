@@ -60,6 +60,20 @@ def rev(string):
     #print edge
     #print rev(edge[1]), rev(edge[0])
 
+import ujson
+mapping = ujson.load(open('mapping.json'))
+
+print 'get mapping'
+
+for node in g.nodes():
+    #print node
+    if mapping.has_key(node):
+        g.node[node]['aln_start'] = mapping[node][0]
+        g.node[node]['aln_end'] = mapping[node][1]
+    else:
+        g.node[node]['aln_start'] = 0
+        g.node[node]['aln_end'] = 0
+    
 print nx.info(g)
 nx.write_graphml(g, filename.split('.')[0]+'.graphml')
 
