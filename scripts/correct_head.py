@@ -3,9 +3,9 @@ import sys, os
 from pbcore.io import FastaIO
 
 def run(reader, writer):
-    for record in reader:
+    for i,record in enumerate(reader):
         seq_length = len(record.sequence)
-        zmw = 0
+        zmw = i
         #bounds = record.header.split('/')[-1]
         #start, end = [int(k) for k in bounds.split('_')]
         start = 0
