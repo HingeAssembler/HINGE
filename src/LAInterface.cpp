@@ -1675,7 +1675,7 @@ int64 LAInterface::getAlignmentNumber() {
 }
 
 void LOverlap::addtype() {
-    if ((abpos > aes + CHI_THRESHOLD) and (aepos > aee - CHI_THRESHOLD) and (bbpos < bes + CHI_THRESHOLD)) {
+    if ((abpos > aes + CHI_THRESHOLD) and (aepos > aee - CHI_THRESHOLD) and (bbpos < bes + CHI_THRESHOLD) and (bepos < bee - CHI_THRESHOLD)) {
         aln_type = FORWARD;
     }
 	/**
@@ -1683,7 +1683,7 @@ void LOverlap::addtype() {
 	 B:        ==========>
 	**/
 
-    else if (( abpos < aes + CHI_THRESHOLD) and (aepos < aee - CHI_THRESHOLD) and (bepos >  bee - CHI_THRESHOLD )) {
+    else if (( abpos < aes + CHI_THRESHOLD) and (aepos < aee - CHI_THRESHOLD) and (bepos >  bee - CHI_THRESHOLD ) and (bbpos > bes + CHI_THRESHOLD) ) {
          aln_type = BACKWARD;
     }
 	/**
