@@ -167,12 +167,11 @@ int main(int argc, char *argv[]) {
     std::map<int, std::map<int, std::vector<LOverlap *> > > idx;
 
 
-
-
     for (int i = 0; i< n_read; i++) {
         has_overlap[i] = std::set<int>();
         idx3[i] = std::vector<LOverlap *>();
     }
+
 
     //for (int i = 0; i < aln.size(); i++)
     //    if (aln[i]->active)
@@ -187,11 +186,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    std::cout<<"add data"<<std::endl;
+
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
             idx[aln[i]->aid][aln[i]->bid].push_back(aln[i]);
         }
     }
+    std::cout<<"add data"<<std::endl;
 
 
     //sort each a,b pair according to abpos:
@@ -205,6 +207,7 @@ int main(int argc, char *argv[]) {
             idx2[i].push_back(&(idx[i][*j]));
     }
 
+    std::cout<<"add data"<<std::endl;
 
     std::map<int,std::vector<Interval> > covered_region;
 
@@ -237,6 +240,8 @@ int main(int argc, char *argv[]) {
             }
         } // find all covered regions, could help remove adaptors
 
+        std::cout<<"covered region"<<std::endl;
+
         for (int i = 0; i < n_read; i++) {
             if (reads[i]->active)
             if ((reads[i]->effective_end - reads[i]->effective_start <
@@ -244,6 +249,8 @@ int main(int argc, char *argv[]) {
                 or (reads[i]->intervals.size() != 1))
                 reads[i]->active = false;
         } // filter according to effective length, and interval size
+
+        std::cout<<"filter data"<<std::endl;
 
         int num_active = 0;
         for (int i = 0; i < n_read; i++) {
