@@ -54,11 +54,11 @@ bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
     return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
 }
 
-bool compare_sum_overlaps(const std::vector<LOverlap * > & ovl1, const std::vector<LOverlap *> & ovl2) {
+bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2) {
     int sum1 = 0;
     int sum2 = 0;
-    for (int i = 0; i < ovl1.size(); i++) sum1 += ovl1[i]->aepos - ovl1[i]->abpos + ovl1[i]->bepos - ovl1[i]->bbpos;
-    for (int i = 0; i < ovl2.size(); i++) sum2 += ovl2[i]->aepos - ovl2[i]->abpos + ovl2[i]->bepos - ovl2[i]->bbpos;
+    for (int i = 0; i < ovl1->size(); i++) sum1 += (*ovl1)[i]->aepos - (*ovl1)[i]->abpos + (*ovl1)[i]->bepos - (*ovl1)[i]->bbpos;
+    for (int i = 0; i < ovl2->size(); i++) sum2 += (*ovl2)[i]->aepos - (*ovl2)[i]->abpos + (*ovl2)[i]->bepos - (*ovl2)[i]->bbpos;
     return sum1 > sum2;
 }
 
@@ -154,34 +154,45 @@ int main(int argc, char *argv[]) {
 	/**
 	 * Remove reads shorter than length threshold
 	 */
-	int LENGTH_THRESHOLD = 3500;
+	int LENGTH_THRESHOLD = 5500;
     double QUALITY_THRESHOLD = 0.23;
     int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
     int N_ITER = 2;
 
-    std::map<std::pair<int,int>, std::vector<LOverlap *> > idx; //map from (aid, bid) to alignments in a vector
-	std::map<int, std::vector<std::vector<LOverlap*>> > idx2; //map from (aid) to alignments in a vector
+    //std::map<std::pair<int,int>, std::vector<LOverlap *> > idx; //map from (aid, bid) to alignments in a vector
+	std::map<int, std::vector<std::vector<LOverlap*>* > > idx2; //map from (aid) to alignments in a vector
     std::vector< std::pair<Node, Node> > edgelist; // save output to edgelist
     std::map<int, std::vector <LOverlap * > >idx3; // this is the pileup
-
     std::map< int, std::set<int> > has_overlap;
+    std::map<int, std::map<int, std::vector<LOverlap *> > > idx;
+
+
+
 
     for (int i = 0; i< n_read; i++) {
         has_overlap[i] = std::set<int>();
         idx3[i] = std::vector<LOverlap *>();
     }
 
-    for (int i = 0; i < aln.size(); i++)
-        if (aln[i]->active)
-            idx[std::pair<int, int>(aln[i]->aid, aln[i]->bid)] = std::vector<LOverlap *>();
+    //for (int i = 0; i < aln.size(); i++)
+    //    if (aln[i]->active)
+    //        idx[std::pair<int, int>(aln[i]->aid, aln[i]->bid)] = std::vector<LOverlap *>();
 
     for (int i = 0; i < aln.size(); i++) {
     if (aln[i]->active) {
-		idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )].push_back(aln[i]);
+	//	idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )].push_back(aln[i]);
         has_overlap[aln[i]->aid].insert(aln[i]->bid);
 	    idx3[aln[i]->aid].push_back(aln[i]);
+        idx[aln[i]->aid][aln[i]->bid] = std::vector<LOverlap *>();
         }
     }
+
+    for (int i = 0; i < aln.size(); i++) {
+        if (aln[i]->active) {
+            idx[aln[i]->aid][aln[i]->bid].push_back(aln[i]);
+        }
+    }
+
 
     //sort each a,b pair according to abpos:
     /*for (int i = 0; i < n_read; i++)
@@ -191,8 +202,8 @@ int main(int argc, char *argv[]) {
     */
     for (int i = 0; i < n_read; i++)
         for (std::set<int>::iterator j = has_overlap[i].begin(); j != has_overlap[i].end(); j++) {
-            idx2[i].push_back(idx[std::pair<int,int>(i, *j)]);
-        }
+            idx2[i].push_back(&(idx[i][*j]));
+    }
 
 
     std::map<int,std::vector<Interval> > covered_region;
@@ -332,34 +343,34 @@ int main(int argc, char *argv[]) {
             if (reads[i]->active)
                 for (int j = 0; j < idx2[i].size(); j++) {
                     //idx2[i][j]->show();
-                    if (idx2[i][j][0]->active) {
-                        for (int kk = 0; kk < idx2[i][j].size(); kk++) {
-                            if (reads[idx2[i][j][kk]->bid]->active)
-                            if ((idx2[i][j][kk]->aln_type == FORWARD) and (cf < 1)) {
+                    if ((*idx2[i][j])[0]->active) {
+                        for (int kk = 0; kk < idx2[i][j]->size(); kk++) {
+                            if (reads[(*idx2[i][j])[kk]->bid]->active)
+                            if (((*idx2[i][j])[kk]->aln_type == FORWARD) and (cf < 1)) {
                                 cf += 1;
                                 //add edge
-                                if (idx2[i][j][kk]->flags == 1) { // n = 0, c = 1
+                                if ((*idx2[i][j])[kk]->flags == 1) { // n = 0, c = 1
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node(idx2[i][j][kk]->aid, 0),
-                                                                  Node(idx2[i][j][kk]->bid, 1)));
+                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 0),
+                                                                  Node((*idx2[i][j])[kk]->bid, 1)));
                                 } else {
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node(idx2[i][j][kk]->aid, 0),
-                                                                  Node(idx2[i][j][kk]->bid, 0)));
+                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 0),
+                                                                  Node((*idx2[i][j])[kk]->bid, 0)));
                                 }
                             }
-                            if (reads[idx2[i][j][kk]->bid]->active)
-                            if ((idx2[i][j][kk]->aln_type == BACKWARD) and (cb < 1)) {
+                            if (reads[(*idx2[i][j])[kk]->bid]->active)
+                            if (((*idx2[i][j])[kk]->aln_type == BACKWARD) and (cb < 1)) {
                                 cb += 1;
                                 //add edge
-                                if (idx2[i][j][kk]->flags == 1) {
+                                if ((*idx2[i][j])[kk]->flags == 1) {
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node(idx2[i][j][kk]->aid, 1),
-                                                                  Node(idx2[i][j][kk]->bid, 0)));
+                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 1),
+                                                                  Node((*idx2[i][j])[kk]->bid, 0)));
                                 } else {
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node(idx2[i][j][kk]->aid, 1),
-                                                                  Node(idx2[i][j][kk]->bid, 1)));
+                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 1),
+                                                                  Node((*idx2[i][j])[kk]->bid, 1)));
                                 }
                             }
                             if ((cf >= 1) and (cb >= 1)) break;
