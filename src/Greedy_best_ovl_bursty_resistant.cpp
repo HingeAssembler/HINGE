@@ -182,7 +182,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-#pragma omp parallel for schedule(static)
     for (int i = 0; i < aln.size(); i++) {
     if (aln[i]->active) {
 	//	idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )].push_back(aln[i]);
@@ -192,7 +191,6 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout<<"add data"<<std::endl;
-#pragma omp parallel for schedule(static)
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
             idx[aln[i]->aid][aln[i]->bid].push_back(aln[i]);
