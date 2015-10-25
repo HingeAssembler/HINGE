@@ -168,9 +168,7 @@ int main(int argc, char *argv[]) {
     std::map< int, std::set<int> > has_overlap;
     std::map<int, std::map<int, std::vector<LOverlap *> > > idx;
 
-#pragma omp parallel for schedule(static,1)
     for (int i = 0; i< n_read; i++) {
-#pragma omp critical
         has_overlap[i] = std::set<int>();
         idx3[i] = std::vector<LOverlap *>();
     }
@@ -178,9 +176,7 @@ int main(int argc, char *argv[]) {
     //for (int i = 0; i < aln.size(); i++)
     //    if (aln[i]->active)
     //        idx[std::pair<int, int>(aln[i]->aid, aln[i]->bid)] = std::vector<LOverlap *>();
-#pragma omp parallel for schedule(static,1)
     for (int i = 0; i < aln.size(); i++) {
-#pragma omp critical
         if (aln[i]->active) {
             idx[aln[i]->aid][aln[i]->bid] = std::vector<LOverlap *>();
         }
