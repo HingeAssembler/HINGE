@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <map>
+#include <unordered_map>
 #include "DB.h"
 #include "align.h"
 #include "LAInterface.h"
@@ -161,12 +161,12 @@ int main(int argc, char *argv[]) {
     int N_ITER = 2;
 	int ALN_THRESHOLD = 2500;
 
-    //std::map<std::pair<int,int>, std::vector<LOverlap *> > idx; //map from (aid, bid) to alignments in a vector
-	std::map<int, std::vector<std::vector<LOverlap*>* > > idx2; //map from (aid) to alignments in a vector
+    //std::unordered_map<std::pair<int,int>, std::vector<LOverlap *> > idx; //unordered_map from (aid, bid) to alignments in a vector
+	std::unordered_map<int, std::vector<std::vector<LOverlap*>* > > idx2; //unordered_map from (aid) to alignments in a vector
     std::vector< std::pair<Node, Node> > edgelist; // save output to edgelist
-    std::map<int, std::vector <LOverlap * > >idx3; // this is the pileup
-    std::map< int, std::set<int> > has_overlap;
-    std::map<int, std::map<int, std::vector<LOverlap *> > > idx;
+    std::unordered_map<int, std::vector <LOverlap * > >idx3; // this is the pileup
+    std::unordered_map< int, std::set<int> > has_overlap;
+    std::unordered_map<int, std::unordered_map<int, std::vector<LOverlap *> > > idx;
 
     for (int i = 0; i< n_read; i++) {
         has_overlap[i] = std::set<int>();
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout<<"add data"<<std::endl;
-    std::map<int,std::vector<Interval> > covered_region;
+    std::unordered_map<int,std::vector<Interval> > covered_region;
 
 
     //for (int i = 0; i < n_read; i++) {
