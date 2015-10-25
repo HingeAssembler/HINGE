@@ -307,6 +307,7 @@ int main(int argc, char *argv[]) {
     }
 
     //sort the reads
+# pragma omp parallel for
     for (int i = 0; i < n_read; i++ ) {
         std::sort( idx2[i].begin(), idx2[i].end(), compare_sum_overlaps );
     }
