@@ -168,12 +168,10 @@ int main(int argc, char *argv[]) {
     std::map< int, std::set<int> > has_overlap;
     std::map<int, std::map<int, std::vector<LOverlap *> > > idx;
 
-
     for (int i = 0; i< n_read; i++) {
         has_overlap[i] = std::set<int>();
         idx3[i] = std::vector<LOverlap *>();
     }
-
 
     //for (int i = 0; i < aln.size(); i++)
     //    if (aln[i]->active)
@@ -210,7 +208,6 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout<<"add data"<<std::endl;
-
     std::map<int,std::vector<Interval> > covered_region;
 
 
@@ -224,10 +221,11 @@ int main(int argc, char *argv[]) {
 
     for (int n_iter = 0; n_iter < N_ITER; n_iter ++) {
 
+#pragma omp parallel for
         for (int i = 0; i < n_read; i++) {
             if (reads[i]->active) {
-                covered_region[i] = Merge(idx3[i]);
-                reads[i]->intervals = covered_region[i];
+                //covered_region[i] = Merge(idx3[i]);
+                reads[i]->intervals = Merge(idx3[i]);
                 /*if (reads[i]->intervals.empty()) {
                     reads[i]->effective_start = 0;
                     reads[i]->effective_end = 0;
@@ -243,7 +241,7 @@ int main(int argc, char *argv[]) {
         } // find all covered regions, could help remove adaptors
 
         std::cout<<"covered region"<<std::endl;
-
+# pragma omp parallel for
         for (int i = 0; i < n_read; i++) {
             if (reads[i]->active)
             if ((reads[i]->effective_end - reads[i]->effective_start <
@@ -255,6 +253,7 @@ int main(int argc, char *argv[]) {
         std::cout<<"filter data"<<std::endl;
 
         int num_active = 0;
+
         for (int i = 0; i < n_read; i++) {
             if (reads[i]->active)
                 num_active++;
@@ -268,7 +267,7 @@ int main(int argc, char *argv[]) {
                  QUALITY_THRESHOLD) or (aln[i]->aepos - aln[i]->abpos < ALN_THRESHOLD))
                 aln[i]->active = false;
         }
-        
+
 # pragma omp parallel for
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active) {
@@ -287,6 +286,7 @@ int main(int argc, char *argv[]) {
         }
 
         int num_active_aln = 0;
+# pragma omp parallel for
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active) {
                 num_active_aln++;
