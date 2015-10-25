@@ -42,7 +42,6 @@ std::ostream& operator<<(std::ostream& out, const aligntype value){
         INSERT_ELEMENT(COVERING);
         INSERT_ELEMENT(UNDIFINED);
         INSERT_ELEMENT(MIDDLE);
-
 #undef INSERT_ELEMENT
     }
 
@@ -182,15 +181,23 @@ int main(int argc, char *argv[]) {
         }
     }
 
+
     for (int i = 0; i < aln.size(); i++) {
     if (aln[i]->active) {
-	//	idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )].push_back(aln[i]);
-        has_overlap[aln[i]->aid].insert(aln[i]->bid);
-	    idx3[aln[i]->aid].push_back(aln[i]);
+	    has_overlap[aln[i]->aid].insert(aln[i]->bid);
         }
     }
 
+#pragma omp parallel for
+    for (int i = 0; i < aln.size(); i++) {
+        if (aln[i]->active) {
+            idx3[aln[i]->aid].push_back(aln[i]);
+        }
+    }
+
+
     std::cout<<"add data"<<std::endl;
+#pragma omp parallel for
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
             idx[aln[i]->aid][aln[i]->bid].push_back(aln[i]);
@@ -483,6 +490,4 @@ int main(int argc, char *argv[]) {
     la.CloseDB(); //close database
     return 0;
 }
-
-
 
