@@ -133,7 +133,6 @@ int main(int argc, char *argv[]) {
     la.OpenDB(name_db);
 	//la.OpenDB2(name_db); // changed this on Oct 12, may case problem, xf1280@gmail.com
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
-
     la.OpenAlignment(name_las);
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
 	//la.resetAlignment();
@@ -148,6 +147,7 @@ int main(int argc, char *argv[]) {
     std::vector<Read *> reads;
     la.getRead(reads,0,n_read);
 
+    std::cout << "input data finished" <<std::endl;
 	/**
 	filter reads
 	**/
@@ -168,7 +168,9 @@ int main(int argc, char *argv[]) {
     std::map< int, std::set<int> > has_overlap;
     std::map<int, std::map<int, std::vector<LOverlap *> > > idx;
 
+#pragma omp parallel for schedule(static,1)
     for (int i = 0; i< n_read; i++) {
+#pragma omp critical
         has_overlap[i] = std::set<int>();
         idx3[i] = std::vector<LOverlap *>();
     }
@@ -176,18 +178,25 @@ int main(int argc, char *argv[]) {
     //for (int i = 0; i < aln.size(); i++)
     //    if (aln[i]->active)
     //        idx[std::pair<int, int>(aln[i]->aid, aln[i]->bid)] = std::vector<LOverlap *>();
+#pragma omp parallel for schedule(static,1)
+    for (int i = 0; i < aln.size(); i++) {
+#pragma omp critical
+        if (aln[i]->active) {
+            idx[aln[i]->aid][aln[i]->bid] = std::vector<LOverlap *>();
+        }
+    }
 
+#pragma omp parallel for schedule(static)
     for (int i = 0; i < aln.size(); i++) {
     if (aln[i]->active) {
 	//	idx[std::pair<int,int>(aln[i]->aid, aln[i]->bid )].push_back(aln[i]);
         has_overlap[aln[i]->aid].insert(aln[i]->bid);
 	    idx3[aln[i]->aid].push_back(aln[i]);
-        idx[aln[i]->aid][aln[i]->bid] = std::vector<LOverlap *>();
         }
     }
 
     std::cout<<"add data"<<std::endl;
-
+#pragma omp parallel for schedule(static)
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
             idx[aln[i]->aid][aln[i]->bid].push_back(aln[i]);
@@ -286,7 +295,7 @@ int main(int argc, char *argv[]) {
         }
 
         int num_active_aln = 0;
-# pragma omp parallel for
+# pragma omp parallel for reduction(+:num_active_aln)
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active) {
                 num_active_aln++;
