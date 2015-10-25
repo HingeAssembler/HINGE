@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include <set>
+#include <omp.h>
 
 
 
@@ -259,7 +260,7 @@ int main(int argc, char *argv[]) {
                 num_active++;
         }
         std::cout << "num active reads " << num_active << std::endl;
-
+# pragma omp parallel for
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active)
             if ((not reads[aln[i]->aid]->active) or (not reads[aln[i]->bid]->active) or
@@ -267,7 +268,8 @@ int main(int argc, char *argv[]) {
                  QUALITY_THRESHOLD) or (aln[i]->aepos - aln[i]->abpos < ALN_THRESHOLD))
                 aln[i]->active = false;
         }
-
+        
+# pragma omp parallel for
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active) {
                 aln[i]->aes = reads[aln[i]->aid]->effective_start;
