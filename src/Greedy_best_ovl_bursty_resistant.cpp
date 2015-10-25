@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
 	/**
 	 * Remove reads shorter than length threshold
 	 */
-	int LENGTH_THRESHOLD = 5500;
+	int LENGTH_THRESHOLD = 4500;
     double QUALITY_THRESHOLD = 0.23;
     int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
     int N_ITER = 2;
