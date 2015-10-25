@@ -35,7 +35,7 @@ print nx.info(g)
 degree_sequence=sorted(nx.degree(g).values(),reverse=True)
 print Counter(degree_sequence)
 
-for i in range(15):
+for i in range(30):
     for node in g.nodes():
         if g.in_degree(node) == 0:
             g.remove_node(node)
@@ -70,9 +70,12 @@ for node in g.nodes():
     if mapping.has_key(node):
         g.node[node]['aln_start'] = mapping[node][0]
         g.node[node]['aln_end'] = mapping[node][1]
+        g.node[node]['aln_strand'] = mapping[node][2]
     else:
         g.node[node]['aln_start'] = 0
         g.node[node]['aln_end'] = 0
+        g.node[node]['aln_strand'] = 0
+        
     
 print nx.info(g)
 nx.write_graphml(g, filename.split('.')[0]+'.graphml')

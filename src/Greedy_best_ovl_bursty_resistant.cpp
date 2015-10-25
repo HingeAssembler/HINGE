@@ -158,6 +158,7 @@ int main(int argc, char *argv[]) {
     double QUALITY_THRESHOLD = 0.23;
     int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
     int N_ITER = 2;
+	int ALN_THRESHOLD = 2500;
 
     //std::map<std::pair<int,int>, std::vector<LOverlap *> > idx; //map from (aid, bid) to alignments in a vector
 	std::map<int, std::vector<std::vector<LOverlap*>* > > idx2; //map from (aid) to alignments in a vector
@@ -245,7 +246,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < n_read; i++) {
             if (reads[i]->active)
             if ((reads[i]->effective_end - reads[i]->effective_start <
-                 LENGTH_THRESHOLD) or (reads[i]->len - reads[i]->effective_end > CHI_THRESHOLD) or (reads[i]->effective_start > CHI_THRESHOLD)
+                 LENGTH_THRESHOLD) /*or (reads[i]->len - reads[i]->effective_end > CHI_THRESHOLD) or (reads[i]->effective_start > CHI_THRESHOLD)*/
                 or (reads[i]->intervals.size() != 1))
                 reads[i]->active = false;
         } // filter according to effective length, and interval size
@@ -263,7 +264,7 @@ int main(int argc, char *argv[]) {
             if (aln[i]->active)
             if ((not reads[aln[i]->aid]->active) or (not reads[aln[i]->bid]->active) or
                 (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) >
-                 QUALITY_THRESHOLD))
+                 QUALITY_THRESHOLD) or (aln[i]->aepos - aln[i]->abpos < ALN_THRESHOLD))
                 aln[i]->active = false;
         }
 
@@ -271,8 +272,15 @@ int main(int argc, char *argv[]) {
             if (aln[i]->active) {
                 aln[i]->aes = reads[aln[i]->aid]->effective_start;
                 aln[i]->aee = reads[aln[i]->aid]->effective_end;
-                aln[i]->bes = reads[aln[i]->bid]->effective_start;
-                aln[i]->bee = reads[aln[i]->bid]->effective_end;
+                
+				if (aln[i]->flags == 0) {
+					aln[i]->bes = reads[aln[i]->bid]->effective_start;
+                	aln[i]->bee = reads[aln[i]->bid]->effective_end;
+				}
+				else {
+					aln[i]->bes = aln[i]->blen - reads[aln[i]->bid]->effective_end;
+                	aln[i]->bee = aln[i]->blen - reads[aln[i]->bid]->effective_start;
+				}
             }
         }
 

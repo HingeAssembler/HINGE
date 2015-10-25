@@ -30,11 +30,11 @@ for key,value in d.items():
     aln = value[0]
     
     if aln[0] == 'n':
-        mapping[str(key)] = (aln[1], aln[2])
-        mapping[str(key)+'\''] = (aln[2], aln[1])
+        mapping[str(key)] = (aln[1], aln[2], 0)
+        mapping[str(key)+'\''] = (aln[2], aln[1], 1)
     else:
-        mapping[str(key)] = (aln[2], aln[1])
-        mapping[str(key)+'\''] = (aln[1], aln[2])
+        mapping[str(key)] = (aln[2], aln[1], 1)
+        mapping[str(key)+'\''] = (aln[1], aln[2], 0)
     
 #print mapping
 import ujson
