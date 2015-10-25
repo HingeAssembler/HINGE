@@ -162,14 +162,14 @@ int main(int argc, char *argv[]) {
 	int ALN_THRESHOLD = 2500;
 
     //std::unordered_map<std::pair<int,int>, std::vector<LOverlap *> > idx; //unordered_map from (aid, bid) to alignments in a vector
-	std::unordered_map<int, std::vector<std::vector<LOverlap*>* > > idx2; //unordered_map from (aid) to alignments in a vector
+    std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read); //unordered_map from (aid) to alignments in a vector
     std::vector< std::pair<Node, Node> > edgelist; // save output to edgelist
     std::unordered_map<int, std::vector <LOverlap * > >idx3; // this is the pileup
-    std::unordered_map< int, std::set<int> > has_overlap;
+    std::vector<std::set<int> > has_overlap(n_read);
     std::unordered_map<int, std::unordered_map<int, std::vector<LOverlap *> > > idx;
 
     for (int i = 0; i< n_read; i++) {
-        has_overlap[i] = std::set<int>();
+        //has_overlap[i] = std::set<int>();
         idx3[i] = std::vector<LOverlap *>();
     }
 
