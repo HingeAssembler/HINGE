@@ -1,6 +1,27 @@
 cmake_minimum_required(VERSION 3.2)
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set(WINDOWS TRUE)
+elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    set(LINUX TRUE)
+elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(MACOSX TRUE)
+    #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build")
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build")
+    message( "OS X Detected, using gcc49")
+    set(CMAKE_C_COMPILER /usr/local/bin/gcc-4.9)
+    set(CMAKE_CXX_COMPILER /usr/local/bin/g++-4.9)
+    set(CMAKE_INCLUDE_CURRENT_DIR ON)
+    set(CMAKE_AUTOMOC ON)
+
+endif()
+
+
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -std=gnu++11")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+
 
 add_library(DB DB.h DB.c QV.h QV.c)
 add_library(LA align.h align.c)
@@ -36,3 +57,5 @@ target_link_libraries(DenovoQV LAInterface)
 
 add_executable(DenovoSV DenovoSV.cpp)
 target_link_libraries(DenovoSV LAInterface)
+
+add_executable(omp_test omp_test.c)
