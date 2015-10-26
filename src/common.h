@@ -54,6 +54,8 @@
  #################################################################################$$
  */
 
+#ifndef COMMON_H
+#define COMMON_H
 #include <stdint.h>
 
 
@@ -286,7 +288,7 @@ consensus_data * generate_utg_consensus( char ** input_seq,
 						   
 void free_consensus_data( consensus_data * consensus );
 	
-	
+#endif
 							   
 							   
 					
