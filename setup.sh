@@ -1,3 +1,6 @@
-export PATH="$PATH:$PWD/DALIGNER:$PWD/DAZZ_DB:$PWD/DEXTRACTOR/:$PWD/blasr/"
-export PATH="$PATH:$PWD/scripts"
-export PATH="$PATH:$PWD/src/build"
+DIR=`dirname ${0}`
+PPWD=$PWD/$DIR
+#echo $PPWD
+export PATH="$PATH:$PPWD/DALIGNER:$PPWD/DAZZ_DB:$PPWD/DEXTRACTOR/:$PPWD/blasr/"
+export PATH="$PATH:$PPWD/scripts"
+export PATH="$PATH:$PPWD/src/build"

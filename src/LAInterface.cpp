@@ -1674,8 +1674,8 @@ int64 LAInterface::getAlignmentNumber() {
 
 }
 
-void LOverlap::addtype() {
-	int THETA = 300;
+void LOverlap::addtype(int THETA) {
+
 	
     if ((abpos > aes + THETA) and (aepos > aee - THETA) and (bbpos < bes + THETA) and (bepos < bee - THETA)) {
         aln_type = FORWARD;

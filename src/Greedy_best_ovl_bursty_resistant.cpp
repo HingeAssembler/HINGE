@@ -18,6 +18,7 @@
 #include <iostream>
 #include <set>
 #include <omp.h>
+#include "INIReader.h"
 
 
 
@@ -74,7 +75,7 @@ bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
     return ovl1->abpos > ovl2->abpos;
 }
 
-std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals)
+std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
 {
     //std::cout<<"Merge"<<std::endl;
     std::vector<std::pair<int, int > > ret;
@@ -88,36 +89,36 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals)
 
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
 
-    int left=intervals[0]->abpos + 200, right = intervals[0]->aepos -200; //left, right means maximal possible interval now
+    int left=intervals[0]->abpos + cutoff, right = intervals[0]->aepos - cutoff; //left, right means maximal possible interval now
 
     for(int i = 1; i < n; i++)
     {
-        if(intervals[i]->abpos + 200 <= right)
+        if(intervals[i]->abpos + cutoff <= right)
         {
-            right=std::max(right,intervals[i]->aepos - 200);
+            right=std::max(right,intervals[i]->aepos - cutoff);
         }
         else
         {
             ret.push_back(std::pair<int, int>(left,right));
-            left = intervals[i]->abpos + 200;
-            right = intervals[i]->aepos - 200;
+            left = intervals[i]->abpos + cutoff;
+            right = intervals[i]->aepos - cutoff;
         }
     }
     ret.push_back(std::pair<int, int>(left,right));
     return ret;
 }
 
-Interval Effective_length(std::vector<LOverlap *> & intervals) {
+Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
     Interval ret;
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
 
-    if (intervals.size() > 5) {
-        ret.first = intervals[5]->abpos;
+    if (intervals.size() > min_cov) {
+        ret.first = intervals[min_cov]->abpos;
     } else
         ret.first = 0;
     sort(intervals.begin(),intervals.end(),compare_overlap_aepos); //sort according to left
-    if (intervals.size() > 5) {
-        ret.second = intervals[5]->aepos;
+    if (intervals.size() > min_cov) {
+        ret.second = intervals[min_cov]->aepos;
     } else
         ret.second = 0;
     return ret;
@@ -125,9 +126,13 @@ Interval Effective_length(std::vector<LOverlap *> & intervals) {
 
 
 int main(int argc, char *argv[]) {
+
+    omp_set_num_threads(4);
+
     LAInterface la;
 	char * name_db = argv[1];
 	char * name_las = argv[2];
+    char * name_config = argv[4];
 	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.OpenDB(name_db);
 	//la.OpenDB2(name_db); // changed this on Oct 12, may case problem, xf1280@gmail.com
@@ -154,11 +159,29 @@ int main(int argc, char *argv[]) {
 	/**
 	 * Remove reads shorter than length threshold
 	 */
-	int LENGTH_THRESHOLD = 4500;
-    double QUALITY_THRESHOLD = 0.23;
-    int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
-    int N_ITER = 2;
-	int ALN_THRESHOLD = 2500;
+
+
+
+    /*
+     * load config
+     */
+
+    INIReader reader(name_config);
+
+    if (reader.ParseError() < 0) {
+        std::cout << "Can't load "<<name_config<<std::endl;
+        return 1;
+    }
+
+    int LENGTH_THRESHOLD = reader.GetInteger("filter", "length_threshold", -1);
+    double QUALITY_THRESHOLD = reader.GetReal("filter", "quality_threshold", 0.0);
+    //int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
+    int N_ITER = reader.GetInteger("filter", "n_iter", -1);
+    int ALN_THRESHOLD = reader.GetInteger("filter", "aln_threshold", -1);
+    int MIN_COV = reader.GetInteger("filter", "min_cov", -1);
+    int CUT_OFF = reader.GetInteger("filter", "cut_off", -1);
+    int THETA = reader.GetInteger("filter", "theta", -1);
+
 
     //std::unordered_map<std::pair<int,int>, std::vector<LOverlap *> > idx; //unordered_map from (aid, bid) to alignments in a vector
     std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read); //unordered_map from (aid) to alignments in a vector
@@ -233,7 +256,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < n_read; i++) {
             if (reads[i]->active) {
                 //covered_region[i] = Merge(idx3[i]);
-                reads[i]->intervals = Merge(idx3[i]);
+                reads[i]->intervals = Merge(idx3[i], CUT_OFF);
                 /*if (reads[i]->intervals.empty()) {
                     reads[i]->effective_start = 0;
                     reads[i]->effective_end = 0;
@@ -241,7 +264,7 @@ int main(int argc, char *argv[]) {
                     reads[i]->effective_start = reads[i]->intervals.front().first;
                     reads[i]->effective_end = reads[i]->intervals.back().second;
                 }*/
-                Interval cov = Effective_length(idx3[i]);
+                Interval cov = Effective_length(idx3[i], MIN_COV);
                 reads[i]->effective_start = cov.first;
                 reads[i]->effective_end = cov.second;
 
@@ -298,7 +321,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active) {
                 num_active_aln++;
-                aln[i]->addtype();
+                aln[i]->addtype(THETA);
             }
         }
         std::cout << "num active alignments " << num_active_aln << std::endl;
@@ -429,6 +452,7 @@ int main(int argc, char *argv[]) {
 
             printf("no_edge nodes:%d\n",no_edge);
 
+# pragma omp parallel for
             for (int ii = 0; ii < n_aln; ii++) {
             if (aln[ii]->active)
             if ((not reads[aln[ii]->aid]->active) or (not reads[aln[ii]->bid]->active))
@@ -436,10 +460,11 @@ int main(int argc, char *argv[]) {
             }
 
             int num_active_aln = 0;
+# pragma omp parallel for reduction(+:num_active_aln)
             for (int i = 0; i < n_aln; i++) {
                 if (aln[i]->active) {
                     num_active_aln++;
-                    aln[i]->addtype();
+                    aln[i]->addtype(THETA);
                 }
             }
             std::cout << "num active alignments " << num_active_aln << std::endl;

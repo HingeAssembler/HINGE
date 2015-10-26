@@ -78,7 +78,7 @@ public:
     int flags; //flags, reverse complement = 1, same direction = 0
     int aes,aee,bes,bee;
     aligntype aln_type = UNDIFINED;
-    void addtype();
+    void addtype(int);
     static const int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
 	bool active = true;
 

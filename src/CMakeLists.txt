@@ -22,6 +22,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -std=gnu++11")
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
+add_library(ini ini.h ini.c INIReader.cpp INIReader.h)
 
 add_library(DB DB.h DB.c QV.h QV.c)
 add_library(LA align.h align.c)
@@ -41,7 +42,7 @@ add_executable(Greedy_best_ovl Greedy_best_ovl)
 target_link_libraries(Greedy_best_ovl LAInterface)
 
 add_executable(Greedy_best_ovl2 Greedy_best_ovl_bursty_resistant)
-target_link_libraries(Greedy_best_ovl2 LAInterface)
+target_link_libraries(Greedy_best_ovl2 LAInterface ini)
 
 
 add_library(OverlapGraph OverlapGraph.cpp)
@@ -59,3 +60,6 @@ add_executable(DenovoSV DenovoSV.cpp)
 target_link_libraries(DenovoSV LAInterface)
 
 add_executable(omp_test omp_test.c)
+
+add_executable(INIReaderTest INIReaderTest)
+target_link_libraries(INIReaderTest ini)
