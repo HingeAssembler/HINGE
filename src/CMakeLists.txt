@@ -36,14 +36,18 @@ target_link_libraries(LAInterface_test LAInterface)
 add_executable(LA4Falcon LA4Falcon)
 target_link_libraries(LA4Falcon LA DB)
 
-add_executable(Falcon kmer_lookup.c falcon.c DW_banded.c )
+add_library(kmer_lookup kmer_lookup.c)
+add_library(DW_banded DW_banded.c)
+add_library(falcon falcon.c)
+
+add_executable(Falcon_test Falcon_test)
+target_link_libraries(Falcon_test kmer_lookup DW_banded falcon)
 
 add_executable(Greedy_best_ovl Greedy_best_ovl)
 target_link_libraries(Greedy_best_ovl LAInterface)
 
 add_executable(Greedy_best_ovl2 Greedy_best_ovl_bursty_resistant)
 target_link_libraries(Greedy_best_ovl2 LAInterface ini)
-
 
 add_library(OverlapGraph OverlapGraph.cpp)
 

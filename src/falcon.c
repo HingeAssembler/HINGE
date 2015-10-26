@@ -61,47 +61,7 @@
 #include <stdint.h>
 #include "common.h"
 
-typedef struct {
-    seq_coor_t t_pos;
-    uint8_t delta;
-    char q_base;
-    seq_coor_t p_t_pos;   // the tag position of the previous base
-    uint8_t p_delta; // the tag delta of the previous base
-    char p_q_base;        // the previous base
-    unsigned q_id;
-} align_tag_t;
 
-typedef struct {
-    seq_coor_t len;
-    align_tag_t * align_tags;
-} align_tags_t;
-
-
-typedef struct {
-    uint16_t size;
-    uint16_t n_link;
-    seq_coor_t * p_t_pos;   // the tag position of the previous base
-    uint8_t * p_delta; // the tag delta of the previous base
-    char * p_q_base;        // the previous base
-    uint16_t * link_count;
-    uint16_t count;
-    seq_coor_t best_p_t_pos;
-    uint8_t best_p_delta;
-    uint8_t best_p_q_base; // encoded base
-    double score;
-} align_tag_col_t;
-
-typedef struct {
-    align_tag_col_t * base;
-} msa_base_group_t;
-
-typedef struct {
-    uint8_t size;
-    uint8_t max_delta;
-    msa_base_group_t * delta;
-} msa_delta_group_t;
-
-typedef msa_delta_group_t * msa_pos_t;
 
 align_tags_t * get_align_tags( char * aln_q_seq, 
                                char * aln_t_seq, 
@@ -400,7 +360,7 @@ consensus_data * get_cns_from_align_tags( align_tags_t ** tag_seqs,
         g_best_score = -1;
 
         for (i = 0; i < t_len; i++) {  //loop through every template base
-            printf("max delta: %d %d\n", i, msa_array[i]->max_delta);
+            //printf("max delta: %d %d\n", i, msa_array[i]->max_delta);
             for (j = 0; j <= msa_array[i]->max_delta; j++) { // loop through every delta position
                 for (kk = 0; kk < 5; kk++) {  // loop through diff bases of the same delta posiiton
                     /*
@@ -447,6 +407,7 @@ consensus_data * get_cns_from_align_tags( align_tags_t ** tag_seqs,
                                 aln_col->best_p_delta = best_j = pj;
                                 aln_col->best_p_q_base = best_b = pkk;
                                 best_ck = ck;
+                                // best_mark = '*';
                             } // find max
                             /*
                             printf("X %d %d %d %c %d %d %d %c %d %lf %c\n", coverage[i], i, j, base, aln_col->count, 
@@ -463,7 +424,7 @@ consensus_data * get_cns_from_align_tags( align_tags_t ** tag_seqs,
                             g_best_aln_col = aln_col;
                             g_best_ck = best_ck;
                             g_best_t_pos = i;
-                            printf("GB %d %d %d %d\n", i, j, ck, g_best_aln_col);
+                            //printf("GB %d %d %d %d\n", i, j, ck, g_best_aln_col);
                         }
                     }
                 }
@@ -471,7 +432,8 @@ consensus_data * get_cns_from_align_tags( align_tags_t ** tag_seqs,
         }
     }
     //assert(g_best_score != -1);
-	// reconstruct the sequences
+
+    // reconstruct the sequences
     unsigned int index;
     char bb;
     int ck;
@@ -535,7 +497,7 @@ consensus_data * get_cns_from_align_tags( align_tags_t ** tag_seqs,
     }
 
     cns_str[index] = 0;
-    printf("%s\n", cns_str);
+    //printf("%s\n", cns_str);
 #ifndef STATIC_ALLOCATE
     for (i = 0; i < t_len; i++) {
         free_delta_group(msa_array[i]);
@@ -627,9 +589,6 @@ consensus_data * generate_consensus( char ** input_seq,
         aln = align(input_seq[j]+arange->s1, arange->e1 - arange->s1 ,
                     input_seq[0]+arange->s2, arange->e2 - arange->s2 , 
                     INDEL_ALLOWENCE_2, 1);
-					
-	
-					printf("QQQQ%s\nTTTT%s\n",aln->q_aln_str,aln->t_aln_str);
         if (aln->aln_str_size > 500 && ((double) aln->dist / (double) aln->aln_str_size) < max_diff) {
             tags_list[aligned_seq_count] = get_align_tags( aln->q_aln_str, 
                                                            aln->t_aln_str, 
@@ -783,15 +742,15 @@ void free_consensus_data( consensus_data * consensus ){
     free(consensus);
 }
 
-
-int main() {
+/*
+void main() {
     unsigned int j;
     char small_buffer[1024];
     char big_buffer[65536];
     char ** input_seq;
     char ** seq_id;
     int seq_count;
-    consensus_data * consensus;
+    char * consensus;
 
     input_seq = calloc( 501, sizeof(char *));
     seq_id = calloc( 501, sizeof(char *));
@@ -814,17 +773,17 @@ int main() {
             if (strcmp(seq_id[seq_count], "-") == 0) {
                 break;
             }
-            printf("%s %d\n", seq_id[seq_count],strlen(input_seq[seq_count]));
+            //printf("%s\n", seq_id[seq_count]);
             seq_count += 1;
             if (seq_count > 500) break;
         }
-        printf("sc: %d\n", seq_count);
+        //printf("sc: %d\n", seq_count);
         if (seq_count < 10 && strcmp(seq_id[seq_count], "-") != 0 ) continue;
         if (seq_count < 10 && strcmp(seq_id[seq_count], "-") == 0 ) break;
 
-            consensus = generate_consensus(input_seq, seq_count, 8, 8, 1, 1, 0.7);
-        if ((strlen(consensus->sequence) > 500) || (1)) {
-            printf(">%s\n%s\n%s\n", seq_id[0], input_seq[0],consensus->sequence);
+            consensus = generate_consensus(input_seq, seq_count, 8, 8);
+        if (strlen(consensus) > 500) {
+            printf(">%s\n%s\n", seq_id[0], consensus);
         }
         fflush(stdout);
         free(consensus);
@@ -841,4 +800,4 @@ int main() {
     free(seq_id);
     free(input_seq);
 }
-
+*/

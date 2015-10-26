@@ -54,6 +54,9 @@
  #################################################################################$$
  */
 
+#include <stdint.h>
+
+
 typedef int seq_coor_t; 
 
 typedef struct {    
@@ -170,9 +173,120 @@ alignment * align(char *, seq_coor_t,
                   char *, seq_coor_t,
                   seq_coor_t,
                   int); 
+				  
+				  
 
 void free_alignment(alignment *);
 
 
 void free_consensus_data(consensus_data *);
 
+
+void print_d_path(  d_path_data2 * base, unsigned long max_idx);
+
+void d_path_sort( d_path_data2 * base, unsigned long max_idx);
+
+int compare_d_path(const void * a, const void * b);
+
+
+typedef struct {
+    seq_coor_t t_pos;
+    uint8_t delta;
+    char q_base;
+    seq_coor_t p_t_pos;   // the tag position of the previous base
+    uint8_t p_delta; // the tag delta of the previous base
+    char p_q_base;        // the previous base
+    unsigned q_id;
+} align_tag_t;
+
+typedef struct {
+    seq_coor_t len;
+    align_tag_t * align_tags;
+} align_tags_t;
+
+
+typedef struct {
+    uint16_t size;
+    uint16_t n_link;
+    seq_coor_t * p_t_pos;   // the tag position of the previous base
+    uint8_t * p_delta; // the tag delta of the previous base
+    char * p_q_base;        // the previous base
+    uint16_t * link_count;
+    uint16_t count;
+    seq_coor_t best_p_t_pos;
+    uint8_t best_p_delta;
+    uint8_t best_p_q_base; // encoded base
+    double score;
+} align_tag_col_t;
+
+typedef struct {
+    align_tag_col_t * base;
+} msa_base_group_t;
+
+typedef struct {
+    uint8_t size;
+    uint8_t max_delta;
+    msa_base_group_t * delta;
+} msa_delta_group_t;
+
+typedef msa_delta_group_t * msa_pos_t;
+
+
+align_tags_t * get_align_tags( char * aln_q_seq, 
+                               char * aln_t_seq, 
+                               seq_coor_t aln_seq_len,
+                               aln_range * range,
+                               unsigned q_id,
+                               seq_coor_t t_offset);
+							   
+							   
+void free_align_tags( align_tags_t * tags);
+
+
+void allocate_aln_col( align_tag_col_t * col);
+
+void realloc_aln_col( align_tag_col_t * col );
+
+void free_aln_col( align_tag_col_t * col);
+
+void allocate_delta_group( msa_delta_group_t * g);
+
+void realloc_delta_group( msa_delta_group_t * g, uint16_t new_size );
+
+void free_delta_group( msa_delta_group_t * g);
+
+void update_col( align_tag_col_t * col, seq_coor_t p_t_pos, uint8_t p_delta, char p_q_base);
+
+msa_pos_t * get_msa_working_sapce(unsigned int max_t_len);
+
+void clean_msa_working_space( msa_pos_t * msa_array, unsigned int max_t_len);
+
+consensus_data * get_cns_from_align_tags( align_tags_t ** tag_seqs, 
+                                          unsigned n_tag_seqs, 
+                                          unsigned t_len, 
+                                          unsigned min_cov );
+										  
+consensus_data * generate_consensus( char ** input_seq, 
+                           unsigned int n_seq, 
+                           unsigned min_cov, 
+                           unsigned K,
+                           unsigned long local_match_count_window,
+                           unsigned long local_match_count_threshold,
+                           double min_idt);
+								 
+	
+	
+	
+consensus_data * generate_utg_consensus( char ** input_seq, 
+                           seq_coor_t *offset,
+                           unsigned int n_seq, 
+                           unsigned min_cov, 
+                           unsigned K,
+                           double min_idt);
+						   
+void free_consensus_data( consensus_data * consensus );
+	
+	
+							   
+							   
+					
