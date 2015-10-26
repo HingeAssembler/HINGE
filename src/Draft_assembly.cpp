@@ -365,9 +365,97 @@ int main(int argc, char *argv[]) {
     }
 
 
+# pragma omp parallel for
+    for (int i = 0; i < n_read; i++ ) {
+        std::sort( idx2[i].begin(), idx2[i].end(), compare_sum_overlaps );
+    }
 
 
+    for (int n_iter = 0; n_iter < 3; n_iter ++) {
+        int no_edge = 0;
+        edgelist.clear();
+        for (int i = 0; i < n_read; i++) {
+            int cf = 0;
+            int cb = 0;
+            /*
+             * For each read, if there is exact right match (type FORWARD), choose the one with longest alignment with read A
+             * same for BACKWARD,
+             */
+            if (reads[i]->active)
+                for (int j = 0; j < idx2[i].size(); j++) {
+                    //idx2[i][j]->show();
+                    if ((*idx2[i][j])[0]->active) {
+                        for (int kk = 0; kk < idx2[i][j]->size(); kk++) {
+                            if (reads[(*idx2[i][j])[kk]->bid]->active)
+                            if (((*idx2[i][j])[kk]->aln_type == FORWARD) and (cf < 1)) {
+                                cf += 1;
+                                //add edge
+                                if ((*idx2[i][j])[kk]->flags == 1) { // n = 0, c = 1
+                                    edgelist.push_back(
+                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 0),
+                                                                  Node((*idx2[i][j])[kk]->bid, 1)));
+                                } else {
+                                    edgelist.push_back(
+                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 0),
+                                                                  Node((*idx2[i][j])[kk]->bid, 0)));
+                                }
+                            }
+                            if (reads[(*idx2[i][j])[kk]->bid]->active)
+                            if (((*idx2[i][j])[kk]->aln_type == BACKWARD) and (cb < 1)) {
+                                cb += 1;
+                                //add edge
+                                if ((*idx2[i][j])[kk]->flags == 1) {
+                                    edgelist.push_back(
+                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 1),
+                                                                  Node((*idx2[i][j])[kk]->bid, 0)));
+                                } else {
+                                    edgelist.push_back(
+                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 1),
+                                                                  Node((*idx2[i][j])[kk]->bid, 1)));
+                                }
+                            }
+                            if ((cf >= 1) and (cb >= 1)) break;
+                        }
+                    }
+                    if ((cf >= 1) and (cb >= 1)) break;
+                }
 
+                if (reads[i]->active) {
+                    if (cf == 0) printf("%d has no out-going edges\n", i);
+                    if (cb == 0) printf("%d has no in-coming edges\n", i);
+                    if ((cf == 0) or (cb ==0)) {
+                        no_edge++;
+                        reads[i]->active = false;
+                    }
+                }
+
+            }
+
+            printf("no_edge nodes:%d\n",no_edge);
+		}
+		
+		
+		
+# pragma omp parallel for
+            for (int ii = 0; ii < n_aln; ii++) {
+            if (aln[ii]->active)
+            if ((not reads[aln[ii]->aid]->active) or (not reads[aln[ii]->bid]->active))
+                aln[ii]->active = false;
+            }
+
+            int num_active_aln = 0;
+# pragma omp parallel for reduction(+:num_active_aln)
+	for (int i = 0; i < n_aln; i++) {
+	    if (aln[i]->active) {
+	        num_active_aln++;
+	        aln[i]->addtype(THETA);
+	    }
+	}
+	std::cout << "num active alignments " << num_active_aln << std::endl;
+	
+	
+	
+	edgelist.clear();
     std::string edge_line;
     std::ifstream edges_file(name_input);
     while (!edges_file.eof()) {
@@ -396,9 +484,52 @@ int main(int argc, char *argv[]) {
     }
 	
 	for (int i = 0; i < edgelist.size(); i++) {
-		printf()
+		printf("%d->%d\n", edgelist[i].first, edgelist[i].second);
 	}
 	
+	std::string sequence = "";
+	for (int i = 0; i < edgelist.size(); i++){
+		if (i == 0) {
+            if (edgelist[i].first.strand == 0)
+                sequence.append(reads[edgelist[i].first.id]->bases);
+            else
+                sequence.append(reverse_complement(reads[edgelist[i].first.id]->bases));
+		}
+		
+		std::vector<LOverlap *> currentalns = idx[edgelist[i].first.id][edgelist[i].second.id];
+    	LOverlap * currentaln = NULL;
+		for (int j = 0; j < currentalns.size(); j++) {
+    		std::cout << edgelist[i].first.id << " " << edgelist[i].second.id << " " << currentalns[j]->aln_type << std::endl;
+    		if (currentalns[j]->aln_type != UNDIFINED) currentaln = currentalns[j];
+		}
+		
+
+        std::string current_seq;
+
+        if (edgelist[i].second.strand == 0)
+            current_seq = reads[edgelist[i].second.id]->bases;
+        else
+            current_seq = reverse_complement(reads[edgelist[i].second.id]->bases);
+
+        if (edgelist[i].first.strand == 0) {
+            sequence.erase(sequence.end() - (currentaln->alen - currentaln->aepos), sequence.end());
+            current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->bepos);
+            sequence.append(current_seq);
+        }
+        else {
+            sequence.erase(sequence.end() - (currentaln->abpos), sequence.end());
+            current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->blen - currentaln->bbpos);
+            sequence.append(current_seq);
+        }
+		
+		
+	}
+	
+	std::cout<<sequence.size()<<std::endl;
+	std::ofstream out(name_output);
+	
+	out << ">draftassembly" << std::endl;
+	out << sequence << std::endl;
 
     la.CloseDB(); //close database
     return 0;
