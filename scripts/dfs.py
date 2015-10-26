@@ -32,24 +32,25 @@ def de_clip(filename, n_iter):
             return string[:-1]
         else:
             return string+'\''
-    
-    import ujson
-    mapping = ujson.load(open(filename.split('.')[0]+'.mapping.json'))
-    
-    print 'get mapping'
-    
-    for node in g.nodes():
-        #print node
-        if mapping.has_key(node):
-            g.node[node]['aln_start'] = mapping[node][0]
-            g.node[node]['aln_end'] = mapping[node][1]
-            g.node[node]['aln_strand'] = mapping[node][2]
-        else:
-            g.node[node]['aln_start'] = 0
-            g.node[node]['aln_end'] = 0
-            g.node[node]['aln_strand'] = 0
-            
+    try:
+        import ujson
+        mapping = ujson.load(open(filename.split('.')[0]+'.mapping.json'))
         
+        print 'get mapping'
+        
+        for node in g.nodes():
+            #print node
+            if mapping.has_key(node):
+                g.node[node]['aln_start'] = mapping[node][0]
+                g.node[node]['aln_end'] = mapping[node][1]
+                g.node[node]['aln_strand'] = mapping[node][2]
+            else:
+                g.node[node]['aln_start'] = 0
+                g.node[node]['aln_end'] = 0
+                g.node[node]['aln_strand'] = 0
+                
+    except:
+        pass
     print nx.info(g)
     nx.write_graphml(g, filename.split('.')[0]+'.graphml')
     

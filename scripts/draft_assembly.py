@@ -20,8 +20,8 @@ def linearize(filename):
     print nx.info(con[0])
     
     with open(filename.split('.')[0]+'.linear.edges', 'w') as f:
-        for item in nx.dfs_preorder_nodes(con[0]):
-            f.write(item + '\n')
+        for item in nx.dfs_edges(con[0]):
+            f.write(item[0] + ' ' + item[1] + '\n')
 
 filename = sys.argv[1]
 linearize(filename)
