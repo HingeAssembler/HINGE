@@ -17,7 +17,7 @@ int main() {
 
     input_seq = (char **)calloc( 501, sizeof(char *));
     seq_id = (char **)calloc( 501, sizeof(char *));
-    
+
     while(1) {
         seq_count = 0;
         while (1) {
@@ -60,7 +60,7 @@ int main() {
     };
     free(seq_id);
     free(input_seq);
-	
-	
+
+
 	return 0;
 }
