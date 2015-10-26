@@ -127,7 +127,6 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
 
 int main(int argc, char *argv[]) {
 
-    omp_set_num_threads(4);
 
     LAInterface la;
 	char * name_db = argv[1];
@@ -182,6 +181,9 @@ int main(int argc, char *argv[]) {
     int CUT_OFF = reader.GetInteger("filter", "cut_off", -1);
     int THETA = reader.GetInteger("filter", "theta", -1);
 
+	int N_PROC = reader.GetInteger("running", "n_proc", 4);
+
+    omp_set_num_threads(N_PROC);
 
     //std::unordered_map<std::pair<int,int>, std::vector<LOverlap *> > idx; //unordered_map from (aid, bid) to alignments in a vector
     std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read); //unordered_map from (aid) to alignments in a vector
@@ -189,6 +191,8 @@ int main(int argc, char *argv[]) {
     std::unordered_map<int, std::vector <LOverlap * > >idx3; // this is the pileup
     std::vector<std::set<int> > has_overlap(n_read);
     std::unordered_map<int, std::unordered_map<int, std::vector<LOverlap *> > > idx;
+
+
 
     for (int i = 0; i< n_read; i++) {
         //has_overlap[i] = std::set<int>();
