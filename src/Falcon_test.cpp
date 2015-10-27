@@ -38,7 +38,7 @@ int main() {
             }
             printf("%s\n", seq_id[seq_count]);
             seq_count += 1;
-            if (seq_count > 500) break;
+            //if (seq_count > 500) break;
         }
         printf("sc: %d\n", seq_count);
         if (seq_count < 10 && strcmp(seq_id[seq_count], "-") != 0 ) continue;

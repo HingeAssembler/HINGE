@@ -452,9 +452,8 @@ int main(int argc, char *argv[]) {
 	    }
 	}
 	std::cout << "num active alignments " << num_active_aln << std::endl;
-	
-	
-	
+
+
 	edgelist.clear();
     std::string edge_line;
     std::ifstream edges_file(name_input);
@@ -482,7 +481,9 @@ int main(int argc, char *argv[]) {
             edgelist.push_back(std::pair<Node,Node>(node0,node1));
         }
     }
-	
+
+    edgelist.push_back(std::pair<Node, Node>(edgelist.back().second, edgelist.front().first));
+
 	for (int i = 0; i < edgelist.size(); i++) {
 		printf("%d->%d\n", edgelist[i].first, edgelist[i].second);
 	}
@@ -502,7 +503,6 @@ int main(int argc, char *argv[]) {
     		std::cout << edgelist[i].first.id << " " << edgelist[i].second.id << " " << currentalns[j]->aln_type << std::endl;
     		if (currentalns[j]->aln_type != UNDIFINED) currentaln = currentalns[j];
 		}
-		
 
         std::string current_seq;
 
@@ -521,9 +521,13 @@ int main(int argc, char *argv[]) {
             current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->blen - currentaln->bbpos);
             sequence.append(current_seq);
         }
-		
-		
+
 	}
+
+    
+    //need to trim the end
+
+
 	
 	std::cout<<sequence.size()<<std::endl;
 	std::ofstream out(name_output);

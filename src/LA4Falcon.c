@@ -624,7 +624,7 @@ int main(int argc, char *argv[])
                     Load_Read(db2, hits[tmp_idx].r_id, bbuffer, 0);
                     if (hits[tmp_idx].t_o) Complement_Seq(bbuffer, hits[tmp_idx].t_l );
                     Upper_Read(bbuffer);
-                    strncpy( buffer, bbuffer + hits[tmp_idx].t_s, (int64) hits[tmp_idx].t_e - (int64) hits[tmp_idx].t_s );
+                    strncpy( buffer, bbuffer + hits[tmp_idx].t_s, (int64) hits[tmp_idx].t_e - (int64) hits[tmp_idx].t_s ); // only aligned region
                     buffer[ (int64) hits[tmp_idx].t_e - (int64) hits[tmp_idx].t_s - 1] = '\0';
                     printf("%08d %s\n", hits[tmp_idx].r_id, buffer); // print aligned region for B read
                 }
@@ -642,7 +642,7 @@ int main(int argc, char *argv[])
                 ovl_len = ovl->path.bepos - ovl->path.bbpos;
                 overhang_len = MIN( ovl->path.abpos, ovl->path.bbpos );
                 overhang_len +=  MIN(  aln->alen - ovl->path.aepos,  aln->blen - ovl->path.bepos);
-                score = ovl_len - overhang_len;
+                score = ovl_len - overhang_lDen;
                 hits[hit_count].r_id = ovl->bread;
                 hits[hit_count].t_o = COMP(aln->flags);
                 hits[hit_count].t_s = ovl->path.bbpos;

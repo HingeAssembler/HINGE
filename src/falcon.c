@@ -555,7 +555,9 @@ consensus_data * generate_consensus( char ** input_seq,
     sda_ptr = allocate_seq_addr( (seq_coor_t) strlen( input_seq[0]) );
     add_sequence( 0, K, input_seq[0], strlen(input_seq[0]), sda_ptr, sa_ptr, lk_ptr);
     //mask_k_mer(1 << (K * 2), lk_ptr, 16);
-
+	// sequence 0 is the base sequence
+	// others are pile ups
+	
     aligned_seq_count = 0;
     for (j=1; j < seq_count; j++) {
 
@@ -585,6 +587,7 @@ consensus_data * generate_consensus( char ** input_seq,
         
         
 #define INDEL_ALLOWENCE_2 150
+		// WTF are these heuristics
 
         aln = align(input_seq[j]+arange->s1, arange->e1 - arange->s1 ,
                     input_seq[0]+arange->s2, arange->e2 - arange->s2 , 
