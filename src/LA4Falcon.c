@@ -77,7 +77,7 @@ typedef struct {
 
 hit_record * hits;
 
-#define MIN(X,Y)  ((X) < (Y)) ? (X) : (Y) 
+#define MIN(X,Y)  ((X) < (Y)) ? (X) : (Y)
 
 static int compare_hits(const void  * h1, const void *h2) {
     return ((hit_record *) h2)->score - ((hit_record *) h1)->score;
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
             break;
           case 'n':
             ARG_POSITIVE(MAX_HIT_COUNT, "max numer of supporting read ouput (used for FALCON consensus. default 400, max: 2000)")
-            if (MAX_HIT_COUNT > 2000) MAX_HIT_COUNT = 2000; 
+            if (MAX_HIT_COUNT > 2000) MAX_HIT_COUNT = 2000;
             break;
         }
       else
@@ -619,7 +619,7 @@ int main(int argc, char *argv[])
             }
             if (p_aread != ovl -> aread ) {
                 int tmp_idx;
-                qsort( hits, hit_count, sizeof(hit_record), compare_hits ); 
+                qsort( hits, hit_count, sizeof(hit_record), compare_hits );
                 for (tmp_idx = 0; tmp_idx < hit_count && tmp_idx < MAX_HIT_COUNT; tmp_idx++) {
                     Load_Read(db2, hits[tmp_idx].r_id, bbuffer, 0);
                     if (hits[tmp_idx].t_o) Complement_Seq(bbuffer, hits[tmp_idx].t_l );
@@ -642,13 +642,13 @@ int main(int argc, char *argv[])
                 ovl_len = ovl->path.bepos - ovl->path.bbpos;
                 overhang_len = MIN( ovl->path.abpos, ovl->path.bbpos );
                 overhang_len +=  MIN(  aln->alen - ovl->path.aepos,  aln->blen - ovl->path.bepos);
-                score = ovl_len - overhang_lDen;
+                score = ovl_len - overhang_len;
                 hits[hit_count].r_id = ovl->bread;
                 hits[hit_count].t_o = COMP(aln->flags);
                 hits[hit_count].t_s = ovl->path.bbpos;
                 hits[hit_count].t_e = ovl->path.bepos;
                 hits[hit_count].t_l = aln->blen;
-                hits[hit_count].score = score; 
+                hits[hit_count].score = score;
                 hit_count ++;
                 if (hit_count > 50000) skip_rest = 1;
 
@@ -760,8 +760,8 @@ int main(int argc, char *argv[])
       }
 
     if (FALCON)
-      { 
-        qsort( hits, hit_count, sizeof(hit_record), compare_hits ); 
+      {
+        qsort( hits, hit_count, sizeof(hit_record), compare_hits );
         int tmp_idx;
         for (tmp_idx = 0; tmp_idx < hit_count && tmp_idx < MAX_HIT_COUNT; tmp_idx++) {
             Load_Read(db2, hits[tmp_idx].r_id, bbuffer, 0);
