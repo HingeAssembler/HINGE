@@ -20,6 +20,10 @@
 #include <omp.h>
 #include "INIReader.h"
 
+extern "C" {
+#include "common.h"
+}
+
 
 
 #define LAST_READ_SYMBOL  '$'
@@ -495,6 +499,13 @@ int main(int argc, char *argv[]) {
 	//}
 
 
+    for (int i = 0; i < n_read; i ++ ) {
+        std::transform(reads[i]->bases.begin(), reads[i]->bases.end(),reads[i]->bases.begin(), ::toupper);
+    }
+
+
+    const int top_k = 400;
+    //choose top 400 for consensus
 
     for (int i = 0; i < edgelist.size(); i++){
         int nactive = 0;
@@ -504,9 +515,62 @@ int main(int argc, char *argv[]) {
             if (idx3[std::get<0>(edgelist[i]).id][kk]->active)
                 nactive ++;
         }
-
+        std::sort(idx3[i].begin(), idx3[i].end(), compare_overlap);
         printf("id: %d, num pileup: %d/%d\n", std::get<0>(edgelist[i]).id, nactive, total);
+
+        int seq_count = nactive;
+        char small_buffer[1024];
+        char big_buffer[65536];
+        char ** input_seq;
+        //char ** seq_id;
+        consensus_data * consensus;
+
+        input_seq = (char **)calloc( 501, sizeof(char *));
+        //seq_id = (char **)calloc( 501, sizeof(char *));
+
+        input_seq[0] = (char *)calloc( 100000 , sizeof(char));
+
+        strcpy(input_seq[0], reads[idx3[std::get<0>(edgelist[i]).id][0]->aid]->bases.c_str());
+
+        //feed input seq in
+        int num_chosen = 1;
+        int num_passed = 1;
+
+        while ((num_chosen < top_k) and (num_passed < idx3[num_passed].size())) {
+            
+            if (idx3[std::get<0>(edgelist[i]).id][num_passed]->active) {
+                //put it in
+                int start = idx3[std::get<0>(edgelist[i]).id][num_passed]->bbpos;
+                int end = idx3[std::get<0>(edgelist[i]).id][num_passed]->bepos;
+                std::string bsub = reads[idx3[std::get<0>(edgelist[i]).id][num_passed]->bid]->bases;
+                input_seq[num_chosen] = (char *)calloc( 100000 , sizeof(char));
+                strcpy(input_seq[num_chosen], bsub.substr(start, end-start).c_str());
+                num_chosen ++;
+            }
+            num_passed ++;
+
+        }
+
+        seq_count = num_chosen;
+
+
+
+        consensus = generate_consensus(input_seq, seq_count, 8, 8, 12, 6, 0.70); // generate consensus for each read
+
+
+
+        if (strlen(consensus->sequence) > 500) {
+            printf(">%d %s\n", i, consensus->sequence);
+        }
+
+        free_consensus_data(consensus);
+        for (int jj=0; jj < seq_count; jj++) {
+            //free(seq_id[jj]);
+            free(input_seq[jj]);
+        };
+
     }
+
 
 
 	std::string sequence = "";
