@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
     char * name_input = argv[3];
 	char * name_output = argv[4];
 	char * name_config = argv[5];
-	
+
 	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.OpenDB(name_db);
 	//la.OpenDB2(name_db); // changed this on Oct 12, may case problem, xf1280@gmail.com
@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
             if (aln[i]->active) {
                 aln[i]->aes = reads[aln[i]->aid]->effective_start;
                 aln[i]->aee = reads[aln[i]->aid]->effective_end;
-                
+
 				if (aln[i]->flags == 0) {
 					aln[i]->bes = reads[aln[i]->bid]->effective_start;
                 	aln[i]->bee = reads[aln[i]->bid]->effective_end;
@@ -439,9 +439,9 @@ int main(int argc, char *argv[]) {
 
             printf("no_edge nodes:%d\n",no_edge);
 		}
-		
-		
-		
+
+
+
 # pragma omp parallel for
             for (int ii = 0; ii < n_aln; ii++) {
             if (aln[ii]->active)
@@ -516,7 +516,7 @@ int main(int argc, char *argv[]) {
                 nactive ++;
         }
         std::sort(idx3[i].begin(), idx3[i].end(), compare_overlap);
-        printf("id: %d, num pileup: %d/%d\n", std::get<0>(edgelist[i]).id, nactive, total);
+        //printf("id: %d, num pileup: %d/%d\n", std::get<0>(edgelist[i]).id, nactive, total);
 
         int seq_count = nactive;
         char small_buffer[1024];
@@ -536,8 +536,8 @@ int main(int argc, char *argv[]) {
         int num_chosen = 1;
         int num_passed = 1;
 
-        while ((num_chosen < top_k) and (num_passed < idx3[num_passed].size())) {
-            
+        while ((num_chosen < top_k) and (num_passed < idx3[std::get<0>(edgelist[i]).id].size())) {
+
             if (idx3[std::get<0>(edgelist[i]).id][num_passed]->active) {
                 //put it in
                 int start = idx3[std::get<0>(edgelist[i]).id][num_passed]->bbpos;
@@ -554,14 +554,10 @@ int main(int argc, char *argv[]) {
         seq_count = num_chosen;
 
 
-
+        //printf("%d\n",seq_count);
         consensus = generate_consensus(input_seq, seq_count, 8, 8, 12, 6, 0.70); // generate consensus for each read
 
-
-
-        if (strlen(consensus->sequence) > 500) {
             printf(">%d %s\n", i, consensus->sequence);
-        }
 
         free_consensus_data(consensus);
         for (int jj=0; jj < seq_count; jj++) {
@@ -581,9 +577,9 @@ int main(int argc, char *argv[]) {
             else
                 sequence.append(reverse_complement(reads[std::get<0>(edgelist[i]).id]->bases));
 		}
-		
-	
-		
+
+
+
 		std::vector<LOverlap *> currentalns = idx[std::get<0>(edgelist[i]).id][std::get<1>(edgelist[i]).id];
 		//std::sort( currentalns.begin(), currentalns.end(), compare_overlap );
 
@@ -592,9 +588,9 @@ int main(int argc, char *argv[]) {
 		aligntype need;
 		if (std::get<0>(edgelist[i]).strand == 0)
 			need = FORWARD;
-		else 
+		else
 			need = BACKWARD;
-		
+
 		for (int j = 0; j < currentalns.size(); j++) {
     		//std::cout << std::get<0>(edgelist[i]).id << " " << std::get<1>(edgelist[i]).id << " " << currentalns[j]->aln_type << std::endl;
     		if (currentalns[j]->aepos - currentalns[j]->abpos == std::get<2>(edgelist[i]) ) currentaln = currentalns[j];
@@ -620,14 +616,14 @@ int main(int argc, char *argv[]) {
 
 	}
 
-    
+
     //need to trim the end
 
 
-	
+
 	std::cout<<sequence.size()<<std::endl;
 	std::ofstream out(name_output);
-	
+
 	out << ">draftassembly" << std::endl;
 	out << sequence << std::endl;
 
