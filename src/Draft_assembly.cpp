@@ -498,10 +498,19 @@ int main(int argc, char *argv[]) {
 		}
 		
 		std::vector<LOverlap *> currentalns = idx[edgelist[i].first.id][edgelist[i].second.id];
+		
+		std::sort( currentalns.begin(), currentalns.end(), compare_overlap );
+		
     	LOverlap * currentaln = NULL;
+		aligntype need;
+		if (edgelist[i].first.strand == 0) 
+			need = FORWARD;
+		else 
+			need = BACKWARD;
+		
 		for (int j = 0; j < currentalns.size(); j++) {
     		std::cout << edgelist[i].first.id << " " << edgelist[i].second.id << " " << currentalns[j]->aln_type << std::endl;
-    		if (currentalns[j]->aln_type != UNDIFINED) currentaln = currentalns[j];
+    		if (currentalns[j]->aln_type == need) currentaln = currentalns[j];
 		}
 
         std::string current_seq;

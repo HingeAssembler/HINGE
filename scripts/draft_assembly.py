@@ -22,6 +22,8 @@ def linearize(filename):
     with open(filename.split('.')[0]+'.linear.edges', 'w') as f:
         for item in nx.dfs_edges(con[0]):
             f.write(item[0] + ' ' + item[1] + '\n')
+        #for item in nx.dfs_edges(con[1]):
+        #    f.write(item[0] + ' ' + item[1] + '\n')
 
 filename = sys.argv[1]
 linearize(filename)
