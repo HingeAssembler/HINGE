@@ -493,7 +493,22 @@ int main(int argc, char *argv[]) {
 	//for (int i = 0; i < edgelist.size(); i++) {
 	//	printf("%d->%d\n", std::get<0>(edgelist[i]), std::get<1>(edgelist[i]));
 	//}
-	
+
+
+
+    for (int i = 0; i < edgelist.size(); i++){
+        int nactive = 0;
+        int total = 0;
+        for (int kk = 0; kk < idx3[std::get<0>(edgelist[i]).id].size(); kk++) {
+            total ++;
+            if (idx3[std::get<0>(edgelist[i]).id][kk]->active)
+                nactive ++;
+        }
+
+        printf("id: %d, num pileup: %d/%d\n", std::get<0>(edgelist[i]).id, nactive, total);
+    }
+
+
 	std::string sequence = "";
 	for (int i = 0; i < edgelist.size(); i++){
 		if (i == 0) {
@@ -511,13 +526,13 @@ int main(int argc, char *argv[]) {
 
     	LOverlap * currentaln = NULL;
 		aligntype need;
-		if (std::get<0>(edgelist[i]).strand == 0) 
+		if (std::get<0>(edgelist[i]).strand == 0)
 			need = FORWARD;
 		else 
 			need = BACKWARD;
 		
 		for (int j = 0; j < currentalns.size(); j++) {
-    		std::cout << std::get<0>(edgelist[i]).id << " " << std::get<1>(edgelist[i]).id << " " << currentalns[j]->aln_type << std::endl;
+    		//std::cout << std::get<0>(edgelist[i]).id << " " << std::get<1>(edgelist[i]).id << " " << currentalns[j]->aln_type << std::endl;
     		if (currentalns[j]->aepos - currentalns[j]->abpos == std::get<2>(edgelist[i]) ) currentaln = currentalns[j];
 		}
 
