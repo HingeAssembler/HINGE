@@ -24,6 +24,8 @@
 
 #define LAST_READ_SYMBOL  '$'
 
+typedef std::tuple<Node, Node, int> Edge_w;
+
 static int ORDER(const void *l, const void *r) {
     int x = *((int32 *) l);
     int y = *((int32 *) r);
@@ -213,7 +215,7 @@ int main(int argc, char *argv[]) {
 
     //std::unordered_map<std::pair<int,int>, std::vector<LOverlap *> > idx; //unordered_map from (aid, bid) to alignments in a vector
     std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read); //unordered_map from (aid) to alignments in a vector
-    std::vector< std::pair<Node, Node> > edgelist; // save output to edgelist
+    std::vector< Edge_w > edgelist; // save output to edgelist
     std::unordered_map<int, std::vector <LOverlap * > >idx3; // this is the pileup
     std::vector<std::set<int> > has_overlap(n_read);
     std::unordered_map<int, std::unordered_map<int, std::vector<LOverlap *> > > idx;
@@ -390,7 +392,7 @@ int main(int argc, char *argv[]) {
                             if (((*idx2[i][j])[kk]->aln_type == FORWARD) and (cf < 1)) {
                                 cf += 1;
                                 //add edge
-                                if ((*idx2[i][j])[kk]->flags == 1) { // n = 0, c = 1
+                                /*if ((*idx2[i][j])[kk]->flags == 1) { // n = 0, c = 1
                                     edgelist.push_back(
                                             std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 0),
                                                                   Node((*idx2[i][j])[kk]->bid, 1)));
@@ -398,13 +400,13 @@ int main(int argc, char *argv[]) {
                                     edgelist.push_back(
                                             std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 0),
                                                                   Node((*idx2[i][j])[kk]->bid, 0)));
-                                }
+                                }*/
                             }
                             if (reads[(*idx2[i][j])[kk]->bid]->active)
                             if (((*idx2[i][j])[kk]->aln_type == BACKWARD) and (cb < 1)) {
                                 cb += 1;
                                 //add edge
-                                if ((*idx2[i][j])[kk]->flags == 1) {
+                                /*if ((*idx2[i][j])[kk]->flags == 1) {
                                     edgelist.push_back(
                                             std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 1),
                                                                   Node((*idx2[i][j])[kk]->bid, 0)));
@@ -412,7 +414,7 @@ int main(int argc, char *argv[]) {
                                     edgelist.push_back(
                                             std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 1),
                                                                   Node((*idx2[i][j])[kk]->bid, 1)));
-                                }
+                                }*/
                             }
                             if ((cf >= 1) and (cb >= 1)) break;
                         }
@@ -462,7 +464,8 @@ int main(int argc, char *argv[]) {
         std::vector<std::string> tokens = split(edge_line, ' ');
         Node node0;
         Node node1;
-        if (tokens.size() == 2) {
+        int w;
+        if (tokens.size() == 3) {
             if (tokens[0].back() == '\'') {
                 node0.id = std::stoi(tokens[0].substr(0, tokens[0].size() - 1));
                 node0.strand = 1;
@@ -477,41 +480,44 @@ int main(int argc, char *argv[]) {
             } else {
                 node1.id = std::stoi(tokens[1]);
                 node1.strand = 0;
+
+
             }
-            edgelist.push_back(std::pair<Node,Node>(node0,node1));
+            w = std::stoi(tokens[2]);
+            edgelist.push_back(std::make_tuple(node0,node1,w));
         }
     }
 
-    edgelist.push_back(std::pair<Node, Node>(edgelist.back().second, edgelist.front().first));
+    //edgelist.push_back(std::pair<Node, Node>(edgelist.back().second, edgelist.front().first));
 
 	for (int i = 0; i < edgelist.size(); i++) {
-		printf("%d->%d\n", edgelist[i].first, edgelist[i].second);
+		printf("%d->%d\n", std::get<0>(edgelist[i]), std::get<1>(edgelist[i]));
 	}
 	
 	std::string sequence = "";
 	for (int i = 0; i < edgelist.size(); i++){
 		if (i == 0) {
-            if (edgelist[i].first.strand == 0)
-                sequence.append(reads[edgelist[i].first.id]->bases);
+            if (std::get<0>(edgelist[i]).strand == 0)
+                sequence.append(reads[std::get<0>(edgelist[i]).id]->bases);
             else
-                sequence.append(reverse_complement(reads[edgelist[i].first.id]->bases));
+                sequence.append(reverse_complement(reads[std::get<0>(edgelist[i]).id]->bases));
 		}
 		
-		std::vector<LOverlap *> currentalns = idx[edgelist[i].first.id][edgelist[i].second.id];
+		std::vector<LOverlap *> currentalns = idx[std::get<0>(edgelist[i]).id][std::get<1>(edgelist[i]).id];
     	LOverlap * currentaln = NULL;
 		for (int j = 0; j < currentalns.size(); j++) {
-    		std::cout << edgelist[i].first.id << " " << edgelist[i].second.id << " " << currentalns[j]->aln_type << std::endl;
-    		if (currentalns[j]->aln_type != UNDIFINED) currentaln = currentalns[j];
+    		std::cout << std::get<0>(edgelist[i]).id << " " << std::get<1>(edgelist[i]).id << " " << currentalns[j]->aln_type << std::endl;
+    		if (currentalns[j]->aepos - currentalns[j]->abpos == std::get<2>(edgelist[i]) ) currentaln = currentalns[j];
 		}
 
         std::string current_seq;
 
-        if (edgelist[i].second.strand == 0)
-            current_seq = reads[edgelist[i].second.id]->bases;
+        if (std::get<1>(edgelist[i]).strand == 0)
+            current_seq = reads[std::get<1>(edgelist[i]).id]->bases;
         else
-            current_seq = reverse_complement(reads[edgelist[i].second.id]->bases);
+            current_seq = reverse_complement(reads[std::get<1>(edgelist[i]).id]->bases);
 
-        if (edgelist[i].first.strand == 0) {
+        if (std::get<0>(edgelist[i]).strand == 0) {
             sequence.erase(sequence.end() - (currentaln->alen - currentaln->aepos), sequence.end());
             current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->bepos);
             sequence.append(current_seq);
