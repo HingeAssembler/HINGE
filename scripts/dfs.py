@@ -10,7 +10,10 @@ def de_clip(filename, n_iter):
     
     with open(filename,'r') as f:
         for line in f.xreadlines():
-            g.add_edge(*(line.strip().split('->')))
+            l = line.strip().split(',')
+            l2 = l[0].split('->') + [l[1]]
+            #print l2
+            g.add_edge(l2[0],l2[1],weight = int(l2[2])/100000.0, ew = int(l2[2]))
     
     
     print nx.info(g)

@@ -14,17 +14,21 @@
 #include "OverlapGraph.h"
 #include <algorithm>
 #include <fstream>
-#include <sstream>
+
 #include <iostream>
 #include <set>
 #include <omp.h>
 #include "INIReader.h"
-
+#include <tuple>
 
 
 #define LAST_READ_SYMBOL  '$'
 
-typedef std::tuple<Node, Node, int> Edge_w;
+
+typedef std::tuple<Node, Node, int> Edge;
+
+typedef std::pair<Node, Node> Edge_nw;
+
 
 static int ORDER(const void *l, const void *r) {
     int x = *((int32 *) l);
@@ -49,32 +53,6 @@ std::ostream& operator<<(std::ostream& out, const aligntype value){
     }
 
     return out << strings[value];
-}
-
-std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        elems.push_back(item);
-    }
-    return elems;
-}
-
-
-std::vector<std::string> split(const std::string &s, char delim) {
-    std::vector<std::string> elems;
-    split(s, delim, elems);
-    return elems;
-}
-
-
-std::string reverse_complement(std::string seq) {
-    static std::map<char, char> m = {{'a','t'}, {'c','g'}, {'g','c'}, {'t','a'}, {'A','T'}, {'C','G'}, {'T','A'}, {'G','C'}, {'n','n'}, {'N', 'N'}};
-    std::reverse(seq.begin(), seq.end());
-    for (int i = 0; i < seq.size(); i++) {
-        seq[i] = m[seq[i]];
-    }
-    return seq;
 }
 
 
@@ -155,13 +133,11 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
 
 int main(int argc, char *argv[]) {
 
+
     LAInterface la;
 	char * name_db = argv[1];
 	char * name_las = argv[2];
-    char * name_input = argv[3];
-	char * name_output = argv[4];
-	char * name_config = argv[5];
-	
+    char * name_config = argv[4];
 	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.OpenDB(name_db);
 	//la.OpenDB2(name_db); // changed this on Oct 12, may case problem, xf1280@gmail.com
@@ -189,6 +165,8 @@ int main(int argc, char *argv[]) {
 	 * Remove reads shorter than length threshold
 	 */
 
+
+
     /*
      * load config
      */
@@ -215,7 +193,7 @@ int main(int argc, char *argv[]) {
 
     //std::unordered_map<std::pair<int,int>, std::vector<LOverlap *> > idx; //unordered_map from (aid, bid) to alignments in a vector
     std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read); //unordered_map from (aid) to alignments in a vector
-    std::vector< Edge_w > edgelist; // save output to edgelist
+    std::vector<Edge_nw> edgelist; // save output to edgelist
     std::unordered_map<int, std::vector <LOverlap * > >idx3; // this is the pileup
     std::vector<std::set<int> > has_overlap(n_read);
     std::unordered_map<int, std::unordered_map<int, std::vector<LOverlap *> > > idx;
@@ -366,12 +344,50 @@ int main(int argc, char *argv[]) {
         }
     }
 
-
+    //sort the reads
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++ ) {
         std::sort( idx2[i].begin(), idx2[i].end(), compare_sum_overlaps );
     }
 
+    /*for (int i = 0; i < n_read; i++) {
+    printf("\n read %d:", i);
+    for (int j = 0; j < covered_region[i].size(); j++) {
+        printf("[%d, %d] ",covered_region[i][j].first, covered_region[i][j].second);
+    }
+    }*/
+
+    /*
+    for (int i = 0; i < n_read; i++ ) {
+        printf("read:%d\n",i);
+        for (int j = 0; j<idx2[i].size(); j++) {
+            int sum = 0;
+            for (int k = 0; k < idx2[i][j].size(); k++) {
+                sum +=  idx2[i][j][k]->aepos + idx2[i][j][k]->bepos - idx2[i][j][k]->abpos - idx2[i][j][k]->bbpos;
+            }
+
+            sum /= 2;
+            printf("sum:%d\n",sum);
+        }
+    }*/
+
+    /*
+     * Debug output
+     */
+    /*for (int i = 0; i < n_read; i++) {
+        for (int j = 0; j < idx2[i].size(); j++) {
+            printf("%d,%d,%d,%d\n",i, idx2[i].size(),j,idx2[i][j].size() );
+            for (int k = 0; k<idx2[i][j].size(); k++) {
+                std::cout<<" "<<idx2[i][j][k]->active << " "<< "["<<idx2[i][j][k]->abpos<<","<<idx2[i][j][k]->aepos <<"]/" <<idx2[i][j][k]->alen <<" "<<"["<<idx2[i][j][k]->bbpos<<","<<idx2[i][j][k]->bepos <<"]/" <<idx2[i][j][k]->blen<<" "<<idx2[i][j][k]->aln_type << std::endl;
+            }
+        }
+    }*/
+
+    //from the list, find the first one that can extend read A to the right, this will form a graph
+
+    /**
+	 **    get the best overlap for each read and form a graph
+	 **/
 
     for (int n_iter = 0; n_iter < 3; n_iter ++) {
         int no_edge = 0;
@@ -383,38 +399,42 @@ int main(int argc, char *argv[]) {
              * For each read, if there is exact right match (type FORWARD), choose the one with longest alignment with read A
              * same for BACKWARD,
              */
+
             if (reads[i]->active)
                 for (int j = 0; j < idx2[i].size(); j++) {
                     //idx2[i][j]->show();
+
+                    std::sort( idx2[i][j]->begin(), idx2[i][j]->end(), compare_overlap );
+
                     if ((*idx2[i][j])[0]->active) {
                         for (int kk = 0; kk < idx2[i][j]->size(); kk++) {
                             if (reads[(*idx2[i][j])[kk]->bid]->active)
                             if (((*idx2[i][j])[kk]->aln_type == FORWARD) and (cf < 1)) {
                                 cf += 1;
                                 //add edge
-                                /*if ((*idx2[i][j])[kk]->flags == 1) { // n = 0, c = 1
+                                if ((*idx2[i][j])[kk]->flags == 1) { // n = 0, c = 1
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 0),
+                                            Edge_nw(Node((*idx2[i][j])[kk]->aid, 0),
                                                                   Node((*idx2[i][j])[kk]->bid, 1)));
                                 } else {
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 0),
+                                            Edge_nw(Node((*idx2[i][j])[kk]->aid, 0),
                                                                   Node((*idx2[i][j])[kk]->bid, 0)));
-                                }*/
+                                }
                             }
                             if (reads[(*idx2[i][j])[kk]->bid]->active)
                             if (((*idx2[i][j])[kk]->aln_type == BACKWARD) and (cb < 1)) {
                                 cb += 1;
                                 //add edge
-                                /*if ((*idx2[i][j])[kk]->flags == 1) {
+                                if ((*idx2[i][j])[kk]->flags == 1) {
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 1),
+                                            Edge_nw(Node((*idx2[i][j])[kk]->aid, 1),
                                                                   Node((*idx2[i][j])[kk]->bid, 0)));
                                 } else {
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 1),
+                                            Edge_nw(Node((*idx2[i][j])[kk]->aid, 1),
                                                                   Node((*idx2[i][j])[kk]->bid, 1)));
-                                }*/
+                                }
                             }
                             if ((cf >= 1) and (cb >= 1)) break;
                         }
@@ -425,6 +445,17 @@ int main(int argc, char *argv[]) {
                 if (reads[i]->active) {
                     if (cf == 0) printf("%d has no out-going edges\n", i);
                     if (cb == 0) printf("%d has no in-coming edges\n", i);
+                    /*if ((cf == 0) or (cb == 0))
+                        for (int j = 0; j < idx2[i].size(); j++) {
+                            printf("%d,%d,%d,%d\n", i, idx2[i].size(), j, idx2[i][j].size());
+                            for (int k = 0; k < idx2[i][j].size(); k++) {
+                                std::cout << " " << idx2[i][j][k]->active << " " << "[" << idx2[i][j][k]->abpos << "," <<
+                                idx2[i][j][k]->aepos << "]/" << idx2[i][j][k]->alen << " " << "[" << idx2[i][j][k]->bbpos <<
+                                "," << idx2[i][j][k]->bepos << "]/" << idx2[i][j][k]->blen << " " << idx2[i][j][k]->aln_type <<
+                                std::endl;
+                            }
+                        }
+                        */
                     if ((cf == 0) or (cb ==0)) {
                         no_edge++;
                         reads[i]->active = false;
@@ -434,10 +465,7 @@ int main(int argc, char *argv[]) {
             }
 
             printf("no_edge nodes:%d\n",no_edge);
-		}
-		
-		
-		
+
 # pragma omp parallel for
             for (int ii = 0; ii < n_aln; ii++) {
             if (aln[ii]->active)
@@ -447,112 +475,55 @@ int main(int argc, char *argv[]) {
 
             int num_active_aln = 0;
 # pragma omp parallel for reduction(+:num_active_aln)
-	for (int i = 0; i < n_aln; i++) {
-	    if (aln[i]->active) {
-	        num_active_aln++;
-	        aln[i]->addtype(THETA);
-	    }
-	}
-	std::cout << "num active alignments " << num_active_aln << std::endl;
-
-
-	edgelist.clear();
-    std::string edge_line;
-    std::ifstream edges_file(name_input);
-    while (!edges_file.eof()) {
-        std::getline(edges_file,edge_line);
-        std::vector<std::string> tokens = split(edge_line, ' ');
-        Node node0;
-        Node node1;
-        int w;
-        if (tokens.size() == 3) {
-            if (tokens[0].back() == '\'') {
-                node0.id = std::stoi(tokens[0].substr(0, tokens[0].size() - 1));
-                node0.strand = 1;
-            } else {
-                node0.id = std::stoi(tokens[0]);
-                node0.strand = 0;
+            for (int i = 0; i < n_aln; i++) {
+                if (aln[i]->active) {
+                    num_active_aln++;
+                    aln[i]->addtype(THETA);
+                }
             }
+            std::cout << "num active alignments " << num_active_aln << std::endl;
 
-            if (tokens[1].back() == '\'') {
-                node1.id = std::stoi(tokens[1].substr(0, tokens[1].size() - 1));
-                node1.strand = 1;
-            } else {
-                node1.id = std::stoi(tokens[1]);
-                node1.strand = 0;
+		/*
+		 * For each read, if there is no exact right or left match, choose that one with a chimeric end, but still choose
+		 * the one with longest alignment, same for BACKWARD
+		 */
+       /* for (int j = 0; j< idx2[i].size(); j++) {
+            //idx2[i][j]->show();
+            if (idx2[i][j][0]->active) {
+				if ((idx2[i][j].front()->aln_type == MISMATCH_RIGHT) and (cf < 1)) {
+            	    cf += 1;
+            	    //add edge
+            	    if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
+            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,1)));
+            	    } else {
+            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,0)));
+            	    }
+            	}
 
-
-            }
-            w = std::stoi(tokens[2]);
-            edgelist.push_back(std::make_tuple(node0,node1,w));
+            	if ((idx2[i][j].back()->aln_type == MISMATCH_LEFT) and (cb < 1)) {
+            	    cb += 1;
+            	    //add edge
+            	    if (idx2[i][j][0]->flags == 1) {
+            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,0)));
+            	    } else {
+            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,1)));
+            	    }
+            	}
+			}
+            if ((cf == 1) and (cb == 1)) break;
         }
+        */
     }
 
-    //edgelist.push_back(std::pair<Node, Node>(edgelist.back().second, edgelist.front().first));
-
-	//for (int i = 0; i < edgelist.size(); i++) {
-	//	printf("%d->%d\n", std::get<0>(edgelist[i]), std::get<1>(edgelist[i]));
-	//}
-	
-	std::string sequence = "";
-	for (int i = 0; i < edgelist.size(); i++){
-		if (i == 0) {
-            if (std::get<0>(edgelist[i]).strand == 0)
-                sequence.append(reads[std::get<0>(edgelist[i]).id]->bases);
-            else
-                sequence.append(reverse_complement(reads[std::get<0>(edgelist[i]).id]->bases));
-		}
-		
-	
-		
-		std::vector<LOverlap *> currentalns = idx[std::get<0>(edgelist[i]).id][std::get<1>(edgelist[i]).id];
-		//std::sort( currentalns.begin(), currentalns.end(), compare_overlap );
-
-
-    	LOverlap * currentaln = NULL;
-		aligntype need;
-		if (std::get<0>(edgelist[i]).strand == 0) 
-			need = FORWARD;
-		else 
-			need = BACKWARD;
-		
-		for (int j = 0; j < currentalns.size(); j++) {
-    		std::cout << std::get<0>(edgelist[i]).id << " " << std::get<1>(edgelist[i]).id << " " << currentalns[j]->aln_type << std::endl;
-    		if (currentalns[j]->aepos - currentalns[j]->abpos == std::get<2>(edgelist[i]) ) currentaln = currentalns[j];
-		}
-
-        std::string current_seq;
-
-        if (std::get<1>(edgelist[i]).strand == 0)
-            current_seq = reads[std::get<1>(edgelist[i]).id]->bases;
-        else
-            current_seq = reverse_complement(reads[std::get<1>(edgelist[i]).id]->bases);
-
-        if (std::get<0>(edgelist[i]).strand == 0) {
-            sequence.erase(sequence.end() - (currentaln->alen - currentaln->aepos), sequence.end());
-            current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->bepos);
-            sequence.append(current_seq);
-        }
-        else {
-            sequence.erase(sequence.end() - (currentaln->abpos), sequence.end());
-            current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->blen - currentaln->bbpos);
-            sequence.append(current_seq);
-        }
-
-	}
-
-    
-    //need to trim the end
-
-
-	
-	std::cout<<sequence.size()<<std::endl;
-	std::ofstream out(name_output);
-	
-	out << ">draftassembly" << std::endl;
-	out << sequence << std::endl;
+    std::ofstream out(argv[3], std::ofstream::out);
+    //print edges list
+    for (int i = 0; i < edgelist.size(); i++){
+        edgelist[i].first.show(out);
+        out<<"->";
+        edgelist[i].second.show(out);
+        out<<std::endl;
+    }
 
     la.CloseDB(); //close database
     return 0;
 }
-

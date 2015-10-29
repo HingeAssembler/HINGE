@@ -19,10 +19,16 @@
 #include <set>
 #include <omp.h>
 #include "INIReader.h"
-
+#include <tuple>
 
 
 #define LAST_READ_SYMBOL  '$'
+
+
+typedef std::tuple<Node, Node, int> Edge_w;
+
+typedef std::pair<Node, Node> Edge_nw;
+
 
 static int ORDER(const void *l, const void *r) {
     int x = *((int32 *) l);
@@ -187,7 +193,7 @@ int main(int argc, char *argv[]) {
 
     //std::unordered_map<std::pair<int,int>, std::vector<LOverlap *> > idx; //unordered_map from (aid, bid) to alignments in a vector
     std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read); //unordered_map from (aid) to alignments in a vector
-    std::vector< std::pair<Node, Node> > edgelist; // save output to edgelist
+    std::vector<Edge_w> edgelist; // save output to edgelist
     std::unordered_map<int, std::vector <LOverlap * > >idx3; // this is the pileup
     std::vector<std::set<int> > has_overlap(n_read);
     std::unordered_map<int, std::unordered_map<int, std::vector<LOverlap *> > > idx;
@@ -393,9 +399,13 @@ int main(int argc, char *argv[]) {
              * For each read, if there is exact right match (type FORWARD), choose the one with longest alignment with read A
              * same for BACKWARD,
              */
+
             if (reads[i]->active)
                 for (int j = 0; j < idx2[i].size(); j++) {
                     //idx2[i][j]->show();
+
+                    std::sort( idx2[i][j]->begin(), idx2[i][j]->end(), compare_overlap );
+
                     if ((*idx2[i][j])[0]->active) {
                         for (int kk = 0; kk < idx2[i][j]->size(); kk++) {
                             if (reads[(*idx2[i][j])[kk]->bid]->active)
@@ -404,12 +414,12 @@ int main(int argc, char *argv[]) {
                                 //add edge
                                 if ((*idx2[i][j])[kk]->flags == 1) { // n = 0, c = 1
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 0),
-                                                                  Node((*idx2[i][j])[kk]->bid, 1)));
+                                            std::make_tuple(Node((*idx2[i][j])[kk]->aid, 0),
+                                                                  Node((*idx2[i][j])[kk]->bid, 1), (*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
                                 } else {
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 0),
-                                                                  Node((*idx2[i][j])[kk]->bid, 0)));
+                                            std::make_tuple(Node((*idx2[i][j])[kk]->aid, 0),
+                                                                  Node((*idx2[i][j])[kk]->bid, 0), (*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
                                 }
                             }
                             if (reads[(*idx2[i][j])[kk]->bid]->active)
@@ -418,12 +428,12 @@ int main(int argc, char *argv[]) {
                                 //add edge
                                 if ((*idx2[i][j])[kk]->flags == 1) {
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 1),
-                                                                  Node((*idx2[i][j])[kk]->bid, 0)));
+                                            std::make_tuple(Node((*idx2[i][j])[kk]->aid, 1),
+                                                                  Node((*idx2[i][j])[kk]->bid, 0), (*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
                                 } else {
                                     edgelist.push_back(
-                                            std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 1),
-                                                                  Node((*idx2[i][j])[kk]->bid, 1)));
+                                            std::make_tuple(Node((*idx2[i][j])[kk]->aid, 1),
+                                                                  Node((*idx2[i][j])[kk]->bid, 1),(*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
                                 }
                             }
                             if ((cf >= 1) and (cb >= 1)) break;
@@ -508,13 +518,20 @@ int main(int argc, char *argv[]) {
     std::ofstream out(argv[3], std::ofstream::out);
     //print edges list
     for (int i = 0; i < edgelist.size(); i++){
-        edgelist[i].first.show(out);
+        Node n1,n2;
+        int w;
+
+        n1 = std::get<0>(edgelist[i]);
+        n2 = std::get<1>(edgelist[i]);
+        w = std::get<2>(edgelist[i]);
+        n1.show(out);
         out<<"->";
-        edgelist[i].second.show(out);
+        n2.show(out);
+        out << ",";
+        out << w;
         out<<std::endl;
     }
 
     la.CloseDB(); //close database
     return 0;
 }
-
