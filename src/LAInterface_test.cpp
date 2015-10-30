@@ -59,13 +59,19 @@ int main(int argc, char *argv[]) {
     la.resetAlignment();
     la.getAlignment(res2, 0, 3);// get alignment for reads [0,3)
 
-	for (auto i:res2)
-		i->show();
-	printf("\n");
 
+
+    for (auto i:res2) {
+        i->show();
+        /*int tlen = i->tlen;
+        int *trace = (int *) i->trace;
+        int u;
+        printf(" ");
+        for (u = 0; u < tlen; u++) {
+            printf("%d,", (int) trace[u]);
+        }*/
+        la.Lshow_Alignment_tgs(i);
+    }
     la.CloseDB(); //close database
     return 0;
 }
-
-
-

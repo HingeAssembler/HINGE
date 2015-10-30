@@ -33,8 +33,8 @@ target_link_libraries(LAInterface LA DB)
 add_executable(LAInterface_test LAInterface_test)
 target_link_libraries(LAInterface_test LAInterface)
 
-add_executable(LA4Falcon LA4Falcon)
-target_link_libraries(LA4Falcon LA DB)
+add_executable(LA4Falcon_test LA4Falcon)
+target_link_libraries(LA4Falcon_test LA DB)
 
 add_library(kmer_lookup kmer_lookup.c)
 add_library(DW_banded DW_banded.c)

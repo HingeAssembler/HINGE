@@ -410,7 +410,7 @@ consensus_data * get_cns_from_align_tags( align_tags_t ** tag_seqs,
                                 // best_mark = '*';
                             } // find max
                             /*
-                            printf("X %d %d %d %c %d %d %d %c %d %lf %c\n", coverage[i], i, j, base, aln_col->count, 
+                            printf("X %d %d %d %c %d %d %d %c %d %lf %c\n", coverage[i], i, j, base, aln_col->count,
                                                                   aln_col->p_t_pos[ck], 
                                                                   aln_col->p_delta[ck], 
                                                                   aln_col->p_q_base[ck], 
@@ -543,10 +543,10 @@ consensus_data * generate_consensus( char ** input_seq,
     max_diff = 1.0 - min_idt;
 
     seq_count = n_seq; // n sequences
-    //printf("XX n_seq %d\n", n_seq);
-    //for (j=0; j < seq_count; j++) {
-    //    printf("seq_len: %u %u\n", j, strlen(input_seq[j]));
-    //};
+    printf("XX n_seq %d\n", n_seq);
+    for (j=0; j < seq_count; j++) {
+        printf("seq_len: %u %u\n", j, strlen(input_seq[j]));
+    };
     fflush(stdout);
 
     tags_list = calloc( seq_count, sizeof(align_tags_t *) ); 
@@ -557,7 +557,9 @@ consensus_data * generate_consensus( char ** input_seq,
     //mask_k_mer(1 << (K * 2), lk_ptr, 16);
 	// sequence 0 is the base sequence
 	// others are pile ups
-	
+	char * base_str = input_seq[0];
+
+
     aligned_seq_count = 0;
     for (j=1; j < seq_count; j++) {
 
@@ -588,7 +590,7 @@ consensus_data * generate_consensus( char ** input_seq,
         
 #define INDEL_ALLOWENCE_2 150
 		// WTF are these heuristics
-
+        //printf("reach\n");
         aln = align(input_seq[j]+arange->s1, arange->e1 - arange->s1 ,
                     input_seq[0]+arange->s2, arange->e2 - arange->s2 , 
                     INDEL_ALLOWENCE_2, 1);
@@ -599,14 +601,25 @@ consensus_data * generate_consensus( char ** input_seq,
                                                            arange, j, 
                                                            0); 
             aligned_seq_count ++;
+
+            printf("Q:%s\n T%s\n", aln->q_aln_str, aln->t_aln_str);
+            printf("j:%s\n 0:%s\n", input_seq[j] + arange->s1, input_seq[0] + arange->s2);
+
         } // get align tags
-        /***
+
+        int k;
+        int j;
+        j = aligned_seq_count - 1;
         for (k = 0; k < tags_list[j]->len; k++) {
-            printf("%ld %d %c\n", tags_list[j]->align_tags[k].t_pos,
+            printf("%d %d %ld %d %c %c\n",j, k, tags_list[j]->align_tags[k].t_pos,
                                    tags_list[j]->align_tags[k].delta,
-                                   tags_list[j]->align_tags[k].q_base);
+                                   //tags_list[j]->align_tags[k].p_q_base,
+                   base_str[tags_list[j]->align_tags[k].t_pos],
+                   tags_list[j]->align_tags[k].q_base);
         }
-        ***/
+
+        printf("seq:%s\n",input_seq[j]);
+
         free_aln_range(arange);
         free_alignment(aln);
         free_kmer_match( kmer_match_ptr);
