@@ -652,7 +652,7 @@ int main(int argc, char *argv[])
                 hit_count ++;
                 if (hit_count > 50000) skip_rest = 1;
 
-#undef TEST_ALN_OUT
+/*#undef TEST_ALN_OUT
 #ifdef TEST_ALN_OUT
                 {
                     tps = ((ovl->path.aepos-1)/tspace - ovl->path.abpos/tspace);
@@ -670,7 +670,7 @@ int main(int argc, char *argv[])
                     for (u = 0; u < tlen; u++)
                         printf("%d,", (int16) trace[u]);
                 }
-#endif
+#endif*/
                 //printf("\n");
                 if (SKIP == 1) {  //if SKIP = 0, then skip_rest is always 0
                     if ( ((int64) aln->alen < (int64) aln->blen) && ((int64) ovl->path.abpos < 1) && ((int64) aln->alen - (int64) ovl->path.aepos < 1) ) {

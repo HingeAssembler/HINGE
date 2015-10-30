@@ -47,12 +47,16 @@ public:
     LAlignment() { };
     //std::string aseq;
     //std::string bseq;
+    char * aseq;
+    char * bseq;
+
+
 	void show() {printf("%d %d %d [%d...%d] x [%d...%d] %d diffs\n",aid,bid,flags,abpos,aepos,bbpos,bepos,diffs); };
     int aid; // id of read a
     int bid; // id of read b
     int alen; // length of read a
     int blen; // length of read b
-    void *trace; // trace
+    int *trace; // trace
     int tlen;
     int diffs;
     int abpos, bbpos; // begin position of read a and b
@@ -142,6 +146,17 @@ public:
 
     int CloseDB2();
 
+    int LPrint_Alignment(FILE *file, Alignment *align, Work_Data *ework,
+                        int indent, int width, int border, int upper, int coord);
+
+    int LPrint_Alignment_exp(FILE *file, LAlignment *align, Work_Data *ework,
+                         int indent, int width, int border, int upper, int coord);
+
+
+    int LCompute_Trace_PTS(Alignment *align, Work_Data *ework, int trace_spacing);
+
+
+    int Lshow_Alignment_tgs(LAlignment *);
 };
 
 #endif

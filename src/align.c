@@ -2110,6 +2110,7 @@ int Print_Alignment(FILE *file, Alignment *align, Work_Data *ework,
 
   if (trace == NULL) return (0);
 
+//#define SHOW_TRACE
 #ifdef SHOW_TRACE
   fprintf(file,"\nTrace:\n");
   for (i = 0; i < tlen; i++)
@@ -2232,6 +2233,7 @@ int Print_Alignment(FILE *file, Alignment *align, Work_Data *ework,
     for (c = 0; c < tlen; c++)
       if ((p = trace[c]) < 0)
         { p = -p;
+          //printf("%d\n",trace[c]);
           while (i != p)
             { COLUMN(a[i],b[j])
               if (a[i] == b[j])
