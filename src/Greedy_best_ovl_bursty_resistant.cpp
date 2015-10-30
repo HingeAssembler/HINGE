@@ -300,11 +300,11 @@ int main(int argc, char *argv[]) {
                 num_active++;
         }
         std::cout << "num active reads " << num_active << std::endl;
-# pragma omp parallel for
+		//# pragma omp parallel for
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active)
             if ((not reads[aln[i]->aid]->active) or (not reads[aln[i]->bid]->active) or
-                (aln[i]->diffs /  float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) >
+                (aln[i]->diffs * 2 /  float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) >
                  QUALITY_THRESHOLD) or (aln[i]->aepos - aln[i]->abpos < ALN_THRESHOLD))
                 aln[i]->active = false;
         }
@@ -408,7 +408,7 @@ int main(int argc, char *argv[]) {
 
                     if ((*idx2[i][j])[0]->active) {
                         for (int kk = 0; kk < idx2[i][j]->size(); kk++) {
-                            if (reads[(*idx2[i][j])[kk]->bid]->active)
+                            if ((reads[(*idx2[i][j])[kk]->bid]->active) and ((*idx2[i][j])[kk]->active))
                             if (((*idx2[i][j])[kk]->aln_type == FORWARD) and (cf < 1)) {
                                 cf += 1;
                                 //add edge
@@ -422,7 +422,7 @@ int main(int argc, char *argv[]) {
                                                                   Node((*idx2[i][j])[kk]->bid, 0), (*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
                                 }
                             }
-                            if (reads[(*idx2[i][j])[kk]->bid]->active)
+                            if ((reads[(*idx2[i][j])[kk]->bid]->active) and ((*idx2[i][j])[kk]->active))
                             if (((*idx2[i][j])[kk]->aln_type == BACKWARD) and (cb < 1)) {
                                 cb += 1;
                                 //add edge

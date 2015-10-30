@@ -330,7 +330,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active)
             if ((not reads[aln[i]->aid]->active) or (not reads[aln[i]->bid]->active) or
-                (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) >
+                (aln[i]->diffs * 2 / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) >
                  QUALITY_THRESHOLD) or (aln[i]->aepos - aln[i]->abpos < ALN_THRESHOLD))
                 aln[i]->active = false;
         }
@@ -387,14 +387,14 @@ int main(int argc, char *argv[]) {
              * For each read, if there is exact right match (type FORWARD), choose the one with longest alignment with read A
              * same for BACKWARD,
              */
-						
+
             if (reads[i]->active)
                 for (int j = 0; j < idx2[i].size(); j++) {
                     //idx2[i][j]->show();
                     if ((*idx2[i][j])[0]->active) {
-						
+
 						//std::sort( idx2[i][j]->begin(), idx2[i][j]->end(), compare_overlap );
-						
+
                         for (int kk = 0; kk < idx2[i][j]->size(); kk++) {
                             if (reads[(*idx2[i][j])[kk]->bid]->active)
                             if (((*idx2[i][j])[kk]->aln_type == FORWARD) and (cf < 1)) {
@@ -536,8 +536,10 @@ int main(int argc, char *argv[]) {
 
 		int astart = reads[idx3[std::get<0>(edgelist[i]).id][0]->aid]->effective_start;
 		int aend = reads[idx3[std::get<0>(edgelist[i]).id][0]->aid]->effective_end;
-		
-        strcpy(input_seq[0], reads[idx3[std::get<0>(edgelist[i]).id][0]->aid]->bases.substr(astart, aend-astart).c_str());
+
+        //strcpy(input_seq[0], reads[idx3[std::get<0>(edgelist[i]).id][0]->aid]->bases.substr(astart, aend-astart).c_str());
+
+		strcpy(input_seq[0], reads[idx3[std::get<0>(edgelist[i]).id][0]->aid]->bases.c_str());
 
         //feed input seq in
         int num_chosen = 1;
@@ -562,7 +564,7 @@ int main(int argc, char *argv[]) {
 
 
         //printf("%d\n",seq_count);
-        consensus = generate_consensus(input_seq, seq_count, 8, 8, 12, 6, 0.70); // generate consensus for each read
+        consensus = generate_consensus(input_seq, seq_count, 8, 8, 12, 6, 0.56); // generate consensus for each read
         printf(">%d_%d_%d\n %s\n", std::get<0>(edgelist[i]).id, num_chosen, strlen(consensus->sequence), consensus->sequence);
         free_consensus_data(consensus);
         for (int jj=0; jj < seq_count; jj++) {

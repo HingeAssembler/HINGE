@@ -25,7 +25,7 @@ with open(n) as f:
         rst.append(int(t1)+1)
         #rst.append(int(t2)+1)
 
-rst = range(1,1316)
+rst = range(1,1399)
 path = '/data/pacbio_assembly/AwesomeAssembler/data/'
 aln = []
 for i,n in enumerate(rst):

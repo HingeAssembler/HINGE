@@ -543,10 +543,10 @@ consensus_data * generate_consensus( char ** input_seq,
     max_diff = 1.0 - min_idt;
 
     seq_count = n_seq; // n sequences
-    printf("XX n_seq %d\n", n_seq);
+    /*printf("XX n_seq %d\n", n_seq);
     for (j=0; j < seq_count; j++) {
         printf("seq_len: %u %u\n", j, strlen(input_seq[j]));
-    };
+    };*/
     fflush(stdout);
 
     tags_list = calloc( seq_count, sizeof(align_tags_t *) ); 
@@ -602,11 +602,12 @@ consensus_data * generate_consensus( char ** input_seq,
                                                            0); 
             aligned_seq_count ++;
 
-            printf("Q:%s\n T%s\n", aln->q_aln_str, aln->t_aln_str);
-            printf("j:%s\n 0:%s\n", input_seq[j] + arange->s1, input_seq[0] + arange->s2);
+            //printf("Q:%s\n T%s\n", aln->q_aln_str, aln->t_aln_str);
+            //printf("j:%s\n 0:%s\n", input_seq[j] + arange->s1, input_seq[0] + arange->s2);
 
         } // get align tags
 
+		/*
         int k;
         int j;
         j = aligned_seq_count - 1;
@@ -617,9 +618,8 @@ consensus_data * generate_consensus( char ** input_seq,
                    base_str[tags_list[j]->align_tags[k].t_pos],
                    tags_list[j]->align_tags[k].q_base);
         }
-
         printf("seq:%s\n",input_seq[j]);
-
+		*/
         free_aln_range(arange);
         free_alignment(aln);
         free_kmer_match( kmer_match_ptr);

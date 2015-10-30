@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
     std::cout << "hello" << std::endl;
     Read *test_read;
 
-    la.OpenDB("G");
+    la.OpenDB("ecoli");
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
 
     la.showRead(1, 3); //show read [1,3)
@@ -35,8 +35,8 @@ int main(int argc, char *argv[]) {
     test_read = la.getRead(0); //get read 0
     test_read->showRead(); // show read 0
 
-    la.OpenAlignment("G.1.las");
-    la.showAlignment(0, 2); // show alignments of read [0,2)
+    la.OpenAlignment("ecoli.las");
+    //la.showAlignment(0, 2); // show alignments of read [0,2)
 
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
 
@@ -57,8 +57,9 @@ int main(int argc, char *argv[]) {
 
     std::vector<LAlignment *> res2;
     la.resetAlignment();
-    la.getAlignment(res2, 0, 3);// get alignment for reads [0,3)
-
+    //la.getAlignment(res2, 0, 3);// get alignment for reads [0,3)
+	
+	la.getAlignment(res2, 34651, 34654);
 
 
     for (auto i:res2) {
@@ -70,7 +71,7 @@ int main(int argc, char *argv[]) {
         for (u = 0; u < tlen; u++) {
             printf("%d,", (int) trace[u]);
         }*/
-        la.Lshow_Alignment_tgs(i);
+        //la.Lshow_Alignment_tgs(i);
     }
     la.CloseDB(); //close database
     return 0;
