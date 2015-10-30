@@ -555,7 +555,7 @@ int main(int argc, char *argv[]) {
                 int end = idx3[std::get<0>(edgelist[i]).id][num_passed]->bepos;
                 std::string bsub = reads[idx3[std::get<0>(edgelist[i]).id][num_passed]->bid]->bases;
                 input_seq[num_chosen] = (char *)calloc( 100000 , sizeof(char));
-                if (idx3[std::get<0>(edgelist[i]).id][num_passed]->flag == 0)
+                if (idx3[std::get<0>(edgelist[i]).id][num_passed]->flags == 0)
                     strcpy(input_seq[num_chosen], bsub.substr(start, end-start).c_str());
                 else
                     strcpy(input_seq[num_chosen], reverse_complement(bsub.substr(start, end-start)).c_str());
@@ -568,12 +568,15 @@ int main(int argc, char *argv[]) {
 
         //printf("%d\n",seq_count);
         consensus = generate_consensus(input_seq, seq_count, 8, 8, 12, 6, 0.56); // generate consensus for each read
-        printf(">%d_%d_%d\n %s\n", std::get<0>(edgelist[i]).id, num_chosen, strlen(consensus->sequence), consensus->sequence);
-
-        if (std::get<0>(edgelist[i]).strand == 0 )
-            sequence_list.push_back(std::string(consensus->sequence));
-        else
+        
+		
+        if (std::get<0>(edgelist[i]).strand == 0 ) {
+			sequence_list.push_back(std::string(consensus->sequence));
+			printf(">%d_%d_%d\n %s\n", std::get<0>(edgelist[i]).id, num_chosen, strlen(consensus->sequence), std::string(consensus->sequence).c_str());
+		} else {
             sequence_list.push_back(reverse_complement(std::string(consensus->sequence)));
+			printf(">%d_%d_%d\n %s\n", std::get<0>(edgelist[i]).id, num_chosen, strlen(consensus->sequence), reverse_complement(std::string(consensus->sequence)).c_str());
+		}
 
         free_consensus_data(consensus);
         for (int jj=0; jj < seq_count; jj++) {
