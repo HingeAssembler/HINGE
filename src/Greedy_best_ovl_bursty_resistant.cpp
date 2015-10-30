@@ -404,7 +404,7 @@ int main(int argc, char *argv[]) {
                 for (int j = 0; j < idx2[i].size(); j++) {
                     //idx2[i][j]->show();
 
-                    std::sort( idx2[i][j]->begin(), idx2[i][j]->end(), compare_overlap );
+                    //std::sort( idx2[i][j]->begin(), idx2[i][j]->end(), compare_overlap );
 
                     if ((*idx2[i][j])[0]->active) {
                         for (int kk = 0; kk < idx2[i][j]->size(); kk++) {

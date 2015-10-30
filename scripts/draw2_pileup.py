@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from ipywidgets.widgets import interact 
+from ipywidgets.widgets import interact
 import interface_utils as util
 import sys
 
@@ -24,12 +24,13 @@ with open(n) as f:
             t2 = t2[:-1]
         rst.append(int(t1)+1)
         #rst.append(int(t2)+1)
-            
+
+rst = range(1,1316)
 path = '/data/pacbio_assembly/AwesomeAssembler/data/'
 aln = []
 for i,n in enumerate(rst):
     print i
-    for item in util.get_alignments_mapping(path+'ecoli', path + 'ecoli.ref', path+'ecoli.ecoli.ref.las', [n]):
+    for item in util.get_alignments_mapping(path+'corr', path + 'ecoli.ref', path+'corr.ecoli.ref.las', [n]):
         aln.append(item)
 
 print aln[0:20]
@@ -48,7 +49,7 @@ for item in aln:
         current_b = item[2]
     else:
         aln_group.append(item)
-    
+
 num = len(alns)
 print len(aln), len(alns)
 
@@ -76,10 +77,10 @@ points = [[0,0], [l,0], [l+tip,grid_size/4], [l,grid_size/2], [0,grid_size/2]]
 polygon = plt.Polygon(points,fc = 'r', ec = 'none', alpha = 0.6)
 plt.gca().add_patch(polygon)
 
-dotted_line = plt.Line2D((0, 0), (0, num*grid_size ),ls='-.')               
+dotted_line = plt.Line2D((0, 0), (0, num*grid_size ),ls='-.')
 plt.gca().add_line(dotted_line)
 
-dotted_line2 = plt.Line2D((l, l), (0, num*grid_size ),ls='-.')               
+dotted_line2 = plt.Line2D((l, l), (0, num*grid_size ),ls='-.')
 plt.gca().add_line(dotted_line2)
 
 for i,aln_group in enumerate(alns):
