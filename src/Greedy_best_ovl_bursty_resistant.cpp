@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active)
             if ((not reads[aln[i]->aid]->active) or (not reads[aln[i]->bid]->active) or
-                (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) >
+                (aln[i]->diffs /  float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) >
                  QUALITY_THRESHOLD) or (aln[i]->aepos - aln[i]->abpos < ALN_THRESHOLD))
                 aln[i]->active = false;
         }

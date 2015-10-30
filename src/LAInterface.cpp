@@ -2792,7 +2792,7 @@ int LAInterface::Lshow_Alignment_tgs(LAlignment * alignment) {
 
 #define COLUMN(x,y) \
     {               \
-        printf(" %d-%d ",x,y); \
+        printf(" %c-%c ",ToU[x],ToU[y]); \
     }               \
 
 
@@ -3148,4 +3148,15 @@ int LAInterface::LPrint_Alignment_exp(FILE *file, LAlignment *align, Work_Data *
     //fprintf(file, "Cool!\n");
     fflush(file);
     return (0);
+}
+
+int LAInterface::generate_consensus(std::vector<LAlignment *> & alns) {
+
+    int seq_count = alns.size();
+
+
+
+
+
+    return 0;
 }

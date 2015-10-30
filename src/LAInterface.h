@@ -157,6 +157,11 @@ public:
 
 
     int Lshow_Alignment_tgs(LAlignment *);
+
+    int generate_consensus(std::vector<LAlignment *> &);
+
+
+
 };
 
 #endif
