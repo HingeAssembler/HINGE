@@ -507,6 +507,8 @@ int main(int argc, char *argv[]) {
         std::transform(reads[i]->bases.begin(), reads[i]->bases.end(),reads[i]->bases.begin(), ::toupper);
     }
 
+    std::vector<std::string> sequence_list;
+
 
     const int top_k = 400;
     //choose top 400 for consensus
@@ -553,19 +555,26 @@ int main(int argc, char *argv[]) {
                 int end = idx3[std::get<0>(edgelist[i]).id][num_passed]->bepos;
                 std::string bsub = reads[idx3[std::get<0>(edgelist[i]).id][num_passed]->bid]->bases;
                 input_seq[num_chosen] = (char *)calloc( 100000 , sizeof(char));
-                strcpy(input_seq[num_chosen], bsub.substr(start, end-start).c_str());
+                if (idx3[std::get<0>(edgelist[i]).id][num_passed]->flag == 0)
+                    strcpy(input_seq[num_chosen], bsub.substr(start, end-start).c_str());
+                else
+                    strcpy(input_seq[num_chosen], reverse_complement(bsub.substr(start, end-start)).c_str());
                 num_chosen ++;
             }
             num_passed ++;
-
         }
 
         seq_count = num_chosen;
 
-
         //printf("%d\n",seq_count);
         consensus = generate_consensus(input_seq, seq_count, 8, 8, 12, 6, 0.56); // generate consensus for each read
         printf(">%d_%d_%d\n %s\n", std::get<0>(edgelist[i]).id, num_chosen, strlen(consensus->sequence), consensus->sequence);
+
+        if (std::get<0>(edgelist[i]).strand == 0 )
+            sequence_list.push_back(std::string(consensus->sequence));
+        else
+            sequence_list.push_back(reverse_complement(std::string(consensus->sequence)));
+
         free_consensus_data(consensus);
         for (int jj=0; jj < seq_count; jj++) {
             //free(seq_id[jj]);
@@ -575,8 +584,9 @@ int main(int argc, char *argv[]) {
     }
 
 
+    std::ofstream out(name_output);
 
-	std::string sequence = "";
+    std::string sequence = "";
 	for (int i = 0; i < edgelist.size(); i++){
 		if (i == 0) {
             if (std::get<0>(edgelist[i]).strand == 0)
@@ -629,7 +639,6 @@ int main(int argc, char *argv[]) {
 
 
 	std::cout<<sequence.size()<<std::endl;
-	std::ofstream out(name_output);
 
 	out << ">draftassembly" << std::endl;
 	out << sequence << std::endl;

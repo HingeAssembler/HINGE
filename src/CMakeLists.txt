@@ -54,6 +54,9 @@ add_library(OverlapGraph OverlapGraph.cpp)
 add_executable(Draft_assembly Draft_assembly)
 target_link_libraries(Draft_assembly LAInterface ini falcon)
 
+add_executable(Circular_consensus Circular_consensus)
+target_link_libraries(Circular_consensus LAInterface ini falcon)
+
 add_executable(SwissCheeseScrubber Swiss_cheese_scrubber.cpp)
 target_link_libraries(SwissCheeseScrubber LAInterface)
 
