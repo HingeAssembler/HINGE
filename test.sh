@@ -18,3 +18,5 @@ fasta2DB G G.fasta
 HPCdaligner -mdust -t5 G | csh -v 
 
 LAInterface_test
+Consensus_test
+LAInterface_test_2DB

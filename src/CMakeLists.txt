@@ -33,6 +33,8 @@ target_link_libraries(LAInterface LA DB)
 add_executable(LAInterface_test LAInterface_test)
 target_link_libraries(LAInterface_test LAInterface)
 
+add_executable(LAInterface_test_2DB LAInterface_test_2DB)
+target_link_libraries(LAInterface_test_2DB LAInterface)
 
 add_executable(LA4Falcon_test LA4Falcon)
 target_link_libraries(LA4Falcon_test LA DB)
@@ -72,5 +74,5 @@ add_executable(omp_test omp_test.c)
 add_executable(INIReaderTest INIReaderTest)
 target_link_libraries(INIReaderTest ini)
 
-add_executable(consensus_test LAInterface_consensus_test.cpp)
-target_link_libraries(consensus_test LAInterface falcon)
+add_executable(Consensus_test LAInterface_consensus_test.cpp)
+target_link_libraries(Consensus_test LAInterface falcon)

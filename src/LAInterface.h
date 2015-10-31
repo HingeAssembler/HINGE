@@ -103,6 +103,11 @@ public:
     int *findx = NULL;
     int nfiles = 0; // n blocks of the read database
 
+    char ** flist2 = NULL;
+    int *findx2 = NULL;
+    int nfiles2 = 0; // n blocks of read database 2
+
+
     FILE *input;
     int64 novl;
     int tspace, tbytes, small;
@@ -112,7 +117,7 @@ public:
 
     LAInterface() { };
 
-    int OpenDB2(std::string filename);
+    int OpenDB2(std::string filename, std::string filename2); // open 2 databases
 
     int OpenDB(std::string filename); // open database
 
@@ -128,7 +133,12 @@ public:
 
     Read *getRead(int number); //get one read
 
+    Read *getRead2(int number); //get one read
+
     void getRead(std::vector<Read *> &reads, int from, int to); // get reads within a range
+
+    void getRead2(std::vector<Read *> &reads, int from, int to); // get reads within a range
+
 
     void getAlignmentB(std::vector<int> &, int n); // get all b reads aligned with a read
 
@@ -143,6 +153,8 @@ public:
     int CloseDB(); // close database
 
     int getReadNumber(); // get total number of reads
+
+    int getReadNumber2(); // get total number of reads
 
     int64 getAlignmentNumber(); // get total number of alignments
 

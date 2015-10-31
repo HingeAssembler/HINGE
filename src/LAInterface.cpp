@@ -21,9 +21,12 @@ void Read::showRead() {
 }
 
 
-int LAInterface::OpenDB2(std::string filename) {
+int LAInterface::OpenDB2(std::string filename, std::string filename2) {
     char *fn = new char[filename.length() + 1];
     strcpy(fn, filename.c_str());
+
+    char *fn2 = new char[filename2.length() + 1];
+    strcpy(fn2, filename2.c_str());
 
     int status = Open_DB(fn, this->db1);
     if (status < 0)
@@ -33,10 +36,91 @@ int LAInterface::OpenDB2(std::string filename) {
         exit(1);
     }
 
-    this->db2 = this->db1;
-    Trim_DB(db1);
 
-    delete[] fn;
+    status = Open_DB(fn2, this->db2);
+    if (status < 0)
+        exit(1);
+    if (this->db2->part > 0) {
+        fprintf(stderr, "%s: Cannot be called on a block: %s\n", "test", fn);
+        exit(1);
+    }
+
+    Trim_DB(db1);
+    Trim_DB(db2);
+
+
+
+
+
+    char *fn_1 = new char[filename.length() + 1 + 3];
+    strcpy(fn_1, fn);
+    strcat(fn_1, ".db");
+
+    FILE * dstub = Fopen(fn_1, "r");
+    if (dstub == NULL)
+        exit(1);
+
+    if (fscanf(dstub, DB_NFILE, &nfiles) != 1) SYSTEM_ERROR
+
+    printf("%d files\n", nfiles);
+
+    flist = (char **) Malloc(sizeof(char *) * nfiles, "Allocating file list");
+    findx = (int *) Malloc(sizeof(int *) * (nfiles + 1), "Allocating file index");
+
+    if (flist == NULL || findx == NULL)
+        exit(1);
+
+    findx += 1;
+    findx[-1] = 0;
+
+    for (int i = 0; i < nfiles; i++) {
+        char prolog[MAX_NAME], fname[MAX_NAME];
+
+        if (fscanf(dstub, DB_FDATA, findx + i, fname, prolog) != 3) SYSTEM_ERROR
+        if ((flist[i] = Strdup(prolog, "Adding to file list")) == NULL)
+            exit(1);
+    }
+
+    fclose(dstub);
+
+
+
+    char *fn_2 = new char[filename.length() + 1 + 3];
+    strcpy(fn_2, fn2);
+    strcat(fn_2, ".db");
+
+    dstub = Fopen(fn_2, "r");
+    if (dstub == NULL)
+        exit(1);
+
+    if (fscanf(dstub, DB_NFILE, &nfiles2) != 1) SYSTEM_ERROR
+
+    printf("%d files\n", nfiles2);
+
+    flist2 = (char **) Malloc(sizeof(char *) * nfiles2, "Allocating file list");
+    findx2 = (int *) Malloc(sizeof(int *) * (nfiles2 + 1), "Allocating file index");
+
+    if (flist2 == NULL || findx2 == NULL)
+        exit(1);
+
+    findx2 += 1;
+    findx2[-1] = 0;
+
+    for (int i = 0; i < nfiles2; i++) {
+        char prolog[MAX_NAME], fname[MAX_NAME];
+
+        if (fscanf(dstub, DB_FDATA, findx2 + i, fname, prolog) != 3) SYSTEM_ERROR
+        if ((flist2[i] = Strdup(prolog, "Adding to file list")) == NULL)
+            exit(1);
+    }
+
+    fclose(dstub);
+
+
+    delete [] fn;
+    delete [] fn2;
+    delete [] fn_1;
+    delete [] fn_2;
     return 0;
 }
 
@@ -268,6 +352,100 @@ Read *LAInterface::getRead(int number) {
         ss >> read_name;
 
         Load_Read(db1, i, read, UPPER);
+
+        for (track = first; track != NULL; track = track->next) {
+            int64 *anno;
+            int *data;
+            int64 s, f, j;
+            int bd, ed, m;
+
+            anno = (int64 *) track->anno;
+            data = (int *) track->data;
+
+            s = (anno[i] >> 2);
+            f = (anno[i + 1] >> 2);
+            if (s < f) {
+                for (j = s; j < f; j += 2) {
+                    bd = data[j];
+                    ed = data[j + 1];
+                    for (m = bd; m < ed; m++)
+                        if (iscase(read[m]))
+                            read[m] = (char) (read[m] + hilight);
+                    if (j == s)
+                        printf("> %s:", track->name);
+                    printf(" [%d,%d]", bd, ed);
+                }
+                printf("\n");
+            }
+        }
+
+        read_bases = std::string(read);
+        fst = 0;
+        lst = len;
+
+
+    }
+    Read *new_r = new Read(number, read_name, read_bases);
+    return new_r;
+}
+
+Read *LAInterface::getRead2(int number) {
+
+    std::stringstream ss;
+    std::string read_name;
+    std::string read_bases;
+    if (flist2 == NULL || findx2 == NULL)
+        exit(1);
+    HITS_READ *reads;
+    HITS_TRACK *first;
+    char *read, **entry;
+    int c, b, e, i;
+    int hilight, substr;
+    int map;
+    int       (*iscase)(int);
+    read = New_Read_Buffer(db2);
+    int UPPER = 1;
+    int WIDTH = 80;
+    //printf("2");
+    entry = NULL;
+    first = db2->tracks;
+    hilight = 'A' - 'a';
+
+    map = 0;
+    reads = db2->reads;
+    substr = 0;
+
+    c = 0;
+
+    b = number;
+    e = number + 1;
+
+    for (i = b; i < e; i++) {
+        int len;
+        int fst, lst;
+        int flags, qv;
+        HITS_READ *r;
+        HITS_TRACK *track;
+
+        r = reads + i;
+        len = r->rlen;
+
+        flags = r->flags;
+        qv = (flags & DB_QV);
+
+        {
+            while (i < findx2[map - 1])
+                map -= 1;
+            while (i >= findx2[map])
+                map += 1;
+            ss << flist2[map] << '/' << r->origin << '/' << r->fpulse << '_' << r->fpulse + len;
+            if (qv > 0)
+                ss << "RQ=" << qv;
+        }
+
+        ss >> read_name;
+
+        Load_Read(db2, i, read, UPPER);
 
         for (track = first; track != NULL; track = track->next) {
             int64 *anno;
@@ -964,6 +1142,100 @@ void LAInterface::getRead(std::vector<Read *> &reads_vec, int from, int to) {
         ss >> read_name;
 
         Load_Read(db1, i, read, UPPER);
+
+        for (track = first; track != NULL; track = track->next) {
+            int64 *anno;
+            int *data;
+            int64 s, f, j;
+            int bd, ed, m;
+
+            anno = (int64 *) track->anno;
+            data = (int *) track->data;
+
+            s = (anno[i] >> 2);
+            f = (anno[i + 1] >> 2);
+            if (s < f) {
+                for (j = s; j < f; j += 2) {
+                    bd = data[j];
+                    ed = data[j + 1];
+                    for (m = bd; m < ed; m++)
+                        if (iscase(read[m]))
+                            read[m] = (char) (read[m] + hilight);
+                    if (j == s)
+                        printf("> %s:", track->name);
+                    printf(" [%d,%d]", bd, ed);
+                }
+                printf("\n");
+            }
+        }
+
+        read_bases = std::string(read);
+        fst = 0;
+        lst = len;
+        Read *new_r = new Read(i, len, read_name, read_bases);
+        reads_vec.push_back(new_r);
+
+    }
+
+}
+
+
+void LAInterface::getRead2(std::vector<Read *> &reads_vec, int from, int to) {
+
+    std::stringstream ss;
+    std::string read_name;
+    std::string read_bases;
+    if (flist2 == NULL || findx2 == NULL)
+        exit(1);
+    HITS_READ *reads;
+    HITS_TRACK *first;
+    char *read, **entry;
+    int c, b, e, i;
+    int hilight, substr;
+    int map;
+    int       (*iscase)(int);
+    read = New_Read_Buffer(db2);
+    int UPPER = 1;
+    int WIDTH = 80;
+    entry = NULL;
+    first = db2->tracks;
+    hilight = 'A' - 'a';
+
+    map = 0;
+    reads = db2->reads;
+    substr = 0;
+
+    c = 0;
+
+    b = from;
+    e = to;
+
+    for (i = b; i < e; i++) {
+        int len;
+        int fst, lst;
+        int flags, qv;
+        HITS_READ *r;
+        HITS_TRACK *track;
+
+        r = reads + i;
+        len = r->rlen;
+
+        flags = r->flags;
+        qv = (flags & DB_QV);
+
+        {
+            while (i < findx2[map - 1])
+                map -= 1;
+            while (i >= findx2[map])
+                map += 1;
+            ss << flist2[map] << '/' << r->origin << '/' << r->fpulse << '_' << r->fpulse + len;
+            if (qv > 0)
+                ss << "RQ=" << qv;
+        }
+
+        ss >> read_name;
+
+        Load_Read(db2, i, read, UPPER);
 
         for (track = first; track != NULL; track = track->next) {
             int64 *anno;
@@ -1740,6 +2012,11 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
 
 int LAInterface::getReadNumber() {
     return db1->nreads;
+}
+
+
+int LAInterface::getReadNumber2() {
+    return db2->nreads;
 }
 
 int64 LAInterface::getAlignmentNumber() {
