@@ -36,11 +36,11 @@ int main() {
             if (strcmp(seq_id[seq_count], "-") == 0) {
                 break;
             }
-            printf("%s\n", seq_id[seq_count]);
+            //printf("%s\n", seq_id[seq_count]);
             seq_count += 1;
             //if (seq_count > 500) break;
         }
-        printf("sc: %d\n", seq_count);
+        //printf("sc: %d\n", seq_count);
         if (seq_count < 10 && strcmp(seq_id[seq_count], "-") != 0 ) continue;
         if (seq_count < 10 && strcmp(seq_id[seq_count], "-") == 0 ) break;
             consensus = generate_consensus(input_seq, seq_count, 8, 8, 12, 6, 0.70);

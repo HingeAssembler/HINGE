@@ -83,6 +83,13 @@
      In otherwords A[abpos+1..aepos] is aligned to B[bbpos+1..bepos] (assuming X[1] is
      the *first* character of X).
 
+
+     A local alignment is specified by the point '(abpos,bbpos)' at which its path in
+     the underlying edit graph starts, and the point '(aepos,bepos)' at which it ends.
+     In otherwords A[abpos..aepos-1] is aligned to B[bbpos..bepos-1] (assuming X[0] is
+     the *first* character of X).
+
+
      There are 'diffs' differences in an optimal local alignment between the beginning and
      end points of the alignment (if computed by Compute_Trace), or nearly so (if computed
      by Local_Alignment).  

@@ -193,48 +193,65 @@ int main(int argc, char *argv[]) {
         std::transform(reads_list[i].begin(),reads_list[i].end(),reads_list[i].begin(), ::toupper);
     }
 
-    std::string first_seq = reads_list.front();
-    char * first_seq_cstr = (char *) malloc(first_seq.size() * sizeof(char));
-    strcpy(first_seq_cstr, first_seq.c_str());
+    for (int i = 0; i < reads_list.size() - 1; i++) {
+        std::string first_seq = reads_list[i];
+        char *first_seq_cstr = (char *) malloc(first_seq.size() * sizeof(char));
+        strcpy(first_seq_cstr, first_seq.c_str());
 
-    std::string second_seq = reads_list[1];
-    char * second_seq_cstr = (char *) malloc(second_seq.size() * sizeof(char));
-    strcpy(second_seq_cstr, second_seq.c_str());
-
-
-    first_seq_cstr ++; //there is a white space
-    second_seq_cstr ++;
-
-    printf("%s\n",first_seq_cstr);
-    kmer_lookup * lk_ptr;
-    seq_array sa_ptr;
-    seq_addr_array sda_ptr;
-    kmer_match * kmer_match_ptr;
-
-    int K = 8;
-    lk_ptr = allocate_kmer_lookup( 1 << (K * 2) );
-    sa_ptr = allocate_seq( (seq_coor_t) first_seq.size() ); // seed sequence
-    sda_ptr = allocate_seq_addr( (seq_coor_t) first_seq.size() );
-
-    printf("fine %d\n", strlen(first_seq_cstr));
-
-    add_sequence( 0, K, first_seq_cstr, strlen(first_seq_cstr), sda_ptr, sa_ptr, lk_ptr);
+        std::string second_seq = reads_list[i + 1];
+        char *second_seq_cstr = (char *) malloc(second_seq.size() * sizeof(char));
+        strcpy(second_seq_cstr, second_seq.c_str());
 
 
-    kmer_match_ptr = find_kmer_pos_for_seq(second_seq_cstr, strlen(second_seq_cstr), K, sda_ptr, lk_ptr);
+        first_seq_cstr++; //there is a white space
+        second_seq_cstr++;
+
+        //printf("%s\n", first_seq_cstr);
+        kmer_lookup *lk_ptr;
+        seq_array sa_ptr;
+        seq_addr_array sda_ptr;
+        kmer_match *kmer_match_ptr;
+
+        int K = 8;
+        lk_ptr = allocate_kmer_lookup(1 << (K * 2));
+        sa_ptr = allocate_seq((seq_coor_t) first_seq.size()); // seed sequence
+        sda_ptr = allocate_seq_addr((seq_coor_t) first_seq.size());
+
+        //printf("fine %d\n", strlen(first_seq_cstr));
+
+        add_sequence(0, K, first_seq_cstr, strlen(first_seq_cstr), sda_ptr, sa_ptr, lk_ptr);
 
 
+        kmer_match_ptr = find_kmer_pos_for_seq(second_seq_cstr, strlen(second_seq_cstr), K, sda_ptr, lk_ptr);
 
-    for (int i = 0; i <  kmer_match_ptr->count; i++ ) {
-        printf("%d %d\n", kmer_match_ptr->query_pos[i], kmer_match_ptr->target_pos[i]);
-    }
+        //for (int i = 0; i < kmer_match_ptr->count; i++) {
+        //    printf("%d %d\n", kmer_match_ptr->query_pos[i], kmer_match_ptr->target_pos[i]);
+        //}
 
 #define INDEL_ALLOWENCE_0 6
-    aln_range * arange;
+        aln_range *arange;
 
-    arange = find_best_aln_range(kmer_match_ptr, K, K * INDEL_ALLOWENCE_0, 5);  // narrow band to avoid aligning through big indels
-    printf("%d, %d, %d, %d\n", arange->s1, arange->e1, arange->s2, arange->e2);
+        arange = find_best_aln_range(kmer_match_ptr, K, K * INDEL_ALLOWENCE_0,
+                                     5);  // narrow band to avoid aligning through big indels
+        printf("%d: %d, %d, %d, %d\n", i, arange->s1, arange->e1, arange->s2, arange->e2);
 
+        free(first_seq_cstr - 1);
+        free(second_seq_cstr - 1);
+        free_kmer_match(kmer_match_ptr);
+        free_aln_range(arange);
+        free_seq_addr_array(sda_ptr);
+        free_seq_array(sa_ptr);
+        free_kmer_lookup(lk_ptr);
+        first_seq_cstr = NULL;
+        second_seq_cstr = NULL;
+        kmer_match_ptr = NULL;
+        arange = NULL;
+        sda_ptr = NULL;
+        sa_ptr = NULL;
+        lk_ptr = NULL;
+
+
+    }
 
     return 0;
 }

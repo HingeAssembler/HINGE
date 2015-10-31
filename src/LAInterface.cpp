@@ -1377,6 +1377,9 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
         work = NULL;
     }
 
+    small  = 1;
+    tbytes = sizeof(uint8);
+
     tmax = 1000;
     trace = (uint16 *) Malloc(sizeof(uint16) * tmax, "Allocating trace vector");
     if (trace == NULL)
@@ -1446,6 +1449,9 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
         ovl->path.trace = (void *) trace;
         Read_Trace(input, ovl, tbytes);
         //  Determine if it should be displayed
+
+
+
 
         ar = ovl->aread + 1;
         if (in) {
@@ -1576,8 +1582,32 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
 
                 if (FLIP)
                     Flip_Alignment(aln, 0);
+                //if (small)
+                //    Decompress_TraceTo16(ovl);
+
+
                 if (small)
                     Decompress_TraceTo16(ovl);
+
+                new_al->trace_pts_len = ovl->path.tlen;
+                new_al->trace_pts = (uint16 *)malloc(ovl->path.tlen * sizeof(uint16));
+
+                memcpy(new_al->trace_pts, ovl->path.trace, ovl->path.tlen * sizeof(uint16));
+
+                /*{
+                    printf("\n");
+
+                    uint16 *pp = (uint16 *) ovl->path.trace;
+                    for (int uu = 0; uu < ovl->path.tlen; uu++) {
+                        printf("%d ", pp[uu]);
+                        new_al->trace_pts[uu] = pp[uu];
+                    }
+
+
+                    printf("\n");
+
+
+                }*/
 
                 amin = ovl->path.abpos - BORDER;
                 if (amin < 0) amin = 0;
@@ -2165,7 +2195,6 @@ int LAInterface::LPrint_Alignment(FILE *file, Alignment *align, Work_Data *ework
   Abuf[o] = N2A[u];							\
   Bbuf[o] = N2A[v];							\
   o += 1;								\
-        printf(" %d-%d ",x,y); \
 }
 
     a = align->aseq - 1;
@@ -2907,6 +2936,210 @@ int LAInterface::Lshow_Alignment_tgs(LAlignment * alignment) {
 }
 
 
+std::pair<std::string, std::string> LAInterface::Lget_Alignment_tgs(LAlignment * alignment) {
+
+    //load aseq and bseq first
+
+    //printf("A:%s\n",alignment->aseq);
+    //printf("B:%s\n",alignment->bseq);
+    int amin, amax, bmin, bmax;
+    const int BORDER = 10;
+    amin = alignment->abpos - BORDER;
+    if (amin < 0) amin = 0;
+    amax = alignment->aepos + BORDER;
+    if (amax > alignment->alen) amax = alignment->alen;
+    if (alignment->flags == 1) {
+        bmin = (alignment->blen - alignment->bepos) - BORDER;
+        if (bmin < 0) bmin = 0;
+        bmax = (alignment->blen - alignment->bbpos) + BORDER;
+        if (bmax > alignment->blen) bmax = alignment->blen;
+    }
+    else {
+        bmin = alignment->bbpos - BORDER;
+        if (bmin < 0) bmin = 0;
+        bmax = alignment->bepos + BORDER;
+        if (bmax > alignment->blen) bmax = alignment->blen;
+    }
+
+
+    char * abuffer = New_Read_Buffer(db1);
+    char * bbuffer = New_Read_Buffer(db2);
+
+
+    char * aseq = Load_Subread(db1, alignment->aid, amin, amax, abuffer, 0);
+    char * bseq = Load_Subread(db2, alignment->bid, bmin, bmax, bbuffer, 0);
+
+
+    alignment->aseq = aseq - amin;
+    if (alignment->flags == 1) {
+        Complement_Seq(bseq, bmax - bmin);
+        alignment->bseq = bseq - (alignment->blen - bmax);
+    }
+    else
+        alignment->bseq = bseq - bmin;
+
+
+
+
+    char *Abuf, *Bbuf, *Dbuf;
+    int   i, j, o;
+    char *a, *b;
+    char  mtag, dtag;
+    int   prefa, prefb;
+    int   aend, bend;
+    int   sa, sb;
+    int   match, diff;
+    char *N2A;
+    int border = 10;
+
+    int tlen = alignment->tlen;
+    int * trace = alignment->trace;
+
+    a = alignment->aseq - 1;
+    b = alignment->bseq - 1;
+
+    i = j = 1;
+
+    prefa = alignment->abpos;
+    prefb = alignment->bbpos;
+
+    if (prefa > border)
+    { i = prefa-(border-1);
+        prefa = border;
+    }
+    if (prefb > border)
+    { j = prefb-(border-1);
+        prefb = border;
+    }
+
+    sa   = i;
+    sb   = j;
+    mtag = ':';
+    dtag = ':';
+
+    std::string aa = "";
+    std::string bb = "";
+
+#define COLUMN(x,y) \
+    {               \
+        aa.append(1,ToU[x]); \
+        bb.append(1,ToU[y]); \
+    }               \
+
+
+    while (prefa > prefb)
+    { //COLUMN(a[i],4)
+        i += 1;
+        prefa -= 1;
+    }
+    while (prefb > prefa)
+    { //COLUMN(4,b[j])
+        j += 1;
+        prefb -= 1;
+    }
+    while (prefa > 0)
+    { //COLUMN(a[i],b[j])
+        i += 1;
+        j += 1;
+        prefa -= 1;
+    }
+
+    mtag = '[';
+    if (prefb > 0)
+    //COLUMN(5,5)
+
+    mtag  = '|';
+    dtag  = '*';
+
+    match = diff = 0;
+
+    { int p, c;      /* Output columns of alignment til reach trace end */
+
+        for (c = 0; c < tlen; c++)
+            if ((p = trace[c]) < 0)
+            { p = -p;
+                //printf("%d\n",trace[c]);
+                while (i != p)
+                { COLUMN(a[i],b[j])
+                    if (a[i] == b[j])
+                        match += 1;
+                    else
+                        diff += 1;
+                    i += 1;
+                    j += 1;
+                }
+                COLUMN(7,b[j])
+                j += 1;
+                diff += 1;
+            }
+            else
+            { while (j != p)
+                { COLUMN(a[i],b[j])
+                    if (a[i] == b[j])
+                        match += 1;
+                    else
+                        diff += 1;
+                    i += 1;
+                    j += 1;
+                }
+                COLUMN(a[i],7)
+                i += 1;
+                diff += 1;
+            }
+        p = alignment->aepos;
+        while (i <= p)
+        { COLUMN(a[i],b[j])
+            if (a[i] == b[j])
+                match += 1;
+            else
+                diff += 1;
+            i += 1;
+            j += 1;
+        }
+    }
+
+ /*   { int c;     // Output remaining column including unaligned suffix
+
+        mtag = ']';
+        if (a[i] != 4 && b[j] != 4 && border > 0)
+        COLUMN(6,6)
+
+        mtag = ':';
+        dtag = ':';
+
+        c = 0;
+        while (c < border && (a[i] != 4 || b[j] != 4))
+        { if (a[i] != 4)
+            if (b[j] != 4)
+            { COLUMN(a[i],b[j])
+                i += 1;
+                j += 1;
+            }
+            else
+            { COLUMN(a[i],4)
+                i += 1;
+            }
+            else
+            { COLUMN(4,b[j])
+                j += 1;
+            }
+            c += 1;
+        }
+    }*/
+
+
+    //printf("%s\n%s\n", aa.c_str(), bb.c_str());
+    free(abuffer - 1);
+    free(bbuffer - 1);
+
+    alignment->aseq = NULL;
+    alignment->bseq = NULL;
+
+
+    return std::pair<std::string, std::string>(aa,bb);
+}
+
+
 
 int LAInterface::LPrint_Alignment_exp(FILE *file, LAlignment *align, Work_Data *ework,
                                   int indent, int width, int border, int upper, int coord)
@@ -2992,7 +3225,6 @@ int LAInterface::LPrint_Alignment_exp(FILE *file, LAlignment *align, Work_Data *
   Abuf[o] = N2A[u];							\
   Bbuf[o] = N2A[v];							\
   o += 1;								\
-        printf(" %d-%d ",x,y); \
 }
 
     a = align->aseq - 1;
@@ -3153,7 +3385,6 @@ int LAInterface::LPrint_Alignment_exp(FILE *file, LAlignment *align, Work_Data *
 int LAInterface::generate_consensus(std::vector<LAlignment *> & alns) {
 
     int seq_count = alns.size();
-
 
 
 

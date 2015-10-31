@@ -602,8 +602,22 @@ consensus_data * generate_consensus( char ** input_seq,
                                                            0); 
             aligned_seq_count ++;
 
-            //printf("Q:%s\n T%s\n", aln->q_aln_str, aln->t_aln_str);
-            //printf("j:%s\n 0:%s\n", input_seq[j] + arange->s1, input_seq[0] + arange->s2);
+
+            char * s = aln->q_aln_str;
+            int nq = 0;
+            while (*s++) {
+                if (*s != '-') nq++;
+            }
+            s = aln->t_aln_str;
+            int nt = 0;
+            while (*s++) {
+                if (*s != '-') nt++;
+            }
+
+
+            //printf("Q:%s\nT:%s\n%d\n%d %d\n", aln->q_aln_str, aln->t_aln_str, aln->aln_str_size, nq, nt);
+            //printf("[%d %d] x [%d %d]\n", arange->s1, arange->e1, arange->s2, arange->e2);
+            //printf("j:%s\n0:%s\n", input_seq[j] + arange->s1, input_seq[0] + arange->s2);
 
         } // get align tags
 

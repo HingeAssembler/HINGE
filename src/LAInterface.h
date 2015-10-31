@@ -57,6 +57,8 @@ public:
     int alen; // length of read a
     int blen; // length of read b
     int *trace; // trace
+    uint16 *trace_pts;
+    int trace_pts_len;
     int tlen;
     int diffs;
     int abpos, bbpos; // begin position of read a and b
@@ -161,7 +163,7 @@ public:
     int generate_consensus(std::vector<LAlignment *> &);
 
 
-
+    std::pair<std::string, std::string> Lget_Alignment_tgs(LAlignment *alignment);
 };
 
 #endif

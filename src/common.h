@@ -240,6 +240,13 @@ align_tags_t * get_align_tags( char * aln_q_seq,
                                aln_range * range,
                                unsigned q_id,
                                seq_coor_t t_offset);
+
+align_tags_t * get_align_tags2( char * aln_q_seq,
+                               char * aln_t_seq,
+                               seq_coor_t aln_seq_len,
+                               aln_range * range,
+                               unsigned q_id,
+                               seq_coor_t t_offset);
 							   
 							   
 void free_align_tags( align_tags_t * tags);

@@ -33,12 +33,13 @@ target_link_libraries(LAInterface LA DB)
 add_executable(LAInterface_test LAInterface_test)
 target_link_libraries(LAInterface_test LAInterface)
 
+
 add_executable(LA4Falcon_test LA4Falcon)
 target_link_libraries(LA4Falcon_test LA DB)
 
 add_library(kmer_lookup kmer_lookup.c)
 add_library(DW_banded DW_banded.c)
-add_library(falcon falcon.c)
+add_library(falcon falcon.c falcon_utils.c)
 target_link_libraries(falcon kmer_lookup DW_banded)
 add_executable(Falcon_test Falcon_test)
 target_link_libraries(Falcon_test falcon)
@@ -70,3 +71,6 @@ add_executable(omp_test omp_test.c)
 
 add_executable(INIReaderTest INIReaderTest)
 target_link_libraries(INIReaderTest ini)
+
+add_executable(consensus_test LAInterface_consensus_test.cpp)
+target_link_libraries(consensus_test LAInterface falcon)
