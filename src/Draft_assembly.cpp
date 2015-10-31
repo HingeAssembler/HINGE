@@ -616,38 +616,62 @@ int main(int argc, char *argv[]) {
         else
             next_seq = reverse_complement(reads[std::get<1>(edgelist[i]).id]->bases);
 		
-		int abpos, aepos, alen, bbpos, bepos, blen;
+		int abpos, aepos, alen, bbpos, bepos, blen, aes, aee, bes, bee;
 		
 		alen = currentaln->alen;
 		blen = currentaln->blen;
 		if (std::get<0>(edgelist[i]).strand == 0) {
 			abpos = currentaln->abpos;
 			aepos = currentaln->aepos;
+			
+			aes = currentaln->aes;
+			aee = currentaln->aee;
+			
 		} else {
 			abpos = alen - currentaln->aepos;
 			aepos = alen - currentaln->abpos;
+		
+			aes = alen - currentaln->aee;
+			aee = alen - currentaln->aes;
 		}
 		
 		if (((std::get<1>(edgelist[i]).strand == 0) and (currentaln->flags == 0)) or ((std::get<1>(edgelist[i]).strand == 1) and (currentaln->flags == 1))) {
 			bbpos = currentaln->bbpos;
 			bepos = currentaln->bepos;
+			
+			bes = currentaln->bes;
+			bee = currentaln->bee;
+			
 		} else {
 			bbpos = blen - currentaln->bepos;
 			bepos = blen - currentaln->bbpos;
+			
+			bes = blen - currentaln->bee;
+			bee = blen - currentaln->bes;
+			
 		}
 		
-		printf("[%d %d]/%d x [%d %d]/%d\n", abpos, aepos, alen, bbpos, bepos, blen);
+		printf("[[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", abpos, aepos, aes, aee, bbpos, bepos, bes, bee);
 		
 		if (i == 0) {
 			sequence = current_seq;
 		}
 		
-		sequence.erase(sequence.end()-(alen-aepos), sequence.end());
+		/*if (aee>aepos)
+			sequence.erase(sequence.end() - (aee-aepos), sequence.end());
+		else 
+			sequence.erase(sequence.end() - (alen-aepos), sequence.end());
+		
 		
 		next_seq.erase(next_seq.begin(), next_seq.begin() + bepos);
 		
-		sequence += next_seq;
+		if (bepos < bee)
+			next_seq.erase(next_seq.end() - (blen - bee), next_seq.end());*/
 		
+		sequence.erase(sequence.end() - (alen - aepos), sequence.end());
+		next_seq.erase(next_seq.begin(), next_seq.begin() + bepos);
+		
+		sequence += next_seq;
 	}
 
     //need to trim the end
