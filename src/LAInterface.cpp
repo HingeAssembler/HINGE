@@ -1649,8 +1649,6 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
         work = NULL;
     }
 
-    small  = 1;
-    tbytes = sizeof(uint8);
 
     tmax = 1000;
     trace = (uint16 *) Malloc(sizeof(uint16) * tmax, "Allocating trace vector");
@@ -1706,9 +1704,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
     lhalf = rhalf = 0;
 
     for (j = 0; j < novl; j++)
-
         //  Read it in
-
     {
         //printf("j:%d/%d\n",j,novl);
         Read_Overlap(input, ovl);
@@ -1748,6 +1744,8 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
         }
         if (!in)
             continue;
+		
+		//printf("j:%d/%d\n",j,novl);
 
         //  If -o check display only overlaps
 
@@ -1846,7 +1844,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
         //printf("]");
 
 
-        if ((ALIGN || CARTOON || REFERENCE) || (true)) {
+        if ((ALIGN || CARTOON || REFERENCE)  || true) {
             if (ALIGN || REFERENCE) {
                 char *aseq, *bseq;
                 int amin, amax;

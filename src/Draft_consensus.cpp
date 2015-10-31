@@ -46,13 +46,30 @@ int main(int argc, char *argv[]) {
     la.OpenAlignment(name_las);
 
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
-
+	
+	//la.showAlignment(0,1);
+	
+	std::vector<LOverlap *> res1;
+	  	la.resetAlignment();
+	  	la.getOverlap(res1, 0, 1); // get alignment(overlap) for reads [3,5)
+	    	
+	for (auto i:res1)
+		i->show();
+	printf("\n");
+	
+	
     std::vector<LAlignment *> res;
     la.resetAlignment();
 	la.getAlignment(res, 0, 1); // get all alignments
-
-
+	
+	for (auto i:res) {
+		i->show();
+	}
+	
+	
     int seq_count = res.size();
+	printf("seq_count:%d\n",seq_count);
+	
     align_tags_t ** tags_list;
     tags_list = (align_tags_t **) calloc( seq_count+1, sizeof(align_tags_t *) );
 
@@ -77,19 +94,26 @@ int main(int argc, char *argv[]) {
                                      arange, 0, 0);
 
 
-    for (int i = 0; i < seq_count; i ++) {
+
+	printf("%s\n%s\n",seq,seq);
+    
+	for (int i = 0; i < seq_count; i ++) {
 
         std::pair<std::string, std::string>  alignment = la.Lget_Alignment_tgs(res[i]);
 
+		
         char * t_aln_str = (char *) malloc(alignment.first.size()* sizeof(char));
         char * q_aln_str = (char *) malloc(alignment.second.size()* sizeof(char));
 
         strcpy(q_aln_str, alignment.second.c_str());
         strcpy(t_aln_str, alignment.first.c_str());
 
+
+		printf("%s\n%s\n",q_aln_str,t_aln_str);
+	
         seq_coor_t aln_str_size = strlen(q_aln_str);
-        aln_range * arange;
-        arange = (aln_range*) calloc(1 , sizeof(aln_range));
+        
+        aln_range * arange = (aln_range*) calloc(1 , sizeof(aln_range));
         arange->s1 = res[i]->bbpos;
         arange->e1 = res[i]->bepos;
         arange->s2 = res[i]->abpos;
@@ -103,7 +127,6 @@ int main(int argc, char *argv[]) {
         free(q_aln_str);
         free(t_aln_str);
         free_aln_range(arange);
-
     }
 
     //print consensus
@@ -116,7 +139,7 @@ int main(int argc, char *argv[]) {
     free_consensus_data(consensus);
     for (int i = 0; i <seq_count + 1; i++)
         free_align_tags(tags_list[i]);
-
+	
     la.CloseDB(); //close database*/
     return 0;
 }
