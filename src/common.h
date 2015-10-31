@@ -275,6 +275,11 @@ consensus_data * get_cns_from_align_tags( align_tags_t ** tag_seqs,
                                           unsigned t_len, 
                                           unsigned min_cov );
 										  
+consensus_data * get_cns_from_align_tags_large( align_tags_t ** tag_seqs, 
+                                          unsigned n_tag_seqs, 
+                                          unsigned t_len, 
+                                          unsigned min_cov );
+
 consensus_data * generate_consensus( char ** input_seq, 
                            unsigned int n_seq, 
                            unsigned min_cov, 

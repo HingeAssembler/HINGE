@@ -50,8 +50,6 @@ int LAInterface::OpenDB2(std::string filename, std::string filename2) {
 
 
 
-
-
     char *fn_1 = new char[filename.length() + 1 + 3];
     strcpy(fn_1, fn);
     strcat(fn_1, ".db");
@@ -85,7 +83,7 @@ int LAInterface::OpenDB2(std::string filename, std::string filename2) {
 
 
 
-    char *fn_2 = new char[filename.length() + 1 + 3];
+    char *fn_2 = new char[filename2.length() + 1 + 3];
     strcpy(fn_2, fn2);
     strcat(fn_2, ".db");
 
@@ -291,8 +289,111 @@ void LAInterface::showRead(int from, int to) {
         }
 
     }
-
 }
+
+
+void LAInterface::showRead2(int from, int to) {
+    if (flist2 == NULL || findx2 == NULL)
+        exit(1);
+    HITS_READ *reads;
+    HITS_TRACK *first;
+    char *read, **entry;
+    int c, b, e, i;
+    int hilight, substr;
+    int map;
+    int       (*iscase)(int);
+
+    read = New_Read_Buffer(db2);
+    int UPPER = 1;
+    int WIDTH = 80;
+    //printf("2");
+    {
+        entry = NULL;
+        first = db2->tracks;
+    }
+
+
+    hilight = 'A' - 'a';
+    iscase = islower;
+
+    map = 0;
+    reads = db2->reads;
+    substr = 0;
+
+    c = 0;
+
+    b = from;
+    e = to;
+
+    for (i = b; i < e; i++) {
+        int len;
+        int fst, lst;
+        int flags, qv;
+        HITS_READ *r;
+        HITS_TRACK *track;
+
+        r = reads + i;
+        len = r->rlen;
+
+        flags = r->flags;
+        qv = (flags & DB_QV);
+
+        {
+            while (i < findx[map - 1])
+                map -= 1;
+            while (i >= findx[map])
+                map += 1;
+            printf(">%s/%d/%d_%d", flist[map], r->origin, r->fpulse, r->fpulse + len);
+            if (qv > 0)
+                printf(" RQ=0.%3d", qv);
+        }
+        printf("\n");
+
+
+        Load_Read(db2, i, read, UPPER);
+
+        for (track = first; track != NULL; track = track->next) {
+            int64 *anno;
+            int *data;
+            int64 s, f, j;
+            int bd, ed, m;
+
+            anno = (int64 *) track->anno;
+            data = (int *) track->data;
+
+            s = (anno[i] >> 2);
+            f = (anno[i + 1] >> 2);
+            if (s < f) {
+                for (j = s; j < f; j += 2) {
+                    bd = data[j];
+                    ed = data[j + 1];
+                    for (m = bd; m < ed; m++)
+                        if (iscase(read[m]))
+                            read[m] = (char) (read[m] + hilight);
+                    if (j == s)
+                        printf("> %s:", track->name);
+                    printf(" [%d,%d]", bd, ed);
+                }
+                printf("\n");
+            }
+        }
+
+
+        fst = 0;
+        lst = len;
+
+        {
+            int j;
+
+            for (j = fst; j + WIDTH < lst; j += WIDTH)
+                printf("%.*s\n", WIDTH, read + j);
+            if (j < lst)
+                printf("%.*s\n", lst - j, read + j);
+        }
+
+    }
+}
+
 
 
 Read *LAInterface::getRead(int number) {
@@ -485,8 +586,7 @@ Read *LAInterface::getRead2(int number) {
 
 
 int LAInterface::OpenAlignment(std::string filename) {
-    db2 = db1;
-
+    
     char *fn = new char[filename.size() + 1];
     strcpy(fn, filename.c_str());
 
@@ -1429,7 +1529,8 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
 
         //  If -o check display only overlaps
         aln->alen = db1->reads[ovl->aread].rlen;
-        aln->blen = db1->reads[ovl->bread].rlen;
+        aln->blen = db2->reads[ovl->bread].rlen;
+		//printf("aread:%d, bread:%d, alen:%d, blen:%d\n",ovl->aread, ovl->bread, aln->alen, aln->blen);
         aln->flags = ovl->flags;
         tps = ovl->path.tlen / 2;
         LOverlap *new_ovl = new LOverlap();

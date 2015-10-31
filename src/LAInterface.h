@@ -124,6 +124,8 @@ public:
     int OpenAlignment(std::string filename); // open .las Alignment file
 
     void showRead(int from, int to); // show reads in a range
+	
+    void showRead2(int from, int to); // show reads in a range
 
     void showAlignment(int from, int to); // show alignment with 'A read' in a range
 
