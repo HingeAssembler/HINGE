@@ -501,7 +501,7 @@ int main(int argc, char *argv[]) {
 	//for (int i = 0; i < edgelist.size(); i++) {
 	//	printf("%d->%d\n", std::get<0>(edgelist[i]), std::get<1>(edgelist[i]));
 	//}
-
+/* test falcon consensus, now we don't need them
 
     for (int i = 0; i < n_read; i ++ ) {
         std::transform(reads[i]->bases.begin(), reads[i]->bases.end(),reads[i]->bases.begin(), ::toupper);
@@ -586,7 +586,7 @@ int main(int argc, char *argv[]) {
 
     }
 
-
+*/
     std::ofstream out(name_output);
 
     std::string sequence = "";
@@ -636,10 +636,7 @@ int main(int argc, char *argv[]) {
 
 	}
 
-
     //need to trim the end
-
-
 
 	std::cout<<sequence.size()<<std::endl;
 

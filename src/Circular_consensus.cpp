@@ -250,6 +250,7 @@ int main(int argc, char *argv[]) {
         sa_ptr = NULL;
         lk_ptr = NULL;
 
+        // Now it gives segment error, need to be fixed, TBD
 
     }
 
