@@ -160,6 +160,7 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
 int main(int argc, char *argv[]) {
 
     char * filename = argv[1];
+    char * out = argv[2];
     printf("filename: %s\n", filename);
 
     std::string line;
@@ -192,6 +193,9 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < reads_list.size(); i ++ ) {
         std::transform(reads_list[i].begin(),reads_list[i].end(),reads_list[i].begin(), ::toupper);
     }
+
+    std::string seq = reads_list[0];
+    printf("%d\n",seq.size());
 
     for (int i = 0; i < reads_list.size() - 1; i++) {
         std::string first_seq = reads_list[i];
@@ -235,6 +239,17 @@ int main(int argc, char *argv[]) {
                                      5);  // narrow band to avoid aligning through big indels
         printf("%d: %d, %d, %d, %d\n", i, arange->s1, arange->e1, arange->s2, arange->e2);
 
+        seq.erase(seq.end()- (reads_list[i].size() - arange->e2) , seq.end());
+        std::cout << "erase:" <<(reads_list[i].size() - arange->e2) << std::endl;
+        std::string apd = reads_list[i + 1];
+        apd.erase(apd.begin(), apd.begin() + arange->e1);
+        std::cout<<"grow:" << apd.size() << std::endl;
+
+
+        std::cout<<seq.substr(seq.size() - 100, std::string::npos) << apd.substr(0,100) << std::endl;
+
+        seq.append(apd);
+
         free(first_seq_cstr - 1);
         free(second_seq_cstr - 1);
         free_kmer_match(kmer_match_ptr);
@@ -248,6 +263,49 @@ int main(int argc, char *argv[]) {
         // Update:fixed
 
     }
+
+    //std::cout<<seq<<std::endl;
+    std::cout<<seq.size()<<std::endl;
+
+
+    std::ofstream outfile(out);
+
+    outfile << ">Draft_assembly_" <<seq.size() <<std::endl;
+    outfile<<seq<<std::endl;
+
+    /*consensus_data * consensus;
+
+    char ** input_seq;
+    char ** seq_id;
+
+    int seq_count = reads_list.size() + 1;
+
+    input_seq = (char **)calloc( seq_count, sizeof(char *));
+    seq_id = (char **)calloc( seq_count, sizeof(char *));
+
+
+    input_seq[0] = (char *) malloc((seq.size() + 20) * sizeof(char));
+    strcpy(input_seq[0], seq.c_str());
+    seq_id[0] = (char *)calloc( 20, sizeof(char));
+    strcpy(seq_id[0], "hi");
+
+    for (int i = 0; i < seq_count-1; i++) {
+        input_seq[i+1] = (char *) malloc((reads_list[i].size() + 20) * sizeof(char));
+        strcpy(input_seq[i+1], reads_list[i].c_str());
+        seq_id[i+1] = (char *)calloc( 20, sizeof(char));
+        strcpy(seq_id[i+1], "hi");
+
+    }
+
+    printf("finish reading\n");
+
+    consensus = generate_consensus_large(input_seq, seq_count - 1, 8, 8, 12, 1, 0.90);
+
+    if (strlen(consensus->sequence) > 500) {
+        printf(">%s\n%s\n", seq_id[0], consensus->sequence);
+    }
+    */
+
 
     return 0;
 }

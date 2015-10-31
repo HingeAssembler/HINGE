@@ -64,13 +64,26 @@ int main(int argc, char *argv[]) {
     std::vector<LAlignment *> res;
     la.resetAlignment();
 	la.getAlignment(res, 0, 1); // get all alignments
-	
-	//for (auto i:res) {
+
+
+
+    std::vector<LAlignment *> filtered;
+
+    for (auto i:res) {
+        if ((i->aepos - i->abpos) > 4000) {
+            filtered.push_back(i);
+        }
+    }
+
+
+
+
+    //for (auto i:res) {
 	//	i->show();
 	//}
 	
 	
-    int seq_count = res.size();
+    int seq_count = filtered.size();
 	printf("seq_count:%d\n",seq_count);
 	
     align_tags_t ** tags_list;
@@ -99,13 +112,17 @@ int main(int argc, char *argv[]) {
 
 
 	//printf("%s\n%s\n",seq,seq);
-	
+
+
+
+
 	
 	printf("num:%d\n",seq_count);
-    
+
 	for (int i = 0; i < seq_count ; i ++) {
 
-        std::pair<std::string, std::string>  alignment = la.Lget_Alignment_tgs(res[i]);
+
+        std::pair<std::string, std::string>  alignment = la.Lget_Alignment_tgs(filtered[i]);
 
 		
         char * t_aln_str = (char *) malloc((alignment.first.size()+20)* sizeof(char));
@@ -122,10 +139,10 @@ int main(int argc, char *argv[]) {
 		printf("%d/%d, %d\n", i, seq_count, aln_str_size);
         
         aln_range * arange = (aln_range*) calloc(1 , sizeof(aln_range));
-        arange->s1 = res[i]->bbpos;
-        arange->e1 = res[i]->bepos;
-        arange->s2 = res[i]->abpos;
-        arange->e2 = res[i]->aepos;
+        arange->s1 = filtered[i]->bbpos;
+        arange->e1 = filtered[i]->bepos;
+        arange->s2 = filtered[i]->abpos;
+        arange->e2 = filtered[i]->aepos;
 		arange->score = 5;
 		//printf("before get tags\n");
         tags_list[i+1] = get_align_tags( q_aln_str,

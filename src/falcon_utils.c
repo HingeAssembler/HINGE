@@ -9,6 +9,148 @@
 
 
 
+consensus_data * generate_consensus_large( char ** input_seq,
+                                     unsigned int n_seq,
+                                     unsigned min_cov,
+                                     unsigned K,
+                                     unsigned long local_match_count_window,
+                                     unsigned long local_match_count_threshold,
+                                     double min_idt) {
+    // local_match_count_window, local_match_count_threshold obsoleted, keep the interface for a while
+
+    unsigned int j;
+    unsigned int seq_count;
+    unsigned int aligned_seq_count;
+    kmer_lookup * lk_ptr;
+    seq_array sa_ptr;
+    seq_addr_array sda_ptr;
+    kmer_match * kmer_match_ptr;
+    aln_range * arange;
+    alignment * aln;
+    align_tags_t ** tags_list;
+    //char * consensus;
+    consensus_data * consensus;
+    double max_diff;
+    max_diff = 1.0 - min_idt;
+
+    seq_count = n_seq; // n sequences
+    printf("XX n_seq %d\n", n_seq);
+    for (j=0; j < seq_count; j++) {
+        printf("seq_len: %u %u\n", j, strlen(input_seq[j]));
+    };
+    fflush(stdout);
+
+    tags_list = calloc( seq_count, sizeof(align_tags_t *) );
+    lk_ptr = allocate_kmer_lookup( 1 << (K * 2) );
+    sa_ptr = allocate_seq( (seq_coor_t) strlen( input_seq[0]) ); // seed sequence
+    sda_ptr = allocate_seq_addr( (seq_coor_t) strlen( input_seq[0]) );
+    printf("before add sequence\n");
+    add_sequence( 0, K, input_seq[0], strlen(input_seq[0]), sda_ptr, sa_ptr, lk_ptr);
+    //mask_k_mer(1 << (K * 2), lk_ptr, 16);
+    // sequence 0 is the base sequence
+    // others are pile ups
+    printf("after add sequence\n");
+    char * base_str = input_seq[0];
+
+
+    aligned_seq_count = 0;
+    for (j=1; j < seq_count; j++) {
+
+        printf("seq_len: %ld %u\n", j, strlen(input_seq[j]));
+
+        kmer_match_ptr = find_kmer_pos_for_seq(input_seq[j], strlen(input_seq[j]), K, sda_ptr, lk_ptr);
+#define INDEL_ALLOWENCE_0 6
+
+        arange = find_best_aln_range(kmer_match_ptr, K, K * INDEL_ALLOWENCE_0, 5);  // narrow band to avoid aligning through big indels
+
+        //printf("1:%ld %ld %ld %ld\n", arange_->s1, arange_->e1, arange_->s2, arange_->e2);
+
+        //arange = find_best_aln_range2(kmer_match_ptr, K, K * INDEL_ALLOWENCE_0, 5);  // narrow band to avoid aligning through big indels
+
+        //printf("2:%ld %ld %ld %ld\n\n", arange->s1, arange->e1, arange->s2, arange->e2);
+
+#define INDEL_ALLOWENCE_1 0.10
+        if (arange->e1 - arange->s1 < 100 || arange->e2 - arange->s2 < 100 ||
+                                                                       abs( (arange->e1 - arange->s1 ) - (arange->e2 - arange->s2) ) >
+                    (int) (0.5 * INDEL_ALLOWENCE_1 * (arange->e1 - arange->s1 + arange->e2 - arange->s2))) {
+            free_kmer_match( kmer_match_ptr);
+            free_aln_range(arange);
+            continue;
+        }
+        //printf("%ld %s\n", strlen(input_seq[j]), input_seq[j]);
+        //printf("%ld %s\n\n", strlen(input_seq[0]), input_seq[0]);
+
+
+#define INDEL_ALLOWENCE_2 150
+        // WTF are these heuristics
+        //printf("reach\n");
+        aln = align(input_seq[j]+arange->s1, arange->e1 - arange->s1 ,
+                    input_seq[0]+arange->s2, arange->e2 - arange->s2 ,
+                    INDEL_ALLOWENCE_2, 1);
+        if (aln->aln_str_size > 500 && ((double) aln->dist / (double) aln->aln_str_size) < max_diff) {
+            tags_list[aligned_seq_count] = get_align_tags( aln->q_aln_str,
+                                                           aln->t_aln_str,
+                                                           aln->aln_str_size,
+                                                           arange, j,
+                                                           0);
+            aligned_seq_count ++;
+
+
+            char * s = aln->q_aln_str;
+            int nq = 0;
+            while (*s++) {
+                if (*s != '-') nq++;
+            }
+            s = aln->t_aln_str;
+            int nt = 0;
+            while (*s++) {
+                if (*s != '-') nt++;
+            }
+
+
+            //printf("Q:%s\nT:%s\n%d\n%d %d\n", aln->q_aln_str, aln->t_aln_str, aln->aln_str_size, nq, nt);
+            //printf("[%d %d] x [%d %d]\n", arange->s1, arange->e1, arange->s2, arange->e2);
+            //printf("j:%s\n0:%s\n", input_seq[j] + arange->s1, input_seq[0] + arange->s2);
+
+        } // get align tags
+
+        /*
+        int k;
+        int j;
+        j = aligned_seq_count - 1;
+        for (k = 0; k < tags_list[j]->len; k++) {
+            printf("%d %d %ld %d %c %c\n",j, k, tags_list[j]->align_tags[k].t_pos,
+                                   tags_list[j]->align_tags[k].delta,
+                                   //tags_list[j]->align_tags[k].p_q_base,
+                   base_str[tags_list[j]->align_tags[k].t_pos],
+                   tags_list[j]->align_tags[k].q_base);
+        }
+        printf("seq:%s\n",input_seq[j]);
+        */
+        free_aln_range(arange);
+        free_alignment(aln);
+        free_kmer_match( kmer_match_ptr);
+    }
+
+    if (aligned_seq_count > 0) {
+        consensus = get_cns_from_align_tags_large( tags_list, aligned_seq_count, strlen(input_seq[0]), min_cov );
+    } else {
+        // allocate an empty consensus sequence
+        consensus = calloc( 1, sizeof(consensus_data) );
+        consensus->sequence = calloc( 1, sizeof(char) );
+        consensus->eqv = calloc( 1, sizeof(unsigned int) );
+    }
+    //free(consensus);
+    free_seq_addr_array(sda_ptr);
+    free_seq_array(sa_ptr);
+    free_kmer_lookup(lk_ptr);
+    for (j=0; j < aligned_seq_count; j++) {
+        free_align_tags(tags_list[j]);
+    }
+    free(tags_list);
+    return consensus;
+}
+
 align_tags_t * get_align_tags2( char * aln_q_seq, 
                                char * aln_t_seq, 
                                seq_coor_t aln_seq_len,

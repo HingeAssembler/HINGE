@@ -287,8 +287,16 @@ consensus_data * generate_consensus( char ** input_seq,
                            unsigned long local_match_count_window,
                            unsigned long local_match_count_threshold,
                            double min_idt);
-								 
-	
+
+
+consensus_data * generate_consensus_large( char ** input_seq,
+                                     unsigned int n_seq,
+                                     unsigned min_cov,
+                                     unsigned K,
+                                     unsigned long local_match_count_window,
+                                     unsigned long local_match_count_threshold,
+                                     double min_idt);
+
 	
 	
 consensus_data * generate_utg_consensus( char ** input_seq, 
