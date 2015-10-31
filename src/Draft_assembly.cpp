@@ -588,59 +588,73 @@ int main(int argc, char *argv[]) {
 
 */
     std::ofstream out(name_output);
-
+	
     std::string sequence = "";
 	for (int i = 0; i < edgelist.size(); i++){
-		if (i == 0) {
-            if (std::get<0>(edgelist[i]).strand == 0)
-                sequence.append(reads[std::get<0>(edgelist[i]).id]->bases);
-            else
-                sequence.append(reverse_complement(reads[std::get<0>(edgelist[i]).id]->bases));
-		}
-
-
 
 		std::vector<LOverlap *> currentalns = idx[std::get<0>(edgelist[i]).id][std::get<1>(edgelist[i]).id];
-		//std::sort( currentalns.begin(), currentalns.end(), compare_overlap );
-
 
     	LOverlap * currentaln = NULL;
-		aligntype need;
-		if (std::get<0>(edgelist[i]).strand == 0)
-			need = FORWARD;
-		else
-			need = BACKWARD;
 
 		for (int j = 0; j < currentalns.size(); j++) {
     		//std::cout << std::get<0>(edgelist[i]).id << " " << std::get<1>(edgelist[i]).id << " " << currentalns[j]->aln_type << std::endl;
     		if (currentalns[j]->aepos - currentalns[j]->abpos == std::get<2>(edgelist[i]) ) currentaln = currentalns[j];
 		}
 
+		if (currentaln == NULL) exit(1);
+		currentaln->show();
         std::string current_seq;
-
+		std::string next_seq;
+		
         if (std::get<1>(edgelist[i]).strand == 0)
-            current_seq = reads[std::get<1>(edgelist[i]).id]->bases;
+            current_seq = reads[std::get<0>(edgelist[i]).id]->bases;
         else
-            current_seq = reverse_complement(reads[std::get<1>(edgelist[i]).id]->bases);
-
-        if (std::get<0>(edgelist[i]).strand == 0) {
-            sequence.erase(sequence.end() - (currentaln->alen - currentaln->aepos), sequence.end());
-            current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->bepos);
-            sequence.append(current_seq);
-        }
-        else {
-            sequence.erase(sequence.end() - (currentaln->abpos), sequence.end());
-            current_seq.erase(current_seq.begin(), current_seq.begin() + currentaln->blen - currentaln->bbpos);
-            sequence.append(current_seq);
-        }
-
+            current_seq = reverse_complement(reads[std::get<0>(edgelist[i]).id]->bases);
+		
+        if (std::get<1>(edgelist[i]).strand == 0)
+            next_seq = reads[std::get<1>(edgelist[i]).id]->bases;
+        else
+            next_seq = reverse_complement(reads[std::get<1>(edgelist[i]).id]->bases);
+		
+		int abpos, aepos, alen, bbpos, bepos, blen;
+		
+		alen = currentaln->alen;
+		blen = currentaln->blen;
+		if (std::get<0>(edgelist[i]).strand == 0) {
+			abpos = currentaln->abpos;
+			aepos = currentaln->aepos;
+		} else {
+			abpos = alen - currentaln->aepos;
+			aepos = alen - currentaln->abpos;
+		}
+		
+		if (((std::get<1>(edgelist[i]).strand == 0) and (currentaln->flags == 0)) or ((std::get<1>(edgelist[i]).strand == 1) and (currentaln->flags == 1))) {
+			bbpos = currentaln->bbpos;
+			bepos = currentaln->bepos;
+		} else {
+			bbpos = blen - currentaln->bepos;
+			bepos = blen - currentaln->bbpos;
+		}
+		
+		printf("[%d %d]/%d x [%d %d]/%d\n", abpos, aepos, alen, bbpos, bepos, blen);
+		
+		if (i == 0) {
+			sequence = current_seq;
+		}
+		
+		sequence.erase(sequence.end()-(alen-aepos), sequence.end());
+		
+		next_seq.erase(next_seq.begin(), next_seq.begin() + bepos);
+		
+		sequence += next_seq;
+		
 	}
 
     //need to trim the end
 
 	std::cout<<sequence.size()<<std::endl;
 
-	out << ">draftassembly" << std::endl;
+	out << ">Draft_assembly\n";
 	out << sequence << std::endl;
 
     la.CloseDB(); //close database
