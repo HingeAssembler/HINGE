@@ -195,11 +195,11 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < reads_list.size() - 1; i++) {
         std::string first_seq = reads_list[i];
-        char *first_seq_cstr = (char *) malloc(first_seq.size() * sizeof(char));
+        char *first_seq_cstr = (char *) malloc((first_seq.size()+20) * sizeof(char));
         strcpy(first_seq_cstr, first_seq.c_str());
 
         std::string second_seq = reads_list[i + 1];
-        char *second_seq_cstr = (char *) malloc(second_seq.size() * sizeof(char));
+        char *second_seq_cstr = (char *) malloc((second_seq.size()+20) * sizeof(char));
         strcpy(second_seq_cstr, second_seq.c_str());
 
 
@@ -242,15 +242,10 @@ int main(int argc, char *argv[]) {
         free_seq_addr_array(sda_ptr);
         free_seq_array(sa_ptr);
         free_kmer_lookup(lk_ptr);
-        first_seq_cstr = NULL;
-        second_seq_cstr = NULL;
-        kmer_match_ptr = NULL;
-        arange = NULL;
-        sda_ptr = NULL;
-        sa_ptr = NULL;
-        lk_ptr = NULL;
 
-        // Now it gives segment error, need to be fixed, TBD
+
+        // Now it gives segment error, need to be fixed,
+        // Update:fixed
 
     }
 
