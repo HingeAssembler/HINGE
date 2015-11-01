@@ -2365,7 +2365,6 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
 
                 new_al->trace_pts_len = ovl->path.tlen;
                 new_al->trace_pts = (uint16 *)malloc(ovl->path.tlen * sizeof(uint16));
-
                 memcpy(new_al->trace_pts, ovl->path.trace, ovl->path.tlen * sizeof(uint16));
 
                 /*{
@@ -2383,6 +2382,9 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
 
                 }*/
 
+
+//#define DOALIGN
+#ifdef DOALIGN
                 amin = ovl->path.abpos - BORDER;
                 if (amin < 0) amin = 0;
                 amax = ovl->path.aepos + BORDER;
@@ -2417,14 +2419,14 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
 
                 Compute_Trace_PTS(aln, work, tspace);
 
-
+#endif
                 /*new_al->aseq = (char *) malloc(new_al->alen * sizeof(char));
                 new_al->bseq = (char *) malloc(new_al->blen * sizeof(char));
 
                 memcpy(new_al->aseq, aln->aseq, new_al->alen* sizeof(char));
                 memcpy(new_al->bseq, aln->bseq, new_al->blen* sizeof(char));*/
-                new_al->aseq = NULL;
-                new_al->bseq = NULL;
+                //new_al->aseq = NULL;
+                //new_al->bseq = NULL;
 
 
                 /*{
@@ -2437,6 +2439,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
                     printf("\n");
                 }*/
 
+#ifdef DOALIGN
                 new_al->tlen =  aln->path->tlen;
                 new_al->trace = (int *) malloc(sizeof(int) * aln->path->tlen*2);
                 //if (new_al->trace == NULL)
@@ -2458,7 +2461,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
                     //printf("\n");
                 }
 
-
+#endif
                 if (FLIP) {
                     if (COMP(aln->flags)) {
                         Complement_Seq(aseq, amax - amin);
@@ -3773,7 +3776,7 @@ std::pair<std::string, std::string> LAInterface::Lget_Alignment_tgs(LAlignment *
     int border = 10;
 
     int tlen = alignment->tlen;
-    int * trace = alignment->trace;
+    int * trace = alignment->trace; // get the trace from here
 
     a = alignment->aseq - 1;
     b = alignment->bseq - 1;
@@ -4166,7 +4169,130 @@ int LAInterface::generate_consensus(std::vector<LAlignment *> & alns) {
 
     int seq_count = alns.size();
 
+    //TBD
 
+
+    return 0;
+}
+
+int LAInterface::recover_alignment(LAlignment *alignment) {
+
+
+    int j;
+    uint16 *trace;
+    Work_Data *work;
+    int in, npt, idx, ar;
+    int64 tps;
+    char *abuffer, *bbuffer;
+    int ar_wide, br_wide;
+    int ai_wide, bi_wide;
+    int mn_wide, mx_wide;
+    int tp_wide;
+    int blast, match, seen, lhalf, rhalf;
+    bool ALIGN = true;
+    bool REFERENCE = false;
+    bool CARTOON = false;
+    bool OVERLAP = false;
+    bool FLIP = false;
+    bool UPPERCASE = false;
+    bool MAP = false;
+    int INDENT = 4;
+    int WIDTH = 100;
+    int BORDER = 10;
+
+    int tmax = 3000;
+    trace = (uint16 *) malloc(sizeof(uint16) * tmax);
+    if (trace == NULL)
+        exit(1);
+
+    int amin, amax, bmin, bmax;
+
+
+    work = New_Work_Data();
+    abuffer = New_Read_Buffer(db1);
+    bbuffer = New_Read_Buffer(db2);
+
+    Overlap * ovl = (Overlap *) malloc(sizeof(Overlap));
+    Alignment * aln = (Alignment *) malloc(sizeof (Alignment));
+
+    aln->path = &(ovl->path);
+    Path * path = &(ovl->path);
+
+    path->abpos = alignment->abpos;
+    path->aepos = alignment->aepos;
+    path->bbpos = alignment->bbpos;
+    path->bepos = alignment->bepos;
+    path->diffs = alignment->diffs;
+    path->tlen = alignment->tlen;
+    aln->alen = alignment->alen;
+    aln->blen = alignment->blen;
+    aln->flags = (uint32)alignment->flags;
+    ovl->aread = alignment->aid;
+    ovl->bread = alignment->bid;
+
+    path->trace = (uint16 *)malloc(path->tlen * sizeof(uint16));
+    memcpy(path->trace, alignment->trace_pts, path->tlen * sizeof(uint16));
+
+
+
+    amin = ovl->path.abpos - BORDER;
+    if (amin < 0) amin = 0;
+    amax = ovl->path.aepos + BORDER;
+    if (amax > aln->alen) amax = aln->alen;
+    if (COMP(aln->flags)) {
+        bmin = (aln->blen - ovl->path.bepos) - BORDER;
+        if (bmin < 0) bmin = 0;
+        bmax = (aln->blen - ovl->path.bbpos) + BORDER;
+        if (bmax > aln->blen) bmax = aln->blen;
+    }
+    else {
+        bmin = ovl->path.bbpos - BORDER;
+        if (bmin < 0) bmin = 0;
+        bmax = ovl->path.bepos + BORDER;
+        if (bmax > aln->blen) bmax = aln->blen;
+    }
+
+    char * aseq = Load_Subread(db1, ovl->aread, amin, amax, abuffer, 0);
+    char * bseq = Load_Subread(db2, ovl->bread, bmin, bmax, bbuffer, 0);
+
+
+    aln->aseq = aseq - amin;
+    if (COMP(aln->flags)) {
+        Complement_Seq(bseq, bmax - bmin);
+        aln->bseq = bseq - (aln->blen - bmax);
+    }
+    else
+        aln->bseq = bseq - bmin;
+
+
+    Compute_Trace_PTS(aln, work, tspace);
+
+
+    /*{
+        int tlen = aln->path->tlen;
+        int *trace = (int *) aln->path->trace;
+        int u;
+        printf(" ");
+        for (u = 0; u < tlen; u++)
+            printf("%d,", (int) trace[u]);
+        printf("\n");
+    }*/
+
+
+
+    alignment->tlen =  aln->path->tlen;
+    alignment->trace = (int *) malloc(sizeof(int) * aln->path->tlen*2);
+    {
+        int tlen = aln->path->tlen;
+        int *trace = (int *) aln->path->trace;
+        int u;
+        //printf(" ");
+        for (u = 0; u < tlen; u++) {
+            //printf("%d,", (int) trace[u]);
+            alignment->trace[u] = (int)trace[u];
+        }
+        //printf("\n");
+    }
 
 
     return 0;

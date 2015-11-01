@@ -178,6 +178,7 @@ public:
 
     int generate_consensus(std::vector<LAlignment *> &);
 
+    int recover_alignment(LAlignment *);
 
     std::pair<std::string, std::string> Lget_Alignment_tgs(LAlignment *alignment);
 
