@@ -76,6 +76,10 @@ int main(int argc, char *argv[]) {
     }
 
 
+    // for each read B, just pick the best one
+
+
+
 
 
     //for (auto i:res) {
