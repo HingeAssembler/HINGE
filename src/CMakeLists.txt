@@ -52,7 +52,7 @@ target_link_libraries(Greedy_best_ovl2 LAInterface ini)
 
 add_library(OverlapGraph OverlapGraph.cpp)
 
-add_executable(Draft_assembly Draft_assembly.obesolete3)
+add_executable(Draft_assembly Draft_assembly)
 target_link_libraries(Draft_assembly LAInterface ini falcon)
 
 add_executable(Circular_consensus Circular_consensus)
@@ -68,7 +68,7 @@ add_executable(DenovoSV DenovoSV.cpp) # TBD
 target_link_libraries(DenovoSV LAInterface)
 
 add_executable(Draft_consensus Draft_consensus.cpp)
-target_link_libraries(Draft_consensus LAInterface falcon)
+target_link_libraries(Draft_consensus LAInterface falcon ini)
 
 
 

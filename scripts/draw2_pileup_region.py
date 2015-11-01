@@ -11,34 +11,44 @@ import os
 os.environ['PATH'] += ':/data/pacbio_assembly/AwesomeAssembler/DALIGNER'
 #print os.popen("export").read()
 
-n = (sys.argv[1])
-rst = []
-with open(n) as f:
-    for line in f:
-        tmp = line.strip().split()
-        t1 = tmp[0]
-        if t1[-1] == '\'':
-            t1 = t1[:-1]
-        t2 = tmp[1]
-        if t2[-1] == '\'':
-            t2 = t2[:-1]
-        rst.append((int(t1)+1, int(tmp[2])))
-        #rst.append(int(t2)+1)
+left = int(sys.argv[1])
+right = int(sys.argv[2])
+
 
 #rst = range(1,1399)
 path = '/data/pacbio_assembly/AwesomeAssembler/data/'
 aln = []
-for i,e in enumerate(rst):
-    n = e[0]
-    print i,n
-    li = list(util.get_alignments_mapping(path+'ecoli', path + 'ecoli.ref', path +'ecoli.ecoli.ref.las', [n]))
-    if (len(li) > 0):
-        item = sorted(li, key=lambda x:x[4] - x[3], reverse = True)[0]
+
+bb = []
+with open('ecoli.linear.edges') as f:
+    for line in f:
+        e = line.split(" ")[0]
+        if e[-1] == '\'':
+            e = e[:-1]
+        
+        bb.append(int(e))
+        
+print bb
+
+bb = set(bb)
+
+
+for i,item in enumerate(util.get_alignments_mapping2(path+'draft', path +'ecoli', path +'draft.ecoli.las')):
+    if i%2000 == 0:
+        print i, item
+
+    if item[3] >= left and item[4] <= right:
         aln.append(item)
 
-print aln[0:20]
 
-#aln.sort(key = lambda x:x[2])
+
+
+
+
+
+
+print 'number:',len(aln)
+aln.sort(key = lambda x:x[2])
 
 alns = []
 current_b = aln[0][2]
@@ -54,36 +64,31 @@ for item in aln:
         aln_group.append(item)
 
 num = len(alns)
+
 print len(aln), len(alns)
 
-#print [len(item) for item in alns]
-#print [item[0:3] for item in aln]
+alns.sort(key = lambda x:min([item[3] for item in x]))
 
-#alns.sort(key = lambda x:min([item[3] for item in x]))
-
-#size_chunk = num/grid_size
-#for i in range(grid_size):
-#    aln[i*size_chunk:min((i+1)*size_chunk, num)] = sorted(aln[i*size_chunk:min((i+1)*size_chunk, num)],key = lambda x: x[4]-x[3] ,reverse=True)
 
 plt.figure(figsize = (15,10))
 plt.axes()
 #plt.gca().axes.get_yaxis().set_visible(False)
-l = aln[0][5]
-tip = l/5000
-ed = l/2000
+#l = aln[0][5]
+tip = (right-left)/5000
+ed = (right-left)/2000
 grid_size = 1.0
-plt.xlim(-2000,l+2000)
+plt.xlim(left-2000,right+2000)
 plt.ylim(-5,num*grid_size)
 
-points = [[0,0], [l,0], [l+tip,grid_size/4], [l,grid_size/2], [0,grid_size/2]]
+points = [[left,0], [right,0], [right+tip,grid_size/4], [right,grid_size/2], [left,grid_size/2]]
 #rectangle = plt.Rectangle((0, 0), l, 5, fc='r',ec = 'none')
 polygon = plt.Polygon(points,fc = 'r', ec = 'none', alpha = 0.6)
 plt.gca().add_patch(polygon)
 
-dotted_line = plt.Line2D((0, 0), (0, num*grid_size ),ls='-.')
+dotted_line = plt.Line2D((left, left), (0, num*grid_size ),ls='-.')
 plt.gca().add_line(dotted_line)
 
-dotted_line2 = plt.Line2D((l, l), (0, num*grid_size ),ls='-.')
+dotted_line2 = plt.Line2D((right, right), (0, num*grid_size ),ls='-.')
 plt.gca().add_line(dotted_line2)
 
 for i,aln_group in enumerate(alns):
@@ -110,7 +115,11 @@ for i,aln_group in enumerate(alns):
             if (bbpos > 0):
                 points_start = [[abpos, (i+1)*grid_size],[abpos-tip, (i+1)*grid_size+grid_size/4], [abpos, (i+1)*grid_size+grid_size/2], [abpos-ed, (i+1)*grid_size+grid_size/2],[abpos-ed-tip, (i+1)*grid_size+grid_size/4], [abpos-ed, (i+1)*grid_size]]
 
-        polygon = plt.Polygon(points,fc = 'b', ec = 'none', alpha = 0.6)
+        if item[2] in bb:
+            polygon = plt.Polygon(points,fc = 'r', ec = 'none', alpha = 0.8)
+        else:
+            polygon = plt.Polygon(points,fc = 'b', ec = 'none', alpha = 0.6)
+            
         polygon.set_url("http://shannon.stanford.edu:5000/aln" + str(item[2]+1) + ".pdf")
         plt.gca().add_patch(polygon)
 
@@ -122,4 +131,4 @@ for i,aln_group in enumerate(alns):
             polygon2 = plt.Polygon(points_start,fc = 'g', ec = 'none', alpha = 0.6)
             plt.gca().add_patch(polygon2)
 
-plt.savefig('mapping/map.' + str(n)+ '.svg')
+plt.savefig('mapping/map.' + str(left) +'_'+ str(right)+ '.pdf')

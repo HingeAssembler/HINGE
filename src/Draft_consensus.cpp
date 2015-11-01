@@ -12,14 +12,24 @@
 #include "LAInterface.h"
 
 #include <iostream>
+#include <fstream>
 #include <tuple>
 #include <string>
 #include <algorithm>
+#include <map>
+#include <unordered_map>
 extern "C" {
 #include "common.h"
 }
+#include "INIReader.h"
+
 
 #define LAST_READ_SYMBOL  '$'
+
+bool compare_overlap(LAlignment * ovl1, LAlignment * ovl2) {
+    return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
+}
+
 
 static int ORDER(const void *l, const void *r) {
     int x = *((int32 *) l);
@@ -32,7 +42,20 @@ int main(int argc, char *argv[]) {
     std::string name_db1 = std::string(argv[1]);
     std::string name_db2 = std::string(argv[2]);
     std::string name_las = std::string(argv[3]);
+	char * name_out = argv[4];
+	char * name_config = argv[5];
+	
+	
+	INIReader reader(name_config);
 
+	if (reader.ParseError() < 0) {
+	    std::cout << "Can't load "<<name_config<<std::endl;
+	    return 1;
+	}
+		
+		
+	int LENGTH_THRESHOLD = reader.GetInteger("consensus", "min_length", -1);
+	printf("length threshold:%d\n", LENGTH_THRESHOLD);
     //std::cout<<name_db1 << " " << name_db2 << " " << name_las <<std::endl;
 
     LAInterface la;
@@ -40,15 +63,20 @@ int main(int argc, char *argv[]) {
     Read *test_read;
 
     la.OpenDB2(name_db1, name_db2);
+	
+	int n_reads = la.getReadNumber2();
+	
     std::cout<<"# Contigs:" << la.getReadNumber() << std::endl;
-    std::cout<<"# Reads:" << la.getReadNumber2() << std::endl;
+    std::cout<<"# Reads:" << n_reads << std::endl;
 
 
 	//la.showRead2(4,6);
 	
     la.OpenAlignment(name_las);
 
-    std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
+	int n_alns = la.getAlignmentNumber();
+	
+    std::cout<<"# Alignments:" << n_alns << std::endl;
 	
 	//la.showAlignment(0,1);
 	
@@ -66,12 +94,35 @@ int main(int argc, char *argv[]) {
 	la.getAlignment(res, 0, 1); // get all alignments
 
 
+	std::unordered_map<int, std::vector<LAlignment *>> idx;
+	
+	for (int i = 0; i < n_reads; i++) 
+		idx[i] = std::vector<LAlignment *>();
+	
+	
+	for (int i = 0; i < n_alns; i++)
+		idx[res[i]->bid].push_back(res[i]);
+	
+	for (int i = 0; i < n_reads; i++)
+		std::sort(idx[i].begin(), idx[i].end(), compare_overlap);
+	
+	
 
     std::vector<LAlignment *> filtered;
 
-    for (auto i:res) {
-        if ((i->aepos - i->abpos) > 4000) {
-            filtered.push_back(i);
+    for (int i = 0; i < n_reads; i++) {
+		LAlignment * aln;
+		if (idx[i].size() > 1) {
+			if ((idx[i][0]->aepos - idx[i][0]->abpos) > 1.5*(idx[i][1]->aepos - idx[i][1]->abpos))
+				aln = idx[i][0];
+			else 
+				continue;
+		} else if (idx[i].size() == 1) {
+			aln = idx[i][0];
+		} else continue;
+		
+		if ((aln->aepos - aln->abpos) > LENGTH_THRESHOLD) {
+            filtered.push_back(aln);
         }
     }
 
@@ -140,7 +191,7 @@ int main(int argc, char *argv[]) {
 		
 	
         seq_coor_t aln_str_size = strlen(q_aln_str);
-		printf("%d/%d, %d\n", i, seq_count, aln_str_size);
+		if (i%1000 == 0) printf("%d/%d, %d\n", i, seq_count, aln_str_size);
         
         aln_range * arange = (aln_range*) calloc(1 , sizeof(aln_range));
         arange->s1 = filtered[i]->bbpos;
@@ -166,7 +217,11 @@ int main(int argc, char *argv[]) {
     consensus_data * consensus;
     consensus = get_cns_from_align_tags_large( tags_list, seq_count+1, strlen(seq), 6 );
 
-    printf(">Consensus\n%s\n", consensus->sequence);
+	std::ofstream out(name_out);
+	
+	printf("Length:%d\n", strlen(consensus->sequence));
+	
+    out << ">Consensus\n" << consensus->sequence<<std::endl;
 
     free_consensus_data(consensus);
     for (int i = 0; i <seq_count + 1; i++)

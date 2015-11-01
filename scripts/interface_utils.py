@@ -35,6 +35,13 @@ def get_alignments_mapping(filename, ref, alignmentname, readlist):
                                       stdout=subprocess.PIPE,bufsize=1)
     alignments = parse_alignment2(stream.stdout) # generator
     return alignments
+    
+def get_alignments_mapping2(ref, filename, alignmentname):
+    print ref,filename,alignmentname
+    stream = subprocess.Popen(["LA4Awesome", ref, filename, alignmentname],
+                                      stdout=subprocess.PIPE,bufsize=1)
+    alignments = parse_alignment2(stream.stdout) # generator
+    return alignments
 
 def get_all_reads(filename):
     stream = subprocess.Popen(["DBshow", filename],
