@@ -616,11 +616,16 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < edgelist.size(); i++) {
         int aid = std::get<0>(edgelist[i]).id;
         int bid = std::get<1>(edgelist[i]).id;
+        bool found = false;
         for (int j = 0; j < idx_aln[std::get<0>(edgelist[i]).id].size(); j++) {
             //printf("%d %d %d %d\n",bid, idx_aln[aid][j]->bid, idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos, std::get<2>(edgelist[i]));
             if ((idx_aln[aid][j]->bid == bid) and \
-            (idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos == std::get<2>(edgelist[i])))
+            (idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos == std::get<2>(edgelist[i]))) {
                 selected.push_back(idx_aln[aid][j]);
+                found = true;
+                break;
+            }
+            if (found) continue;
         }
     }
 
@@ -729,23 +734,13 @@ int main(int argc, char *argv[]) {
 	std::cout<<sequence.size()<<std::endl;
 
     for (int i = 0; i < selected.size(); i++) {
-
-
-
-            uint16 *pp = (uint16 *) selected[i]->trace_pts;
-            for (int uu = 0; uu < selected[i]->trace_pts_len; uu++) {
-                printf("%d ", pp[uu]);
-            }
-
-            printf("\n");
-
-
+        
         la.recover_alignment(selected[i]);
         printf("%d %d\n",selected[i]->tlen, selected[i]->trace_pts_len);
 
         auto res = la.Lget_Alignment_tgs(selected[i]);
-        std::cout << res.first << std::endl;
-        std::cout << res.second << std::endl;
+        //std::cout << res.first << std::endl;
+        //std::cout << res.second << std::endl;
     }
 
 	out << ">Draft_assembly\n";
