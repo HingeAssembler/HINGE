@@ -181,6 +181,9 @@ int main(int argc, char *argv[]) {
 	la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
 
+
+
+
     std::vector<Read *> reads;
     la.getRead(reads,0,n_read);
 
@@ -587,9 +590,51 @@ int main(int argc, char *argv[]) {
     }
 
 */
+
+
+
+    std::vector<LAlignment *> full_alns;
+    std::vector <LAlignment *> selected;
+    std::unordered_map<int, std::vector<LAlignment *>> idx_aln;
+    la.resetAlignment();
+    std::vector<int> range;
+
+    for (int i = 0; i < edgelist.size(); i++) {
+        range.push_back(std::get<0>(edgelist[i]).id);
+        idx_aln[std::get<0>(edgelist[i]).id] = std::vector<LAlignment *> ();
+    }
+
+    std::sort(range.begin(), range.end());
+
+
+    la.getAlignment(full_alns, range);
+
+    for (auto i:full_alns) {
+        idx_aln[i->aid].push_back(i);
+    }
+
+    for (int i = 0; i < edgelist.size(); i++) {
+        int aid = std::get<0>(edgelist[i]).id;
+        int bid = std::get<1>(edgelist[i]).id;
+        for (int j = 0; j < idx_aln[std::get<0>(edgelist[i]).id].size(); j++) {
+            printf("%d %d %d %d\n",bid, idx_aln[aid][j]->bid, idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos, std::get<2>(edgelist[i]));
+            if ((idx_aln[aid][j]->bid == bid) and \
+            (idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos == std::get<2>(edgelist[i])))
+                selected.push_back(idx_aln[aid][j]);
+        }
+    }
+
+
+
+
     std::ofstream out(name_output);
 	
     std::string sequence = "";
+
+    std::vector<LOverlap *> bedges;
+    std::vector<std::string> breads;
+
+
 	for (int i = 0; i < edgelist.size(); i++){
 
 		std::vector<LOverlap *> currentalns = idx[std::get<0>(edgelist[i]).id][std::get<1>(edgelist[i]).id];
@@ -602,7 +647,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (currentaln == NULL) exit(1);
-		currentaln->show();
+		//currentaln->show();
         std::string current_seq;
 		std::string next_seq;
 		
@@ -651,30 +696,35 @@ int main(int argc, char *argv[]) {
 			
 		}
 		
-		printf("[[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", abpos, aepos, aes, aee, bbpos, bepos, bes, bee);
-		
-		if (i == 0) {
-			sequence = current_seq;
-		}
-		
-		/*if (aee>aepos)
-			sequence.erase(sequence.end() - (aee-aepos), sequence.end());
-		else 
-			sequence.erase(sequence.end() - (alen-aepos), sequence.end());
-		
-		
-		next_seq.erase(next_seq.begin(), next_seq.begin() + bepos);
-		
-		if (bepos < bee)
-			next_seq.erase(next_seq.end() - (blen - bee), next_seq.end());*/
-		
-		sequence.erase(sequence.end() - (alen - aepos), sequence.end());
-		next_seq.erase(next_seq.begin(), next_seq.begin() + bepos);
-		
-		sequence += next_seq;
-	}
+		//printf("[[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", abpos, aepos, aes, aee, bbpos, bepos, bes, bee);
 
+        LOverlap *new_ovl = new LOverlap();
+        new_ovl->abpos = abpos;
+        new_ovl->aepos = aepos;
+        new_ovl->bbpos = bbpos;
+        new_ovl->bepos = bepos;
+        new_ovl->aee = aee;
+        new_ovl->aes = aes;
+        new_ovl->bee = bee;
+        new_ovl->bes = bes;
+        new_ovl->alen = currentaln->alen;
+        new_ovl->blen = currentaln->blen;
+
+        bedges.push_back(new_ovl);
+        breads.push_back(current_seq);
+		//if (i == 0) {
+		//	sequence = current_seq;
+		//}
+
+		//sequence.erase(sequence.end() - (alen - aepos), sequence.end());
+		//next_seq.erase(next_seq.begin(), next_seq.begin() + bepos);
+		//sequence += next_seq;
+	}
     //need to trim the end
+
+
+
+    std::cout << bedges.size() << " " << breads.size() << " " << selected.size() << std::endl;
 
 	std::cout<<sequence.size()<<std::endl;
 

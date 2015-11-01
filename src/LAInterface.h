@@ -150,6 +150,8 @@ public:
 
     void getAlignment(std::vector<LAlignment *> &, int from, int to); // get alignment with 'A read' in a range
 
+    void getAlignment(std::vector<LAlignment *> &result_vec, std::vector<int> &range);
+
     void getAlignment(std::vector<LAlignment *> &, int n);
 
     int CloseDB(); // close database
@@ -178,6 +180,7 @@ public:
 
 
     std::pair<std::string, std::string> Lget_Alignment_tgs(LAlignment *alignment);
+
 };
 
 #endif
