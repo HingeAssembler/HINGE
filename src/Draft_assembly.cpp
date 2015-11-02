@@ -871,7 +871,7 @@ int main(int argc, char *argv[]) {
 
         int trim = EDGE_TRIM;
 
-        for (int j = 0; j < pitfalls[i+1].size(); j++)
+        /*for (int j = 0; j < pitfalls[i+1].size(); j++)
             if ((pitfalls[i+1][j].first > this_alignment->bepos ) and ( pitfalls[i+1][j].second<this_alignment->blen)) {
                 printf("read %d:", range[i+1]);
                 printf("[%d %d]\n", pitfalls[i + 1][j].first, pitfalls[i + 1][j].second);
@@ -883,11 +883,11 @@ int main(int argc, char *argv[]) {
         if (next_trim > 200) {
             trim = next_trim+50;
         }
-        next_trim = 0;
+        next_trim = 0;*/
 
         std::string str2 = get_aligned_seq_end(aln_tag1, aln_tag2, trim);
 
-        printf("%d,%s\n", str2.size(), str2.c_str());
+        //printf("%d,%s\n", str2.size(), str2.c_str());
         //printf("ref:%s\n", next_seq.substr(this_alignment->bepos - str2.size(), str2.size()).c_str());
 
         sequence.erase(sequence.end() - (this_alignment->alen - this_alignment->aepos), sequence.end());
