@@ -121,6 +121,8 @@ std::string get_aligned_seq_end(std::string aln_tag1, std::string aln_tag2, int 
 }
 
 
+
+
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
     return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
 }
@@ -716,7 +718,9 @@ int main(int argc, char *argv[]) {
     }
 
 
-    for (int i = 0; i < edgelist.size() - 1; i++){
+
+
+    for (int i = 0; i < edgelist.size(); i++){
 
 		std::vector<LOverlap *> currentalns = idx[std::get<0>(edgelist[i]).id][std::get<1>(edgelist[i]).id];
 
@@ -759,6 +763,7 @@ int main(int argc, char *argv[]) {
 
 		alen = currentaln->alen;
 		blen = currentaln->blen;
+
 		if (std::get<0>(edgelist[i]).strand == 0) {
 			abpos = currentaln->abpos;
 			aepos = currentaln->aepos;
@@ -803,26 +808,29 @@ int main(int argc, char *argv[]) {
         new_ovl->bes = bes;
         new_ovl->alen = currentaln->alen;
         new_ovl->blen = currentaln->blen;
+        new_ovl->aid = std::get<0>(edgelist[i]).id;
+        new_ovl->bid = std::get<1>(edgelist[i]).id;
+
 
         bedges.push_back(new_ovl);
         breads.push_back(current_seq);
 
-		if (i == 0) {
-			sequence = current_seq;
-		}
-
-        int trim = EDGE_TRIM;
 
 
+        /*for (int j = 0; j < pitfalls[i+1].size(); j++)
+            if ((pitfalls[i+1][j].first > bepos ) and ( pitfalls[i+1][j].second<blen)) {
+                //printf("read %d:", range[i+1]);
+                //printf("[%d %d]\n", pitfalls[i + 1][j].first, pitfalls[i + 1][j].second);
+                //fix the pit fall
+                //next_trim = blen - pitfalls[i + 1][j].first;
+                //printf("trim:%d\n", next_trim);
+                }
 
-        std::string str2 = get_aligned_seq_end(aln_tags1, aln_tags2, trim);
+        */
+
         //printf("%d,%s\n", str2.size(), str2.c_str());
         //printf("ref:%s\n", next_seq.substr(bepos - str2.size(), str2.size()).c_str());
-		sequence.erase(sequence.end() - (alen - aepos), sequence.end());
 
-        sequence.erase(sequence.end() - trim, sequence.end());
-
-		next_seq.erase(next_seq.begin(), next_seq.begin() + bepos);
 
         //filling the pit holes !!
         //show all the gaps in [bepos <--> blen]
@@ -832,17 +840,41 @@ int main(int argc, char *argv[]) {
         printf("read a %d b %d\n",std::get<0>(edgelist[i]).id,std::get<1>(edgelist[i]).id);
         printf("alen %d bepos: %d blen: %d\n", alen, bepos, blen);
         printf("\n");*/
-        
 
-        for (int j = 0; j < pitfalls[i+1].size(); j++)
-            if ((pitfalls[i+1][j].first > bepos ) and ( pitfalls[i+1][j].second<blen)) {
-                printf("read %d:", range[i+1]);
-                printf("[%d %d]\n", pitfalls[i + 1][j].first, pitfalls[i + 1][j].second);
-            }
-        sequence += str2;
-        sequence += next_seq;
+
+
+
 	}
     //need to trim the end
+
+
+    sequence = breads[0];
+
+
+    for (int i = 0; i < range.size()-1; i++) {
+        std::string this_seq = breads[i];
+        std::string next_seq = breads[i + 1];
+        LOverlap * this_alignment = bedges[i];
+        LOverlap * next_alignment = bedges[i+1];
+        std::string aln_tag1 = aln_tags_list[i].first;
+        std::string aln_tag2 = aln_tags_list[i].second;
+
+
+        printf("%d %d %d %d %d %d %d\n",this_alignment->aid, this_alignment->bid, next_alignment->aid, this_alignment->alen, this_alignment->blen, this_seq.size(), next_seq.size());
+
+        int trim = EDGE_TRIM;
+        std::string str2 = get_aligned_seq_end(aln_tag1, aln_tag2, trim);
+
+        printf("%d,%s\n", str2.size(), str2.c_str());
+        //printf("ref:%s\n", next_seq.substr(this_alignment->bepos - str2.size(), str2.size()).c_str());
+
+        sequence.erase(sequence.end() - (this_alignment->alen - this_alignment->aepos), sequence.end());
+        sequence.erase(sequence.end() - trim, sequence.end());
+        next_seq.erase(next_seq.begin(), next_seq.begin() + this_alignment->bepos);
+        sequence += str2;
+        sequence += next_seq;
+    }
+
 
 
 
