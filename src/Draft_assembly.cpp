@@ -245,6 +245,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    int MIN_COV2 = reader.GetInteger("draft", "min_cov", -1);
+    int EDGE_TRIM = reader.GetInteger("draft", "trim", -1);
     int LENGTH_THRESHOLD = reader.GetInteger("filter", "length_threshold", -1);
     double QUALITY_THRESHOLD = reader.GetReal("filter", "quality_threshold", 0.0);
     //int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
@@ -689,8 +691,32 @@ int main(int argc, char *argv[]) {
     std::vector<LOverlap *> bedges;
     std::vector<std::string> breads;
 
+    std::vector<std::vector<std::pair<int, int> > > pitfalls;
 
-	for (int i = 0; i < edgelist.size(); i++){
+
+    range.clear();
+    for (int i = 0; i < edgelist.size(); i++) {
+        range.push_back(std::get<0>(edgelist[i]).id);
+    }
+
+    for (int i = 0; i < range.size(); i++) {
+        int aread = range[i];
+        if (idx3[aread].size() > 0) {
+            std::vector<int> * res = la.getCoverage(idx3[aread]);
+            std::vector<std::pair<int, int> > * res2 = la.lowCoverageRegions(*res, MIN_COV2);
+            delete res;
+            //printf("%d %d: (%d %d) ", i, aread, 0, idx3[aread][0]->alen);
+            //for (int j = 0; j < res2->size(); j++) {
+            //    printf("[%d %d] ", res2->at(j).first, res2->at(j).second);
+            //}
+            //printf("\n");
+            pitfalls.push_back(*res2);
+            delete res2;
+        }
+    }
+
+
+    for (int i = 0; i < edgelist.size() - 1; i++){
 
 		std::vector<LOverlap *> currentalns = idx[std::get<0>(edgelist[i]).id][std::get<1>(edgelist[i]).id];
 
@@ -785,7 +811,7 @@ int main(int argc, char *argv[]) {
 			sequence = current_seq;
 		}
 
-        int trim = 200;
+        int trim = EDGE_TRIM;
 
 
 
@@ -797,6 +823,22 @@ int main(int argc, char *argv[]) {
         sequence.erase(sequence.end() - trim, sequence.end());
 
 		next_seq.erase(next_seq.begin(), next_seq.begin() + bepos);
+
+        //filling the pit holes !!
+        //show all the gaps in [bepos <--> blen]
+        /*printf("read: %d ", range[i+1]);
+        for (int j = 0; j < pitfalls[i+1].size(); j++)
+            printf("[%d %d] ", pitfalls[i+1][j].first, pitfalls[i+1][j].second);
+        printf("read a %d b %d\n",std::get<0>(edgelist[i]).id,std::get<1>(edgelist[i]).id);
+        printf("alen %d bepos: %d blen: %d\n", alen, bepos, blen);
+        printf("\n");*/
+        
+
+        for (int j = 0; j < pitfalls[i+1].size(); j++)
+            if ((pitfalls[i+1][j].first > bepos ) and ( pitfalls[i+1][j].second<blen)) {
+                printf("read %d:", range[i+1]);
+                printf("[%d %d]\n", pitfalls[i + 1][j].first, pitfalls[i + 1][j].second);
+            }
         sequence += str2;
         sequence += next_seq;
 	}
@@ -804,30 +846,12 @@ int main(int argc, char *argv[]) {
 
 
 
-    std::cout << bedges.size() << " " << breads.size() << " " << selected.size() << " " << aln_tags_list.size() << std::endl;
+    std::cout << bedges.size() << " " << breads.size() << " " << selected.size() << " " << aln_tags_list.size() << " " << pitfalls.size() <<  std::endl;
 
     /*for (int i = 0; i < bedges.size() - 1; i++) {
         printf("%d %d %d %d %d\n", bedges[i]->bbpos, bedges[i]->bepos, bedges[i+1]->abpos, bedges[i+1]->aepos, bedges[i]->bepos - bedges[i+1]->abpos);
     }*/
 
-
-
-    /*for (int i = 0; i < range.size(); i++)
-		{
-			int aread = range[i];
-			if (idx2[aread].size() > 0) {
-
-    		    std::vector<int> * res = la.getCoverage(idx3[aread]);
-    		    std::vector<std::pair<int, int> > * res2 = la.lowCoverageRegions(*res, 25);
-    		    delete res;
-    		    printf("%d %d: (%d %d) ", i, aread, 0, idx3[aread][0]->alen);
-    		    for (int j = 0; j < res2->size(); j++) {
-    		        printf("[%d %d] ", res2->at(j).first, res2->at(j).second);
-    		    }
-    	    printf("\n");
-    	    delete res2;
-		}
-    }*/
 
 
 
