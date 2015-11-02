@@ -177,6 +177,7 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < seq_count ; i ++) {
 
 
+        la.recoverAlignment(filtered[i]);
         std::pair<std::string, std::string>  alignment = la.getAlignmentTags(filtered[i]);
 
 		
