@@ -849,7 +849,7 @@ int main(int argc, char *argv[]) {
 
 
     sequence = breads[0];
-
+    int next_trim = 0;
 
     for (int i = 0; i < range.size()-1; i++) {
         std::string this_seq = breads[i];
@@ -862,7 +862,25 @@ int main(int argc, char *argv[]) {
 
         printf("%d %d %d %d %d %d %d\n",this_alignment->aid, this_alignment->bid, next_alignment->aid, this_alignment->alen, this_alignment->blen, this_seq.size(), next_seq.size());
 
+
+
+
         int trim = EDGE_TRIM;
+
+        for (int j = 0; j < pitfalls[i+1].size(); j++)
+            if ((pitfalls[i+1][j].first > this_alignment->bepos ) and ( pitfalls[i+1][j].second<this_alignment->blen)) {
+                printf("read %d:", range[i+1]);
+                printf("[%d %d]\n", pitfalls[i + 1][j].first, pitfalls[i + 1][j].second);
+                //fix the pit fall
+                next_trim = next_alignment->aepos - pitfalls[i + 1][j].first;
+                printf("longer next trim:%d\n", next_trim);
+            }
+
+        if (next_trim > 200) {
+            trim = next_trim;
+            next_trim = 0;
+        }
+
         std::string str2 = get_aligned_seq_end(aln_tag1, aln_tag2, trim);
 
         printf("%d,%s\n", str2.size(), str2.c_str());
@@ -873,9 +891,10 @@ int main(int argc, char *argv[]) {
         next_seq.erase(next_seq.begin(), next_seq.begin() + this_alignment->bepos);
         sequence += str2;
         sequence += next_seq;
+
+
+
     }
-
-
 
 
     std::cout << bedges.size() << " " << breads.size() << " " << selected.size() << " " << aln_tags_list.size() << " " << pitfalls.size() <<  std::endl;
