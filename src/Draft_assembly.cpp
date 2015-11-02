@@ -675,6 +675,8 @@ int main(int argc, char *argv[]) {
 
     std::unordered_map<int, std::unordered_map<int, std::pair<std::string, std::string> > > aln_tags_map;
     std::vector<std::pair<std::string, std::string> > aln_tags_list;
+    std::vector<std::pair<std::string, std::string> > aln_tags_list_true_strand;
+
 
 
     for (int i = 0; i < selected.size(); i++) {
@@ -753,6 +755,8 @@ int main(int argc, char *argv[]) {
             aln_tags1 = reverse_complement(aln_tags_list[i].first);
             aln_tags2 = reverse_complement(aln_tags_list[i].second);
         }
+
+        aln_tags_list_true_strand.push_back(std::pair<std::string, std::string>(aln_tags1, aln_tags2));
 
         if (std::get<1>(edgelist[i]).strand == 0)
             next_seq = reads[std::get<1>(edgelist[i]).id]->bases;
@@ -856,8 +860,8 @@ int main(int argc, char *argv[]) {
         std::string next_seq = breads[i + 1];
         LOverlap * this_alignment = bedges[i];
         LOverlap * next_alignment = bedges[i+1];
-        std::string aln_tag1 = aln_tags_list[i].first;
-        std::string aln_tag2 = aln_tags_list[i].second;
+        std::string aln_tag1 = aln_tags_list_true_strand[i].first;
+        std::string aln_tag2 = aln_tags_list_true_strand[i].second;
 
 
         printf("%d %d %d %d %d %d %d\n",this_alignment->aid, this_alignment->bid, next_alignment->aid, this_alignment->alen, this_alignment->blen, this_seq.size(), next_seq.size());
@@ -877,9 +881,9 @@ int main(int argc, char *argv[]) {
             }
 
         if (next_trim > 200) {
-            trim = next_trim;
-            next_trim = 0;
+            trim = next_trim+50;
         }
+        next_trim = 0;
 
         std::string str2 = get_aligned_seq_end(aln_tag1, aln_tag2, trim);
 
@@ -897,7 +901,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    std::cout << bedges.size() << " " << breads.size() << " " << selected.size() << " " << aln_tags_list.size() << " " << pitfalls.size() <<  std::endl;
+    std::cout << bedges.size() << " " << breads.size() << " " << selected.size() << " " << aln_tags_list.size() << " " << pitfalls.size() << " " << aln_tags_list_true_strand.size() <<  std::endl;
 
     /*for (int i = 0; i < bedges.size() - 1; i++) {
         printf("%d %d %d %d %d\n", bedges[i]->bbpos, bedges[i]->bepos, bedges[i+1]->abpos, bedges[i+1]->aepos, bedges[i]->bepos - bedges[i+1]->abpos);
