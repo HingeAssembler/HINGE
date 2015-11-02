@@ -125,17 +125,17 @@ int main(int argc, char ** argv) {
     la.getRead(reads,0,n_read);
 
 
-    for (int i = 0; i < n_read; i++ ) {
+    /*for (int i = 0; i < n_read; i++ ) {
         std::vector<std::pair<int,int> > covered_region;
         covered_region = Merge(idx2[i]);
     } // find all covered regions, could help remove adaptors
+	*/
 
+    for (int i = 0; i < n_read; i++)
+	if (idx2[i].size() > 0) {
 
-    for (int i = 0; i < 50; i++) {
         std::vector<int> * res = la.getCoverage(idx2[i]);
-
-        std::vector<std::pair<int, int> > * res2 = la.lowCoverageRegions(*res, 15);
-
+        std::vector<std::pair<int, int> > * res2 = la.lowCoverageRegions(*res, 35);
         delete res;
         printf("%d: (%d %d) ",i, 0, idx2[i][0]->alen);
         for (int i = 0; i < res2->size(); i++) {

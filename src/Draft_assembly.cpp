@@ -571,8 +571,8 @@ int main(int argc, char *argv[]) {
 
         //printf("%d\n",seq_count);
         consensus = generateConsensus(input_seq, seq_count, 8, 8, 12, 6, 0.56); // generate consensus for each read
-        
-		
+
+
         if (std::get<0>(edgelist[i]).strand == 0 ) {
 			sequence_list.push_back(std::string(consensus->sequence));
 			printf(">%d_%d_%d\n %s\n", std::get<0>(edgelist[i]).id, num_chosen, strlen(consensus->sequence), std::string(consensus->sequence).c_str());
@@ -633,7 +633,7 @@ int main(int argc, char *argv[]) {
 
 
     std::ofstream out(name_output);
-	
+
     std::string sequence = "";
 
     std::vector<LOverlap *> bedges;
@@ -655,52 +655,52 @@ int main(int argc, char *argv[]) {
 		//currentaln->show();
         std::string current_seq;
 		std::string next_seq;
-		
+
         if (std::get<1>(edgelist[i]).strand == 0)
             current_seq = reads[std::get<0>(edgelist[i]).id]->bases;
         else
             current_seq = reverse_complement(reads[std::get<0>(edgelist[i]).id]->bases);
-		
+
         if (std::get<1>(edgelist[i]).strand == 0)
             next_seq = reads[std::get<1>(edgelist[i]).id]->bases;
         else
             next_seq = reverse_complement(reads[std::get<1>(edgelist[i]).id]->bases);
-		
+
 		int abpos, aepos, alen, bbpos, bepos, blen, aes, aee, bes, bee;
-		
+
 		alen = currentaln->alen;
 		blen = currentaln->blen;
 		if (std::get<0>(edgelist[i]).strand == 0) {
 			abpos = currentaln->abpos;
 			aepos = currentaln->aepos;
-			
+
 			aes = currentaln->aes;
 			aee = currentaln->aee;
-			
+
 		} else {
 			abpos = alen - currentaln->aepos;
 			aepos = alen - currentaln->abpos;
-		
+
 			aes = alen - currentaln->aee;
 			aee = alen - currentaln->aes;
 		}
-		
+
 		if (((std::get<1>(edgelist[i]).strand == 0) and (currentaln->flags == 0)) or ((std::get<1>(edgelist[i]).strand == 1) and (currentaln->flags == 1))) {
 			bbpos = currentaln->bbpos;
 			bepos = currentaln->bepos;
-			
+
 			bes = currentaln->bes;
 			bee = currentaln->bee;
-			
+
 		} else {
 			bbpos = blen - currentaln->bepos;
 			bepos = blen - currentaln->bbpos;
-			
+
 			bes = blen - currentaln->bee;
 			bee = blen - currentaln->bes;
-			
+
 		}
-		
+
 		//printf("[[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", abpos, aepos, aes, aee, bbpos, bepos, bes, bee);
 
         LOverlap *new_ovl = new LOverlap();
@@ -731,6 +731,26 @@ int main(int argc, char *argv[]) {
 
     std::cout << bedges.size() << " " << breads.size() << " " << selected.size() << std::endl;
 
+
+    for (int i = 0; i < range.size(); i++)
+		{
+			int aread = range[i];
+			if (idx2[aread].size() > 0) {
+
+    		    std::vector<int> * res = la.getCoverage(idx3[aread]);
+    		    std::vector<std::pair<int, int> > * res2 = la.lowCoverageRegions(*res, 25);
+    		    delete res;
+    		    printf("%d %d: (%d %d) ", i, aread, 0, idx3[aread][0]->alen);
+    		    for (int j = 0; j < res2->size(); j++) {
+    		        printf("[%d %d] ", res2->at(j).first, res2->at(j).second);
+    		    }
+    	    printf("\n");
+    	    delete res2;
+		}
+    }
+
+
+
 	std::cout<<sequence.size()<<std::endl;
 
     for (int i = 0; i < selected.size(); i++) {
@@ -738,6 +758,7 @@ int main(int argc, char *argv[]) {
         //printf("%d %d\n",selected[i]->tlen, selected[i]->trace_pts_len);
         auto res = la.getAlignmentTags(selected[i]);
     }
+
 
 	out << ">Draft_assembly\n";
 	out << sequence << std::endl;
