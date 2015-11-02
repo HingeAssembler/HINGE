@@ -781,14 +781,24 @@ int main(int argc, char *argv[]) {
         bedges.push_back(new_ovl);
         breads.push_back(current_seq);
 
-
 		if (i == 0) {
 			sequence = current_seq;
 		}
 
+        int trim = 200;
+
+
+
+        std::string str2 = get_aligned_seq_end(aln_tags1, aln_tags2, trim);
+        //printf("%d,%s\n", str2.size(), str2.c_str());
+        //printf("ref:%s\n", next_seq.substr(bepos - str2.size(), str2.size()).c_str());
 		sequence.erase(sequence.end() - (alen - aepos), sequence.end());
+
+        sequence.erase(sequence.end() - trim, sequence.end());
+
 		next_seq.erase(next_seq.begin(), next_seq.begin() + bepos);
-		sequence += next_seq;
+        sequence += str2;
+        sequence += next_seq;
 	}
     //need to trim the end
 
