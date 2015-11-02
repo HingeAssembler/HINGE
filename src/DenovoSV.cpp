@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <unordered_map>
 #include <limits>
 #include <iostream>
 
@@ -108,30 +109,17 @@ int main(int argc, char ** argv) {
     la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
 
-    std::map<std::pair<int,int>, std::vector<LOverlap *> > idx; //map from (aid, bid) to alignment id
-    std::map<int, std::vector<LOverlap*>> idx2; //map from (aid) to alignment id in a vector
+    std::unordered_map<int, std::vector<LOverlap*>> idx2; //map from (aid) to alignment id in a vector
 
     for (int i = 0; i < n_read; i++ ) {
         idx2[i] = std::vector< LOverlap * >(); // initialize idx2
     }
 
     for (int i = 0; i < aln.size(); i++) {
-        if (aln[i]->diffs / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.5 ) {
+        if (aln[i]->diffs*2 / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.25 ) {
             idx2[aln[i]->aid].push_back(aln[i]);
         }
     }
-	
-    for (int i = 0; i < n_read; i++ ) {
-        std::sort(idx2[i].begin(), idx2[i].end(), compare_overlap);
-    }
-	
-	for (int i = 0; i < n_read; i++) 
-		for (int j = 0; j<idx2[i].size(); j++) {
-            if (idx.find(std::pair<int,int>(idx2[i][j]->aid, idx2[i][j]->bid )) == idx.end())
-                idx[std::pair<int,int>(idx2[i][j]->aid, idx2[i][j]->bid )] = std::vector<LOverlap *> ();
-
-            idx[std::pair<int,int>(idx2[i][j]->aid, idx2[i][j]->bid )].push_back(idx2[i][j]);
-		}
 
     std::vector<Read *> reads;
     la.getRead(reads,0,n_read);
@@ -141,6 +129,22 @@ int main(int argc, char ** argv) {
         std::vector<std::pair<int,int> > covered_region;
         covered_region = Merge(idx2[i]);
     } // find all covered regions, could help remove adaptors
+
+
+    for (int i = 0; i < 50; i++) {
+        std::vector<int> * res = la.getCoverage(idx2[i]);
+
+        std::vector<std::pair<int, int> > * res2 = la.lowCoverageRegions(*res, 15);
+
+        delete res;
+        printf("%d: (%d %d) ",i, 0, idx2[i][0]->alen);
+        for (int i = 0; i < res2->size(); i++) {
+            printf("[%d %d] ", res2->at(i).first, res2->at(i).second);
+        }
+        printf("\n");
+        delete res2;
+
+    }
 
 
 

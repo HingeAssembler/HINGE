@@ -4327,7 +4327,7 @@ std::vector<std::pair<int, int> > * LAInterface::lowCoverageRegions(std::vector<
         int start = 0;
         if (cov[pos] < min_cov){
             start = pos;
-            while (cov[pos] < min_cov)
+            while ((cov[pos] < min_cov) and (pos < cov.size()))
                 pos ++;
             reg->push_back(std::pair<int, int >(start, pos) ); //low coverage region in [a,b)
             }
