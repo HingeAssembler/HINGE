@@ -734,13 +734,9 @@ int main(int argc, char *argv[]) {
 	std::cout<<sequence.size()<<std::endl;
 
     for (int i = 0; i < selected.size(); i++) {
-
         la.recoverAlignment(selected[i]);
-        printf("%d %d\n",selected[i]->tlen, selected[i]->trace_pts_len);
-
+        //printf("%d %d\n",selected[i]->tlen, selected[i]->trace_pts_len);
         auto res = la.getAlignmentTags(selected[i]);
-        //std::cout << res.first << std::endl;
-        //std::cout << res.second << std::endl;
     }
 
 	out << ">Draft_assembly\n";

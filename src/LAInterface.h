@@ -180,7 +180,14 @@ public:
 
     int recoverAlignment(LAlignment *);
 
+    std::vector<int> * getCoverage(std::vector<LOverlap *> alns);
+
+    std::vector<int> * getCoverage(std::vector<LAlignment *> alns);
+
     std::pair<std::string, std::string> getAlignmentTags(LAlignment *alignment);
+
+
+    std::vector<std::pair<int, int> > * lowCoverageRegions(std::vector<int> & cov, int min_cov);
 
 };
 

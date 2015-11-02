@@ -4296,3 +4296,42 @@ int LAInterface::recoverAlignment(LAlignment *alignment) {
 
     return 0;
 }
+
+std::vector<int> * LAInterface::getCoverage(std::vector<LOverlap *> alns) {
+    std::vector<int> * res = new std::vector<int>( alns[0]->alen, 0 );
+
+    for (int i = 0; i < alns.size(); i++) {
+        for (int j = alns[i]->abpos; j < alns[i]->aepos; j++)
+            (*res)[j] ++;
+    }
+
+    return res;
+}
+
+
+std::vector<int> *LAInterface::getCoverage(std::vector<LAlignment *> alns) {
+    std::vector<int> * res = new std::vector<int>( alns[0]->alen, 0 );
+
+    for (int i = 0; i < alns.size(); i++) {
+        for (int j = alns[i]->abpos; j < alns[i]->aepos; j++)
+            (*res)[j] ++;
+    }
+
+    return res;
+}
+
+std::vector<std::pair<int, int> > * LAInterface::lowCoverageRegions(std::vector<int> &cov, int min_cov) {
+    std::vector<std::pair < int, int>> * reg = new std::vector<std::pair < int, int>> ();
+    int pos = 0;
+    while (pos < cov.size()) {
+        int start = 0;
+        if (cov[pos] < min_cov){
+            start = pos;
+            while (cov[pos] < min_cov)
+                pos ++;
+            reg->push_back(std::pair<int, int >(start, pos) ); //low coverage region in [a,b)
+            }
+        else pos ++;
+    }
+    return reg;
+}
