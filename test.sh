@@ -17,6 +17,7 @@ simulator 1.0 -c50. >G.fasta
 fasta2DB G G.fasta 
 HPCdaligner -mdust -t5 G | csh -v 
 
-LAInterface_test
-Consensus_test
-LAInterface_test_2DB
+touch log.txt
+LAInterface_test>log.txt
+Consensus_test>log.txt
+LAInterface_test_2DB>log.txt
