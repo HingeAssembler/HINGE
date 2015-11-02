@@ -73,7 +73,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
 
 
 std::string reverse_complement(std::string seq) {
-    static std::map<char, char> m = {{'a','t'}, {'c','g'}, {'g','c'}, {'t','a'}, {'A','T'}, {'C','G'}, {'T','A'}, {'G','C'}, {'n','n'}, {'N', 'N'}};
+    static std::map<char, char> m = {{'a','t'}, {'c','g'}, {'g','c'}, {'t','a'}, {'A','T'}, {'C','G'}, {'T','A'}, {'G','C'}, {'n','n'}, {'N', 'N'}, {'-', '-'}};
     std::reverse(seq.begin(), seq.end());
     for (int i = 0; i < seq.size(); i++) {
         seq[i] = m[seq[i]];
@@ -81,6 +81,44 @@ std::string reverse_complement(std::string seq) {
     return seq;
 }
 
+
+std::string get_aligned_seq(std::string aln_tag1, std::string aln_tag2, int offset) {
+    int pos = 0;
+    int count = 0;
+    while (count < offset) {
+        if (aln_tag1[pos] != '-') count++;
+        pos ++;
+    }
+
+    std::string str = "";
+
+    for (int i = 0; i < pos; i++) {
+        if (aln_tag2[i] != '-') str+=(aln_tag2[i]);
+    }
+
+    return str;
+}
+
+
+std::string get_aligned_seq_end(std::string aln_tag1, std::string aln_tag2, int offset) {
+    int pos = 0;
+    int count = 0;
+    int len = aln_tag1.size() - 1;
+    while (count < offset) {
+        if (aln_tag1[len-pos] != '-') count++;
+        pos ++;
+    }
+
+    std::string str = "";
+
+    for (int i = 0; i < pos; i++) {
+        if (aln_tag2[len-i] != '-') str+=(aln_tag2[len-i]);
+    }
+
+
+    std::reverse(str.begin(),str.end());
+    return str;
+}
 
 
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
@@ -631,9 +669,21 @@ int main(int argc, char *argv[]) {
 
 
 
+    std::unordered_map<int, std::unordered_map<int, std::pair<std::string, std::string> > > aln_tags_map;
+    std::vector<std::pair<std::string, std::string> > aln_tags_list;
+
+
+    for (int i = 0; i < selected.size(); i++) {
+        la.recoverAlignment(selected[i]);
+        //printf("%d %d\n",selected[i]->tlen, selected[i]->trace_pts_len);
+        std::pair<std::string, std::string> res = la.getAlignmentTags(selected[i]);
+        aln_tags_map[selected[i]->aid][selected[i]->bid] = res;
+        aln_tags_list.push_back(res);
+    }
+
+
 
     std::ofstream out(name_output);
-
     std::string sequence = "";
 
     std::vector<LOverlap *> bedges;
@@ -653,13 +703,26 @@ int main(int argc, char *argv[]) {
 
 		if (currentaln == NULL) exit(1);
 		//currentaln->show();
+
         std::string current_seq;
 		std::string next_seq;
 
-        if (std::get<1>(edgelist[i]).strand == 0)
+        std::string aln_tags1;
+        std::string aln_tags2;
+
+
+        if (std::get<0>(edgelist[i]).strand == 0)
             current_seq = reads[std::get<0>(edgelist[i]).id]->bases;
         else
             current_seq = reverse_complement(reads[std::get<0>(edgelist[i]).id]->bases);
+
+        if (std::get<0>(edgelist[i]).strand == 0) {
+            aln_tags1 = aln_tags_list[i].first;
+            aln_tags2 = aln_tags_list[i].second;
+        } else {
+            aln_tags1 = reverse_complement(aln_tags_list[i].first);
+            aln_tags2 = reverse_complement(aln_tags_list[i].second);
+        }
 
         if (std::get<1>(edgelist[i]).strand == 0)
             next_seq = reads[std::get<1>(edgelist[i]).id]->bases;
@@ -717,22 +780,29 @@ int main(int argc, char *argv[]) {
 
         bedges.push_back(new_ovl);
         breads.push_back(current_seq);
-		//if (i == 0) {
-		//	sequence = current_seq;
-		//}
 
-		//sequence.erase(sequence.end() - (alen - aepos), sequence.end());
-		//next_seq.erase(next_seq.begin(), next_seq.begin() + bepos);
-		//sequence += next_seq;
+
+		if (i == 0) {
+			sequence = current_seq;
+		}
+
+		sequence.erase(sequence.end() - (alen - aepos), sequence.end());
+		next_seq.erase(next_seq.begin(), next_seq.begin() + bepos);
+		sequence += next_seq;
 	}
     //need to trim the end
 
 
 
-    std::cout << bedges.size() << " " << breads.size() << " " << selected.size() << std::endl;
+    std::cout << bedges.size() << " " << breads.size() << " " << selected.size() << " " << aln_tags_list.size() << std::endl;
+
+    /*for (int i = 0; i < bedges.size() - 1; i++) {
+        printf("%d %d %d %d %d\n", bedges[i]->bbpos, bedges[i]->bepos, bedges[i+1]->abpos, bedges[i+1]->aepos, bedges[i]->bepos - bedges[i+1]->abpos);
+    }*/
 
 
-    for (int i = 0; i < range.size(); i++)
+
+    /*for (int i = 0; i < range.size(); i++)
 		{
 			int aread = range[i];
 			if (idx2[aread].size() > 0) {
@@ -747,17 +817,13 @@ int main(int argc, char *argv[]) {
     	    printf("\n");
     	    delete res2;
 		}
-    }
+    }*/
 
 
 
 	std::cout<<sequence.size()<<std::endl;
 
-    for (int i = 0; i < selected.size(); i++) {
-        la.recoverAlignment(selected[i]);
-        //printf("%d %d\n",selected[i]->tlen, selected[i]->trace_pts_len);
-        auto res = la.getAlignmentTags(selected[i]);
-    }
+
 
 
 	out << ">Draft_assembly\n";
