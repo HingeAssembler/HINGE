@@ -25,9 +25,9 @@ with open('ecoli.linear.edges') as f:
         e = line.split(" ")[0]
         if e[-1] == '\'':
             e = e[:-1]
-        
+
         bb.append(int(e))
-        
+
 print bb
 
 bb = set(bb)
@@ -119,7 +119,7 @@ for i,aln_group in enumerate(alns):
             polygon = plt.Polygon(points,fc = 'r', ec = 'none', alpha = 0.8)
         else:
             polygon = plt.Polygon(points,fc = 'b', ec = 'none', alpha = 0.6)
-            
+
         polygon.set_url("http://shannon.stanford.edu:5000/aln" + str(item[2]+1) + ".pdf")
         plt.gca().add_patch(polygon)
 
@@ -131,4 +131,4 @@ for i,aln_group in enumerate(alns):
             polygon2 = plt.Polygon(points_start,fc = 'g', ec = 'none', alpha = 0.6)
             plt.gca().add_patch(polygon2)
 
-plt.savefig('mapping/map.' + str(left) +'_'+ str(right)+ '.pdf')
+plt.savefig('mapping/map.' + str(left) +'_'+ str(right)+ '.svg')

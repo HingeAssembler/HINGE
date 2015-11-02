@@ -4293,6 +4293,12 @@ int LAInterface::recoverAlignment(LAlignment *alignment) {
         //printf("\n");
     }
 
+    free(bbuffer - 1);
+    free(abuffer - 1);
+    Free_Work_Data(work);
+	//free(path->trace);
+	
+	
 
     return 0;
 }
