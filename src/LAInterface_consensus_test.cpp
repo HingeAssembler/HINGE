@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
     std::cout << "hello" << std::endl;
     Read *test_read;
 
-    la.OpenDB("G");
+    la.openDB("G");
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
 
     la.showRead(1, 3); //show read [1,3)
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
     test_read = la.getRead(0); //get read 0
     test_read->showRead(); // show read 0
 
-    la.OpenAlignment("G.1.las");
+    la.openAlignmentFile("G.1.las");
     la.showAlignment(0, 2); // show alignments of read [0,2)
 
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
@@ -96,7 +96,8 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < seq_count; i ++) {
         res2[i]->show();
 
-        std::pair<std::string, std::string>  alignment = la.Lget_Alignment_tgs(res2[i]);
+        la.recoverAlignment(res2[i]);
+        std::pair<std::string, std::string>  alignment = la.getAlignmentTags(res2[i]);
 
         //alignment.first.erase (std::remove(alignment.first.begin(), alignment.first.end(), '-'), alignment.first.end());
         //alignment.second.erase (std::remove(alignment.second.begin(), alignment.second.end(), '-'), alignment.second.end());
@@ -140,6 +141,6 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i <seq_count + 1; i++)
         free_align_tags(tags_list[i]);
 
-    la.CloseDB(); //close database
+    la.closeDB(); //close database
     return 0;
 }

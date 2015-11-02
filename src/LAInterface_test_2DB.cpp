@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
     std::cout << "hello" << std::endl;
     Read *test_read;
 
-    la.OpenDB2("G","G");
+    la.openDB2("G", "G");
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
     std::cout<<"# Reads:" << la.getReadNumber2() << std::endl;
 
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     test_read = la.getRead2(1); //get read 0
     test_read->showRead(); // show read 0
 
-    la.OpenAlignment("G.1.las");
+    la.openAlignmentFile("G.1.las");
     la.showAlignment(0, 2); // show alignments of read [0,2)
 
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
             printf("%d,", (int) trace[u]);
         }
         printf("\n");
-        la.Lshow_Alignment_tgs(res2[i]);*/
+        la.showAlignmentTags(res2[i]);*/
 
         /*printf("\n");
         for (int j = 0; j < res2[i]->trace_pts_len; j++)
@@ -85,6 +85,6 @@ int main(int argc, char *argv[]) {
         printf("\n");*/
 
     }
-    la.CloseDB(); //close database
+    la.closeDB(); //close database
     return 0;
 }

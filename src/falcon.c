@@ -811,7 +811,7 @@ void main() {
         if (seq_count < 10 && strcmp(seq_id[seq_count], "-") != 0 ) continue;
         if (seq_count < 10 && strcmp(seq_id[seq_count], "-") == 0 ) break;
 
-            consensus = generate_consensus(input_seq, seq_count, 8, 8);
+            consensus = generateConsensus(input_seq, seq_count, 8, 8);
         if (strlen(consensus) > 500) {
             printf(">%s\n%s\n", seq_id[0], consensus);
         }

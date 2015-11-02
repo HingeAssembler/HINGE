@@ -21,7 +21,7 @@ void Read::showRead() {
 }
 
 
-int LAInterface::OpenDB2(std::string filename, std::string filename2) {
+int LAInterface::openDB2(std::string filename, std::string filename2) {
     char *fn = new char[filename.length() + 1];
     strcpy(fn, filename.c_str());
 
@@ -123,7 +123,7 @@ int LAInterface::OpenDB2(std::string filename, std::string filename2) {
 }
 
 
-int LAInterface::OpenDB(std::string filename) {
+int LAInterface::openDB(std::string filename) {
     char *fn = new char[filename.length() + 1];
     strcpy(fn, filename.c_str());
 
@@ -177,13 +177,13 @@ int LAInterface::OpenDB(std::string filename) {
     return 0;
 }
 
-int LAInterface::CloseDB() {
+int LAInterface::closeDB() {
     Close_DB(db1);
     return 0;
 }
 
 
-int LAInterface::CloseDB2() {
+int LAInterface::closeDB2() {
     Close_DB(db1);
     Close_DB(db2);
     return 0;
@@ -585,7 +585,7 @@ Read *LAInterface::getRead2(int number) {
 }
 
 
-int LAInterface::OpenAlignment(std::string filename) {
+int LAInterface::openAlignmentFile(std::string filename) {
     
     char *fn = new char[filename.size() + 1];
     strcpy(fn, filename.c_str());
@@ -851,7 +851,7 @@ void LAInterface::showAlignment(int from, int to) {
                 else
                     aln->bseq = bseq - bmin;
 
-                LCompute_Trace_PTS(aln, work, tspace);
+                computeTracePTS(aln, work, tspace);
 
                 if (FLIP) {
                     if (COMP(aln->flags)) {
@@ -879,7 +879,7 @@ void LAInterface::showAlignment(int from, int to) {
             if (REFERENCE)
                 Print_Reference(stdout, aln, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
             if (ALIGN)
-                LPrint_Alignment(stdout, aln, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
+                printAlignment(stdout, aln, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
         }
         else {
             printf(" :   < ");
@@ -1979,7 +1979,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
 
 
                 }*/
-
+#ifdef DOALIGN
                 amin = ovl->path.abpos - BORDER;
                 if (amin < 0) amin = 0;
                 amax = ovl->path.aepos + BORDER;
@@ -2055,7 +2055,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
                     //printf("\n");
                 }
 
-
+#endif
                 if (FLIP) {
                     if (COMP(aln->flags)) {
                         Complement_Seq(aseq, amax - amin);
@@ -2082,8 +2082,8 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
             if (REFERENCE)
                 Print_Reference(stdout, aln, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
             //if (ALIGN)
-                //LPrint_Alignment(stdout, aln, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
-            //    LPrint_Alignment_exp(stdout, new_al, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
+                //printAlignment(stdout, aln, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
+            //    printAlignment_exp(stdout, new_al, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
 
 
 
@@ -2488,8 +2488,8 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
             if (REFERENCE)
                 Print_Reference(stdout, aln, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
             //if (ALIGN)
-            //LPrint_Alignment(stdout, aln, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
-            //    LPrint_Alignment_exp(stdout, new_al, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
+            //printAlignment(stdout, aln, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
+            //    printAlignment_exp(stdout, new_al, work, INDENT, WIDTH, BORDER, UPPERCASE, mx_wide);
 
 
 
@@ -2894,8 +2894,8 @@ static int enlarge_vector(_Work_Data *work, int newmax)
 static char ToL[8] = { 'a', 'c', 'g', 't', '.', '[', ']', '-' };
 static char ToU[8] = { 'A', 'C', 'G', 'T', '.', '[', ']', '-' };
 
-int LAInterface::LPrint_Alignment(FILE *file, Alignment *align, Work_Data *ework,
-                    int indent, int width, int border, int upper, int coord)
+int LAInterface::printAlignment(FILE *file, Alignment *align, Work_Data *ework,
+                                int indent, int width, int border, int upper, int coord)
 { _Work_Data *work  = (_Work_Data *) ework;
     int        *trace = (int *) align->path->trace;
     int         tlen  = align->path->tlen;
@@ -3420,7 +3420,7 @@ static int iter_np(char *A, int M, char *B, int N, Trace_Waves *wave)
 
 
 
-int LAInterface::LCompute_Trace_PTS(Alignment *align, Work_Data *ework, int trace_spacing)
+int LAInterface::computeTracePTS(Alignment *align, Work_Data *ework, int trace_spacing)
 { _Work_Data *work = (_Work_Data *) ework;
     Trace_Waves wave;
 
@@ -3521,7 +3521,7 @@ int LAInterface::LCompute_Trace_PTS(Alignment *align, Work_Data *ework, int trac
     return (0);
 }
 
-int LAInterface::Lshow_Alignment_tgs(LAlignment * alignment) {
+int LAInterface::showAlignmentTags(LAlignment *alignment) {
 
     //load aseq and bseq first
 
@@ -3719,7 +3719,7 @@ int LAInterface::Lshow_Alignment_tgs(LAlignment * alignment) {
 }
 
 
-std::pair<std::string, std::string> LAInterface::Lget_Alignment_tgs(LAlignment * alignment) {
+std::pair<std::string, std::string> LAInterface::getAlignmentTags(LAlignment *alignment) {
 
     //load aseq and bseq first
 
@@ -3924,8 +3924,8 @@ std::pair<std::string, std::string> LAInterface::Lget_Alignment_tgs(LAlignment *
 
 
 
-int LAInterface::LPrint_Alignment_exp(FILE *file, LAlignment *align, Work_Data *ework,
-                                  int indent, int width, int border, int upper, int coord)
+int LAInterface::printAlignment_exp(FILE *file, LAlignment *align, Work_Data *ework,
+                                    int indent, int width, int border, int upper, int coord)
 { _Work_Data *work  = (_Work_Data *) ework;
     int        *trace = (int *) align->trace;
     int         tlen  = align->tlen;
@@ -4165,7 +4165,7 @@ int LAInterface::LPrint_Alignment_exp(FILE *file, LAlignment *align, Work_Data *
     return (0);
 }
 
-int LAInterface::generate_consensus(std::vector<LAlignment *> & alns) {
+int LAInterface::generateConsensus(std::vector<LAlignment *> &alns) {
 
     int seq_count = alns.size();
 
@@ -4175,7 +4175,7 @@ int LAInterface::generate_consensus(std::vector<LAlignment *> & alns) {
     return 0;
 }
 
-int LAInterface::recover_alignment(LAlignment *alignment) {
+int LAInterface::recoverAlignment(LAlignment *alignment) {
 
 
     int j;
@@ -4200,10 +4200,10 @@ int LAInterface::recover_alignment(LAlignment *alignment) {
     int WIDTH = 100;
     int BORDER = 10;
 
-    int tmax = 3000;
-    trace = (uint16 *) malloc(sizeof(uint16) * tmax);
-    if (trace == NULL)
-        exit(1);
+    //int tmax = 3000;
+    //trace = (uint16 *) malloc(sizeof(uint16) * tmax);
+    //if (trace == NULL)
+    //    exit(1);
 
     int amin, amax, bmin, bmax;
 
@@ -4232,7 +4232,6 @@ int LAInterface::recover_alignment(LAlignment *alignment) {
 
     path->trace = (uint16 *)malloc(path->tlen * sizeof(uint16));
     memcpy(path->trace, alignment->trace_pts, path->tlen * sizeof(uint16));
-
 
 
     amin = ovl->path.abpos - BORDER;

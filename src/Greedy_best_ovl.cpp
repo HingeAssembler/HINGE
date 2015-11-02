@@ -38,11 +38,11 @@ int main(int argc, char *argv[]) {
 	char * name_db = argv[1];
 	char * name_las = argv[2];
 	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
-    la.OpenDB(name_db);
-	//la.OpenDB2(name_db); // changed this on Oct 12, may case problem, xf1280@gmail.com
+	la.openDB(name_db);
+	//la.openDB2(name_db); // changed this on Oct 12, may case problem, xf1280@gmail.com
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
 
-    la.OpenAlignment(name_las);
+	la.openAlignmentFile(name_las);
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
 	//la.resetAlignment();
 	//la.showOverlap(0,1);
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    la.CloseDB(); //close database
+	la.closeDB(); //close database
     return 0;
 }
 

@@ -167,10 +167,10 @@ int main(int argc, char *argv[]) {
 	char * name_config = argv[5];
 
 	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
-    la.OpenDB(name_db);
-	//la.OpenDB2(name_db); // changed this on Oct 12, may case problem, xf1280@gmail.com
+    la.openDB(name_db);
+	//la.openDB2(name_db); // changed this on Oct 12, may case problem, xf1280@gmail.com
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
-    la.OpenAlignment(name_las);
+    la.openAlignmentFile(name_las);
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
 	//la.resetAlignment();
 	//la.showOverlap(0,1);
@@ -570,7 +570,7 @@ int main(int argc, char *argv[]) {
         seq_count = num_chosen;
 
         //printf("%d\n",seq_count);
-        consensus = generate_consensus(input_seq, seq_count, 8, 8, 12, 6, 0.56); // generate consensus for each read
+        consensus = generateConsensus(input_seq, seq_count, 8, 8, 12, 6, 0.56); // generate consensus for each read
         
 		
         if (std::get<0>(edgelist[i]).strand == 0 ) {
@@ -734,11 +734,11 @@ int main(int argc, char *argv[]) {
 	std::cout<<sequence.size()<<std::endl;
 
     for (int i = 0; i < selected.size(); i++) {
-        
-        la.recover_alignment(selected[i]);
+
+        la.recoverAlignment(selected[i]);
         printf("%d %d\n",selected[i]->tlen, selected[i]->trace_pts_len);
 
-        auto res = la.Lget_Alignment_tgs(selected[i]);
+        auto res = la.getAlignmentTags(selected[i]);
         //std::cout << res.first << std::endl;
         //std::cout << res.second << std::endl;
     }
@@ -746,7 +746,7 @@ int main(int argc, char *argv[]) {
 	out << ">Draft_assembly\n";
 	out << sequence << std::endl;
 
-    la.CloseDB(); //close database
+    la.closeDB(); //close database
     return 0;
 }
 

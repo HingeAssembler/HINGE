@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     //std::cout << "hello" << std::endl;
     Read *test_read;
 
-    la.OpenDB2(name_db1, name_db2);
+    la.openDB2(name_db1, name_db2);
 	
 	int n_reads = la.getReadNumber2();
 	
@@ -71,8 +71,8 @@ int main(int argc, char *argv[]) {
 
 
 	//la.showRead2(4,6);
-	
-    la.OpenAlignment(name_las);
+
+    la.openAlignmentFile(name_las);
 
 	int n_alns = la.getAlignmentNumber();
 	
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < seq_count ; i ++) {
 
 
-        std::pair<std::string, std::string>  alignment = la.Lget_Alignment_tgs(filtered[i]);
+        std::pair<std::string, std::string>  alignment = la.getAlignmentTags(filtered[i]);
 
 		
         char * t_aln_str = (char *) malloc((alignment.first.size()+20)* sizeof(char));
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
     free_consensus_data(consensus);
     for (int i = 0; i <seq_count + 1; i++)
         free_align_tags(tags_list[i]);
-	
-    la.CloseDB(); //close database*/
+
+    la.closeDB(); //close database*/
     return 0;
 }

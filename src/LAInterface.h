@@ -117,11 +117,11 @@ public:
 
     LAInterface() { };
 
-    int OpenDB2(std::string filename, std::string filename2); // open 2 databases
+    int openDB2(std::string filename, std::string filename2); // open 2 databases
 
-    int OpenDB(std::string filename); // open database
+    int openDB(std::string filename); // open database
 
-    int OpenAlignment(std::string filename); // open .las Alignment file
+    int openAlignmentFile(std::string filename); // open .las Alignment file
 
     void showRead(int from, int to); // show reads in a range
 	
@@ -154,7 +154,7 @@ public:
 
     void getAlignment(std::vector<LAlignment *> &, int n);
 
-    int CloseDB(); // close database
+    int closeDB(); // close database
 
     int getReadNumber(); // get total number of reads
 
@@ -162,25 +162,25 @@ public:
 
     int64 getAlignmentNumber(); // get total number of alignments
 
-    int CloseDB2();
+    int closeDB2();
 
-    int LPrint_Alignment(FILE *file, Alignment *align, Work_Data *ework,
-                        int indent, int width, int border, int upper, int coord);
+    int printAlignment(FILE *file, Alignment *align, Work_Data *ework,
+                       int indent, int width, int border, int upper, int coord);
 
-    int LPrint_Alignment_exp(FILE *file, LAlignment *align, Work_Data *ework,
-                         int indent, int width, int border, int upper, int coord);
-
-
-    int LCompute_Trace_PTS(Alignment *align, Work_Data *ework, int trace_spacing);
+    int printAlignment_exp(FILE *file, LAlignment *align, Work_Data *ework,
+                           int indent, int width, int border, int upper, int coord);
 
 
-    int Lshow_Alignment_tgs(LAlignment *);
+    int computeTracePTS(Alignment *align, Work_Data *ework, int trace_spacing);
 
-    int generate_consensus(std::vector<LAlignment *> &);
 
-    int recover_alignment(LAlignment *);
+    int showAlignmentTags(LAlignment *);
 
-    std::pair<std::string, std::string> Lget_Alignment_tgs(LAlignment *alignment);
+    int generateConsensus(std::vector<LAlignment *> &);
+
+    int recoverAlignment(LAlignment *);
+
+    std::pair<std::string, std::string> getAlignmentTags(LAlignment *alignment);
 
 };
 
