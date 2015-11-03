@@ -914,7 +914,7 @@ int main(int argc, char *argv[]) {
                     printf("fine, this will be removed in next alignment\n");
                 else {
                     std::string fix = get_aligned_seq_middle(next_aln_tag1, next_aln_tag2,
-                    pitfalls[i + 1][j].first-next_alignment->abpos, pitfalls[i + 1][j].second - next_alignment->abpos );
+                    pitfalls[i + 1][j].first-next_alignment->abpos - 20 , pitfalls[i + 1][j].second - next_alignment->abpos + 20);
                     printf("fix will be:%s\n",fix.c_str());
                      //fix this pitfall;
                 }
