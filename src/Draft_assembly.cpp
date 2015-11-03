@@ -120,6 +120,33 @@ std::string get_aligned_seq_end(std::string aln_tag1, std::string aln_tag2, int 
     return str;
 }
 
+std::vector<int> get_alignment_pos_list(std::string aln_tag1, std::string aln_tag2) {
+
+    // pass
+
+}
+
+
+std::string get_aligned_seq_middle(std::string aln_tag1, std::string aln_tag2, int begin, int end) {
+    int pos = 0;
+    int count = 0;
+    while ( count < begin) {
+        if (aln_tag1[pos] != '-') count ++;
+        pos ++;
+    }
+
+    std::string bstr = "";
+
+    while (count < end) {
+        if (aln_tag1[pos] != '-') count ++;
+        if (aln_tag2[pos] != '-') bstr += aln_tag2[pos];
+        pos ++;
+    }
+
+    return bstr;
+
+}
+
 
 
 
@@ -863,6 +890,10 @@ int main(int argc, char *argv[]) {
         std::string aln_tag1 = aln_tags_list_true_strand[i].first;
         std::string aln_tag2 = aln_tags_list_true_strand[i].second;
 
+        std::string next_aln_tag1 = aln_tags_list_true_strand[i+1].first;
+        std::string next_aln_tag2 = aln_tags_list_true_strand[i+1].second;
+
+
 
         printf("%d %d %d %d %d %d %d\n",this_alignment->aid, this_alignment->bid, next_alignment->aid, this_alignment->alen, this_alignment->blen, this_seq.size(), next_seq.size());
 
@@ -871,19 +902,25 @@ int main(int argc, char *argv[]) {
 
         int trim = EDGE_TRIM;
 
-        /*for (int j = 0; j < pitfalls[i+1].size(); j++)
+        for (int j = 0; j < pitfalls[i+1].size(); j++)
             if ((pitfalls[i+1][j].first > this_alignment->bepos ) and ( pitfalls[i+1][j].second<this_alignment->blen)) {
-                printf("read %d:", range[i+1]);
+                printf("read %d: the pitfall is:", range[i+1]);
                 printf("[%d %d]\n", pitfalls[i + 1][j].first, pitfalls[i + 1][j].second);
                 //fix the pit fall
-                next_trim = next_alignment->aepos - pitfalls[i + 1][j].first;
-                printf("longer next trim:%d\n", next_trim);
+                //next_trim = next_alignment->aepos - pitfalls[i + 1][j].first;
+                //printf("longer next trim:%d\n", next_trim);
+
+                if (pitfalls[i + 1][j].first > next_alignment->aepos)
+                    printf("fine, this will be removed in next alignment\n");
+                else {
+                    std::string fix = get_aligned_seq_middle(next_aln_tag1, next_aln_tag2,
+                    pitfalls[i + 1][j].first-next_alignment->abpos, pitfalls[i + 1][j].second - next_alignment->abpos );
+                    printf("fix will be:%s\n",fix.c_str());
+                     //fix this pitfall;
+                }
+
             }
 
-        if (next_trim > 200) {
-            trim = next_trim+50;
-        }
-        next_trim = 0;*/
 
         std::string str2 = get_aligned_seq_end(aln_tag1, aln_tag2, trim);
 
@@ -892,8 +929,7 @@ int main(int argc, char *argv[]) {
 
         sequence.erase(sequence.end() - (this_alignment->alen - this_alignment->aepos), sequence.end());
         sequence.erase(sequence.end() - trim, sequence.end());
-        next_seq.erase(next_seq.begin(), next_seq.begin() + this_alignment->bepos);
-        sequence += str2;
+        next_seq.erase(next_seq.begin(), next_seq.begin() + this_alignment->bepos - str2.size());
         sequence += next_seq;
 
 
