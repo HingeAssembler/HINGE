@@ -19,9 +19,17 @@ def linearize(filename):
     
     print nx.info(con[0])
     
+    dfs_edges = list(nx.dfs_edges(con[0]))
+
+    
+    dfs_edges.append((dfs_edges[-1][-1], dfs_edges[0][0]))
+    
+    #print dfs_edges
+    
     with open(filename.split('.')[0]+'.linear.edges', 'w') as f:
-        for item in nx.dfs_edges(con[0]):
+        for item in dfs_edges:
             f.write(item[0] + ' ' + item[1] + ' ' + str(con[0].edge[item[0]][item[1]]['ew'])+'\n')
+            
 
 
 filename = sys.argv[1]

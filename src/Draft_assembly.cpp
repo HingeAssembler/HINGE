@@ -916,9 +916,10 @@ int main(int argc, char *argv[]) {
                     pitfalls[i + 1][j].first-next_alignment->abpos - 20 , pitfalls[i + 1][j].second - next_alignment->abpos + 20);
                     printf("fix will be:%s\n",fix.c_str());
 
-                    next_seq.erase(pitfalls[i + 1][j].first-20, pitfalls[i + 1][j].second + 40 - pitfalls[i + 1][j].first);
-                    next_seq.insert(pitfalls[i + 1][j].first-20,fix);
-
+					if (fix.size() > 0) {
+                    	next_seq.erase(pitfalls[i + 1][j].first-20, pitfalls[i + 1][j].second + 40 - pitfalls[i + 1][j].first);
+                    	next_seq.insert(pitfalls[i + 1][j].first-20,fix);
+					}
                      //fix this pitfall;
                 }
 
