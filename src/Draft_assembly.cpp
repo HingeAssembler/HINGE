@@ -901,7 +901,6 @@ int main(int argc, char *argv[]) {
 
 
         int trim = EDGE_TRIM;
-
         for (int j = 0; j < pitfalls[i+1].size(); j++)
             if ((pitfalls[i+1][j].first > this_alignment->bepos ) and ( pitfalls[i+1][j].second<this_alignment->blen)) {
                 printf("read %d: the pitfall is:", range[i+1]);
@@ -916,6 +915,10 @@ int main(int argc, char *argv[]) {
                     std::string fix = get_aligned_seq_middle(next_aln_tag1, next_aln_tag2,
                     pitfalls[i + 1][j].first-next_alignment->abpos - 20 , pitfalls[i + 1][j].second - next_alignment->abpos + 20);
                     printf("fix will be:%s\n",fix.c_str());
+
+                    next_seq.erase(pitfalls[i + 1][j].first-20, pitfalls[i + 1][j].second + 40 - pitfalls[i + 1][j].first);
+                    next_seq.insert(pitfalls[i + 1][j].first-20,fix);
+
                      //fix this pitfall;
                 }
 
