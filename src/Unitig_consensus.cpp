@@ -1009,7 +1009,7 @@ int main(int argc, char *argv[]) {
 
 
 
-
+    int rmax = -1;
     while (current_starting_read < n_bb_reads-1) {
         int currentread = current_starting_read;
         int additional_offset = 0;
@@ -1020,6 +1020,7 @@ int main(int argc, char *argv[]) {
 
             //int next_waypoint = mappings[currentread][waypoint - bedges[current_starting_read]->abpos] + bedges[current_starting_read]->bbpos;
             std::vector<std::pair<int,int> > lane;
+
             while ((waypoint > bedges[currentread]->abpos) and (waypoint < bedges[ currentread ]->aepos)) {
 
                 printf("%d %d\n",currentread, waypoint);
@@ -1038,6 +1039,7 @@ int main(int argc, char *argv[]) {
 
 
                 lane.push_back(std::pair<int,int>(currentread, waypoint));
+                if (currentread>rmax) rmax = currentread;
                 //int previous_wp = waypoint;
                 waypoint  = mappings[currentread][waypoint - bedges[currentread]->abpos] + bedges[currentread]->bbpos;
                 //printf("%s\n%s\n", breads[currentread].substr(previous_wp,50).c_str(), breads[currentread+1].substr(waypoint,50).c_str());
@@ -1045,9 +1047,10 @@ int main(int argc, char *argv[]) {
                 if (currentread >= n_bb_reads) break;
             }
             if (currentread < n_bb_reads)
-            if (waypoint <  bedges[currentread]->alen)
-                lane.push_back(std::pair<int,int>(currentread, waypoint));
-
+            if (waypoint <  bedges[currentread]->alen) {
+                lane.push_back(std::pair<int, int>(currentread, waypoint));
+                if (currentread>rmax) rmax = currentread;
+            }
             /*if (revert) {
                 printf("revert\n");
                 revert = false;
@@ -1060,9 +1063,11 @@ int main(int argc, char *argv[]) {
             }
             else*/
             {
-            current_starting_space ++;
-            currentread = current_starting_read;
-            lanes.push_back(lane);
+                if (currentread >= rmax)
+                    lanes.push_back(lane);
+                current_starting_space ++;
+                currentread = current_starting_read;
+
             }
 
         }
