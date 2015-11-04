@@ -1038,12 +1038,15 @@ int main(int argc, char *argv[]) {
 
 
                 lane.push_back(std::pair<int,int>(currentread, waypoint));
-                int previous_wp = waypoint;
+                //int previous_wp = waypoint;
                 waypoint  = mappings[currentread][waypoint - bedges[currentread]->abpos] + bedges[currentread]->bbpos;
                 //printf("%s\n%s\n", breads[currentread].substr(previous_wp,50).c_str(), breads[currentread+1].substr(waypoint,50).c_str());
                 currentread ++;
                 if (currentread >= n_bb_reads) break;
             }
+            if (currentread < n_bb_reads)
+            if (waypoint <  bedges[currentread]->alen)
+                lane.push_back(std::pair<int,int>(currentread, waypoint));
 
             /*if (revert) {
                 printf("revert\n");
