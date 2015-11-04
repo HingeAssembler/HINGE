@@ -1144,9 +1144,9 @@ int main(int argc, char *argv[]) {
 
                 aln_range * arange = (aln_range*) calloc(1 , sizeof(aln_range));
                 arange->s1 = 0;
-                arange->e1 = strlen(bseq)+1;
+                arange->e1 = strlen(bseq);
                 arange->s2 = 0;
-                arange->e2 = strlen(aseq)+1;
+                arange->e2 = strlen(aseq);
                 arange->score = 5;
 
                 printf("blen %d alen%d\n",strlen(bseq), strlen(aseq));
@@ -1185,7 +1185,12 @@ int main(int argc, char *argv[]) {
                            aseq[tags_list[j]->align_tags[k].t_pos],
                            tags_list[j]->align_tags[k].q_base);
                 }*/
-                
+                free(q_aln_str);
+                free(t_aln_str);
+                free(aseq);
+                free(bseq);
+                free_alignment(alng);
+
 
             }
 
@@ -1196,6 +1201,9 @@ int main(int argc, char *argv[]) {
             draft_assembly += std::string(consensus->sequence);
 
             free_consensus_data(consensus);
+            for (int j = 0; j < seq_count; j++)
+                free_align_tags(tags_list[j]);
+
 
 
         }  else {
