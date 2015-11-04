@@ -1026,7 +1026,7 @@ int main(int argc, char *argv[]) {
                 trace_pts[currentread].push_back(waypoint);
 
 
-                if (waypoint > bedges[currentread]->aepos - EDGE_SAFE) {
+                /*if (waypoint > bedges[currentread]->aepos - EDGE_SAFE) {
                     printf("Reaching the end, neglect low coverage\n");
                 }
 
@@ -1034,7 +1034,7 @@ int main(int argc, char *argv[]) {
                     revert = true;
                     printf("Low coverage, revert\n");
                     break;
-                }
+                }*/
 
 
                 lane.push_back(std::pair<int,int>(currentread, waypoint));
@@ -1045,7 +1045,7 @@ int main(int argc, char *argv[]) {
                 if (currentread >= n_bb_reads) break;
             }
 
-            if (revert) {
+            /*if (revert) {
                 printf("revert\n");
                 revert = false;
                 while (currentread >= current_starting_read) {
@@ -1055,7 +1055,7 @@ int main(int argc, char *argv[]) {
                 }
                 currentread = current_starting_read;
             }
-            else
+            else*/
             {
             current_starting_space ++;
             currentread = current_starting_read;
@@ -1119,7 +1119,10 @@ int main(int argc, char *argv[]) {
 
         }
 
-        if (ladders[i].size() == 0) continue;
+        if (ladders[i].size() == 0) {
+            printf("low coverage!\n");
+            continue;
+        }
 
         if (ladders[i].size() > 1) {
 
