@@ -980,36 +980,102 @@ int main(int argc, char *argv[]) {
     int tspace = 500; // set lane length to be 500
     int nlane = 0;
 
+
+
+    printf("%d %d\n", mappings[0][800], mappings[0][1000]);
+    printf("%s\n%s\n", breads[0].substr(bedges[0]->abpos+800,50).c_str(),breads[1].substr(bedges[0]->bbpos+ mappings[0][800],50).c_str() );
+
+
+
+
+
     std::vector<std::vector<std::pair<int, int>>> lanes;
+
+
+
 
     int currentlane = 0;
     int current_starting_read = 0;
     int current_starting_space = 1;
+    int current_starting_offset = 0;
     int n_bb_reads = range.size();
-    while (current_starting_read < n_bb_reads) {
+    std::vector<std::vector<int>> trace_pts(n_bb_reads);
+    bool revert = false;
+
+
+
+
+    while (current_starting_read < n_bb_reads-1) {
         int currentread = current_starting_read;
+        int additional_offset = 0;
 
-        while (bedges[current_starting_read]->abpos + current_starting_space*tspace < bedges[current_starting_read]->aepos) {
-            int waypoint = bedges[current_starting_read]->abpos + tspace * current_starting_space;
-            int next_waypoint = mappings[currentread][waypoint - bedges[current_starting_read]->abpos] + bedges[current_starting_read]->bbpos;
+        while (bedges[current_starting_read]->abpos + current_starting_space*tspace + current_starting_offset + additional_offset < bedges[current_starting_read]->aepos) {
+            int waypoint = bedges[current_starting_read]->abpos + tspace * current_starting_space + current_starting_offset + additional_offset;
+            //int next_waypoint = mappings[currentread][waypoint - bedges[current_starting_read]->abpos] + bedges[current_starting_read]->bbpos;
 
-            while ((next_waypoint > bedges[currentread + 1]->abpos) and (next_waypoint < bedges[currentread+1]->aepos)) {
-                waypoint = next_waypoint;
-                currentread ++;
-                next_waypoint = mappings[currentread][waypoint - bedges[current_starting_read]->abpos] + bedges[current_starting_read]->bbpos;
+            std::vector<std::pair<int,int> > lane;
+            while ((waypoint > bedges[currentread]->abpos) and (waypoint < bedges[ currentread ]->aepos)) {
+
                 printf("%d %d\n",currentread, waypoint);
+                trace_pts[currentread].push_back(waypoint);
+                if (coverages[currentread]->at(waypoint) < MIN_COV2) {
+                    revert = true;
+                    printf("Low coverage, revert\n");
+                    break;
+                }
+                lane.push_back(std::pair<int,int>(currentread, waypoint));
+                int previous_wp = waypoint;
+                waypoint  = mappings[currentread][waypoint - bedges[currentread]->abpos] + bedges[currentread]->bbpos;
+                //printf("%s\n%s\n", breads[currentread].substr(previous_wp,50).c_str(), breads[currentread+1].substr(waypoint,50).c_str());
+                currentread ++;
+                if (currentread >= n_bb_reads) break;
             }
 
+            if (revert) {
+                printf("revert\n");
+                revert = false;
+                while (currentread >= current_starting_read) {
+                    trace_pts[currentread].pop_back();
+                    currentread --;
+                    additional_offset += 50;
+                }
+                currentread = current_starting_read;
+            }
+            else
+            {
             current_starting_space ++;
             currentread = current_starting_read;
+            lanes.push_back(lane);
+            }
+
         }
+
         current_starting_read ++;
         current_starting_space = 1;//get next space;
+        if (trace_pts[current_starting_read].size() == 0)
+            current_starting_offset = 0;
+        else
+            current_starting_offset = trace_pts[current_starting_read].back() - bedges[current_starting_read]->abpos;
     }
 
 
+    for (int i = 0; i < n_bb_reads; i++) {
+        printf("Read %d:", i);
+        for (int j = 0; j < trace_pts[i].size(); j++) {
+            printf("%d ", trace_pts[i][j]);
+        }
+        printf("\n");
+    }
 
 
+    for (int i = 0; i < lanes.size(); i++) {
+
+        printf("Lane %d\n",i);
+        for (int j = 0; j < lanes[i].size(); j++) {
+            printf("[%d %d] ", lanes[i][j].first, lanes[i][j].second);
+        }
+        printf("\n");
+    }
 
     /*for (int i = 0; i < mapping.size(); i++)
         printf("%d %d\n", i, mapping[i]);
