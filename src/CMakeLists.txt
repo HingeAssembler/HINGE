@@ -71,6 +71,8 @@ add_executable(Draft_consensus Draft_consensus.cpp)
 target_link_libraries(Draft_consensus LAInterface falcon ini)
 
 
+add_executable(Unitig_consensus Unitig_consensus)
+target_link_libraries(Unitig_consensus LAInterface ini falcon)
 
 ## Tests
 add_executable(LAInterface_test LAInterface_test)
