@@ -577,8 +577,8 @@ consensus_data * generate_consensus( char ** input_seq,
         //printf("2:%ld %ld %ld %ld\n\n", arange->s1, arange->e1, arange->s2, arange->e2);
         
 #define INDEL_ALLOWENCE_1 0.10
-        if (arange->e1 - arange->s1 < 100 || arange->e2 - arange->s2 < 100 ||
-            abs( (arange->e1 - arange->s1 ) - (arange->e2 - arange->s2) ) > 
+        if ( arange->e1 - arange->s1 < 100 || arange->e2 - arange->s2 < 100 ||
+            abs( (arange->e1 - arange->s1 ) - (arange->e2 - arange->s2) ) >
                    (int) (0.5 * INDEL_ALLOWENCE_1 * (arange->e1 - arange->s1 + arange->e2 - arange->s2))) {
             free_kmer_match( kmer_match_ptr);
             free_aln_range(arange);

@@ -996,7 +996,7 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::vector<std::pair<int, int>>> lanes;
 
-
+    std::string draft_assembly = "";
 
 
     int currentlane = 0;
@@ -1112,12 +1112,96 @@ int main(int argc, char *argv[]) {
 
 
     for (int i = 0; i < ladders.size(); i++) {
-
         printf("Ladder %d\n",i);
         for (int j = 0; j < ladders[i].size(); j++) {
             //printf("[%d %d-%d] ", std::get<0>(ladders[i][j]), std::get<1>(ladders[i][j]), std::get<2>(ladders[i][j]) );
             printf("%s\n", breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j])).c_str());
+
         }
+
+
+        if (ladders[i].size() > 1) {
+
+            std::string base = breads[std::get<0>(ladders[i][0])].substr(std::get<1>(ladders[i][0]),std::get<2>(ladders[i][0])-std::get<1>(ladders[i][0]));;
+            int seq_count = ladders[i].size();
+            printf("seq_count:%d\n",seq_count);
+            align_tags_t ** tags_list;
+            tags_list = (align_tags_t **) calloc( seq_count, sizeof(align_tags_t *) );
+            consensus_data * consensus;
+
+            int alen;
+            for (int j = 0; j < ladders[i].size(); j++) {
+
+
+                alen = (std::get<2>(ladders[i][0])-std::get<1>(ladders[i][0]));
+                int blen = (std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j]));
+                char * aseq = (char *) malloc( (20+ (std::get<2>(ladders[i][0])-std::get<1>(ladders[i][0]))) * sizeof(char) );
+                char * bseq = (char *) malloc( (20 + (std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j]))) * sizeof(char) );
+                strcpy(aseq, breads[std::get<0>(ladders[i][0])].substr(std::get<1>(ladders[i][0]),std::get<2>(ladders[i][0])-std::get<1>(ladders[i][0])).c_str());
+                strcpy(bseq, breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j])).c_str());
+
+
+
+                aln_range * arange = (aln_range*) calloc(1 , sizeof(aln_range));
+                arange->s1 = 0;
+                arange->e1 = strlen(bseq)+1;
+                arange->s2 = 0;
+                arange->e2 = strlen(aseq)+1;
+                arange->score = 5;
+
+                printf("blen %d alen%d\n",strlen(bseq), strlen(aseq));
+                //printf("before get tags\n");
+
+                alignment * alng = align(bseq, blen , aseq, alen , 150, 1);
+
+                char * q_aln_str = (char * )malloc((5+strlen(alng->q_aln_str))*sizeof(char)) ;
+                char * t_aln_str = (char * )malloc((5+strlen(alng->t_aln_str))*sizeof(char));
+
+
+                strcpy(q_aln_str + 1, alng->q_aln_str);
+                strcpy(t_aln_str + 1, alng->t_aln_str);
+                q_aln_str[0] = 'T';
+                t_aln_str[0] = 'T';
+
+
+
+
+                for (int pos = 0; pos < strlen(q_aln_str); pos++) q_aln_str[pos] = toupper(q_aln_str[pos]);
+                for (int pos = 0; pos < strlen(t_aln_str); pos++) t_aln_str[pos] = toupper(t_aln_str[pos]);
+
+                printf("Q:%s\nT:%s\n", q_aln_str, t_aln_str);
+
+                tags_list[j] = get_align_tags( q_aln_str,
+                                                t_aln_str,
+                                                 strlen(alng->q_aln_str) + 1,
+                                                 arange, (unsigned int)j, 0);
+                //free(aseq);
+                //free(bseq);
+
+                /*for (int k = 0; k < tags_list[j]->len; k++) {
+                    printf("%d %d %ld %d %c %c\n",j, k, tags_list[j]->align_tags[k].t_pos,
+                           tags_list[j]->align_tags[k].delta,
+                            //tags_list[j]->align_tags[k].p_q_base,
+                           aseq[tags_list[j]->align_tags[k].t_pos],
+                           tags_list[j]->align_tags[k].q_base);
+                }*/
+                
+
+            }
+
+            //printf("%d %d\n%s\n",seq_count, strlen(seq), seq);
+
+            consensus = get_cns_from_align_tags( tags_list, seq_count, alen+1, 1 );
+            printf("Consensus:%s\n",consensus->sequence);
+            draft_assembly += std::string(consensus->sequence);
+
+            free_consensus_data(consensus);
+
+
+        }  else {
+            draft_assembly +=  breads[std::get<0>(ladders[i][0])].substr(std::get<1>(ladders[i][0]),std::get<2>(ladders[i][0])-std::get<1>(ladders[i][0]));
+        }
+
         printf("\n");
     }
 
@@ -1129,12 +1213,12 @@ int main(int argc, char *argv[]) {
     printf("[%d %d], [%d %d]\n", bedges[0]->abpos, bedges[0]->aepos, bedges[0]->bbpos, bedges[0]->bepos);*/
 
     std::cout<<sequence.size()<<std::endl;
-
+    std::cout<<draft_assembly.size()<<std::endl;
 
 
 
 	out << ">Draft_assembly\n";
-	out << sequence << std::endl;
+	out << draft_assembly << std::endl;
 
     la.closeDB(); //close database
     return 0;
