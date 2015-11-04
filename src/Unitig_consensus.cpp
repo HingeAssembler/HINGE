@@ -295,6 +295,11 @@ int main(int argc, char *argv[]) {
 
     int MIN_COV2 = reader.GetInteger("draft", "min_cov", -1);
     int EDGE_TRIM = reader.GetInteger("draft", "trim", -1);
+    int EDGE_SAFE = reader.GetInteger("draft", "edge_safe", -1);
+    int TSPACE = reader.GetInteger("draft", "tspace", -1);
+    int STEP = reader.GetInteger("draft", "step", -1);
+
+
     int LENGTH_THRESHOLD = reader.GetInteger("filter", "length_threshold", -1);
     double QUALITY_THRESHOLD = reader.GetReal("filter", "quality_threshold", 0.0);
     //int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
@@ -977,7 +982,7 @@ int main(int argc, char *argv[]) {
     }*/
 
 
-    int tspace = 500; // set lane length to be 500
+    int tspace = TSPACE; // set lane length to be 500
     int nlane = 0;
 
 
@@ -1008,21 +1013,30 @@ int main(int argc, char *argv[]) {
     while (current_starting_read < n_bb_reads-1) {
         int currentread = current_starting_read;
         int additional_offset = 0;
-
-        while (bedges[current_starting_read]->abpos + current_starting_space*tspace + current_starting_offset + additional_offset < bedges[current_starting_read]->aepos) {
+        while (bedges[current_starting_read]->abpos + current_starting_space*tspace + current_starting_offset + additional_offset < bedges[current_starting_read]->aepos - EDGE_SAFE) {
             int waypoint = bedges[current_starting_read]->abpos + tspace * current_starting_space + current_starting_offset + additional_offset;
-            //int next_waypoint = mappings[currentread][waypoint - bedges[current_starting_read]->abpos] + bedges[current_starting_read]->bbpos;
+            if ((waypoint - bedges[current_starting_read]->abpos) < EDGE_SAFE)
+                waypoint += EDGE_SAFE;
 
+            //int next_waypoint = mappings[currentread][waypoint - bedges[current_starting_read]->abpos] + bedges[current_starting_read]->bbpos;
             std::vector<std::pair<int,int> > lane;
             while ((waypoint > bedges[currentread]->abpos) and (waypoint < bedges[ currentread ]->aepos)) {
 
                 printf("%d %d\n",currentread, waypoint);
                 trace_pts[currentread].push_back(waypoint);
-                if (coverages[currentread]->at(waypoint) < MIN_COV2) {
+
+
+                if (waypoint > bedges[currentread]->aepos - EDGE_SAFE) {
+                    printf("Reaching the end, neglect low coverage\n");
+                }
+
+                if ((coverages[currentread]->at(waypoint) < MIN_COV2) and (waypoint < bedges[currentread]->aepos - EDGE_SAFE)) {
                     revert = true;
                     printf("Low coverage, revert\n");
                     break;
                 }
+
+
                 lane.push_back(std::pair<int,int>(currentread, waypoint));
                 int previous_wp = waypoint;
                 waypoint  = mappings[currentread][waypoint - bedges[currentread]->abpos] + bedges[currentread]->bbpos;
@@ -1037,7 +1051,7 @@ int main(int argc, char *argv[]) {
                 while (currentread >= current_starting_read) {
                     trace_pts[currentread].pop_back();
                     currentread --;
-                    additional_offset += 50;
+                    additional_offset += STEP;
                 }
                 currentread = current_starting_read;
             }
@@ -1076,6 +1090,39 @@ int main(int argc, char *argv[]) {
         }
         printf("\n");
     }
+
+
+    printf("In total %d lanes\n", lanes.size());
+
+
+    std::vector<std::vector<std::tuple<int, int, int> > > ladders;
+
+    for (int i = 0; i < lanes.size() - 1; i++) {
+        std::vector<std::pair<int,int> > lane1 = lanes[i];
+        std::vector<std::pair<int,int> > lane2 = lanes[i+1];
+        std::vector<std::tuple<int, int, int> > ladder;
+        int pos = 0;
+        for (int j = 0; j < lane2.size(); j++) {
+            while ((lane1[pos].first!=lane2[j].first) and (pos < lane1.size()-1)) pos ++;
+            if ((lane1[pos].first == lane2[j].first)) ladder.push_back(std::make_tuple(lane2[j].first, lane1[pos].second, lane2[j].second));
+        }
+        ladders.push_back(ladder);
+    }
+
+
+
+    for (int i = 0; i < ladders.size(); i++) {
+
+        printf("Ladder %d\n",i);
+        for (int j = 0; j < ladders[i].size(); j++) {
+            //printf("[%d %d-%d] ", std::get<0>(ladders[i][j]), std::get<1>(ladders[i][j]), std::get<2>(ladders[i][j]) );
+            printf("%s\n", breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j])).c_str());
+        }
+        printf("\n");
+    }
+
+
+
 
     /*for (int i = 0; i < mapping.size(); i++)
         printf("%d %d\n", i, mapping[i]);
