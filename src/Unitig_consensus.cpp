@@ -1119,27 +1119,44 @@ int main(int argc, char *argv[]) {
 
         }
 
+        if (ladders[i].size() == 0) continue;
 
         if (ladders[i].size() > 1) {
 
-            std::string base = breads[std::get<0>(ladders[i][0])].substr(std::get<1>(ladders[i][0]),std::get<2>(ladders[i][0])-std::get<1>(ladders[i][0]));;
+
+            int mx = 0;
+            int maxcoverage = 0;
+            for (int j = 0; j < ladders[i].size(); j++) {
+                int coverage = 0;
+                int read = std::get<0>(ladders[i][j]);
+                int start = std::get<1>(ladders[i][j]);
+                int end = std::get<2>(ladders[i][j]);
+                for (int pos = start; pos < end; pos ++) {
+                    coverage += coverages[read]->at(pos);
+                }
+                if (coverage > maxcoverage) {
+                    maxcoverage = coverage;
+                    mx = j;
+                }
+            }
+
+
+
+            std::string base = breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),std::get<2>(ladders[i][mx])-std::get<1>(ladders[i][mx]));;
             int seq_count = ladders[i].size();
-            printf("seq_count:%d\n",seq_count);
+            printf("seq_count:%d, max %d\n",seq_count,mx);
             align_tags_t ** tags_list;
             tags_list = (align_tags_t **) calloc( seq_count, sizeof(align_tags_t *) );
             consensus_data * consensus;
 
-            int alen;
+            int alen = (std::get<2>(ladders[i][mx])-std::get<1>(ladders[i][mx]));
             for (int j = 0; j < ladders[i].size(); j++) {
 
-
-                alen = (std::get<2>(ladders[i][0])-std::get<1>(ladders[i][0]));
                 int blen = (std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j]));
-                char * aseq = (char *) malloc( (20+ (std::get<2>(ladders[i][0])-std::get<1>(ladders[i][0]))) * sizeof(char) );
+                char * aseq = (char *) malloc( (20+ (std::get<2>(ladders[i][mx])-std::get<1>(ladders[i][mx]))) * sizeof(char) );
                 char * bseq = (char *) malloc( (20 + (std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j]))) * sizeof(char) );
-                strcpy(aseq, breads[std::get<0>(ladders[i][0])].substr(std::get<1>(ladders[i][0]),std::get<2>(ladders[i][0])-std::get<1>(ladders[i][0])).c_str());
+                strcpy(aseq, breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),std::get<2>(ladders[i][mx])-std::get<1>(ladders[i][mx])).c_str());
                 strcpy(bseq, breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j])).c_str());
-
 
 
                 aln_range * arange = (aln_range*) calloc(1 , sizeof(aln_range));
@@ -1171,10 +1188,10 @@ int main(int argc, char *argv[]) {
 
                 printf("Q:%s\nT:%s\n", q_aln_str, t_aln_str);
 
-                tags_list[j] = get_align_tags( q_aln_str,
+                tags_list[j] = get_align_tags(  q_aln_str,
                                                 t_aln_str,
                                                  strlen(alng->q_aln_str) + 1,
-                                                 arange, (unsigned int)j, 0);
+                                                 arange, (unsigned int)j, 0 );
                 //free(aseq);
                 //free(bseq);
 
