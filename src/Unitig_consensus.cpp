@@ -1127,15 +1127,15 @@ int main(int argc, char *argv[]) {
             int mx = 0;
             int maxcoverage = 0;
             for (int j = 0; j < ladders[i].size(); j++) {
-                int coverage = 0;
+                int mincoverage = 10000;
                 int read = std::get<0>(ladders[i][j]);
                 int start = std::get<1>(ladders[i][j]);
                 int end = std::get<2>(ladders[i][j]);
                 for (int pos = start; pos < end; pos ++) {
-                    coverage += coverages[read]->at(pos);
+                    if (coverages[read]->at(pos) < mincoverage) mincoverage = coverages[read]->at(pos);
                 }
-                if (coverage > maxcoverage) {
-                    maxcoverage = coverage;
+                if (mincoverage > maxcoverage) {
+                    maxcoverage = mincoverage;
                     mx = j;
                 }
             }
