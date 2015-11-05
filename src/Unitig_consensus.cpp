@@ -1015,8 +1015,8 @@ int main(int argc, char *argv[]) {
         int additional_offset = 0;
         while (bedges[current_starting_read]->abpos + current_starting_space*tspace + current_starting_offset + additional_offset < bedges[current_starting_read]->aepos - EDGE_SAFE) {
             int waypoint = bedges[current_starting_read]->abpos + tspace * current_starting_space + current_starting_offset + additional_offset;
-            if ((waypoint - bedges[current_starting_read]->abpos) < EDGE_SAFE)
-                waypoint += EDGE_SAFE;
+            //if ((waypoint - bedges[current_starting_read]->abpos) < EDGE_SAFE)
+            //    waypoint += EDGE_SAFE;
 
             //int next_waypoint = mappings[currentread][waypoint - bedges[current_starting_read]->abpos] + bedges[current_starting_read]->bbpos;
             std::vector<std::pair<int,int> > lane;
