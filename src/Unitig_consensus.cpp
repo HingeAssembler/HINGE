@@ -1150,7 +1150,12 @@ int main(int argc, char *argv[]) {
                     mx = j;
                 }
             }
-
+			
+			
+			if (ladders[i].size() == 2) {
+				draft_assembly +=  breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),std::get<2>(ladders[i][mx])-std::get<1>(ladders[i][mx]));
+				continue;	
+			}
 
 
             std::string base = breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),std::get<2>(ladders[i][mx])-std::get<1>(ladders[i][mx]));;
