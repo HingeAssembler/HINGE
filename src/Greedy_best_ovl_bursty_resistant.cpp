@@ -140,12 +140,10 @@ int main(int argc, char *argv[]) {
     char * name_config = argv[4];
 	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.openDB(name_db);
-	//la.openDB2(name_db); // changed this on Oct 12, may case problem, xf1280@gmail.com
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
     la.openAlignmentFile(name_las);
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
-	//la.resetAlignment();
-	//la.showOverlap(0,1);
+
 
 	int n_aln = la.getAlignmentNumber();
 	int n_read = la.getReadNumber();
@@ -157,14 +155,6 @@ int main(int argc, char *argv[]) {
     la.getRead(reads,0,n_read);
 
     std::cout << "input data finished" <<std::endl;
-	/**
-	filter reads
-	**/
-
-	/**
-	 * Remove reads shorter than length threshold
-	 */
-
 
 
     /*
@@ -180,34 +170,32 @@ int main(int argc, char *argv[]) {
 
     int LENGTH_THRESHOLD = reader.GetInteger("filter", "length_threshold", -1);
     double QUALITY_THRESHOLD = reader.GetReal("filter", "quality_threshold", 0.0);
-    //int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
     int N_ITER = reader.GetInteger("filter", "n_iter", -1);
     int ALN_THRESHOLD = reader.GetInteger("filter", "aln_threshold", -1);
     int MIN_COV = reader.GetInteger("filter", "min_cov", -1);
     int CUT_OFF = reader.GetInteger("filter", "cut_off", -1);
     int THETA = reader.GetInteger("filter", "theta", -1);
-
 	int N_PROC = reader.GetInteger("running", "n_proc", 4);
 
     omp_set_num_threads(N_PROC);
 
-    //std::unordered_map<std::pair<int,int>, std::vector<LOverlap *> > idx; //unordered_map from (aid, bid) to alignments in a vector
     std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read); //unordered_map from (aid) to alignments in a vector
     std::vector<Edge_w> edgelist; // save output to edgelist
     std::unordered_map<int, std::vector <LOverlap * > >idx3; // this is the pileup
     std::vector<std::set<int> > has_overlap(n_read);
-    std::unordered_map<int, std::unordered_map<int, std::vector<LOverlap *> > > idx;
-
+    std::unordered_map<int, std::unordered_map<int, std::vector<LOverlap *> > > idx; //unordered_map from (aid, bid) to alignments in a vector
+/*
+ * Index alignments by:
+ * 1) read A - idx3
+ * 2) read A-read B - idx
+ */
 
 
     for (int i = 0; i< n_read; i++) {
-        //has_overlap[i] = std::set<int>();
+        has_overlap[i] = std::set<int>();
         idx3[i] = std::vector<LOverlap *>();
     }
 
-    //for (int i = 0; i < aln.size(); i++)
-    //    if (aln[i]->active)
-    //        idx[std::pair<int, int>(aln[i]->aid, aln[i]->bid)] = std::vector<LOverlap *>();
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
             idx[aln[i]->aid][aln[i]->bid] = std::vector<LOverlap *>();
@@ -228,27 +216,21 @@ int main(int argc, char *argv[]) {
     }
 
 
-    std::cout<<"add data"<<std::endl;
+    std::cout<<"index data"<<std::endl;
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
             idx[aln[i]->aid][aln[i]->bid].push_back(aln[i]);
         }
     }
-    std::cout<<"add data"<<std::endl;
+    std::cout<<"index data"<<std::endl;
 
 
-    //sort each a,b pair according to abpos:
-    /*for (int i = 0; i < n_read; i++)
-        for (std::set<int>::iterator j = has_overlap[i].begin(); j != has_overlap[i].end(); j++) {
-            std::sort(idx[std::pair<int,int>(i, *j)].begin(), idx[std::pair<int,int>(i, *j)].end(), compare_pos);
-        }
-    */
     for (int i = 0; i < n_read; i++)
         for (std::set<int>::iterator j = has_overlap[i].begin(); j != has_overlap[i].end(); j++) {
             idx2[i].push_back(&(idx[i][*j]));
     }
 
-    std::cout<<"add data"<<std::endl;
+    std::cout<<"index data finished"<<std::endl;
     std::unordered_map<int,std::vector<Interval> > covered_region;
 
 
@@ -265,15 +247,8 @@ int main(int argc, char *argv[]) {
 #pragma omp parallel for
         for (int i = 0; i < n_read; i++) {
             if (reads[i]->active) {
-                //covered_region[i] = Merge(idx3[i]);
                 reads[i]->intervals = Merge(idx3[i], CUT_OFF);
-                /*if (reads[i]->intervals.empty()) {
-                    reads[i]->effective_start = 0;
-                    reads[i]->effective_end = 0;
-                } else {
-                    reads[i]->effective_start = reads[i]->intervals.front().first;
-                    reads[i]->effective_end = reads[i]->intervals.back().second;
-                }*/
+
                 Interval cov = Effective_length(idx3[i], MIN_COV);
                 reads[i]->effective_start = cov.first;
                 reads[i]->effective_end = cov.second;
@@ -286,8 +261,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < n_read; i++) {
             if (reads[i]->active)
             if ((reads[i]->effective_end - reads[i]->effective_start <
-                 LENGTH_THRESHOLD) /*or (reads[i]->len - reads[i]->effective_end > CHI_THRESHOLD) or (reads[i]->effective_start > CHI_THRESHOLD)*/
-                or (reads[i]->intervals.size() != 1))
+                 LENGTH_THRESHOLD) or (reads[i]->intervals.size() != 1))
                 reads[i]->active = false;
         } // filter according to effective length, and interval size
 
@@ -300,7 +274,6 @@ int main(int argc, char *argv[]) {
                 num_active++;
         }
         std::cout << "num active reads " << num_active << std::endl;
-		//# pragma omp parallel for
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active)
             if ((not reads[aln[i]->aid]->active) or (not reads[aln[i]->bid]->active) or
@@ -350,40 +323,6 @@ int main(int argc, char *argv[]) {
         std::sort( idx2[i].begin(), idx2[i].end(), compare_sum_overlaps );
     }
 
-    /*for (int i = 0; i < n_read; i++) {
-    printf("\n read %d:", i);
-    for (int j = 0; j < covered_region[i].size(); j++) {
-        printf("[%d, %d] ",covered_region[i][j].first, covered_region[i][j].second);
-    }
-    }*/
-
-    /*
-    for (int i = 0; i < n_read; i++ ) {
-        printf("read:%d\n",i);
-        for (int j = 0; j<idx2[i].size(); j++) {
-            int sum = 0;
-            for (int k = 0; k < idx2[i][j].size(); k++) {
-                sum +=  idx2[i][j][k]->aepos + idx2[i][j][k]->bepos - idx2[i][j][k]->abpos - idx2[i][j][k]->bbpos;
-            }
-
-            sum /= 2;
-            printf("sum:%d\n",sum);
-        }
-    }*/
-
-    /*
-     * Debug output
-     */
-    /*for (int i = 0; i < n_read; i++) {
-        for (int j = 0; j < idx2[i].size(); j++) {
-            printf("%d,%d,%d,%d\n",i, idx2[i].size(),j,idx2[i][j].size() );
-            for (int k = 0; k<idx2[i][j].size(); k++) {
-                std::cout<<" "<<idx2[i][j][k]->active << " "<< "["<<idx2[i][j][k]->abpos<<","<<idx2[i][j][k]->aepos <<"]/" <<idx2[i][j][k]->alen <<" "<<"["<<idx2[i][j][k]->bbpos<<","<<idx2[i][j][k]->bepos <<"]/" <<idx2[i][j][k]->blen<<" "<<idx2[i][j][k]->aln_type << std::endl;
-            }
-        }
-    }*/
-
-    //from the list, find the first one that can extend read A to the right, this will form a graph
 
     /**
 	 **    get the best overlap for each read and form a graph
@@ -402,9 +341,6 @@ int main(int argc, char *argv[]) {
 
             if (reads[i]->active)
                 for (int j = 0; j < idx2[i].size(); j++) {
-                    //idx2[i][j]->show();
-
-                    //std::sort( idx2[i][j]->begin(), idx2[i][j]->end(), compare_overlap );
 
                     if ((*idx2[i][j])[0]->active) {
                         for (int kk = 0; kk < idx2[i][j]->size(); kk++) {
@@ -483,36 +419,6 @@ int main(int argc, char *argv[]) {
             }
             std::cout << "num active alignments " << num_active_aln << std::endl;
 
-		/*
-		 * For each read, if there is no exact right or left match, choose that one with a chimeric end, but still choose
-		 * the one with longest alignment, same for BACKWARD
-		 */
-       /* for (int j = 0; j< idx2[i].size(); j++) {
-            //idx2[i][j]->show();
-            if (idx2[i][j][0]->active) {
-				if ((idx2[i][j].front()->aln_type == MISMATCH_RIGHT) and (cf < 1)) {
-            	    cf += 1;
-            	    //add edge
-            	    if (idx2[i][j][0]->flags == 1) { // n = 0, c = 1
-            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,1)));
-            	    } else {
-            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,0),Node(idx2[i][j][0]->bid,0)));
-            	    }
-            	}
-
-            	if ((idx2[i][j].back()->aln_type == MISMATCH_LEFT) and (cb < 1)) {
-            	    cb += 1;
-            	    //add edge
-            	    if (idx2[i][j][0]->flags == 1) {
-            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,0)));
-            	    } else {
-            	        edgelist.push_back(std::pair<Node, Node> (Node(idx2[i][j][0]->aid,1),Node(idx2[i][j][0]->bid,1)));
-            	    }
-            	}
-			}
-            if ((cf == 1) and (cb == 1)) break;
-        }
-        */
     }
 
     std::ofstream out(argv[3], std::ofstream::out);

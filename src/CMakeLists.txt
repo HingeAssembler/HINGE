@@ -44,11 +44,8 @@ target_link_libraries(falcon kmer_lookup DW_banded)
 ## Executables
 
 
-add_executable(Greedy_best_ovl Greedy_best_ovl)
-target_link_libraries(Greedy_best_ovl LAInterface)
-
-add_executable(Greedy_best_ovl2 Greedy_best_ovl_bursty_resistant)
-target_link_libraries(Greedy_best_ovl2 LAInterface ini)
+add_executable(Greedy_best_ovl Greedy_best_ovl_bursty_resistant)
+target_link_libraries(Greedy_best_ovl LAInterface ini)
 
 add_library(OverlapGraph OverlapGraph.cpp)
 
@@ -58,9 +55,6 @@ target_link_libraries(Draft_assembly LAInterface ini falcon)
 add_executable(Circular_consensus Circular_consensus)
 target_link_libraries(Circular_consensus LAInterface ini falcon)
 
-add_executable(SwissCheeseScrubber Swiss_cheese_scrubber.cpp)
-target_link_libraries(SwissCheeseScrubber LAInterface)
-
 add_executable(DenovoQV DenovoQV.cpp) # TBD
 target_link_libraries(DenovoQV LAInterface)
 
@@ -69,7 +63,6 @@ target_link_libraries(DenovoSV LAInterface)
 
 add_executable(Draft_consensus Draft_consensus.cpp)
 target_link_libraries(Draft_consensus LAInterface falcon ini)
-
 
 add_executable(Unitig_consensus Unitig_consensus)
 target_link_libraries(Unitig_consensus LAInterface ini falcon)
