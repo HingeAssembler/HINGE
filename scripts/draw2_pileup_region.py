@@ -16,7 +16,7 @@ right = int(sys.argv[2])
 
 
 #rst = range(1,1399)
-path = '/data/pacbio_assembly/AwesomeAssembler/data/'
+path = '/data/pacbio_assembly/AwesomeAssembler/data/ecoli/'
 aln = []
 
 bb = []
