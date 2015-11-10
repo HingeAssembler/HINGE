@@ -1117,14 +1117,13 @@ int main(int argc, char *argv[]) {
         ladders.push_back(ladder);
     }
 
-    std::ofstream ofs("log.txt");
 
 
     for (int i = 0; i < ladders.size(); i++) {
         printf("Ladder %d\n",i);
         for (int j = 0; j < ladders[i].size(); j++) {
             //printf("[%d %d-%d] ", std::get<0>(ladders[i][j]), std::get<1>(ladders[i][j]), std::get<2>(ladders[i][j]) );
-            printf("%s\n", breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j])).c_str());
+            //printf("%s\n", breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j])).c_str());
 
         }
 
@@ -1152,12 +1151,12 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            if (maxcoverage < MIN_COV2) ofs << "ladder " << i << " num reads "<< ladders[i].size() << " possibly error here " << maxcoverage << "\n!";
-			
-			
+           std::cout << "ladder " << i << " num reads "<< ladders[i].size() << " possibly error here " << maxcoverage << "\n!";
+
+
 			if (ladders[i].size() == 2) {
 				draft_assembly +=  breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),std::get<2>(ladders[i][mx])-std::get<1>(ladders[i][mx]));
-				continue;	
+				continue;
 			}
 
 
@@ -1185,7 +1184,7 @@ int main(int argc, char *argv[]) {
                 arange->e2 = strlen(aseq);
                 arange->score = 5;
 
-                printf("blen %d alen%d\n",strlen(bseq), strlen(aseq));
+                //printf("blen %d alen%d\n",strlen(bseq), strlen(aseq));
                 //printf("before get tags\n");
 
                 alignment * alng = align(bseq, blen , aseq, alen , 150, 1);
@@ -1205,7 +1204,7 @@ int main(int argc, char *argv[]) {
                 for (int pos = 0; pos < strlen(q_aln_str); pos++) q_aln_str[pos] = toupper(q_aln_str[pos]);
                 for (int pos = 0; pos < strlen(t_aln_str); pos++) t_aln_str[pos] = toupper(t_aln_str[pos]);
 
-                printf("Q:%s\nT:%s\n", q_aln_str, t_aln_str);
+                //printf("Q:%s\nT:%s\n", q_aln_str, t_aln_str);
 
                 tags_list[j] = get_align_tags(  q_aln_str,
                                                 t_aln_str,
@@ -1233,7 +1232,7 @@ int main(int argc, char *argv[]) {
             //printf("%d %d\n%s\n",seq_count, strlen(seq), seq);
 
             consensus = get_cns_from_align_tags( tags_list, seq_count, alen+1, 1 );
-            printf("Consensus:%s\n",consensus->sequence);
+            //printf("Consensus:%s\n",consensus->sequence);
             draft_assembly += std::string(consensus->sequence);
 
             free_consensus_data(consensus);

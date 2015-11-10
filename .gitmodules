@@ -10,3 +10,6 @@
 [submodule "DEXTRACTOR"]
 	path = DEXTRACTOR
 	url = https://github.com/thegenemyers/DEXTRACTOR.git
+[submodule "DASCRUBBER"]
+	path = DASCRUBBER
+	url = https://github.com/thegenemyers/DASCRUBBER.git
