@@ -1117,6 +1117,7 @@ int main(int argc, char *argv[]) {
         ladders.push_back(ladder);
     }
 
+    std::ofstream ofs("log.txt");
 
 
     for (int i = 0; i < ladders.size(); i++) {
@@ -1150,6 +1151,8 @@ int main(int argc, char *argv[]) {
                     mx = j;
                 }
             }
+
+            if (maxcoverage < MIN_COV2) ofs << "ladder " << i << " num reads "<< ladders[i].size() << " possibly error here " << maxcoverage << "\n!";
 			
 			
 			if (ladders[i].size() == 2) {
