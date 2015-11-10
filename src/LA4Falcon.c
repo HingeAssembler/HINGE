@@ -720,7 +720,7 @@ int main(int argc, char *argv[])
                 else
                   aln->bseq = bseq - bmin;
 
-                Compute_Trace_PTS(aln,work,tspace);
+                Compute_Trace_PTS(aln,work,tspace,GREEDIEST);
 
                 if (FLIP)
                   { if (COMP(aln->flags))

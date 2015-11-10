@@ -1138,7 +1138,7 @@ void LAInterface::getAlignmentB(std::vector<int> &result, int from) {
                 else
                     aln->bseq = bseq - bmin;
 
-                Compute_Trace_PTS(aln, work, tspace);
+                Compute_Trace_PTS(aln, work, tspace,GREEDIEST);
 
                 if (FLIP) {
                     if (COMP(aln->flags)) {
@@ -1653,7 +1653,7 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
                 else
                     aln->bseq = bseq - bmin;
 
-                Compute_Trace_PTS(aln, work, tspace);
+                Compute_Trace_PTS(aln, work, tspace,GREEDIEST);
 
                 if (FLIP) {
                     if (COMP(aln->flags)) {
@@ -2012,7 +2012,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
 
 
 
-                Compute_Trace_PTS(aln, work, tspace);
+                Compute_Trace_PTS(aln, work, tspace,GREEDIEST);
 
 
                 /*new_al->aseq = (char *) malloc(new_al->alen * sizeof(char));
@@ -2417,7 +2417,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
 
 
 
-                Compute_Trace_PTS(aln, work, tspace);
+                Compute_Trace_PTS(aln, work, tspace,GREEDIEST);
 
 #endif
                 /*new_al->aseq = (char *) malloc(new_al->alen * sizeof(char));
@@ -2818,7 +2818,7 @@ void LAInterface::showOverlap(int from, int to) {
 	                else
 	                  aln->bseq = bseq - bmin;
 
-	                Compute_Trace_PTS(aln,work,tspace);
+	                Compute_Trace_PTS(aln,work,tspace,GREEDIEST);
 
 	                if (FLIP)
 	                  { if (COMP(aln->flags))
@@ -4264,7 +4264,7 @@ int LAInterface::recoverAlignment(LAlignment *alignment) {
         aln->bseq = bseq - bmin;
 
 
-    Compute_Trace_PTS(aln, work, tspace);
+    Compute_Trace_PTS(aln, work, tspace,GREEDIEST);
 
 
     /*{

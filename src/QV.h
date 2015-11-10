@@ -51,7 +51,6 @@
 #ifndef _QV_COMPRESSOR
 
 #define _QV_COMPRESSOR
-#include <stdio.h>
 
   //  The defined constant INTERACTIVE (set in DB.h) determines whether an interactive or
   //    batch version of the routines in this library are compiled.  In batch mode, routines
