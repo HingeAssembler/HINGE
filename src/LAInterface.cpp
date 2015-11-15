@@ -9,6 +9,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 #include "LAInterface.h"
 #include "align.h"
 #include "DB.h"
@@ -4340,4 +4341,41 @@ std::vector<std::pair<int, int> > * LAInterface::lowCoverageRegions(std::vector<
         else pos ++;
     }
     return reg;
+}
+
+bool compare_event(std::pair<int, int> event1,std::pair<int, int> event2) {
+    return event1.first < event2.first;
+}
+
+
+void LAInterface::profileCoverage(std::vector<LOverlap *> &alignments, std::vector<std::pair<int, int> > & coverage,int reso) {
+    std::vector<std::pair<int, int> > events;
+    for (int i = 0; i < alignments.size(); i ++) {
+        events.push_back(std::pair<int, int>(alignments[i]->abpos, 1));
+        events.push_back(std::pair<int, int>(alignments[i]->aepos, -1));
+    }
+
+    std::sort(events.begin(), events.end(), compare_event);
+
+
+    int pos = 0;
+    int i = 0;
+    int count = 0;
+    while (pos < events.size()) {
+        while ((events[pos].first < i*reso) and (pos < events.size())) {
+            count += events[pos].second;
+            pos++;
+        }
+        coverage.push_back(std::pair<int, int>(i*reso, count));
+        i++;
+    }
+    return;
+}
+
+void LAInterface::repeatDetect(std::vector<std::pair<int, int> > & coverage, std::vector<std::pair<int, int> > & repeat) {
+    for (int i = 1; i < coverage.size(); i++) {
+        if (coverage[i].second > 2*coverage[i-1].second) repeat.push_back(std::pair<int, int>(coverage[i].first, 1));
+        if (coverage[i].second < 0.5*coverage[i-1].second) repeat.push_back(std::pair<int, int>(coverage[i].first, -1));
+    }
+    return;
 }

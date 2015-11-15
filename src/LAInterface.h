@@ -186,8 +186,12 @@ public:
 
     std::pair<std::string, std::string> getAlignmentTags(LAlignment *alignment);
 
-
     std::vector<std::pair<int, int> > * lowCoverageRegions(std::vector<int> & cov, int min_cov);
+
+    void profileCoverage(std::vector<LOverlap *> &alignments, std::vector<std::pair<int, int> > & coverage,int reso);
+
+    void repeatDetect(std::vector<std::pair<int, int> > & coverage, std::vector<std::pair<int, int> > & repeat);
+
 
 };
 
