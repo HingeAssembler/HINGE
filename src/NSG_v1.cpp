@@ -214,7 +214,16 @@ int main(int argc, char *argv[]) {
             idx3[aln[i]->aid].push_back(aln[i]);
         }
     }
-
+    std::cout<<"profile coverage" << std::endl;
+    std::ofstream cov("coverage.txt");
+for (int i = 0; i < n_read; i ++) {
+    std::vector<std::pair<int, int> > coverage, repeat;
+    la.profileCoverage(idx3[i],coverage,40);
+    cov << "read " << i <<" ";
+    for (int j = 0; j < coverage.size(); j++)
+        cov << coverage[j].first << ","  << coverage[j].second << " ";
+    cov << std::endl;
+}
 
     std::cout<<"index data"<<std::endl;
     for (int i = 0; i < aln.size(); i++) {
@@ -287,7 +296,7 @@ int main(int argc, char *argv[]) {
             if (aln[i]->active) {
                 aln[i]->aes = reads[aln[i]->aid]->effective_start;
                 aln[i]->aee = reads[aln[i]->aid]->effective_end;
-                
+
 				if (aln[i]->flags == 0) {
 					aln[i]->bes = reads[aln[i]->bid]->effective_start;
                 	aln[i]->bee = reads[aln[i]->bid]->effective_end;
@@ -316,20 +325,6 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-
-
-for (int i = 0; i < n_read; i ++) {
-    std::vector<std::pair<int, int> > coverage, repeat;
-    la.profileCoverage(idx3[i],coverage,10);
-    //for (int j = 0; j < coverage.size(); j++) {
-    //    printf("%d %d %d\n", i, coverage[j].first, coverage[j].second);
-    //}
-    la.repeatDetect(coverage,repeat);
-    for (int j = 0; j < repeat.size(); j++) {
-        printf("repeat %d %d %d\n",i, repeat[j].first, repeat[j].second);
-    }
-
-}
 
 
 

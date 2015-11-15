@@ -587,7 +587,7 @@ Read *LAInterface::getRead2(int number) {
 
 
 int LAInterface::openAlignmentFile(std::string filename) {
-    
+
     char *fn = new char[filename.size() + 1];
     strcpy(fn, filename.c_str());
 
@@ -1578,7 +1578,7 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
             //printf("  ");
             //Print_Number((int64) ovl->aread+1,br_wide+1,stdout);
         }
-        else { 
+        else {
 			//Print_Number((int64) ovl->aread+1,ar_wide+1,stdout);
             //printf("  ");
             //Print_Number((int64) ovl->bread+1,br_wide+1,stdout);
@@ -1846,7 +1846,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
         }
         if (!in)
             continue;
-		
+
 		//printf("j:%d/%d\n",j,novl);
 
         //  If -o check display only overlaps
@@ -2534,7 +2534,7 @@ int64 LAInterface::getAlignmentNumber() {
 
 void LOverlap::addtype(int THETA) {
 
-	
+
     if ((abpos > aes + THETA) and (aepos > aee - THETA) and (bbpos < bes + THETA) and (bepos < bee - THETA)) {
         aln_type = FORWARD;
     }
@@ -2561,7 +2561,7 @@ void LOverlap::addtype(int THETA) {
          B: ===============>
         **/
 
-	
+
 	//else if ((abpos > 0) and (bbpos<CHI_THRESHOLD)) {
 	//	aln_type = MISMATCH_RIGHT;
 	//}
@@ -2663,8 +2663,8 @@ void LAInterface::showOverlap(int from, int to) {
 	    match = 0;
 	    seen  = 0;
 	    lhalf = rhalf = 0;
-		
-		
+
+
 	    pts = new int[4];
 	    pts[0] = from + 1;
 	    pts[1] = to ;
@@ -2672,7 +2672,7 @@ void LAInterface::showOverlap(int from, int to) {
 
 	    npt = pts[0];
 	    idx = 1;
-		
+
 	    for (j = 0; j < novl; j++)
 
 	       //  Read it in
@@ -2737,7 +2737,7 @@ void LAInterface::showOverlap(int from, int to) {
 	                    printf(" %d ->%lld\n",db2->reads[blast].rlen,db2->reads[blast].coff);
 	                  }
 	                match = 0;
-	                seen  = 0; 
+	                seen  = 0;
 	                lhalf = rhalf = 0;
 	                blast += 1;
 	              }
@@ -2752,7 +2752,7 @@ void LAInterface::showOverlap(int from, int to) {
 	          }
 
 	        //  Display it
-            
+
 	        if (ALIGN || CARTOON || REFERENCE)
 	          printf("\n");
 	        if (FLIP)
@@ -2864,7 +2864,7 @@ void LAInterface::showOverlap(int from, int to) {
 	        free(abuffer-1);
 	        Free_Work_Data(work);
 	      }
-	  
+
 		  return;
 }
 
@@ -4298,8 +4298,8 @@ int LAInterface::recoverAlignment(LAlignment *alignment) {
     free(abuffer - 1);
     Free_Work_Data(work);
 	//free(path->trace);
-	
-	
+
+
 
     return 0;
 }
