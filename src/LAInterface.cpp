@@ -4379,3 +4379,140 @@ void LAInterface::repeatDetect(std::vector<std::pair<int, int> > & coverage, std
     }
     return;
 }
+
+
+static int qv_map[51] =
+  { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+    'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+    'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D',
+    'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+    'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+    'Y'
+  };
+  
+void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
+	int b,e;
+    b = from;
+    e = to;
+	HITS_READ * reads  = db1->reads;
+	bool UPPER = true;
+	
+    int64      *qv_idx;
+    uint8      *qv_val;
+	
+    //if (DOIQV)
+      { int status, kind;
+        HITS_TRACK *track;
+        status = Check_Track(db1,"qual",&kind);
+        if (status == -2)
+          { fprintf(stderr,"%s: .qual-track does not exist for this db.\n",Prog_Name);
+            exit (1);
+          }
+        if (status == -1)
+          { fprintf(stderr,"%s: .qual-track not sync'd with db.\n",Prog_Name);
+            exit (1);
+          }
+        track = Load_Track(db1,"qual");
+        qv_idx = (int64 *) track->anno;
+        qv_val = (uint8 *) track->data;
+      }
+	  
+	
+    for (int i = b; i < e; i++)
+      { 
+		int         len;
+        int         fst, lst;
+        int         flags, qv;
+        HITS_READ  *r;
+
+        r   = reads + i;
+        len = r->rlen;
+        /*if (DORED)
+          printf("R %d\n",i+1);*/
+
+        flags = r->flags;
+        qv    = (flags & DB_QV);
+        /*if (DOHDR)
+          { if (DAM)
+              { char header[MAX_NAME];
+
+                fseeko(hdrs,r->coff,SEEK_SET);
+                fgets(header,MAX_NAME,hdrs);
+                header[strlen(header)-1] = '\0';
+                printf("H %ld %s\n",strlen(header),header);
+                printf("L %d %d %d\n",r->origin,r->fpulse,r->fpulse+len);
+              }
+            else
+              { while (i < findx[map-1])
+                  map -= 1;
+                while (i >= findx[map])
+                  map += 1;
+                printf("H %ld %s\n",strlen(flist[map]),flist[map]);
+                printf("L %d %d %d\n",r->origin,r->fpulse,r->fpulse+len);
+                if (qv > 0)
+                  printf("Q: %d\n",qv);
+              }
+          }*/
+
+        /*if (DOQVS)
+          Load_QVentry(db,i,entry,UPPER);*/
+        /*if (DOSEQ)
+          Load_Read(db,i,read,UPPER);*/
+
+        /*for (m = 0; m < MTOP; m++)
+          { int64 *anno;
+            int   *data;
+            int64  s, f, j;
+
+            anno = (int64 *) MTRACK[m]->anno;
+            data = (int *) MTRACK[m]->data;
+
+            s = (anno[i] >> 2);
+            f = (anno[i+1] >> 2);
+            printf("T%d %lld ",m,(f-s)/2);
+            if (s < f)
+              { for (j = s; j < f; j += 2)
+                  printf(" %d %d",data[j],data[j+1]);
+              }
+            printf("\n");
+          }
+
+        if (substr)
+          { fst = iter->beg;
+            lst = iter->end;
+          }
+        else
+          { fst = 0;
+            lst = len;
+          }
+
+        if (DOSEQ)
+          { printf("S %d ",lst-fst);
+            printf("%.*s\n",lst-fst,read+fst);
+          }
+		*/
+        //if (DOIQV)
+          { int64 k, e;
+			  std::vector<int> qv;
+            k = qv_idx[i];
+            e = qv_idx[i+1];
+            //printf("I %lld ",e-k);
+            while (k < e) {
+				qv.push_back(qv_val[k++]);
+                //putchar(qv_map[qv_val[k++]]);
+				
+            }
+               //printf("\n");
+			QV.push_back(qv);
+          }
+        /*if (DOQVS)
+          { int k;
+
+            for (k = 0; k < 5; k++)
+              { printf("%c %d ",qvname[k],lst-fst);
+                printf("%.*s\n",lst-fst,entry[k]+fst);
+              }
+          }*/
+	  }
+	return;
+}

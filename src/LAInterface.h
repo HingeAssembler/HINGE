@@ -138,6 +138,8 @@ public:
     Read *getRead2(int number); //get one read
 
     void getRead(std::vector<Read *> &reads, int from, int to); // get reads within a range
+	
+	void getQV(std::vector<std::vector<int> > & QV, int from, int to);
 
     void getRead2(std::vector<Read *> &reads, int from, int to); // get reads within a range
 

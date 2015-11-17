@@ -154,6 +154,10 @@ int main(int argc, char *argv[]) {
     std::vector<Read *> reads;
     la.getRead(reads,0,n_read);
 
+
+	std::vector<std::vector<int>>  QV;
+	la.getQV(QV,0,n_read);
+
     std::cout << "input data finished" <<std::endl;
 
 
@@ -180,8 +184,8 @@ int main(int argc, char *argv[]) {
     omp_set_num_threads(N_PROC);
 
     std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read); //unordered_map from (aid) to alignments in a vector
-    std::vector<Edge_w> edgelist; // save output to edgelist
-    std::unordered_map<int, std::vector <LOverlap * > >idx3; // this is the pileup
+    std::vector<Edge_w> edgelist, edgelist_ms; // save output to edgelist
+    std::unordered_map<int, std::vector <LOverlap * > >idx3,idx4; // this is the pileup
     std::vector<std::set<int> > has_overlap(n_read);
     std::unordered_map<int, std::unordered_map<int, std::vector<LOverlap *> > > idx; //unordered_map from (aid, bid) to alignments in a vector
 /*
@@ -194,6 +198,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i< n_read; i++) {
         has_overlap[i] = std::set<int>();
         idx3[i] = std::vector<LOverlap *>();
+        idx4[i] = std::vector<LOverlap *>();
     }
 
     for (int i = 0; i < aln.size(); i++) {
@@ -212,9 +217,11 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
             idx3[aln[i]->aid].push_back(aln[i]);
+			idx4[aln[i]->aid].push_back(aln[i]);
         }
     }
-    std::cout<<"profile coverage" << std::endl;
+
+	/*std::cout<<"profile coverage" << std::endl;
     std::ofstream cov("coverage.txt");
 for (int i = 0; i < n_read; i ++) {
     std::vector<std::pair<int, int> > coverage, repeat;
@@ -223,7 +230,7 @@ for (int i = 0; i < n_read; i ++) {
     for (int j = 0; j < coverage.size(); j++)
         cov << coverage[j].first << ","  << coverage[j].second << " ";
     cov << std::endl;
-}
+}*/
 
     std::cout<<"index data"<<std::endl;
     for (int i = 0; i < aln.size(); i++) {
@@ -253,7 +260,7 @@ for (int i = 0; i < n_read; i ++) {
 
     for (int n_iter = 0; n_iter < N_ITER; n_iter ++) {
 
-#pragma omp parallel for
+		//#pragma omp parallel for
         for (int i = 0; i < n_read; i++) {
             if (reads[i]->active) {
                 reads[i]->intervals = Merge(idx3[i], CUT_OFF);
@@ -261,17 +268,19 @@ for (int i = 0; i < n_read; i ++) {
                 Interval cov = Effective_length(idx3[i], MIN_COV);
                 reads[i]->effective_start = cov.first;
                 reads[i]->effective_end = cov.second;
-
             }
         } // find all covered regions, could help remove adaptors
 
         std::cout<<"covered region"<<std::endl;
-# pragma omp parallel for
+		//# pragma omp parallel for
         for (int i = 0; i < n_read; i++) {
             if (reads[i]->active)
-            if ((reads[i]->effective_end - reads[i]->effective_start <
-                 LENGTH_THRESHOLD) or (reads[i]->intervals.size() != 1))
-                reads[i]->active = false;
+			{
+				//printf("read %d, el %d, is%d\n", i,reads[i]->effective_end - reads[i]->effective_start,reads[i]->intervals.size()  );
+            	if ((reads[i]->effective_end - reads[i]->effective_start <
+            	     LENGTH_THRESHOLD) or (reads[i]->intervals.size() != 1))
+            	    reads[i]->active = false;
+			}
         } // filter according to effective length, and interval size
 
         std::cout<<"filter data"<<std::endl;
@@ -291,7 +300,7 @@ for (int i = 0; i < n_read; i ++) {
                 aln[i]->active = false;
         }
 
-# pragma omp parallel for
+		//# pragma omp parallel for
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active) {
                 aln[i]->aes = reads[aln[i]->aid]->effective_start;
@@ -434,12 +443,63 @@ for (int i = 0; i < n_read; i ++) {
 
     }
 
+/** look for missing edges **/
+	
+
+    for (int i = 0; i < edgelist.size(); i++){
+        Node n1,n2;
+        int w;
+        n1 = std::get<0>(edgelist[i]);
+        n2 = std::get<1>(edgelist[i]);
+        w = std::get<2>(edgelist[i]);
+	    std::vector<std::pair<int, int> > coverage, coverage1;
+	    la.profileCoverage(idx4[n2.id],coverage,40);
+		int es = reads[n2.id]->effective_start;
+		int ee = reads[n2.id]->effective_end;
+		int es1 = reads[n1.id]->effective_start;
+		int ee1 = reads[n1.id]->effective_end;
+		int cov_start = 0;
+		int cov_end = 0;
+		int cov_start1 = 0;
+		int cov_end1 = 0;
+		
+	    la.profileCoverage(idx4[n1.id],coverage1,40);
+		for (int j = 10; j < 20; j++) {
+			cov_start1 	+= coverage1[es1/40+j].second;
+			cov_end1 	+= coverage1[ee1/40-j].second;
+		}
+		
+		cov_start1/=10;
+		cov_end1/=10;
+		
+		
+		for (int j = 10; j < 20; j++) {
+			cov_start 	+= coverage[es/40+j].second;
+			cov_end 	+= coverage[ee/40-j].second;
+		}
+		cov_start/=10;
+		cov_end/=10;
+		if (((cov_start/cov_end>=2) and (cov_start>100) and (n2.strand == 0)) 
+			or ((cov_end /cov_start >= 2) and (cov_end > 100) and (n2.strand == 1))) 
+				{
+					printf("read %d %d cov_start %d, cov_end %d\n", n2.id, n2.strand, cov_start, cov_end);
+					printf("previous %d %d cov_start %d, cov_end %d\n",n1.id, n1.strand, cov_start1, cov_end1);
+					edgelist_ms.push_back(edgelist[i]);
+				}
+	}
+	
+	printf("missing edge #, %d\n", edgelist_ms.size());
+	
+	
+
+	
+
+
     std::ofstream out(argv[3], std::ofstream::out);
     //print edges list
     for (int i = 0; i < edgelist.size(); i++){
         Node n1,n2;
         int w;
-
         n1 = std::get<0>(edgelist[i]);
         n2 = std::get<1>(edgelist[i]);
         w = std::get<2>(edgelist[i]);
