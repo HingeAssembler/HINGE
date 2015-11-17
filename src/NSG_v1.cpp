@@ -446,12 +446,12 @@ for (int i = 0; i < n_read; i ++) {
 /** look for missing edges **/
 	
 
-    for (int current = 0; current < edgelist.size(); current++){
+    for (int i = 0; i < edgelist.size(); i++){
         Node n1,n2;
         int w;
-        n1 = std::get<0>(edgelist[current]);
-        n2 = std::get<1>(edgelist[current]);
-        w = std::get<2>(edgelist[current]);
+        n1 = std::get<0>(edgelist[i]);
+        n2 = std::get<1>(edgelist[i]);
+        w = std::get<2>(edgelist[i]);
 	    std::vector<std::pair<int, int> > coverage, coverage1;
 	    la.profileCoverage(idx4[n2.id],coverage,40);
 		int es = reads[n2.id]->effective_start;
@@ -544,8 +544,8 @@ for (int i = 0; i < n_read; i ++) {
                             }
                             if ((cf >= 1) and (cb >= 1)) break;
                         }
-                    
-                    edgelist_ms.push_back(edgelist[current]);
+
+                    edgelist_ms.push_back(edgelist[i]);
 				}
 	}
 	
