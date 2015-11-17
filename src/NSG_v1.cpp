@@ -483,8 +483,69 @@ for (int i = 0; i < n_read; i ++) {
 			or ((cov_end /cov_start >= 2) and (cov_end > 100) and (n2.strand == 1))) 
 				{
 					printf("read %d %d cov_start %d, cov_end %d\n", n2.id, n2.strand, cov_start, cov_end);
-					printf("previous %d %d cov_start %d, cov_end %d\n",n1.id, n1.strand, cov_start1, cov_end1);
-					edgelist_ms.push_back(edgelist[i]);
+					//printf("previous %d %d cov_start %d, cov_end %d\n",n1.id, n1.strand, cov_start1, cov_end1);
+					int repeat_end = 0;
+                    std::set<int> candidate;
+                    for (int j = 1; j < coverage.size(); j++) {
+                        if (coverage[j].second < 0.5*coverage[j-1].second) {
+                            printf("  -sharp drop at %d\n", coverage[j].first);
+                            repeat_end = coverage[j].first;
+                            break;
+                        }
+
+                    for (int k = 0; k < idx3[n2.id].size(); k++) {
+                        LOverlap * ovl_short = idx3[n2.id][k];
+                        if (ovl_short->aepos < repeat_end) {
+                            candidate.insert(ovl_short->bid);
+                        }
+
+                    int cb = 0, cf = 0;
+
+                        for (int j = 0; j < idx2[i].size(); j++) {
+                            if ((*idx2[i][j])[0]->active) {
+                                for (int kk = 0; kk < idx2[i][j]->size(); kk++) {
+                                    if ((reads[(*idx2[i][j])[kk]->bid]->active) and ((*idx2[i][j])[kk]->active))
+                                    if (((*idx2[i][j])[kk]->aln_type == FORWARD) and (cf < 1) and (candidate.find((*idx2[i][j])[kk]->bid) != candidate.end() ))  {
+                                        cf += 1;
+                                        printf("add edge\n");
+                                        //add edge
+                                        if ((*idx2[i][j])[kk]->flags == 1) { // n = 0, c = 1
+                                            edgelist.push_back(
+                                                    std::make_tuple(Node((*idx2[i][j])[kk]->aid, 0),
+                                                                    Node((*idx2[i][j])[kk]->bid, 1), (*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
+                                        } else {
+                                            edgelist.push_back(
+                                                    std::make_tuple(Node((*idx2[i][j])[kk]->aid, 0),
+                                                                    Node((*idx2[i][j])[kk]->bid, 0), (*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
+                                        }
+                                    }
+                                    if ((reads[(*idx2[i][j])[kk]->bid]->active) and ((*idx2[i][j])[kk]->active))
+                                    if (((*idx2[i][j])[kk]->aln_type == BACKWARD) and (cb < 1)  and (candidate.find((*idx2[i][j])[kk]->bid) != candidate.end() )) {
+                                        cb += 1;
+                                        //add edge
+                                        printf("add edge\n");
+                                        if ((*idx2[i][j])[kk]->flags == 1) {
+                                            edgelist.push_back(
+                                                    std::make_tuple(Node((*idx2[i][j])[kk]->aid, 1),
+                                                                    Node((*idx2[i][j])[kk]->bid, 0), (*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
+                                        } else {
+                                            edgelist.push_back(
+                                                    std::make_tuple(Node((*idx2[i][j])[kk]->aid, 1),
+                                                                    Node((*idx2[i][j])[kk]->bid, 1),(*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
+                                        }
+                                    }
+                                    if ((cf >= 1) and (cb >= 1)) break;
+                                }
+                            }
+                            if ((cf >= 1) and (cb >= 1)) break;
+                        }
+
+
+                    }
+
+                    }
+
+                    edgelist_ms.push_back(edgelist[i]);
 				}
 	}
 	
