@@ -487,17 +487,19 @@ for (int i = 0; i < n_read; i ++) {
 					int repeat_end = 0;
                     std::set<int> candidate;
                     for (int j = 1; j < coverage.size(); j++) {
-                        if (coverage[j].second < 0.5*coverage[j-1].second) {
+                        if (coverage[j].second < 0.5 * coverage[j - 1].second) {
                             printf("  -sharp drop at %d\n", coverage[j].first);
                             repeat_end = coverage[j].first;
                             break;
                         }
+                    }
 
                     for (int k = 0; k < idx3[n2.id].size(); k++) {
                         LOverlap * ovl_short = idx3[n2.id][k];
                         if (ovl_short->aepos < repeat_end) {
                             candidate.insert(ovl_short->bid);
                         }
+                    }
 
                     int cb = 0, cf = 0;
                         int current = n1.id;
@@ -542,12 +544,7 @@ for (int i = 0; i < n_read; i ++) {
                             }
                             if ((cf >= 1) and (cb >= 1)) break;
                         }
-
-
-                    }
-
-                    }
-
+                    
                     edgelist_ms.push_back(edgelist[current]);
 				}
 	}
