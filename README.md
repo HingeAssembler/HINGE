@@ -1,5 +1,7 @@
 # AwesomeAssembler
 
+CI Status: ![image](https://magnum.travis-ci.com/Eureka22/AwesomeAssembler.svg?token=i41xfGcHb72GYFyZnvtg&branch=master)
+
 ## Introduction 
 
 AwesomeAssembler is an experimental long read assembler based on sparse string graph (|E|/|V| bounded). Now AwesomeAssembler is at research prototype stage.
@@ -23,7 +25,7 @@ For the layout step, currently there are two algorithms implemented. For both al
 
 ### Pruning
 
-Currently pruning is only available for `Greedy`. For the initial layout graph, it keeps removing degree-1 nodes, for a certain number of iterations. Implemented in `prune.py`. 
+Currently pruning is only available for `Greedy`. For the initial layout graph, it keeps removing degree-1 nodes, for a certain number of iterations. Implemented in `prune.py`. One output is a graphml file which is the graph representation of the backbone. It can be analyzed and visualized, etc. 
 
 ### Draft assembly
 
@@ -31,7 +33,7 @@ Draft assembly extracts bases from the backbone. First, it reduces the backbone 
 
 ### Consensus
 
-After the draft assembly is obtained. Reads are mapped to the draft assembly and get the final assembly by doing a majority vote.
+After the draft assembly is obtained. Reads are mapped to the draft assembly and get the final assembly by doing a majority vote. In `Draft_consensus.cpp`.
 
 ## Parameters
 
@@ -65,3 +67,84 @@ In the pipeline described above, most programs not only takes the input file and
 - quality_threshold = 0.23; // alignment quality threshold
 
 # Installation
+
+This software is still at prototype stage so it is not well packaged, however it is designed in a modular flavor so different combinations of methods can be tested. 
+
+Installing the software is very easy. 
+
+```
+git clone https://github.com/Eureka22/AwesomeAssembler.git
+git submodule init
+git submodule update
+./build.sh
+```
+
+# Running
+
+In order to call the programs from anywhere, I suggest one export the directory of binary file to system environment, you can do that by using the script `setup.sh`.
+
+A demo run for assembling the ecoli genome is the following:
+
+```
+source setup.sh
+mkdir data/ecoli
+cd data/ecoli
+# reads.fasta should be in data/ecoli
+fasta2DB ecoli reads.fasta
+DBsplit -x500 -s100 ecoli     
+HPCdaligner -dal4 -t16 -e.7 -l500 -s100 ecoli | zsh
+# alternatively, you can put output of HPCdaligner to a bash file and edit it to support 
+rm ecoli.*.ecoli.*
+LAmerge ecoli.las ecoli.*.las
+rm ecoli.*.las # we only need ecoli.las
+
+Greedy_best_ovl ecoli ecoli.las ecoli_greedy.edges greedy.ini
+prune.py ecoli_greedy.edges
+draft_assembly.py ecoli.edges
+Unitig_consensus ecoli ecoli.las ecoli.linear.edges ecoli.draft.fasta greedy.ini
+
+correct_head.py ecoli.draft.fasta ecoli.draft.pb.fasta 
+fasta2DB draft ecoli.draft.pb.fasta
+HPCmapper -e.73 draft ecoli | zsh -v 
+LAmerge draft.ecoli.las draft.ecoli.*.las
+rm draft.ecoli.*.las
+Draft_consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta greedy.ini 
+# final consensus is in ecoli.consensus.fasta
+```
+
+## Debugging
+
+### showing ground truth on graph
+Some programs are for debugging and oberservation. For example, one can get the ground truth by mapping reads to reference and get `ecoli.ecoli.ref.las`.
+
+This `las` file can be parsed to json file for other programs to use. 
+
+```
+run_mapping.py ecoli ecoli.ref ecoli.ecoli.ref.las 1-$ 
+```
+
+In the prune step, if `ecoli.mapping.json` exists, the output `graphml` file will contain the information of ground truth. 
+
+### drawing alignment graphs and mapping graphs
+Draw a read, for example 60947, and output figure to `sample` folder:
+
+```
+draw2.py ecoli ecoli.las 60948 sample 100
+```
+
+Draw pileup on draft assembly, given a region(start,end):
+
+```
+draw2_pileup_region.py  3600000 4500000 
+```
+
+# Preliminary results:
+![image](http://fxia.me/assets/img/awe.png)
+For ecoli 160X dataset, finished assembly can be achieved. 
+
+
+# Limitations
+
+- Only tested on high coverage and microbe datasets
+- Keeping one read and its reverse complement as two nodes lose a lot of information
+- More work needed to make NSG and Z-Pruning working. 

@@ -190,7 +190,6 @@ int main(int argc, char *argv[]) {
  * 2) read A-read B - idx
  */
 
-
     for (int i = 0; i< n_read; i++) {
         has_overlap[i] = std::set<int>();
         idx3[i] = std::vector<LOverlap *>();
@@ -238,7 +237,7 @@ int main(int argc, char *argv[]) {
     //    printf("read %d [%d %d]/%d\n", i, reads[i]->effective_start, reads[i]->effective_end, reads[i]->len);
     //}
 
-    /**Filtering
+    /** Reads and alignments filtering
      *
      **/
 
@@ -317,12 +316,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    //sort the reads
+    //sort the reads by sum of alignment length
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++ ) {
         std::sort( idx2[i].begin(), idx2[i].end(), compare_sum_overlaps );
     }
-
 
     /**
 	 **    get the best overlap for each read and form a graph
@@ -348,7 +346,7 @@ int main(int argc, char *argv[]) {
                             if (((*idx2[i][j])[kk]->aln_type == FORWARD) and (cf < 1)) {
                                 cf += 1;
                                 //add edge
-                                if ((*idx2[i][j])[kk]->flags == 1) { // n = 0, c = 1
+                                if ((*idx2[i][j])[kk]->flags == 1) { // n = 0, c = 1 n:this read itself, c:reverse complement
                                     edgelist.push_back(
                                             std::make_tuple(Node((*idx2[i][j])[kk]->aid, 0),
                                                                   Node((*idx2[i][j])[kk]->bid, 1), (*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
@@ -380,7 +378,7 @@ int main(int argc, char *argv[]) {
 
                 if (reads[i]->active) {
                     if (cf == 0) printf("%d has no out-going edges\n", i);
-                    if (cb == 0) printf("%d has no in-coming edges\n", i);
+                    if (cb == 0) printf("%d' has no out-going edges\n", i);
                     /*if ((cf == 0) or (cb == 0))
                         for (int j = 0; j < idx2[i].size(); j++) {
                             printf("%d,%d,%d,%d\n", i, idx2[i].size(), j, idx2[i][j].size());
@@ -392,7 +390,7 @@ int main(int argc, char *argv[]) {
                             }
                         }
                         */
-                    if ((cf == 0) or (cb ==0)) {
+                    if ((cf == 0) or (cb ==0)) { // if no right extension or no left extension, throw away this read
                         no_edge++;
                         reads[i]->active = false;
                     }
@@ -400,7 +398,7 @@ int main(int argc, char *argv[]) {
 
             }
 
-            printf("no_edge nodes:%d\n",no_edge);
+            printf("no_edge nodes:%d\n",no_edge); // show number of reads with no extension
 
 # pragma omp parallel for
             for (int ii = 0; ii < n_aln; ii++) {
@@ -422,7 +420,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::ofstream out(argv[3], std::ofstream::out);
-    //print edges list
+    //print edges list to file, in node, out node, weight (overlap size)
     for (int i = 0; i < edgelist.size(); i++){
         Node n1,n2;
         int w;
