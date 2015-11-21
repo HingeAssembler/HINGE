@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-	/*std::cout<<"profile coverage" << std::endl;
+	std::cout<<"profile coverage" << std::endl;
     std::ofstream cov("coverage.txt");
 for (int i = 0; i < n_read; i ++) {
     std::vector<std::pair<int, int> > coverage, repeat;
@@ -230,7 +230,7 @@ for (int i = 0; i < n_read; i ++) {
     for (int j = 0; j < coverage.size(); j++)
         cov << coverage[j].first << ","  << coverage[j].second << " ";
     cov << std::endl;
-}*/
+}
 
     std::cout<<"index data"<<std::endl;
     for (int i = 0; i < aln.size(); i++) {
@@ -444,7 +444,7 @@ for (int i = 0; i < n_read; i ++) {
     }
 
 /** look for missing edges **/
-	
+
 
     for (int i = 0; i < edgelist.size(); i++){
         Node n1,n2;
@@ -462,98 +462,127 @@ for (int i = 0; i < n_read; i ++) {
 		int cov_end = 0;
 		int cov_start1 = 0;
 		int cov_end1 = 0;
-		
+
 	    la.profileCoverage(idx4[n1.id],coverage1,40);
 		for (int j = 10; j < 20; j++) {
 			cov_start1 	+= coverage1[es1/40+j].second;
 			cov_end1 	+= coverage1[ee1/40-j].second;
 		}
-		
+
 		cov_start1/=10;
 		cov_end1/=10;
-		
-		
+
+
 		for (int j = 10; j < 20; j++) {
 			cov_start 	+= coverage[es/40+j].second;
 			cov_end 	+= coverage[ee/40-j].second;
 		}
 		cov_start/=10;
 		cov_end/=10;
-		if (((cov_start/cov_end>=2) and (cov_start>100) and (n2.strand == 0)) 
-			or ((cov_end /cov_start >= 2) and (cov_end > 100) and (n2.strand == 1))) 
+		if (((cov_start/cov_end>=2) and (cov_start>100) and (n2.strand == 0))
+			or ((cov_end /cov_start >= 2) and (cov_end > 100) and (n2.strand == 1)))
 				{
 					printf("read %d %d cov_start %d, cov_end %d\n", n2.id, n2.strand, cov_start, cov_end);
 					//printf("previous %d %d cov_start %d, cov_end %d\n",n1.id, n1.strand, cov_start1, cov_end1);
-					int repeat_end = 0;
-                    std::set<int> candidate;
-                    for (int j = 1; j < coverage.size(); j++) {
-                        if (coverage[j].second < 0.5 * coverage[j - 1].second) {
-                            printf("  -sharp drop at %d\n", coverage[j].first);
-                            repeat_end = coverage[j].first;
-                            break;
-                        }
-                    }
 
-                    for (int k = 0; k < idx3[n2.id].size(); k++) {
-                        LOverlap * ovl_short = idx3[n2.id][k];
-                        if (ovl_short->aepos < repeat_end) {
-                            candidate.insert(ovl_short->bid);
-                        }
-                    }
+                    int repeat_end = 0;
+                    std::set<int> candidate;
+					bool rep = false;
+                    
+					if (n2.strand == 0) {
+						
+						for (int j = 1; j < coverage.size(); j++) {
+                	        if (coverage[j].second < 0.5 * coverage[j - 1].second) {
+                	            printf("  -sharp drop at %d\n", coverage[j].first);
+                	            repeat_end = coverage[j].first;
+								rep = true;
+                	            break;
+                	        }
+                	    }
+                		if (rep)
+                	    for (int k = 0; k < idx3[n2.id].size(); k++) {
+                	        LOverlap * ovl_short = idx3[n2.id][k];
+                	        if (ovl_short->aepos < repeat_end + 300) {
+                	            candidate.insert(ovl_short->bid);
+                	        }
+                	    }
+					} else {
+						
+						for (int j = coverage.size() - 1; j > 0 ; j--) {
+                	        if (coverage[j].second < 0.5 * coverage[j + 1].second) {
+                	            printf("  -sharp increase at %d\n", coverage[j].first);
+                	            repeat_end = coverage[j].first;
+								rep = true;
+                	            break;
+                	        }
+                	    }
+                	
+						if (rep)
+                	    for (int k = 0; k < idx3[n2.id].size(); k++) {
+                	        LOverlap * ovl_short = idx3[n2.id][k];
+                	        if (ovl_short->abpos > repeat_end - 300) {
+                	            candidate.insert(ovl_short->bid);
+                	        }
+                	    }
+						
+					}
+										
 
                     int cb = 0, cf = 0;
                         int current = n1.id;
 
-                        for (int j = 0; j < idx2[current].size(); j++) {
-                            if ((*idx2[current][j])[0]->active) {
-                                for (int kk = 0; kk < idx2[current][j]->size(); kk++) {
-                                    if ((reads[(*idx2[current][j])[kk]->bid]->active) and ((*idx2[current][j])[kk]->active))
+                        for (int jj = 0; jj < idx2[current].size(); jj++) {
+                            if ((*idx2[current][jj])[0]->active) {
+                                for (int kk = 0; kk < idx2[current][jj]->size(); kk++) {
+                                    if ((reads[(*idx2[current][jj])[kk]->bid]->active) and ((*idx2[current][jj])[kk]->active))
                                     if (n1.strand == 0)
-                                    if (((*idx2[current][j])[kk]->aln_type == FORWARD) and (cf < 1) and (candidate.find((*idx2[current][j])[kk]->bid) != candidate.end() ))  {
+                                    if (((*idx2[current][jj])[kk]->aln_type == FORWARD) and (cf < 1) and (candidate.find((*idx2[current][jj])[kk]->bid) != candidate.end() ))  {
                                         cf += 1;
                                         printf("add edge\n");
                                         //add edge
-                                        if ((*idx2[current][j])[kk]->flags == 1) { // n = 0, c = 1
-                                            edgelist.push_back(
-                                                    std::make_tuple(Node((*idx2[current][j])[kk]->aid, 0),
-                                                                    Node((*idx2[current][j])[kk]->bid, 1), (*idx2[current][j])[kk]->aepos -(*idx2[current][j])[kk]->abpos));
+                                        if ((*idx2[current][jj])[kk]->flags == 1) { // n = 0, c = 1
+                                            edgelist_ms.push_back(
+                                                    std::make_tuple(Node((*idx2[current][jj])[kk]->aid, 0),
+                                                                    Node((*idx2[current][jj])[kk]->bid, 1), (*idx2[current][jj])[kk]->aepos -(*idx2[current][jj])[kk]->abpos));
                                         } else {
-                                            edgelist.push_back(
-                                                    std::make_tuple(Node((*idx2[current][j])[kk]->aid, 0),
-                                                                    Node((*idx2[current][j])[kk]->bid, 0), (*idx2[current][j])[kk]->aepos -(*idx2[current][j])[kk]->abpos));
+                                            edgelist_ms.push_back(
+                                                    std::make_tuple(Node((*idx2[current][jj])[kk]->aid, 0),
+                                                                    Node((*idx2[current][jj])[kk]->bid, 0), (*idx2[current][jj])[kk]->aepos -(*idx2[current][jj])[kk]->abpos));
                                         }
                                     }
-                                    if ((reads[(*idx2[current][j])[kk]->bid]->active) and ((*idx2[current][j])[kk]->active))
+                                    if ((reads[(*idx2[current][jj])[kk]->bid]->active) and ((*idx2[current][jj])[kk]->active))
                                     if (n1.id == 1)
-                                    if (((*idx2[current][j])[kk]->aln_type == BACKWARD) and (cb < 1)  and (candidate.find((*idx2[current][j])[kk]->bid) != candidate.end() )) {
+                                    if (((*idx2[current][jj])[kk]->aln_type == BACKWARD) and (cb < 1)  and (candidate.find((*idx2[current][jj])[kk]->bid) != candidate.end() )) {
                                         cb += 1;
                                         //add edge
                                         printf("add edge\n");
-                                        if ((*idx2[current][j])[kk]->flags == 1) {
-                                            edgelist.push_back(
-                                                    std::make_tuple(Node((*idx2[current][j])[kk]->aid, 1),
-                                                                    Node((*idx2[current][j])[kk]->bid, 0), (*idx2[current][j])[kk]->aepos -(*idx2[current][j])[kk]->abpos));
+                                        if ((*idx2[current][jj])[kk]->flags == 1) {
+                                            edgelist_ms.push_back(
+                                                    std::make_tuple(Node((*idx2[current][jj])[kk]->aid, 1),
+                                                                    Node((*idx2[current][jj])[kk]->bid, 0), (*idx2[current][jj])[kk]->aepos -(*idx2[current][jj])[kk]->abpos));
                                         } else {
-                                            edgelist.push_back(
-                                                    std::make_tuple(Node((*idx2[current][j])[kk]->aid, 1),
-                                                                    Node((*idx2[current][j])[kk]->bid, 1),(*idx2[current][j])[kk]->aepos -(*idx2[current][j])[kk]->abpos));
+                                            edgelist_ms.push_back(
+                                                    std::make_tuple(Node((*idx2[current][jj])[kk]->aid, 1),
+                                                                    Node((*idx2[current][jj])[kk]->bid, 1),(*idx2[current][jj])[kk]->aepos -(*idx2[current][jj])[kk]->abpos));
                                         }
                                     }
-                                    if ((cf >= 1) and (cb >= 1)) break;
+                                    if ((cf >= 1) or (cb >= 1)) break;
                                 }
                             }
-                            if ((cf >= 1) and (cb >= 1)) break;
+                            if ((cf >= 1) or (cb >= 1)) break;
                         }
 
-                    edgelist_ms.push_back(edgelist[i]);
+                    //edgelist_ms.push_back(edgelist[i]);
 				}
 	}
-	
-	printf("missing edge #, %d\n", edgelist_ms.size());
-	
-	
 
-	
+	printf("missing edge #, %d\n", edgelist_ms.size());
+
+
+    for (int j = 0; j < edgelist_ms.size(); j++) {
+        edgelist.push_back(edgelist_ms[j]);
+    }
+
 
 
     std::ofstream out(argv[3], std::ofstream::out);
