@@ -8,7 +8,7 @@ AwesomeAssembler is an experimental long read assembler based on sparse string g
 
 ## Pipeline Overview
 
-AwesomeAssembler is an OLC(Overlap-Layout-Consensus) assembler. The idea of the pipeline is shown below. One significant difference from HGAP or Falcon pipeline is that it does not have a pre-assemble or read correction step. There are mainly two reasons that we don't want that step is that this step will sometimes collapse repeats, thus introduce errors to homologous regions. Secondly, this will throw away information, for example, half bases are thrown away (as for the ecoli dataset) in the preassembly step in falcon pipeline. 
+AwesomeAssembler is an OLC(Overlap-Layout-Consensus) assembler. The idea of the pipeline is shown below. One significant difference from HGAP or Falcon pipeline is that it does not have a pre-assembly or read correction step. There are mainly two reasons that we don't want that step. The first is that this step will sometimes collapse repeats, thus introduce errors to homologous regions. Secondly, this will throw away information, for example, half bases are thrown away (as for the ecoli dataset) in the preassembly step in falcon pipeline. 
 
 ![image](http://fxia.me/static/arc.png)
 
@@ -126,7 +126,7 @@ run_mapping.py ecoli ecoli.ref ecoli.ecoli.ref.las 1-$
 In the prune step, if `ecoli.mapping.json` exists, the output `graphml` file will contain the information of ground truth. 
 
 ### drawing alignment graphs and mapping graphs
-Draw a read, for example 60947, and output figure to `sample` folder:
+Draw a read, for example 60947, and output figure to `sample` folder (need plus 1 as LAshow counts from 1):
 
 ```
 draw2.py ecoli ecoli.las 60948 sample 100
