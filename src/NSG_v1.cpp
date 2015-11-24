@@ -488,11 +488,11 @@ for (int i = 0; i < n_read; i ++) {
                     int repeat_end = 0;
                     std::set<int> candidate;
 					bool rep = false;
-                    
+
 					if (n2.strand == 0) {
-						
-						for (int j = 1; j < coverage.size(); j++) {
-                	        if (coverage[j].second < 0.5 * coverage[j - 1].second) {
+
+                        for (int j =coverage.size()-5; j > 5; j--) {
+                	        if (coverage[j].second < 0.5 * coverage[j - 5].second) {
                 	            printf("  -sharp drop at %d\n", coverage[j].first);
                 	            repeat_end = coverage[j].first;
 								rep = true;
@@ -500,33 +500,34 @@ for (int i = 0; i < n_read; i ++) {
                 	        }
                 	    }
                 		if (rep)
-                	    for (int k = 0; k < idx3[n2.id].size(); k++) {
-                	        LOverlap * ovl_short = idx3[n2.id][k];
+                	    for (int k = 0; k < idx4[n2.id].size(); k++) {
+                	        LOverlap * ovl_short = idx4[n2.id][k];
                 	        if (ovl_short->aepos < repeat_end + 300) {
                 	            candidate.insert(ovl_short->bid);
                 	        }
                 	    }
 					} else {
-						
-						for (int j = coverage.size() - 1; j > 0 ; j--) {
-                	        if (coverage[j].second < 0.5 * coverage[j + 1].second) {
+
+						for (int j = 5; j<coverage.size() - 5; j++) {
+                	        if (coverage[j].second < 0.5 * coverage[j + 5].second) {
                 	            printf("  -sharp increase at %d\n", coverage[j].first);
                 	            repeat_end = coverage[j].first;
 								rep = true;
                 	            break;
                 	        }
                 	    }
-                	
+
 						if (rep)
-                	    for (int k = 0; k < idx3[n2.id].size(); k++) {
-                	        LOverlap * ovl_short = idx3[n2.id][k];
+                	    for (int k = 0; k < idx4[n2.id].size(); k++) {
+                	        LOverlap * ovl_short = idx4[n2.id][k];
                 	        if (ovl_short->abpos > repeat_end - 300) {
                 	            candidate.insert(ovl_short->bid);
                 	        }
                 	    }
-						
+
 					}
-										
+                    printf("candidate size%d\n", candidate.size());
+
 
                     int cb = 0, cf = 0;
                         int current = n1.id;

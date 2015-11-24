@@ -13,3 +13,6 @@
 [submodule "DASCRUBBER"]
 	path = DASCRUBBER
 	url = https://github.com/thegenemyers/DASCRUBBER.git
+[submodule "graphmap"]
+	path = graphmap
+	url = https://github.com/isovic/graphmap.git
