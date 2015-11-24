@@ -402,7 +402,7 @@ for (int i = 0; i < n_read; i ++) {
 
                 if (reads[i]->active) {
                     if (cf == 0) printf("%d has no out-going edges\n", i);
-                    if (cb == 0) printf("%d has no in-coming edges\n", i);
+                    if (cb == 0) printf("%d' has no out-going edges\n", i);
                     /*if ((cf == 0) or (cb == 0))
                         for (int j = 0; j < idx2[i].size(); j++) {
                             printf("%d,%d,%d,%d\n", i, idx2[i].size(), j, idx2[i][j].size());
@@ -463,7 +463,7 @@ for (int i = 0; i < n_read; i ++) {
 		int cov_start1 = 0;
 		int cov_end1 = 0;
 
-	    la.profileCoverage(idx4[n1.id],coverage1,40);
+	    la.profileCoverage(idx4[n1.id],coverage1,40); // profile coverage and look for unusual pattern
 		for (int j = 10; j < 20; j++) {
 			cov_start1 	+= coverage1[es1/40+j].second;
 			cov_end1 	+= coverage1[ee1/40-j].second;
@@ -486,7 +486,7 @@ for (int i = 0; i < n_read; i ++) {
 					//printf("previous %d %d cov_start %d, cov_end %d\n",n1.id, n1.strand, cov_start1, cov_end1);
 
                     int repeat_end = 0;
-                    std::set<int> candidate;
+                    std::set<int> candidate; // look for candidates
 					bool rep = false;
 
 					if (n2.strand == 0) {
@@ -528,6 +528,9 @@ for (int i = 0; i < n_read; i ++) {
 					}
                     printf("candidate size%d\n", candidate.size());
 
+                    /**
+                     * Repeat the previous edge looking procedure, look for longest one, except that this time look for read in the candidate set
+                     */
 
                     int cb = 0, cf = 0;
                         int current = n1.id;
@@ -573,7 +576,6 @@ for (int i = 0; i < n_read; i ++) {
                             if ((cf >= 1) or (cb >= 1)) break;
                         }
 
-                    //edgelist_ms.push_back(edgelist[i]);
 				}
 	}
 
@@ -585,9 +587,8 @@ for (int i = 0; i < n_read; i ++) {
     }
 
 
-
     std::ofstream out(argv[3], std::ofstream::out);
-    //print edges list
+    //print edges list to file
     for (int i = 0; i < edgelist.size(); i++){
         Node n1,n2;
         int w;

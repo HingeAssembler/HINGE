@@ -4,9 +4,6 @@
 [submodule "DAZZ_DB"]
 	path = DAZZ_DB
 	url = https://github.com/Eureka22/DAZZ_DB.git
-[submodule "blasr"]
-	path = blasr
-	url = https://github.com/PacificBiosciences/blasr.git
 [submodule "DEXTRACTOR"]
 	path = DEXTRACTOR
 	url = https://github.com/thegenemyers/DEXTRACTOR.git

@@ -38,4 +38,4 @@ for key,value in d.items():
     
 #print mapping
 import ujson
-ujson.dump(mapping,open('mapping.json','w'))
+ujson.dump(mapping,open(filename+'mapping.json','w'))

@@ -774,7 +774,9 @@ int main(int argc, char *argv[]) {
     }
 
 
-
+    /***
+     * Prepare the data
+     */
 
     for (int i = 0; i < edgelist.size(); i++){
 
@@ -874,7 +876,6 @@ int main(int argc, char *argv[]) {
         breads.push_back(current_seq);
 
 
-
         /*for (int j = 0; j < pitfalls[i+1].size(); j++)
             if ((pitfalls[i+1][j].first > bepos ) and ( pitfalls[i+1][j].second<blen)) {
                 //printf("read %d:", range[i+1]);
@@ -906,7 +907,7 @@ int main(int argc, char *argv[]) {
     //need to trim the end
 
 
-    sequence = breads[0];
+ /*   sequence = breads[0];
     int next_trim = 0;
 
     for (int i = 0; i < range.size()-1; i++) {
@@ -966,7 +967,7 @@ int main(int argc, char *argv[]) {
 
 
     }
-
+*/
 
     std::vector<std::vector<int> > mappings;
     for (int i = 0; i < range.size(); i++) {
@@ -986,12 +987,8 @@ int main(int argc, char *argv[]) {
     int nlane = 0;
 
 
-
-    printf("%d %d\n", mappings[0][800], mappings[0][1000]);
-    printf("%s\n%s\n", breads[0].substr(bedges[0]->abpos+800,50).c_str(),breads[1].substr(bedges[0]->bbpos+ mappings[0][800],50).c_str() );
-
-
-
+    printf("%d %d\n", mappings[0][800], mappings[0][1000]); // debug output
+    printf("%s\n%s\n", breads[0].substr(bedges[0]->abpos+800,50).c_str(),breads[1].substr(bedges[0]->bbpos+ mappings[0][800],50).c_str() ); //debug output
 
 
     std::vector<std::vector<std::pair<int, int>>> lanes;
@@ -1008,8 +1005,10 @@ int main(int argc, char *argv[]) {
     bool revert = false;
 
 
-
     int rmax = -1;
+    /**
+     * Move forward and put "trace points"
+     */
     while (current_starting_read < n_bb_reads-1) {
         int currentread = current_starting_read;
         int additional_offset = 0;
@@ -1081,6 +1080,9 @@ int main(int argc, char *argv[]) {
     }
 
 
+    /**
+     * Show trace points on reads
+     */
     for (int i = 0; i < n_bb_reads; i++) {
         printf("Read %d:", i);
         for (int j = 0; j < trace_pts[i].size(); j++) {
@@ -1089,6 +1091,9 @@ int main(int argc, char *argv[]) {
         printf("\n");
     }
 
+    /**
+     * Show lanes
+     */
 
     for (int i = 0; i < lanes.size(); i++) {
 
@@ -1102,6 +1107,10 @@ int main(int argc, char *argv[]) {
 
     printf("In total %d lanes\n", lanes.size());
 
+
+    /**
+     * Consequtive lanes form a column (ladder)
+     */
 
     std::vector<std::vector<std::tuple<int, int, int> > > ladders;
 
@@ -1118,7 +1127,9 @@ int main(int argc, char *argv[]) {
     }
 
 
-
+    /**
+     * show ladders
+     */
     for (int i = 0; i < ladders.size(); i++) {
         printf("Ladder %d\n",i);
         for (int j = 0; j < ladders[i].size(); j++) {
@@ -1199,8 +1210,6 @@ int main(int argc, char *argv[]) {
                 t_aln_str[0] = 'T';
 
 
-
-
                 for (int pos = 0; pos < strlen(q_aln_str); pos++) q_aln_str[pos] = toupper(q_aln_str[pos]);
                 for (int pos = 0; pos < strlen(t_aln_str); pos++) t_aln_str[pos] = toupper(t_aln_str[pos]);
 
@@ -1226,7 +1235,6 @@ int main(int argc, char *argv[]) {
                 free(bseq);
                 free_alignment(alng);
 
-
             }
 
             //printf("%d %d\n%s\n",seq_count, strlen(seq), seq);
@@ -1239,8 +1247,6 @@ int main(int argc, char *argv[]) {
             for (int j = 0; j < seq_count; j++)
                 free_align_tags(tags_list[j]);
 
-
-
         }  else {
             draft_assembly +=  breads[std::get<0>(ladders[i][0])].substr(std::get<1>(ladders[i][0]),std::get<2>(ladders[i][0])-std::get<1>(ladders[i][0]));
         }
@@ -1250,14 +1256,12 @@ int main(int argc, char *argv[]) {
 
 
 
-
     /*for (int i = 0; i < mapping.size(); i++)
         printf("%d %d\n", i, mapping[i]);
     printf("[%d %d], [%d %d]\n", bedges[0]->abpos, bedges[0]->aepos, bedges[0]->bbpos, bedges[0]->bepos);*/
 
     std::cout<<sequence.size()<<std::endl;
     std::cout<<draft_assembly.size()<<std::endl;
-
 
 
 	out << ">Draft_assembly\n";
