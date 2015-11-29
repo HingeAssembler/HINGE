@@ -47,7 +47,7 @@ target_link_libraries(falcon kmer_lookup DW_banded)
 add_executable(Greedy_best_ovl Greedy_best_ovl_bursty_resistant)
 target_link_libraries(Greedy_best_ovl LAInterface ini)
 
-add_executable(NSG NSG_v1)
+add_executable(NSG NSG_v2)
 target_link_libraries(NSG LAInterface ini)
 
 add_library(OverlapGraph OverlapGraph.cpp)
@@ -93,3 +93,6 @@ target_link_libraries(INIReaderTest ini)
 
 add_executable(Consensus_test LAInterface_consensus_test.cpp)
 target_link_libraries(Consensus_test LAInterface falcon)
+
+add_executable(Reads_filter filter.cpp)
+target_link_libraries(Reads_filter LAInterface ini)
