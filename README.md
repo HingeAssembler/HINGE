@@ -86,7 +86,7 @@ In order to call the programs from anywhere, I suggest one export the directory 
 A demo run for assembling the ecoli genome is the following:
 
 ```
-source setup.sh
+source setup.sh %I've changed the setup.sh, as it gave errors while running. -GK
 mkdir data/ecoli
 cd data/ecoli
 # reads.fasta should be in data/ecoli
