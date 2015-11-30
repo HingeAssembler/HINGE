@@ -28,7 +28,7 @@ public:
 };
 
 enum aligntype {
-    FORWARD, BACKWARD, COVERING, COVERED, MISMATCH_LEFT, MISMATCH_RIGHT, UNDIFINED, MIDDLE // different type of alignment
+    FORWARD, BACKWARD, ACOVERB, BCOVEREA, UNDIFINED, INTERNAL, NOT_ACTIVE, COVERING, COVERED, MIDDLE, MISMATCH_LEFT, MISMATCH_RIGHT // different type of alignment
 /**
  * FORWARD: Alignment and extend to the right
  * BACKWARD: extend to the left
@@ -80,14 +80,19 @@ public:
     int diffs; //differences
     int abpos, bbpos; // starting position and ending position of alignment in read a
     int aepos, bepos; // starting position and ending position of alignment in read b
+    int eabpos, ebbpos, eaepos, ebepos;
     int tps;
     int flags; //flags, reverse complement = 1, same direction = 0
     int aes,aee,bes,bee;
     aligntype aln_type = UNDIFINED;
     void addtype(int);
+    void addtype2(int max_overhang);
     static const int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
 	bool active = true;
-
+    uint16 *trace_pts;
+    int trace_pts_len;
+    void trim_overlap();
+    int si,ei;
 };
 
 

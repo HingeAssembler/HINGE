@@ -1475,6 +1475,14 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
             new_ovl->flags = 0;
         }
 
+        if (small)
+            Decompress_TraceTo16(ovl);
+
+        new_ovl->trace_pts_len = ovl->path.tlen;
+        new_ovl->trace_pts = (uint16 *)malloc(ovl->path.tlen * sizeof(uint16));
+
+        memcpy(new_ovl->trace_pts, ovl->path.trace, ovl->path.tlen * sizeof(uint16));
+
         new_ovl->aid = ovl->aread;
         new_ovl->bid = ovl->bread;
         new_ovl->abpos = ovl->path.abpos;
@@ -4304,4 +4312,67 @@ void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
           }*/
 	  }
 	return;
+}
+
+
+void LOverlap::trim_overlap() {
+    this->ebbpos = 0;
+    this->ebepos = 0;
+    this->eabpos = 0;
+    this->eaepos = 0;
+
+    std::vector<std::pair<int,int> > tps;
+    tps.push_back(std::pair<int,int>(this->abpos, this->bbpos));
+    int currenta = this->abpos;
+    for (int j = 0; j < this->trace_pts_len/2-1; j++) {
+        if (currenta % 100 != 0) currenta = int(ceil(currenta/100.0))*100;
+        else currenta += 100;
+        tps.push_back(std::pair<int,int>(currenta, tps.back().second + this->trace_pts[2*j + 1]));
+    }
+    tps.push_back(std::pair<int,int>(this->aepos, this->bepos));
+
+    /*for (int j = 0; j < tps.size(); j++) {
+        printf("a%d b%d ", tps[j].first, tps[j].second);
+    }
+    printf("\n");
+    */
+
+
+    for (int i = 0; i< tps.size(); i++) {
+        if ((tps[i].first >= this->aes) and (tps[i].second >= this->bes)) {
+            this->eabpos = tps[i].first;
+            this->ebbpos = tps[i].second;
+            this->si = i;
+            break;
+        }
+    }
+
+    for (int i= (int)tps.size() - 1; i>=0; i--) {
+        if ((tps[i].first <= this->aee) and (tps[i].second <= this->bee)) {
+            this->eaepos = tps[i].first;
+            this->ebepos = tps[i].second;
+            this->ei = i;
+            break;
+        }
+    }
+
+}
+
+void LOverlap::addtype2(int max_overhang) {
+    int overhang = std::min(this->eabpos - this->aes, this->ebbpos - this->bes) + std::min(this->aee - this->eaepos, this->bee - this->ebepos);
+    int tol = 0;
+    if (overhang > max_overhang)
+        this->aln_type = INTERNAL;
+    else if ((this->eabpos - this->aes <= this->ebbpos - this->bes) and (this->aee - this->eaepos <= this->bee - this->ebepos))
+        this->aln_type = BCOVEREA;
+    else if ((this->eabpos - this->aes >= this->ebbpos - this->bes) and (this->aee - this->eaepos  >= this->bee - this->ebepos))
+        this->aln_type = ACOVERB;
+    else if (this->eabpos - this->aes > this->ebbpos - this->bes) {
+        if ((this->bee - this->ebepos > tol) and (this->eabpos - this->aes > tol))
+        this->aln_type = FORWARD;
+    }
+    else {
+        if ((this->ebbpos - this->bes > tol) and (this->aee - this->eaepos > tol))
+        this->aln_type = BACKWARD;
+    }
 }
