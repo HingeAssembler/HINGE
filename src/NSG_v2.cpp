@@ -55,6 +55,10 @@ bool compare_overlap_effective(LOverlap * ovl1, LOverlap * ovl2) {
     return ((ovl1->eaepos - ovl1->eabpos + ovl1->ebepos - ovl1->ebbpos) > (ovl2->eaepos - ovl2->eabpos + ovl2->ebepos - ovl2->ebbpos));
 }
 
+bool compare_overlap_weight(LOverlap * ovl1, LOverlap * ovl2) {
+    return (ovl1->weight > ovl2->weight);
+}
+
 bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2) {
     int sum1 = 0;
     int sum2 = 0;
@@ -182,6 +186,8 @@ int main(int argc, char *argv[]) {
     //std::unordered_map<int, std::vector <LOverlap * > >idx3,idx4; // this is the pileup
     std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx; //unordered_map from (aid, bid) to alignments in a vector
     std::vector<std::vector<LOverlap *>> idx2;
+    std::vector<std::unordered_map<int, LOverlap *>> idx3;
+
 /*
  * Index alignments by:
  * 1) read A - idx3
@@ -225,7 +231,6 @@ int main(int argc, char *argv[]) {
     }
     std::cout<<"index finished" <<std::endl;
 
-
     for (int i = 0; i < n_read; i++) {
         for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin(); it!=idx[i].end(); it++) {
             std::sort(it->second.begin(), it->second.end(), compare_overlap);
@@ -240,10 +245,9 @@ int main(int argc, char *argv[]) {
     }
     std::cout<<num_overlaps << " overlaps" << std::endl;
 
-
-
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {
+        bool contained = false;
         for (int j = 0; j < idx2[i].size(); j++){
             idx2[i][j]->aes = reads[idx2[i][j]->aid]->effective_start;
             idx2[i][j]->aee = reads[idx2[i][j]->aid]->effective_end;
@@ -272,9 +276,18 @@ int main(int argc, char *argv[]) {
                 idx2[i][j]->aln_type = NOT_ACTIVE;
             } else {
                 idx2[i][j]->addtype2(THETA);
+                if (idx2[i][j]->aln_type == BCOVEREA)
+                    contained = true;
             }
         }
+        if (contained) reads[i]->active = false;
     }
+
+    num_active_read = 0;
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->active) num_active_read ++;
+    }
+    std::cout<<"remove contained reads, active reads:" << num_active_read<< std::endl;
 
     for (int iter = 0; iter < N_ITER; iter++) {
         int remove = 0;
@@ -314,14 +327,54 @@ int main(int argc, char *argv[]) {
     }
     std::cout<<num_overlaps << " overlaps" << std::endl;
 
+    for (int i = 0; i < n_read; i++) {
+        idx3.push_back(std::unordered_map<int, LOverlap*>() );
+        if (reads[i]->active)
+        for (int j = 0; j < idx2[i].size(); j++) {
+            if (reads[idx2[i][j]->bid]->active)
+                idx3[i][idx2[i][j]->bid] = idx2[i][j];
+        }
+    }
+
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->active)
+            for (std::unordered_map<int, LOverlap*>::iterator it = idx3[i].begin(); it!=idx3[i].end(); it++) {
+                int aid = i;
+                int bid = it->second->bid;
+                idx3[aid][bid]->weight = idx3[aid][bid]->eaepos - idx3[aid][bid]->eabpos + idx3[bid][aid]->eaepos - idx3[bid][aid]->eabpos;
+                /*if (idx3[aid][bid]->aln_type == FORWARD) {
+                    if (idx3[aid][bid]->flags == 0) idx3[bid][aid]->aln_type = BACKWARD;
+                    else idx3[bid][aid]->aln_type = FORWARD;
+                }
+                if (idx3[aid][bid]->aln_type == BACKWARD) {
+                    if (idx3[aid][bid]->flags == 0) idx3[bid][aid]->aln_type = FORWARD;
+                    else idx3[bid][aid]->aln_type = BACKWARD;
+                }*/
+            }
+    }
+
 
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active)
-            std::sort(idx2[i].begin(), idx2[i].end(), compare_overlap_effective);
+            std::sort(idx2[i].begin(), idx2[i].end(), compare_overlap_weight);
     }
+
+    FILE * out3;
+    out3 = fopen("edges.backup.txt","w");
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->active)
+            for (int j = 0; j < idx2[i].size(); j++) {
+                if (reads[idx2[i][j]->bid]->active)
+                    fprintf(out3,"%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->flags, idx2[i][j]->aln_type,  idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+            }
+    }
+
+
     FILE * out;
-    out = fopen(argv[3], "w");
+    FILE * out2;
+    out = fopen((std::string(argv[3]) + ".1").c_str(), "w");
+    out2 = fopen((std::string(argv[3]) + ".2").c_str(), "w");
 
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
@@ -330,20 +383,33 @@ int main(int argc, char *argv[]) {
             for (int j = 0; j < idx2[i].size(); j++)
                 if (idx2[i][j]->active) {
                     if ((idx2[i][j]->aln_type == FORWARD) and (reads[idx2[i][j]->bid]->active)) {
-                        if (forward == 0) {
-                            if (idx2[i][j]->flags == 0) fprintf(out, "%d eb %d\n%d be %d\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->bid, idx2[i][j]->aid);
-                            else fprintf(out, "%d ee %d\n%d ee %d\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->bid, idx2[i][j]->aid);
+                        if (forward < 1) {
+                            //if (idx2[i][j]->flags == 0) fprintf(out, "%d eb %d %d\n%d be %d %d\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->aepos - idx2[i][j]->abpos, idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->aepos - idx2[i][j]->abpos);
+                            //else fprintf(out, "%d ee %d %d\n%d ee %d %d\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->aepos - idx2[i][j]->abpos, idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->aepos - idx2[i][j]->abpos);
                             //if (idx2[i][j]->flags == 0) fprintf(out, "%d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             //else fprintf(out, "%d %d' [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                            if (idx2[i][j]->flags == 0) fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                            else fprintf(out, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+
+                            if (idx2[i][j]->flags == 0) fprintf(out2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                            else fprintf(out2, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+
                         }
                         forward++;
                     }
                     else if ((idx2[i][j]->aln_type == BACKWARD) and (reads[idx2[i][j]->bid]->active)) {
-                        if (backward == 0) {
-                            if (idx2[i][j]->flags == 0) fprintf(out, "%d eb %d\n%d be %d\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->aid, idx2[i][j]->bid);
-                            else fprintf(out, "%d bb %d\n%d bb %d\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->bid, idx2[i][j]->aid);
+                        if (backward < 1) {
+                            //if (idx2[i][j]->flags == 0) fprintf(out, "%d eb %d %d\n%d be %d %d\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->aepos - idx2[i][j]->abpos, idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->aepos - idx2[i][j]->abpos);
+                            //else fprintf(out, "%d bb %d %d\n%d bb %d %d\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->aepos - idx2[i][j]->abpos, idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->aepos - idx2[i][j]->abpos);
                             //if (idx2[i][j]->flags == 0) fprintf(out, "%d' %d' [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             //else fprintf(out, "%d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+
+                            if (idx2[i][j]->flags == 0) fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                            else fprintf(out, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+
+                            if (idx2[i][j]->flags == 0) fprintf(out2, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                            else fprintf(out2, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+
                         }
                         backward++;
                     }

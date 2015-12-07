@@ -4360,10 +4360,10 @@ void LOverlap::trim_overlap() {
 
 void LOverlap::addtype2(int max_overhang) {
     int overhang = std::min(this->eabpos - this->aes, this->ebbpos - this->bes) + std::min(this->aee - this->eaepos, this->bee - this->ebepos);
-    int tol = 0;
+    int tol = 300;
     if (overhang > max_overhang)
         this->aln_type = INTERNAL;
-    else if ((this->eabpos - this->aes <= this->ebbpos - this->bes) and (this->aee - this->eaepos <= this->bee - this->ebepos))
+    else if ((this->eabpos - this->aes <= this->ebbpos - this->bes + tol) and (this->aee - this->eaepos <= this->bee - this->ebepos + tol))
         this->aln_type = BCOVEREA;
     else if ((this->eabpos - this->aes >= this->ebbpos - this->bes) and (this->aee - this->eaepos  >= this->bee - this->ebepos))
         this->aln_type = ACOVERB;

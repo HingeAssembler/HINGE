@@ -93,6 +93,7 @@ public:
     int trace_pts_len;
     void trim_overlap();
     int si,ei;
+    int weight;
 };
 
 
