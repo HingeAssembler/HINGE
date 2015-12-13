@@ -130,7 +130,6 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
     return ret;
 }
 
-
 int main(int argc, char *argv[]) {
 
     LAInterface la;
@@ -173,30 +172,74 @@ int main(int argc, char *argv[]) {
 
     omp_set_num_threads(N_PROC);
 
-    std::unordered_map<int, std::vector <LOverlap * > >idx3; // this is the pileup
+    std::vector<std::vector <LOverlap * > >idx3; // this is the pileup
 
     for (int i = 0; i< n_read; i++) {
-        idx3[i] = std::vector<LOverlap *>();
+        idx3.push_back(std::vector<LOverlap *>());
     }
+
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
             idx3[aln[i]->aid].push_back(aln[i]);
         }
     }
 
+# pragma omp parallel for
+    for (int i = 0; i < n_read; i++) {
+        std::sort(idx3[i].begin(), idx3[i].end(), compare_overlap);
+    }
+
     std::cout<<"profile coverage" << std::endl;
     std::ofstream cov(std::string(name_db) + ".coverage.txt");
+    std::ofstream rep(std::string(name_db) + ".repeat.txt");
 
     std::vector< std::vector<std::pair<int, int> > > coverages;
+    std::vector< std::vector<std::pair<int, int> > > cgs; //coverage gradient;
+
     for (int i = 0; i < n_read; i ++) {
         std::vector<std::pair<int, int> > coverage;
+        std::vector<std::pair<int, int> > cg;
         la.profileCoverage(idx3[i], coverage, reso, CUT_OFF);
         cov << "read " << i <<" ";
         for (int j = 0; j < coverage.size(); j++)
             cov << coverage[j].first << ","  << coverage[j].second << " ";
         cov << std::endl;
+
+        if (coverage.size() >= 2)
+            for (int j = 0; j < coverage.size() - 1; j++) {
+                cg.push_back(std::pair<int,int>(coverage[j].first, coverage[j+1].second - coverage[j].second));
+            }
+        else cg.push_back(std::pair<int, int> (0,0));
+
         coverages.push_back(coverage);
+        cgs.push_back(cg);
     }
+
+    int num_slot = 0;
+    int total_cov = 0;
+    for (int i = 0; i < n_read/500; i++) {
+        for (int j = 0; j < coverages[i].size(); j++) {
+            total_cov += coverages[i][j].second;
+            num_slot ++;
+        }
+    }
+
+    std::cout << "Estimated coverage:" << total_cov / float(num_slot) << std::endl;
+    int cov_est = total_cov / num_slot;
+    /*coverages.clear();
+    for (int i = 0; i < n_read; i ++) {
+        std::vector<std::pair<int, int> > coverage;
+        la.profileCoveragefine(idx3[i], coverage, reso, CUT_OFF, total_cov/num_slot);
+        cov << "read " << i <<" ";
+        for (int j = 0; j < coverage.size(); j++)
+            cov << coverage[j].first << ","  << coverage[j].second << " ";
+        cov << std::endl;
+        coverages.push_back(coverage);
+    }*/
+
+    std::vector<std::pair<int, int>> maskvec;
+    if (MIN_COV < cov_est/3)
+        MIN_COV = cov_est/3;
 
     std::ofstream mask(name_mask);
     for (int i = 0; i < n_read; i++) {
@@ -224,6 +267,64 @@ int main(int argc, char *argv[]) {
             }
         }
         mask << i << " " << maxstart << " " << maxend << std::endl;
+        maskvec.push_back(std::pair<int, int>(maxstart + 200, maxend - 200));
+    }
+
+    //binarize coverage gradient;
+
+    std::vector<std::vector<std::pair<int, int> > > repeat_anno;
+
+    for (int i = 0; i < n_read; i++) {
+        std::vector<std::pair<int, int> > anno;
+        for (int j = 0; j < cgs[i].size(); j++) {
+            //std::cout<< i << " " << cgs[i][j].first << " " << cgs[i][j].second << std::endl;
+            if ((cgs[i][j].first >= maskvec[i].first) and (cgs[i][j].first <= maskvec[i].second)) {
+                if (cgs[i][j].second > cov_est / 2) anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
+                else if (cgs[i][j].second < -cov_est / 2) anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
+            }
+        }
+        repeat_anno.push_back(anno);
+    }
+
+    int gap_thre = 200;
+
+    // clean it a bit
+    for (int i = 0; i < n_read; i++) {
+        for (std::vector<std::pair<int, int> >::iterator iter = repeat_anno[i].begin(); iter < repeat_anno[i].end(); ) {
+            if (iter+1 < repeat_anno[i].end()){
+                if ((iter->second == 1) and ((iter+1)->second == -1) and ((iter+1)->first - iter->first < gap_thre)){
+                    iter = repeat_anno[i].erase(iter);
+                    iter = repeat_anno[i].erase(iter); // fill gaps
+                } else if ((iter->second == (iter + 1)->second) and ((iter+1)->first - iter->first < gap_thre)) {
+                    repeat_anno[i].erase((iter + 1));
+                } else iter++;
+            } else iter ++;
+        }
+    }
+
+    /*for (int i = 0; i < n_read; i++) {
+        for (int j = 0; j < repeat_anno[i].size(); j++){
+            std::cout<< i << " " << repeat_anno[i][j].first << " " << repeat_anno[i][j].second << std::endl;
+        }
+    }*/
+
+    for (int i = 0; i < n_read; i++) {
+        rep << i << " ";
+        if (repeat_anno[i].size() > 0)
+            if (repeat_anno[i].front().second == -1)
+                rep << -1 << " "<<repeat_anno[i].front().first<<" ";
+
+        for (int j = 0; j < repeat_anno[i].size(); j++) {
+            if (j+1<repeat_anno[i].size())
+            if ((repeat_anno[i][j].second == 1) and (repeat_anno[i][j+1].second == -1))
+                rep << repeat_anno[i][j].first << " " << repeat_anno[i][j+1].first<< " ";
+        }
+
+        if (repeat_anno[i].size() > 0)
+        if (repeat_anno[i].back().second == 1)
+            rep << repeat_anno[i].back().first<<" " << -1 << " ";
+
+        rep << std::endl;
     }
 
     la.closeDB(); //close database

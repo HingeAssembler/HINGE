@@ -198,6 +198,8 @@ public:
 
     void profileCoverage(std::vector<LOverlap *> &alignments, std::vector<std::pair<int, int> > & coverage,int reso, int cutoff);
 
+    void profileCoveragefine(std::vector<LOverlap *> &alignments, std::vector<std::pair<int, int> > & coverage,int reso, int cutoff, int est_coverage);
+
     void repeatDetect(std::vector<std::pair<int, int> > & coverage, std::vector<std::pair<int, int> > & repeat);
 
 

@@ -4169,6 +4169,35 @@ void LAInterface::profileCoverage(std::vector<LOverlap *> &alignments, std::vect
     return;
 }
 
+
+void LAInterface::profileCoveragefine(std::vector<LOverlap *> &alignments, std::vector<std::pair<int, int> > & coverage,int reso, int cutoff, int est_coverage) {
+    std::vector<std::pair<int, int> > events;
+    int sz = alignments.size();
+    if (sz > est_coverage) sz = est_coverage;
+
+    for (int i = 0; i < sz; i ++) {
+        events.push_back(std::pair<int, int>(alignments[i]->abpos + cutoff, 1));
+        events.push_back(std::pair<int, int>(alignments[i]->aepos - cutoff, -1));
+    }
+
+    std::sort(events.begin(), events.end(), compare_event);
+
+    int pos = 0;
+    int i = 0;
+    int count = 0;
+    while (pos < events.size()) {
+        while ((events[pos].first < i*reso) and (pos < events.size())) {
+            count += events[pos].second;
+            pos++;
+        }
+        coverage.push_back(std::pair<int, int>(i*reso, count));
+        i++;
+    }
+    return;
+}
+
+
+
 void LAInterface::repeatDetect(std::vector<std::pair<int, int> > & coverage, std::vector<std::pair<int, int> > & repeat) {
     for (int i = 1; i < coverage.size(); i++) {
         if (coverage[i].second > 2*coverage[i-1].second) repeat.push_back(std::pair<int, int>(coverage[i].first, 1));
