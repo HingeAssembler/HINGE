@@ -130,6 +130,11 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
     return ret;
 }
 
+bool bridge(LOverlap* ovl, int s, int e){
+    return ((ovl->abpos < s - 500) and (ovl->aepos > e + 500));
+}
+
+
 int main(int argc, char *argv[]) {
 
     LAInterface la;
@@ -191,6 +196,7 @@ int main(int argc, char *argv[]) {
 
     std::cout<<"profile coverage" << std::endl;
     std::ofstream cov(std::string(name_db) + ".coverage.txt");
+    std::ofstream homo(std::string(name_db) + ".homologous.txt");
     std::ofstream rep(std::string(name_db) + ".repeat.txt");
 
     std::vector< std::vector<std::pair<int, int> > > coverages;
@@ -295,8 +301,10 @@ int main(int argc, char *argv[]) {
                 if ((iter->second == 1) and ((iter+1)->second == -1) and ((iter+1)->first - iter->first < gap_thre)){
                     iter = repeat_anno[i].erase(iter);
                     iter = repeat_anno[i].erase(iter); // fill gaps
-                } else if ((iter->second == (iter + 1)->second) and ((iter+1)->first - iter->first < gap_thre)) {
+                } else if (((iter->second == 1) and ((iter + 1)->second == 1)) and ((iter+1)->first - iter->first < gap_thre)) {
                     repeat_anno[i].erase((iter + 1));
+                } else if (((iter->second == -1) and ((iter + 1)->second == -1)) and ((iter+1)->first - iter->first < gap_thre)) {
+                    iter = repeat_anno[i].erase(iter);
                 } else iter++;
             } else iter ++;
         }
@@ -313,11 +321,34 @@ int main(int argc, char *argv[]) {
         if (repeat_anno[i].size() > 0)
             if (repeat_anno[i].front().second == -1)
                 rep << -1 << " "<<repeat_anno[i].front().first<<" ";
-
+        bool active = true;
         for (int j = 0; j < repeat_anno[i].size(); j++) {
             if (j+1<repeat_anno[i].size())
-            if ((repeat_anno[i][j].second == 1) and (repeat_anno[i][j+1].second == -1))
-                rep << repeat_anno[i][j].first << " " << repeat_anno[i][j+1].first<< " ";
+            if ((repeat_anno[i][j].second == 1) and (repeat_anno[i][j+1].second == -1)) {
+                rep << repeat_anno[i][j].first << " " << repeat_anno[i][j + 1].first << " ";
+                //check if all internal repeats are bridged by pile-B reads.
+                int s = repeat_anno[i][j].first;
+                int e = repeat_anno[i][j+1].first;
+
+                bool bridged = false;
+
+                //test bridging
+
+                for (int k = 0; k < idx3[i].size(); k++) {
+                    if (bridge(idx3[i][k], s, e)) {
+                        bridged = true;
+                        break;
+                    }
+                }
+
+                if (not bridged) active = false;
+            }
+
+
+        }
+        if (not active) {
+            //printf("read %d comes from homologus recombination\n", i);
+            homo << i << std::endl;
         }
 
         if (repeat_anno[i].size() > 0)
