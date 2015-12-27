@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
         repeat_anno.push_back(anno);
     }
 
-    int gap_thre = 200;
+    int gap_thre = 300;
 
     // clean it a bit
     for (int i = 0; i < n_read; i++) {

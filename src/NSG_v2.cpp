@@ -6,7 +6,7 @@
 #include "OverlapGraph.h"
 #include <algorithm>
 #include <fstream>
-
+#include <sstream>
 #include <iostream>
 #include <set>
 #include <omp.h>
@@ -139,14 +139,22 @@ int main(int argc, char *argv[]) {
     char * name_config = argv[4];
 
     std::string name_mask = std::string(name_db) + ".mas";
+    std::string name_max = std::string(name_db) + ".max";
+    std::string name_homo = std::string(name_db) + ".homologous.txt";
+    std::string name_rep = std::string(name_db) + ".repeat.txt";
+    std::string name_cov = std::string(name_db) + ".coverage.txt";
+    std::ofstream maximal_reads(name_max);
 
+    std::ifstream homo(name_homo);
+    std::vector<int> homo_reads;
+    int read_id;
+    while (homo >> read_id) homo_reads.push_back(read_id);
 
-	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
+    printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.openDB(name_db);
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
     la.openAlignmentFile(name_las);
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
-
 
 	int64 n_aln = la.getAlignmentNumber();
 	int n_read = la.getReadNumber();
@@ -161,7 +169,6 @@ int main(int argc, char *argv[]) {
 	la.getQV(QV,0,n_read);
 
     std::cout << "input data finished" <<std::endl;
-
 
     INIReader reader(name_config);
 
@@ -202,6 +209,34 @@ int main(int argc, char *argv[]) {
         reads[read]->effective_end = re;
     }
     std::cout<<"read mask finished" << std::endl;
+
+    FILE * repeat_file;
+    repeat_file = fopen(name_rep.c_str(), "r");
+    char * line = NULL;
+    size_t len = 0;
+    std::unordered_map<int, std::vector<std::pair<int, int>>> marked_repeats;
+
+    while (getline(&line, &len, repeat_file) != -1) {
+        std::stringstream ss;
+        ss << line;
+        int num;
+        ss >> num;
+        //printf("%d\n",num);
+        marked_repeats[num] = std::vector<std::pair<int, int>>();
+        int r1, r2;
+        while (!ss.eof()) {
+            ss >> r1 >> r2;
+            //printf("[%d %d]\n", r1, r2);
+            marked_repeats[num].push_back(std::pair<int, int>(r1,r2));
+        }
+    }
+    fclose(repeat_file);
+
+    std::cout<<"read marked repeats" << std::endl;
+
+    if (line)
+        free(line);
+
     int num_active_read = 0;
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) num_active_read ++;
@@ -215,10 +250,14 @@ int main(int argc, char *argv[]) {
     }
     std::cout<<"active reads:" << num_active_read<< std::endl;
 
+    //for (int i = 0; i < homo_reads.size(); i++) // filter reads with homologous recombinations
+    //    reads[homo_reads[i]]->active = false;
+
     for (int i = 0; i < n_read; i++) {
         idx.push_back(std::unordered_map<int, std::vector<LOverlap *> >());
         idx2.push_back(std::vector<LOverlap *>());
     }
+
 //int num_finished = 0;
 
 # pragma omp parallel for
@@ -285,7 +324,10 @@ int main(int argc, char *argv[]) {
 
     num_active_read = 0;
     for (int i = 0; i < n_read; i++) {
-        if (reads[i]->active) num_active_read ++;
+        if (reads[i]->active) {
+            num_active_read ++;
+            maximal_reads << i << std::endl;
+        }
     }
     std::cout<<"remove contained reads, active reads:" << num_active_read<< std::endl;
 
@@ -371,10 +413,30 @@ int main(int argc, char *argv[]) {
     }
 
 
+
     FILE * out;
     FILE * out2;
     out = fopen((std::string(argv[3]) + ".1").c_str(), "w");
     out2 = fopen((std::string(argv[3]) + ".2").c_str(), "w");
+
+
+    std::vector<bool> repeat_status_front;
+    std::vector<bool> repeat_status_back;
+
+
+    for (int i = 0; i < n_read; i++) {
+        if (not marked_repeats.empty()) {
+            if (marked_repeats[i].front().first == -1) repeat_status_front.push_back(true);
+            else repeat_status_front.push_back(false);
+        }
+        else repeat_status_front.push_back(false);
+
+        if (not marked_repeats.empty()) {
+            if (marked_repeats[i].back().second == -1) repeat_status_back.push_back(true);
+            else repeat_status_back.push_back(false);
+        }
+        else repeat_status_back.push_back(false);
+    }
 
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
@@ -394,6 +456,13 @@ int main(int argc, char *argv[]) {
                             if (idx2[i][j]->flags == 0) fprintf(out2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else fprintf(out2, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
 
+                            //remove certain hinges
+
+                            if ((repeat_status_back[i]) and (idx2[i][j]->eabpos < marked_repeats[i].front().first - 200)) {
+                                repeat_status_back[i] = false;
+                                //printf("remove %d\n",i);
+                            }
+
                         }
                         forward++;
                     }
@@ -410,12 +479,72 @@ int main(int argc, char *argv[]) {
                             if (idx2[i][j]->flags == 0) fprintf(out2, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else fprintf(out2, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
 
+                            // remove certain hinges
+
+                            if ((repeat_status_front[i]) and (idx2[i][j]->eaepos > marked_repeats[i].back().second + 200) and (idx2[i][j]->eaepos > marked_repeats[i].front().second + 200)) {
+                                repeat_status_front[i] = false;
+                                //printf("remove %d\n",i);
+                            }
                         }
                         backward++;
                     }
                 }
         }
     }
+
+
+
+
+    // filter hinges
+
+
+
+
+
+    printf("%d %d %d\n", n_read, repeat_status_front.size(), repeat_status_back.size());
+
+    //
+    //second pass, for those with repeats
+    //
+
+
+
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->active) {
+
+            for (int j = 0; j < idx2[i].size(); j++)
+                if (idx2[i][j]->active) {
+                    if ((idx2[i][j]->aln_type == FORWARD) and (reads[idx2[i][j]->bid]->active)) {
+                        if (repeat_status_back[i]) // choose the correct repeat status (with hinges)
+                        if (((idx2[i][j]->flags == 0) and repeat_status_front[idx2[i][j]->bid]) or ((idx2[i][j]->flags == 1) and repeat_status_back[idx2[i][j]->bid])) {
+                            if (idx2[i][j]->flags == 0) fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                            else fprintf(out, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                            if (idx2[i][j]->flags == 0) fprintf(out2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                            else fprintf(out, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                        }
+
+
+
+                    }
+                    else if  ((idx2[i][j]->aln_type == BACKWARD) and (reads[idx2[i][j]->bid]->active)) {
+                        if (repeat_status_front[i])
+                        if (((idx2[i][j]->flags == 0) and repeat_status_back[idx2[i][j]->bid]) or ((idx2[i][j]->flags == 1) and repeat_status_front[idx2[i][j]->bid])) {
+                            if (idx2[i][j]->flags == 0) fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                            else fprintf(out, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+
+                            if (idx2[i][j]->flags == 0) fprintf(out2, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                            else fprintf(out, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                        }
+
+                    }
+
+                }
+
+        }
+    }
+
+
+
 
     std::cout<<"sort and output finished" <<std::endl;
 

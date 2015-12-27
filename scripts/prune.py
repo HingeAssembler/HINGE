@@ -56,7 +56,8 @@ def de_clip(filename, n_iter):
         pass
     print nx.info(g)
     nx.write_graphml(g, filename.split('.')[0]+'.graphml')
-    
+    for node in g:
+        print node
     
 filename = sys.argv[1]
 de_clip(filename, 30)
