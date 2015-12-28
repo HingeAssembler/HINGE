@@ -1,6 +1,8 @@
 #!/bin/bash
 
-rsync -rizP --delete --exclude '.*' --exclude '*.pyc' --exclude 'figures' scripts/ $1@shannon.stanford.edu:/data/pacbio_assembly/AwesomeAssembler/scripts
+if [ "$2" == "scripts" ];
+then rsync -rizP --delete --exclude '.*' --exclude '*.pyc' --exclude 'figures' scripts/ $1@shannon.stanford.edu:/data/pacbio_assembly/AwesomeAssembler/scripts
+fi
 
 if [ "$2" == "push" ];
 then rsync -rizP --delete --exclude '.*' --exclude 'build' src/ $1@shannon.stanford.edu:/data/pacbio_assembly/AwesomeAssembler/src

@@ -159,6 +159,49 @@ int main(int argc, char *argv[]) {
 	la.getQV(QV,0,n_read);
     std::cout << "input data finished" <<std::endl;
 
+    for (int i = 0; i < n_read; i++) {
+        for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
+    }
+
+    std::vector<std::pair<int, int> > QV_mask;
+
+    for (int i = 0; i < n_read; i++) {
+        int s = 0, e = 0;
+        int max = 0, maxs = s, maxe = e;
+
+        for (int j = 0; j < QV[i].size(); j++) {
+            if (QV[i][j] == 1) {
+                e ++;
+            }
+            else {
+                if (e - s > max) {
+                    maxe = e ; maxs = s;
+                    max = e - s;
+                }
+
+                s = j+1;
+                e = j+1;
+            }
+        }
+
+        QV_mask.push_back(std::pair<int, int>(maxs*la.tspace, maxe*la.tspace));
+        // create mask by QV
+    }
+
+
+    /*for (int i = 0; i < 200; i++) {
+        printf("read %d: ",i+1);
+
+        printf("%d %d ", QV[i].size(), reads[i]->len);
+
+        for (int j = 0; j < QV[i].size(); j++) printf("%d ", QV[i][j]);
+        printf("[%d %d]", QV_mask[i].first, QV_mask[i].second);
+        printf("\n");
+    }
+    //for debug
+    */
+
+
     INIReader reader(name_config);
     if (reader.ParseError() < 0) {
         std::cout << "Can't load "<<name_config<<std::endl;
@@ -198,6 +241,10 @@ int main(int argc, char *argv[]) {
     std::ofstream cov(std::string(name_db) + ".coverage.txt");
     std::ofstream homo(std::string(name_db) + ".homologous.txt");
     std::ofstream rep(std::string(name_db) + ".repeat.txt");
+    std::ofstream filtered(std::string(name_db) + ".filtered.fasta");
+    std::ofstream hg(std::string(name_db) + ".hinges.txt");
+
+
 
     std::vector< std::vector<std::pair<int, int> > > coverages;
     std::vector< std::vector<std::pair<int, int> > > cgs; //coverage gradient;
@@ -272,9 +319,23 @@ int main(int argc, char *argv[]) {
                 end = start;
             }
         }
-        mask << i << " " << maxstart << " " << maxend << std::endl;
-        maskvec.push_back(std::pair<int, int>(maxstart + 200, maxend - 200));
+        //mask << i << " " << maxstart << " " << maxend << std::endl;
+        mask << i << " " << std::max(maxstart, QV_mask[i].first) << " " << std::min(maxend, QV_mask[i].second) << std::endl;
+        int s = std::max(maxstart, QV_mask[i].first);
+        int l = std::min(maxend, QV_mask[i].second) - std::max(maxstart, QV_mask[i].first);
+        if (l < 0) l = 0;
+        filtered << ">read_" << i << std::endl;
+        filtered << reads[i]->bases.substr(s,l) << std::endl;
+
+        //maskvec.push_back(std::pair<int, int>(maxstart + 200, maxend - 200));
+        maskvec.push_back(std::pair<int, int>(std::max(maxstart + 200, QV_mask[i].first), std::min(maxend - 200, QV_mask[i].second)));
     }
+
+
+
+
+
+
 
     //binarize coverage gradient;
 
@@ -356,6 +417,57 @@ int main(int argc, char *argv[]) {
             rep << repeat_anno[i].back().first<<" " << -1 << " ";
 
         rep << std::endl;
+    }
+    // need a better hinge detection
+
+    std::unordered_map<int, std::vector<std::pair<int, int>> > hinges;
+    // n_read pos -1 = in_hinge 1 = out_hinge
+
+    for (int i = 0; i < n_read; i++) {
+        hinges[i] = std::vector<std::pair<int, int>>();
+
+        for (int j = 0; j < repeat_anno[i].size(); j++) {
+            if (repeat_anno[i][j].second == -1) { // look for in hinges, negative gradient
+                bool bridged = true;
+                int support = 0;
+                for (int k = 0; k < idx3[i].size(); k++) {
+                    //printf("%d %d %d %d\n", idx3[i][k]->abpos, idx3[i][k]->aepos, maskvec[i].first, repeat_anno[i][j].first);
+                    if ((idx3[i][k]->abpos < maskvec[i].first + 200) and (idx3[i][k]->aepos > repeat_anno[i][j].first - 300) and (idx3[i][k]->aepos < repeat_anno[i][j].first + 300)) {
+                        support ++;
+                        if (support > 7) {
+                            bridged = false;
+                            break;
+                        }
+                    }
+                }
+                if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_anno[i][j].first,-1));
+
+            } else { // look for out_hinges, positive gradient
+                bool bridged = true;
+                int support = 0;
+                for (int k = 0; k < idx3[i].size(); k++) {
+                    if ((idx3[i][k]->abpos > repeat_anno[i][j].first - 300) and (idx3[i][k]->abpos < repeat_anno[i][j].first + 300) and (idx3[i][k]->aepos > maskvec[i].second - 200)) {
+                        support ++;
+                        if (support > 7) {
+                            bridged = false;
+                            break;
+                        }
+                    }
+                }
+                if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_anno[i][j].first, 1));
+
+            }
+
+        }
+
+    }
+
+    for (int i = 0; i < n_read; i++) {
+        hg << i << " ";
+        for (int j = 0; j < hinges[i].size(); j++) {
+            hg << hinges[i][j].first << " " << hinges[i][j].second << " ";
+        }
+        hg << std::endl;
     }
 
     la.closeDB(); //close database

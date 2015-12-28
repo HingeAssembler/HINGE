@@ -142,6 +142,7 @@ int main(int argc, char *argv[]) {
     std::string name_max = std::string(name_db) + ".max";
     std::string name_homo = std::string(name_db) + ".homologous.txt";
     std::string name_rep = std::string(name_db) + ".repeat.txt";
+    std::string name_hg = std::string(name_db) + ".hinges.txt";
     std::string name_cov = std::string(name_db) + ".coverage.txt";
     std::ofstream maximal_reads(name_max);
 
@@ -212,27 +213,56 @@ int main(int argc, char *argv[]) {
 
     FILE * repeat_file;
     repeat_file = fopen(name_rep.c_str(), "r");
+    FILE * hinge_file;
+    hinge_file = fopen(name_hg.c_str(), "r");
     char * line = NULL;
     size_t len = 0;
     std::unordered_map<int, std::vector<std::pair<int, int>>> marked_repeats;
 
     while (getline(&line, &len, repeat_file) != -1) {
         std::stringstream ss;
+        ss.clear();
         ss << line;
         int num;
         ss >> num;
         //printf("%d\n",num);
         marked_repeats[num] = std::vector<std::pair<int, int>>();
-        int r1, r2;
+        int r1 = 0, r2 = 0;
         while (!ss.eof()) {
+            r1 = 0;
+            r2 = 0;
             ss >> r1 >> r2;
-            //printf("[%d %d]\n", r1, r2);
-            marked_repeats[num].push_back(std::pair<int, int>(r1,r2));
+            if ((r1!=0) and (r2!=0)) {
+                //printf("[%d %d]\n", r1, r2);
+                marked_repeats[num].push_back(std::pair<int, int>(r1, r2));
+            }
         }
+        ss.clear();
     }
     fclose(repeat_file);
-
     std::cout<<"read marked repeats" << std::endl;
+    std::unordered_map<int, std::vector<std::pair<int, int>>> marked_hinges;
+    while (getline(&line, &len, hinge_file) != -1) {
+        std::stringstream ss;
+        ss << line;
+        int num;
+        ss >> num;
+        //printf("%d\n",num);
+        marked_hinges[num] = std::vector<std::pair<int, int>>();
+        int r1 = 0, r2 = 0;
+        while (!ss.eof()) {
+            r1 = 0; r2 = 0;
+            ss >> r1 >> r2;
+            if ((r1 != 0) and (r2 != 0)) {
+                //printf("[%d %d]\n", r1, r2);
+                marked_hinges[num].push_back(std::pair<int, int>(r1, r2));
+            }
+        }
+        ss.clear();
+    }
+    fclose(hinge_file);
+
+    std::cout<<"read marked hinges" << std::endl;
 
     if (line)
         free(line);
@@ -413,29 +443,54 @@ int main(int argc, char *argv[]) {
     }
 
 
+
     FILE * out;
     FILE * out2;
     out = fopen((std::string(argv[3]) + ".1").c_str(), "w");
     out2 = fopen((std::string(argv[3]) + ".2").c_str(), "w");
 
 
-    std::vector<bool> repeat_status_front;
-    std::vector<bool> repeat_status_back;
+
+    class Hinge {
+    public:
+        int pos;
+        int type; // 1, -1
+        bool active;
+        bool active2;
+        Hinge(int pos, int t, bool active):pos(pos),type(t), active(active), active2(false) {};
+        Hinge():pos(0),type(1), active(true) {};
+    };
+
+    std::unordered_map<int, std::vector<Hinge> > hinges_vec;
 
 
+
+    int n = 0;
     for (int i = 0; i < n_read; i++) {
-        if (not marked_repeats.empty()) {
-            if (marked_repeats[i].front().first == -1) repeat_status_front.push_back(true);
-            else repeat_status_front.push_back(false);
+        hinges_vec[i] = std::vector<Hinge>();
+        for (int j = 0; j < marked_hinges[i].size(); j++) {
+            hinges_vec[i].push_back(Hinge(marked_hinges[i][j].first, marked_hinges[i][j].second , true));
+            if (reads[i]->active) {
+                n ++;
+                //printf("%d %d %d\n", i, marked_hinges[i][j].first, marked_hinges[i][j].second);
+            }
         }
-        else repeat_status_front.push_back(false);
-
-        if (not marked_repeats.empty()) {
-            if (marked_repeats[i].back().second == -1) repeat_status_back.push_back(true);
-            else repeat_status_back.push_back(false);
-        }
-        else repeat_status_back.push_back(false);
     }
+
+    printf("%d hinges\n", n);
+
+
+    n = 0;
+    for (int i = 0; i < n_read; i++) {
+        for (int j = 0; j < hinges_vec[i].size(); j++) {
+            if ((reads[i]->active) and (hinges_vec[i][j].active)) n++;
+        }
+    }
+    printf("%d active hinges\n", n);
+
+
+
+
 
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
@@ -445,44 +500,168 @@ int main(int argc, char *argv[]) {
                 if (idx2[i][j]->active) {
                     if ((idx2[i][j]->aln_type == FORWARD) and (reads[idx2[i][j]->bid]->active)) {
                         if (forward < 1) {
-                            //if (idx2[i][j]->flags == 0) fprintf(out, "%d eb %d %d\n%d be %d %d\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->aepos - idx2[i][j]->abpos, idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->aepos - idx2[i][j]->abpos);
-                            //else fprintf(out, "%d ee %d %d\n%d ee %d %d\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->aepos - idx2[i][j]->abpos, idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->aepos - idx2[i][j]->abpos);
-                            //if (idx2[i][j]->flags == 0) fprintf(out, "%d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
-                            //else fprintf(out, "%d %d' [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
-                            if (idx2[i][j]->flags == 0) fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+
+                            /*if (idx2[i][j]->flags == 0) fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else fprintf(out, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
 
                             if (idx2[i][j]->flags == 0) fprintf(out2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else fprintf(out2, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
-
+                            */
                             //remove certain hinges
 
-                            if ((repeat_status_back[i]) and (idx2[i][j]->eabpos < marked_repeats[i].front().first - 200)) {
-                                repeat_status_back[i] = false;
-                                //printf("remove %d\n",i);
+                            for (int k = 0; k < hinges_vec[i].size(); k++) {
+                                if ((idx2[i][j]->eabpos < hinges_vec[i][k].pos - 400) and (hinges_vec[i][k].type == 1))
+                                    hinges_vec[i][k].active = false;
                             }
+
+                            /*for (int k = 0; k < hinges_vec[idx2[i][j]->bid].size(); k++) {
+                                if ((hinges_vec[idx2[i][j]->bid][k].type == 1) and (idx2[i][j]->flags == 1) and (idx2[i][j]->ebepos > idx2[i][j]->blen - hinges_vec[idx2[i][j]->bid][k].pos + 300))
+                                    hinges_vec[idx2[i][j]->bid][k].active2 = false;
+
+                                if ((hinges_vec[idx2[i][j]->bid][k].type == -1) and (idx2[i][j]->flags == 0) and (idx2[i][j]->ebepos > hinges_vec[idx2[i][j]->bid][k].pos + 300))
+                                    hinges_vec[idx2[i][j]->bid][k].active2 = false;
+                            }*/
+
+                            //if ((repeat_status_back[i]) and (idx2[i][j]->eabpos < marked_repeats[i].front().first - 200)) {
+                            //    repeat_status_back[i] = false;
+                                //printf("remove %d\n",i);
+                            //}
+
 
                         }
                         forward++;
                     }
                     else if ((idx2[i][j]->aln_type == BACKWARD) and (reads[idx2[i][j]->bid]->active)) {
                         if (backward < 1) {
-                            //if (idx2[i][j]->flags == 0) fprintf(out, "%d eb %d %d\n%d be %d %d\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->aepos - idx2[i][j]->abpos, idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->aepos - idx2[i][j]->abpos);
-                            //else fprintf(out, "%d bb %d %d\n%d bb %d %d\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->aepos - idx2[i][j]->abpos, idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->aepos - idx2[i][j]->abpos);
-                            //if (idx2[i][j]->flags == 0) fprintf(out, "%d' %d' [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
-                            //else fprintf(out, "%d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
 
-                            if (idx2[i][j]->flags == 0) fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                            /*if (idx2[i][j]->flags == 0) fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else fprintf(out, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
 
                             if (idx2[i][j]->flags == 0) fprintf(out2, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else fprintf(out2, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
-
+                            */
                             // remove certain hinges
 
-                            if ((repeat_status_front[i]) and (idx2[i][j]->eaepos > marked_repeats[i].back().second + 200) and (idx2[i][j]->eaepos > marked_repeats[i].front().second + 200)) {
-                                repeat_status_front[i] = false;
+                            //if ((repeat_status_front[i]) and (idx2[i][j]->eaepos > marked_repeats[i].back().second + 200) and (idx2[i][j]->eaepos > marked_repeats[i].front().second + 200)) {
+                            //    repeat_status_front[i] = false;
                                 //printf("remove %d\n",i);
+                            //}
+
+                            for (int k = 0; k < hinges_vec[i].size(); k++) {
+                                if ((idx2[i][j]->eaepos > hinges_vec[i][k].pos + 400) and (hinges_vec[i][k].type == -1))
+                                    hinges_vec[i][k].active = false;
+                            }
+
+
+                            /*for (int k = 0; k < hinges_vec[idx2[i][j]->bid].size(); k++) {
+                                if ((hinges_vec[idx2[i][j]->bid][k].type == 1) and (idx2[i][j]->flags == 0) and (idx2[i][j]->ebbpos < hinges_vec[idx2[i][j]->bid][k].pos - 300))
+                                    hinges_vec[idx2[i][j]->bid][k].active2 = false;
+
+                                if ((hinges_vec[idx2[i][j]->bid][k].type == -1) and (idx2[i][j]->flags == 1) and (idx2[i][j]->ebbpos < idx2[i][j]->blen - hinges_vec[idx2[i][j]->bid][k].pos - 300))
+                                    hinges_vec[idx2[i][j]->bid][k].active2 = false;
+                            }*/
+
+                        }
+                        backward++;
+                    }
+                }
+        }
+    }
+
+
+    n = 0;
+    for (int i = 0; i < n_read; i++) {
+        for (int j = 0; j < hinges_vec[i].size(); j++) {
+            if ((reads[i]->active) and ((hinges_vec[i][j].active) or hinges_vec[i][j].active2)) {
+                printf("%d %d %d\n", i, marked_hinges[i][j].first, marked_hinges[i][j].second);
+                n++;
+            }
+        }
+    }
+    printf("after filter %d active hinges\n", n);
+
+
+    // filter hinges
+    //
+    std::vector<bool> repeat_status_front;
+    std::vector<bool> repeat_status_back;
+
+
+    for (int i = 0; i < n_read; i++) {
+        bool in = false;
+        bool out = false;
+        for (int j = 0; j < hinges_vec[i].size(); j++) {
+            if (((hinges_vec[i][j].active) or (hinges_vec[i][j].active2)) and (hinges_vec[i][j].type == 1)) in = true;
+            if (((hinges_vec[i][j].active) or (hinges_vec[i][j].active2)) and (hinges_vec[i][j].type == -1)) out = true;
+        }
+        repeat_status_front.push_back(out);
+        repeat_status_back.push_back(in);
+    }
+
+
+
+
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->active) {
+            int forward = 0;
+            int backward = 0;
+            for (int j = 0; j < idx2[i].size(); j++)
+                if (idx2[i][j]->active) {
+                    if ((idx2[i][j]->aln_type == FORWARD) and (reads[idx2[i][j]->bid]->active)) {
+                        /*if (not repeat_status_back[i])*/ {
+                            if (forward < 1) {
+
+                                if (idx2[i][j]->flags == 0)
+                                    fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
+                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
+                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
+                                            idx2[i][j]->bes, idx2[i][j]->bee);
+                                else
+                                    fprintf(out, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
+                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
+                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
+                                            idx2[i][j]->bes, idx2[i][j]->bee);
+
+                                if (idx2[i][j]->flags == 0)
+                                    fprintf(out2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
+                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
+                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
+                                            idx2[i][j]->bes, idx2[i][j]->bee);
+                                else
+                                    fprintf(out2, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
+                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
+                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
+                                            idx2[i][j]->bes, idx2[i][j]->bee);
+
+                            }
+                        }
+                        forward++;
+                    }
+                    else if ((idx2[i][j]->aln_type == BACKWARD) and (reads[idx2[i][j]->bid]->active)) {
+                        if (backward < 1) {
+
+                            /*if (not repeat_status_front[i])*/ {
+                                if (idx2[i][j]->flags == 0)
+                                    fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
+                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
+                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
+                                            idx2[i][j]->bes, idx2[i][j]->bee);
+                                else
+                                    fprintf(out, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
+                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
+                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
+                                            idx2[i][j]->bes, idx2[i][j]->bee);
+
+                                if (idx2[i][j]->flags == 0)
+                                    fprintf(out2, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
+                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
+                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
+                                            idx2[i][j]->bes, idx2[i][j]->bee);
+                                else
+                                    fprintf(out2, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
+                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
+                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
+                                            idx2[i][j]->bes, idx2[i][j]->bee);
                             }
                         }
                         backward++;
@@ -492,15 +671,6 @@ int main(int argc, char *argv[]) {
     }
 
 
-    // filter hinges
-
-
-
-    printf("%d %d %d\n", n_read, repeat_status_front.size(), repeat_status_back.size());
-
-    //
-    //second pass, for those with repeats
-    //
 
 
     for (int i = 0; i < n_read; i++) {
@@ -522,7 +692,7 @@ int main(int argc, char *argv[]) {
                                         idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
                                         idx2[i][j]->bes, idx2[i][j]->bee);
                             if (idx2[i][j]->flags == 0)
-                                fprintf(out2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
+                                fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
                                         idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
                                         idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
                                         idx2[i][j]->bes, idx2[i][j]->bee);
@@ -551,7 +721,7 @@ int main(int argc, char *argv[]) {
                                         idx2[i][j]->bes, idx2[i][j]->bee);
 
                             if (idx2[i][j]->flags == 0)
-                                fprintf(out2, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
+                                fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
                                         idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
                                         idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
                                         idx2[i][j]->bes, idx2[i][j]->bee);
@@ -565,11 +735,17 @@ int main(int argc, char *argv[]) {
                     }
 
                 }
-
         }
     }
 
 
+
+
+    //printf("%d %d %d\n", n_read, repeat_status_front.size(), repeat_status_back.size());
+
+    //
+    //second pass, for those with repeats
+    //
 
     std::cout<<"sort and output finished" <<std::endl;
 
