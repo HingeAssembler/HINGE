@@ -216,6 +216,7 @@ int main(int argc, char *argv[]) {
     int CUT_OFF = reader.GetInteger("filter", "cut_off", -1);
     int THETA = reader.GetInteger("filter", "theta", -1);
 	int N_PROC = reader.GetInteger("running", "n_proc", 4);
+    int EST_COV = reader.GetInteger("filter", "ec", 0);
     int reso = 40;
 
     omp_set_num_threads(N_PROC);
@@ -272,6 +273,7 @@ int main(int argc, char *argv[]) {
     int total_cov = 0;
     for (int i = 0; i < n_read/500; i++) {
         for (int j = 0; j < coverages[i].size(); j++) {
+            printf("%d\n", coverages[i][j].second);
             total_cov += coverages[i][j].second;
             num_slot ++;
         }
@@ -279,6 +281,11 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Estimated coverage:" << total_cov / float(num_slot) << std::endl;
     int cov_est = total_cov / num_slot;
+
+
+    if (EST_COV != 0) cov_est = EST_COV;
+    std::cout << "Estimated coverage:" << cov_est << std::endl;
+
     /*coverages.clear();
     for (int i = 0; i < n_read; i ++) {
         std::vector<std::pair<int, int> > coverage;

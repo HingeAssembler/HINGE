@@ -22,6 +22,7 @@ class Node {
 public:
     int id;
     int strand;
+    bool pseudo = false;
     Node(int id, int strand): id(id), strand(strand) {};
     Node() {};
     void show(std::ofstream & out ) { out<<id; if (strand == 1) out<<"\'";}
