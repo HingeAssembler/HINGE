@@ -61,7 +61,7 @@ std::ostream& operator<<(std::ostream& out, const aligntype value){
 
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
     //Returns True if the sum of the match lengths of the two reads in ovl1 > the sum of the  overlap lengths of the two reads in ovl2
-    //Returns False otherwise
+    //Returns False otherwise.
     return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
 }
 
@@ -92,6 +92,7 @@ bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
 }
 
 std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
+//Returns sections of read a which are covered by overlaps. Each overlap is considered as <start_pos+cutoff,end_pos-cutoff>.
 {
     //std::cout<<"Merge"<<std::endl;
     std::vector<std::pair<int, int > > ret;
@@ -103,11 +104,14 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int c
         return ret;
     }
 
-    sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
+    //Where is sort defined ? Is this std::sort?
+    sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left (start position of overlap beginning on a)
 
     int left=intervals[0]->abpos + cutoff, right = intervals[0]->aepos - cutoff; //left, right means maximal possible interval now
 
-    for(int i = 1; i < n; i++)
+    for(int i = 1; i < n; i++) //Ovl1 ~ Ovl2 if Ovl1 and Ovl2 have a nonzero intersection. (that is both the b read maps to the same position on the a read)
+    //This defines a chain of  connected overlaps. This for loop returns a a vector ret which
+    // is a pair of <start of connected overlaps, end of connected overlaps>
     {
         if(intervals[i]->abpos + cutoff <= right)
         {
