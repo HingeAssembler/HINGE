@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
 	char * name_db = argv[1]; //.db file of reads to load
 	char * name_las = argv[2];//.las file of alignments
     char * name_mask = argv[3];
-    char * name_config = argv[4];//What is name_config?
+    char * name_config = argv[4];//.ini file with some settings
 	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.openDB(name_db);
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;

@@ -36,7 +36,7 @@ enum aligntype {
  * COVERED: read a covered by read b
  * MISMATCH_LEFT: read a has a chimeric section on the left, and read b align with the rest of read a and extend it to the left
  * MISMATCH_RIGHT: read a has a chimeric section on the right, read b align with the rest of read a and extend it to the right
- * UNDIFIEND: any other exceptions
+ * UNDIFINED: any other exceptions
 **/
 
 } ;
