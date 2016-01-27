@@ -151,6 +151,8 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
 }
 
 bool bridge(LOverlap* ovl, int s, int e){
+    //Returns True if [s e] on read a is bridged by ovl. False else.
+    //Put 500 in a typedef perhaps?
     return ((ovl->abpos < s - 500) and (ovl->aepos > e + 500));
 }
 
@@ -158,10 +160,10 @@ bool bridge(LOverlap* ovl, int s, int e){
 int main(int argc, char *argv[]) {
 
     LAInterface la;
-	char * name_db = argv[1];
-	char * name_las = argv[2];
+	char * name_db = argv[1]; //.db file of reads to load
+	char * name_las = argv[2];//.las file of alignments
     char * name_mask = argv[3];
-    char * name_config = argv[4];
+    char * name_config = argv[4];//What is name_config?
 	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.openDB(name_db);
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
@@ -170,10 +172,10 @@ int main(int argc, char *argv[]) {
 
 	int n_aln = la.getAlignmentNumber();
 	int n_read = la.getReadNumber();
-    std::vector<LOverlap *> aln;
+    std::vector<LOverlap *> aln;//Vector of pointers to all alignments
 	la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
-    std::vector<Read *> reads;
+    std::vector<Read *> reads; //Vector of pointers to all reads
     la.getRead(reads,0,n_read);
 	std::vector<std::vector<int>>  QV;
 	la.getQV(QV,0,n_read);
@@ -182,7 +184,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
     }
-
+    //Are we using QV at all?
     std::vector<std::pair<int, int> > QV_mask;
 
     for (int i = 0; i < n_read; i++) {
@@ -254,7 +256,7 @@ int main(int argc, char *argv[]) {
     }
 
 # pragma omp parallel for
-    for (int i = 0; i < n_read; i++) {
+    for (int i = 0; i < n_read; i++) {// sort overlaps of a reads
         std::sort(idx3[i].begin(), idx3[i].end(), compare_overlap);
     }
 
@@ -272,13 +274,16 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < n_read; i ++) {
         std::vector<std::pair<int, int> > coverage;
+        //TODO : Implement set based gradient
         std::vector<std::pair<int, int> > cg;
+        //What is profileCoverage?
         la.profileCoverage(idx3[i], coverage, reso, CUT_OFF);
         cov << "read " << i <<" ";
         for (int j = 0; j < coverage.size(); j++)
             cov << coverage[j].first << ","  << coverage[j].second << " ";
         cov << std::endl;
 
+        //Computes coverage gradients.
         if (coverage.size() >= 2)
             for (int j = 0; j < coverage.size() - 1; j++) {
                 cg.push_back(std::pair<int,int>(coverage[j].first, coverage[j+1].second - coverage[j].second));
@@ -291,6 +296,7 @@ int main(int argc, char *argv[]) {
 
     int num_slot = 0;
     int total_cov = 0;
+    //Finding the average coverage
     for (int i = 0; i < n_read/500; i++) {
         for (int j = 0; j < coverages[i].size(); j++) {
             printf("%d\n", coverages[i][j].second);
@@ -327,6 +333,8 @@ int main(int argc, char *argv[]) {
             coverages[i][j].second -= MIN_COV;
             if (coverages[i][j].second < 0) coverages[i][j].second = 0;
         }
+
+        //What is going on here?
         int start = 0;
         int end = start;
         int maxlen = 0, maxstart = 0, maxend = 0;
