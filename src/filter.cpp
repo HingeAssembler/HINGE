@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
     }
-    //Are we using QV at all?
+    //Are we using QV at all? What is going on here?
     std::vector<std::pair<int, int> > QV_mask;
 
     for (int i = 0; i < n_read; i++) {
@@ -375,7 +375,7 @@ int main(int argc, char *argv[]) {
     //binarize coverage gradient;
 
     std::vector<std::vector<std::pair<int, int> > > repeat_anno;
-
+    //What is going on here?
     for (int i = 0; i < n_read; i++) {
         std::vector<std::pair<int, int> > anno;
         for (int j = 0; j < cgs[i].size(); j++) {
