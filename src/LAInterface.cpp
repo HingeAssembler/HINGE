@@ -4147,6 +4147,7 @@ bool compare_event(std::pair<int, int> event1,std::pair<int, int> event2) {
 
 
 void LAInterface::profileCoverage(std::vector<LOverlap *> &alignments, std::vector<std::pair<int, int> > & coverage,int reso, int cutoff) {
+    //Returns coverage, which is a pair of ints <i*reso, coverage at position i*reso of read a>
     std::vector<std::pair<int, int> > events;
     for (int i = 0; i < alignments.size(); i ++) {
         events.push_back(std::pair<int, int>(alignments[i]->abpos + cutoff, 1));
