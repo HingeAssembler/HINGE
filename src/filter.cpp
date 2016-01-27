@@ -66,7 +66,8 @@ bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
 }
 
 bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2) {
-    //
+    //Returns True if the sum of matches over both reads for overlaps in ovl1  > sum of matches over both reads for overlaps in ovl2
+    //Returns False otherwise
     int sum1 = 0;
     int sum2 = 0;
     for (int i = 0; i < ovl1->size(); i++) sum1 += (*ovl1)[i]->aepos - (*ovl1)[i]->abpos + (*ovl1)[i]->bepos - (*ovl1)[i]->bbpos;
@@ -75,14 +76,18 @@ bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vect
 }
 
 bool compare_pos(LOverlap * ovl1, LOverlap * ovl2) {
+    //True if ovl1 starts earlier than ovl2 on read a.
     return (ovl1->abpos) > (ovl2->abpos);
 }
 
 bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
+    //True if ovl2 starts earlier than ovl1 on read a.
+    //flips the two argumenst in compare_pos
     return ovl1->abpos < ovl2->abpos;
 }
 
 bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
+    //Same as compare_pos?
     return ovl1->abpos > ovl2->abpos;
 }
 
@@ -90,7 +95,7 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int c
 {
     //std::cout<<"Merge"<<std::endl;
     std::vector<std::pair<int, int > > ret;
-    int n = intervals.size();
+    int n = intervals.size(); // Length of the vector intervals
     if (n == 0) return ret;
 
     if(n == 1) {
