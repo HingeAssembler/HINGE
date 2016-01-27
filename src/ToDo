@@ -1,5 +1,15 @@
 Comments/To do
 
 
-Two high-quality matches smoothly connected (no low qv, no low coverage region in between)
+- Two high-quality matches smoothly connected (no low qv, no low coverage region in between)
 Problem: Sequence of sets of indices. Identify gradients in set element
+
+- Write function similar to profileCoverage that checks for k-coverage. This should take care of both chimeric segments 
+and "homologous recombination" issue
+
+- When checking for hinges, line 458. When alignment ends in +-300 interval around rising/falling edge, should check whether
+the actual read extends longer. 
+
+- Before doing the hinge test (say, at a rising edge), you should check whether there is any read that extends from the 
+annotation event until the end of the (effective) read. If there isn't, place a hinge anyway. Otherwise, do the current test
+
