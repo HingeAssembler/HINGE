@@ -25,12 +25,13 @@
 #define LAST_READ_SYMBOL  '$'
 
 
-typedef std::tuple<Node, Node, int> Edge_w;
+typedef std::tuple<Node, Node, int> Edge_w; //Edge with weight
 
-typedef std::pair<Node, Node> Edge_nw;
+typedef std::pair<Node, Node> Edge_nw; //Edge without weights
 
 
 static int ORDER(const void *l, const void *r) {
+    //Returns the difference between l and r. Why void pointer?
     int x = *((int32 *) l);
     int y = *((int32 *) r);
     return (x - y);
@@ -38,6 +39,7 @@ static int ORDER(const void *l, const void *r) {
 
 
 std::ostream& operator<<(std::ostream& out, const aligntype value){
+    //What is this doing?
     static std::map<aligntype, std::string> strings;
     if (strings.size() == 0){
 #define INSERT_ELEMENT(p) strings[p] = #p
@@ -64,6 +66,7 @@ bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
 }
 
 bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2) {
+    //
     int sum1 = 0;
     int sum2 = 0;
     for (int i = 0; i < ovl1->size(); i++) sum1 += (*ovl1)[i]->aepos - (*ovl1)[i]->abpos + (*ovl1)[i]->bepos - (*ovl1)[i]->bbpos;
