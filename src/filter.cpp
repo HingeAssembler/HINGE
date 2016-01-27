@@ -128,7 +128,13 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int c
     return ret;
 }
 
+//Interval = pair<int, int>. Defined in LAInterface.h
 Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
+//Returns <start_pos, end_pos>
+//start_pos : the first position at which Read a of the overlaps have at least min_cov matches on it.
+//end_pos : the last position that the  (#overlaps- min_cov)th read (in order of start positions ends).
+//Should compare_overlap_aepos actually compare aepos? If that is done, then the end_pos will be the last position
+// on the a read so that all positions beyond have less than min_cov matches on them
     Interval ret;
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
 
