@@ -163,10 +163,10 @@ int main(int argc, char *argv[]) {
 	char * name_db = argv[1]; //.db file of reads to load
 	char * name_las = argv[2];//.las file of alignments
     char * name_mask = argv[3];
-    char * name_config = argv[4];//What is name_config?
+    char * name_config = argv[4];//name of the configuration file, in INI format
 	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.openDB(name_db);
-    std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
+    std::cout<<"# Reads:" << la.getReadNumber() << std::endl; // output some statistics 
     la.openAlignmentFile(name_las);
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
 
@@ -178,14 +178,16 @@ int main(int argc, char *argv[]) {
     std::vector<Read *> reads; //Vector of pointers to all reads
     la.getRead(reads,0,n_read);
 	std::vector<std::vector<int>>  QV;
-	la.getQV(QV,0,n_read);
+	la.getQV(QV,0,n_read); // load QV track from .db file 
     std::cout << "input data finished" <<std::endl;
 
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
     }
-    //Are we using QV at all? What is going on here?
+    //Binarize QV vector, 40 is the threshold
+    
     std::vector<std::pair<int, int> > QV_mask;
+    // QV_mask is the mask based on QV for reads, for each read, it has one pair [start, end]
 
     for (int i = 0; i < n_read; i++) {
         int s = 0, e = 0;
@@ -205,8 +207,8 @@ int main(int argc, char *argv[]) {
                 e = j+1;
             }
         }
-
-        QV_mask.push_back(std::pair<int, int>(maxs*la.tspace, maxe*la.tspace));
+	// get the longest consecutive region that has good QV 
+        QV_mask.push_back(std::pair<int, int>(maxs*la.tspace, maxe*la.tspace)); // tspace the the interval of trace points
         // create mask by QV
     }
 
@@ -220,7 +222,7 @@ int main(int argc, char *argv[]) {
         printf("[%d %d]", QV_mask[i].first, QV_mask[i].second);
         printf("\n");
     }
-    //for debug
+    //display, for debug
     */
 
 
@@ -237,9 +239,9 @@ int main(int argc, char *argv[]) {
     int MIN_COV = reader.GetInteger("filter", "min_cov", -1);
     int CUT_OFF = reader.GetInteger("filter", "cut_off", -1);
     int THETA = reader.GetInteger("filter", "theta", -1);
-	int N_PROC = reader.GetInteger("running", "n_proc", 4);
-    int EST_COV = reader.GetInteger("filter", "ec", 0);
-    int reso = 40;
+    int N_PROC = reader.GetInteger("running", "n_proc", 4);
+    int EST_COV = reader.GetInteger("filter", "ec", 0); // load the estimated coverage (probably from other programs) from ini file, if it is zero, then estimate it
+    int reso = 40; // resolution of masks, repeat annotation, coverage, etc  = 40 basepairs 
 
     omp_set_num_threads(N_PROC);
 
@@ -276,7 +278,7 @@ int main(int argc, char *argv[]) {
         std::vector<std::pair<int, int> > coverage;
         //TODO : Implement set based gradient
         std::vector<std::pair<int, int> > cg;
-        //What is profileCoverage?
+        //profileCoverage: get the coverage based on pile-o-gram
         la.profileCoverage(idx3[i], coverage, reso, CUT_OFF);
         cov << "read " << i <<" ";
         for (int j = 0; j < coverage.size(); j++)
@@ -296,7 +298,7 @@ int main(int argc, char *argv[]) {
 
     int num_slot = 0;
     int total_cov = 0;
-    //Finding the average coverage
+    //Finding the average coverage, probing a small proportion of reads
     for (int i = 0; i < n_read/500; i++) {
         for (int j = 0; j < coverages[i].size(); j++) {
             printf("%d\n", coverages[i][j].second);
@@ -307,23 +309,13 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Estimated coverage:" << total_cov / float(num_slot) << std::endl;
     int cov_est = total_cov / num_slot;
-
+    //get estimated coverage
 
     if (EST_COV != 0) cov_est = EST_COV;
-    std::cout << "Estimated coverage:" << cov_est << std::endl;
-
-    /*coverages.clear();
-    for (int i = 0; i < n_read; i ++) {
-        std::vector<std::pair<int, int> > coverage;
-        la.profileCoveragefine(idx3[i], coverage, reso, CUT_OFF, total_cov/num_slot);
-        cov << "read " << i <<" ";
-        for (int j = 0; j < coverage.size(); j++)
-            cov << coverage[j].first << ","  << coverage[j].second << " ";
-        cov << std::endl;
-        coverages.push_back(coverage);
-    }*/
+    std::cout << "Estimated coverage:" << cov_est << std::endl; //if the coverage is specified by ini file, cover the estimated one
 
     std::vector<std::pair<int, int>> maskvec;
+    // mask vector, same format as mask_QV
     if (MIN_COV < cov_est/3)
         MIN_COV = cov_est/3;
 
@@ -334,7 +326,7 @@ int main(int argc, char *argv[]) {
             if (coverages[i][j].second < 0) coverages[i][j].second = 0;
         }
 
-        //What is going on here? Computes the maximum contiguous region in the read with coverage > MIN_COV
+        //get the longest consecutive region that has decent coverage, decent coverage = estimated coverage / 3
         int start = 0;
         int end = start;
         int maxlen = 0, maxstart = 0, maxend = 0;
@@ -364,18 +356,15 @@ int main(int argc, char *argv[]) {
 
         //maskvec.push_back(std::pair<int, int>(maxstart + 200, maxend - 200));
         maskvec.push_back(std::pair<int, int>(std::max(maxstart + 200, QV_mask[i].first), std::min(maxend - 200, QV_mask[i].second)));
+        
+        //get the interestion of two masks
     }
-
-
-
-
-
 
 
     //binarize coverage gradient;
 
     std::vector<std::vector<std::pair<int, int> > > repeat_anno;
-    //What is going on here?
+    //detect repeats based on coverage gradient, mark it has rising (1) or falling (-1)
     for (int i = 0; i < n_read; i++) {
         std::vector<std::pair<int, int> > anno;
         for (int j = 0; j < cgs[i].size(); j++) {
@@ -390,7 +379,7 @@ int main(int argc, char *argv[]) {
 
     int gap_thre = 300;
 
-    // clean it a bit
+    // clean it a bit, merge consecutive 1, or consecutive -1, or adjacent 1 and -1 if their position is within gap_threshold (could be bursty error)
     for (int i = 0; i < n_read; i++) {
         for (std::vector<std::pair<int, int> >::iterator iter = repeat_anno[i].begin(); iter < repeat_anno[i].end(); ) {
             if (iter+1 < repeat_anno[i].end()){
@@ -440,7 +429,6 @@ int main(int argc, char *argv[]) {
                 if (not bridged) active = false;
             }
 
-
         }
         if (not active) {
             //printf("read %d comes from homologus recombination\n", i);
@@ -450,11 +438,11 @@ int main(int argc, char *argv[]) {
         if (repeat_anno[i].size() > 0)
         if (repeat_anno[i].back().second == 1)
             rep << repeat_anno[i].back().first<<" " << -1 << " ";
-
         rep << std::endl;
     }
     // need a better hinge detection
 
+	// get hinges from repeat annotation information
     std::unordered_map<int, std::vector<std::pair<int, int>> > hinges;
     // n_read pos -1 = in_hinge 1 = out_hinge
 
@@ -483,7 +471,7 @@ int main(int argc, char *argv[]) {
                 for (int k = 0; k < idx3[i].size(); k++) {
                     if ((idx3[i][k]->abpos > repeat_anno[i][j].first - 300) and (idx3[i][k]->abpos < repeat_anno[i][j].first + 300) and (idx3[i][k]->aepos > maskvec[i].second - 200)) {
                         support ++;
-                        if (support > 7) {
+                        if (support > 7) { // heuristic here
                             bridged = false;
                             break;
                         }
@@ -492,11 +480,10 @@ int main(int argc, char *argv[]) {
                 if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_anno[i][j].first, 1));
 
             }
-
         }
-
     }
 
+	//output hinges
     for (int i = 0; i < n_read; i++) {
         hg << i << " ";
         for (int j = 0; j < hinges[i].size(); j++) {
