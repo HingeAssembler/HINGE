@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
             if (coverages[i][j].second < 0) coverages[i][j].second = 0;
         }
 
-        //What is going on here?
+        //What is going on here? Computes the maximum contiguous region in the read with coverage > MIN_COV
         int start = 0;
         int end = start;
         int maxlen = 0, maxstart = 0, maxend = 0;
