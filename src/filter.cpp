@@ -58,6 +58,8 @@ std::ostream& operator<<(std::ostream& out, const aligntype value){
 
 
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
+    //Returns True if the sum of the match lengths of the two reads in ovl1 > the sum of the  overlap lengths of the two reads in ovl2
+    //Returns False otherwise
     return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
 }
 
