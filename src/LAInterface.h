@@ -90,7 +90,8 @@ public:
     aligntype aln_type = UNDIFINED;
     void addtype(int);
     void addtype2(int max_overhang);
-    static const int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
+	void AddTypesAsymmetric(int max_overhang);
+	static const int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
 	bool active = true;
     uint16 *trace_pts;
     int trace_pts_len;
