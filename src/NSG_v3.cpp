@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
     }
 
     int num_overlaps = 0;
-    for (int i = 0; i < n_read; i++) {
+    for (int i = 0; i < n_read; i++) {//Isn't this just 0 or 1?
         num_overlaps += idx2[i].size();
     }
     std::cout<<num_overlaps << " overlaps" << std::endl;
@@ -323,10 +323,10 @@ int main(int argc, char *argv[]) {
             idx2[i][j]->aes = reads[idx2[i][j]->aid]->effective_start;
             idx2[i][j]->aee = reads[idx2[i][j]->aid]->effective_end;
 
-            if (idx2[i][j]->flags == 0) {
+            if (idx2[i][j]->flags == 0) {//Where are flags set?
                 idx2[i][j]->bes = reads[idx2[i][j]->bid]->effective_start;
                 idx2[i][j]->bee = reads[idx2[i][j]->bid]->effective_end;
-            } else {
+            } else {//looks like an iverted match
                 idx2[i][j]->bes = idx2[i][j]->blen - reads[idx2[i][j]->bid]->effective_end;
                 idx2[i][j]->bee = idx2[i][j]->blen - reads[idx2[i][j]->bid]->effective_start;
             }
@@ -337,7 +337,7 @@ int main(int argc, char *argv[]) {
             }
             std::cout<<std::endl;*/
             //printf("before %d %d %d %d ov %d %d %d %d\n", aln[i]->aes, aln[i]->aee, aln[i]->bes, aln[i]->bee, aln[i]->abpos, aln[i]->aepos, aln[i]->bbpos, aln[i]->bepos);
-            idx2[i][j]->trim_overlap();
+            idx2[i][j]->trim_overlap();//What does this do?
             //printf("after %d %d %d %d ov %d %d %d %d\n", aln[i]->aes, aln[i]->aee, aln[i]->bes, aln[i]->bee, aln[i]->eabpos, aln[i]->eaepos, aln[i]->ebbpos, aln[i]->ebepos);
             //num_finished ++;
             //if (num_finished%100000 == 0) printf("%lf percent finished\n", num_finished/double(aln.size())*100);
