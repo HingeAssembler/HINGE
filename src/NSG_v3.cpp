@@ -432,8 +432,8 @@ int main(int argc, char *argv[]) {
                 int aid = i;
                 int bid = it->second->bid;
                 idx3[aid][bid]->weight =
-                        idx3[aid][bid]->eaepos - idx3[aid][bid]->eabpos
-                        + idx3[bid][aid]->eaepos - idx3[bid][aid]->eabpos;
+                        idx3[aid][bid]->eff_aepos - idx3[aid][bid]->eff_abpos
+                        + idx3[bid][aid]->eff_aepos - idx3[bid][aid]->eff_abpos;
                 /*if (idx3[aid][bid]->aln_type == FORWARD) {
                     if (idx3[aid][bid]->flags == 0) idx3[bid][aid]->aln_type = BACKWARD;
                     else idx3[bid][aid]->aln_type = FORWARD;
