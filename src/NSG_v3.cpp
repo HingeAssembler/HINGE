@@ -471,6 +471,8 @@ int main(int argc, char *argv[]) {
     FILE * out2;
     out = fopen((std::string(argv[3]) + ".1").c_str(), "w");
     out2 = fopen((std::string(argv[3]) + ".2").c_str(), "w");
+    out3 = fopen((std::string(argv[3]) + ".hinges").c_str(), "w");
+
 
 
 
@@ -749,22 +751,22 @@ int main(int argc, char *argv[]) {
                         if (((idx2[i][j]->flags == 0) and repeat_status_front[idx2[i][j]->bid])
                             or ((idx2[i][j]->flags == 1) and repeat_status_back[idx2[i][j]->bid])) {
                             if (idx2[i][j]->flags == 0)
-                                fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
+                                fprintf(out3, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
                                         idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
                                         idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
                                         idx2[i][j]->bes, idx2[i][j]->bee);
                             else
-                                fprintf(out, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
+                                fprintf(out3, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
                                         idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
                                         idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
                                         idx2[i][j]->bes, idx2[i][j]->bee);
                             if (idx2[i][j]->flags == 0)
-                                fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
+                                fprintf(out3, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
                                         idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
                                         idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
                                         idx2[i][j]->bes, idx2[i][j]->bee);
                             else
-                                fprintf(out, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
+                                fprintf(out3, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
                                         idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
                                         idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
                                         idx2[i][j]->bes, idx2[i][j]->bee);
@@ -778,23 +780,23 @@ int main(int argc, char *argv[]) {
                         if (((idx2[i][j]->flags == 0) and repeat_status_back[idx2[i][j]->bid])
                             or ((idx2[i][j]->flags == 1) and repeat_status_front[idx2[i][j]->bid])) {
                             if (idx2[i][j]->flags == 0)
-                                fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
+                                fprintf(out3, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
                                         idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
                                         idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
                                         idx2[i][j]->bes, idx2[i][j]->bee);
                             else
-                                fprintf(out, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
+                                fprintf(out3, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
                                         idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
                                         idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
                                         idx2[i][j]->bes, idx2[i][j]->bee);
 
                             if (idx2[i][j]->flags == 0)
-                                fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
+                                fprintf(out3, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
                                         idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
                                         idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
                                         idx2[i][j]->bes, idx2[i][j]->bee);
                             else
-                                fprintf(out, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
+                                fprintf(out3, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
                                         idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
                                         idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
                                         idx2[i][j]->bes, idx2[i][j]->bee);
