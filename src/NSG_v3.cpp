@@ -194,15 +194,18 @@ int main(int argc, char *argv[]) {
     //std::unordered_map<int, std::vector <LOverlap * > >idx3,idx4; // this is the pileup
     std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx; 
     /*
-    	idx is a vector of length n_read, each element idx3[read A id] is a map, from read B id to a vector of overlaps
+    	idx is a vector of length n_read, each element idx3[read A id] is a map, 
+    	from read B id to a vector of overlaps
     */
     std::vector<std::vector<LOverlap *>> idx2;
     /*
-    	idx2 is a vector of length n_read, each element idx2[read A id] is a vector, for each read B, we put the best overlap into that vector
+    	idx2 is a vector of length n_read, each element idx2[read A id] is a vector, 
+    	for each read B, we put the best overlap into that vector
     */
     std::vector<std::unordered_map<int, LOverlap *>> idx3;
 	/*
-		idx3 is a vector of length n_read, each element idx3[read A id] is a map, from read read B id to the best overlap of read A and read B
+		idx3 is a vector of length n_read, each element idx3[read A id] is a map, 
+		from read read B id to the best overlap of read A and read B
 	*/
 
     FILE * mask_file;
