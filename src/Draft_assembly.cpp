@@ -410,16 +410,16 @@ int main(int argc, char *argv[]) {
 # pragma omp parallel for
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active) {
-                aln[i]->aes = reads[aln[i]->aid]->effective_start;
-                aln[i]->aee = reads[aln[i]->aid]->effective_end;
+                aln[i]->eff_astart = reads[aln[i]->aid]->effective_start;
+                aln[i]->eff_aend = reads[aln[i]->aid]->effective_end;
 
 				if (aln[i]->flags == 0) {
-					aln[i]->bes = reads[aln[i]->bid]->effective_start;
-                	aln[i]->bee = reads[aln[i]->bid]->effective_end;
+					aln[i]->eff_bstart = reads[aln[i]->bid]->effective_start;
+                	aln[i]->eff_bend = reads[aln[i]->bid]->effective_end;
 				}
 				else {
-					aln[i]->bes = aln[i]->blen - reads[aln[i]->bid]->effective_end;
-                	aln[i]->bee = aln[i]->blen - reads[aln[i]->bid]->effective_start;
+					aln[i]->eff_bstart = aln[i]->blen - reads[aln[i]->bid]->effective_end;
+                	aln[i]->eff_bend = aln[i]->blen - reads[aln[i]->bid]->effective_start;
 				}
             }
         }
@@ -799,30 +799,30 @@ int main(int argc, char *argv[]) {
 			abpos = currentaln->abpos;
 			aepos = currentaln->aepos;
 
-			aes = currentaln->aes;
-			aee = currentaln->aee;
+			aes = currentaln->eff_astart;
+			aee = currentaln->eff_aend;
 
 		} else {
 			abpos = alen - currentaln->aepos;
 			aepos = alen - currentaln->abpos;
 
-			aes = alen - currentaln->aee;
-			aee = alen - currentaln->aes;
+			aes = alen - currentaln->eff_aend;
+			aee = alen - currentaln->eff_astart;
 		}
 
 		if (((std::get<1>(edgelist[i]).strand == 0) and (currentaln->flags == 0)) or ((std::get<1>(edgelist[i]).strand == 1) and (currentaln->flags == 1))) {
 			bbpos = currentaln->bbpos;
 			bepos = currentaln->bepos;
 
-			bes = currentaln->bes;
-			bee = currentaln->bee;
+			bes = currentaln->eff_bstart;
+			bee = currentaln->eff_bend;
 
 		} else {
 			bbpos = blen - currentaln->bepos;
 			bepos = blen - currentaln->bbpos;
 
-			bes = blen - currentaln->bee;
-			bee = blen - currentaln->bes;
+			bes = blen - currentaln->eff_bend;
+			bee = blen - currentaln->eff_bstart;
 
 		}
 
@@ -833,10 +833,10 @@ int main(int argc, char *argv[]) {
         new_ovl->aepos = aepos;
         new_ovl->bbpos = bbpos;
         new_ovl->bepos = bepos;
-        new_ovl->aee = aee;
-        new_ovl->aes = aes;
-        new_ovl->bee = bee;
-        new_ovl->bes = bes;
+        new_ovl->eff_aend = aee;
+        new_ovl->eff_astart = aes;
+        new_ovl->eff_bend = bee;
+        new_ovl->eff_bstart = bes;
         new_ovl->alen = currentaln->alen;
         new_ovl->blen = currentaln->blen;
         new_ovl->aid = std::get<0>(edgelist[i]).id;

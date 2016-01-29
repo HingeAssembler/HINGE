@@ -80,13 +80,13 @@ public:
     int diffs; //differences
     int abpos, bbpos; // starting position and ending position of alignment in read a
     int aepos, bepos; // starting position and ending position of alignment in read b
-    int eabpos, ebbpos, eaepos, ebepos;
+    int eff_abpos, eff_bbpos, eff_aepos, eff_bepos;
     int tps;
     int flags; //flags, reverse complement = 1, same direction = 0
-    int aes,aee,bes,bee;
+    int eff_astart, eff_aend, eff_bstart, eff_bend;
     aligntype aln_type = UNDIFINED;
-    void addtype(int);
-    void addtype2(int max_overhang);
+    void addtype(int); // depreciated
+    void addtype2(int max_overhang); //classify overlaps
     static const int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
 	bool active = true;
     uint16 *trace_pts;

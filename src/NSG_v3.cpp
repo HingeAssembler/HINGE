@@ -53,8 +53,8 @@ bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
 }
 
 bool compare_overlap_effective(LOverlap * ovl1, LOverlap * ovl2) {
-    return ((ovl1->eaepos - ovl1->eabpos + ovl1->ebepos - ovl1->ebbpos) >
-            (ovl2->eaepos - ovl2->eabpos + ovl2->ebepos - ovl2->ebbpos));
+    return ((ovl1->eff_aepos - ovl1->eff_abpos + ovl1->eff_bepos - ovl1->eff_bbpos) >
+            (ovl2->eff_aepos - ovl2->eff_abpos + ovl2->eff_bepos - ovl2->eff_bbpos));
 }
 
 bool compare_overlap_weight(LOverlap * ovl1, LOverlap * ovl2) {
@@ -333,15 +333,15 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         bool contained = false;
         for (int j = 0; j < idx2[i].size(); j++){
-            idx2[i][j]->aes = reads[idx2[i][j]->aid]->effective_start;
-            idx2[i][j]->aee = reads[idx2[i][j]->aid]->effective_end;
+            idx2[i][j]->eff_astart = reads[idx2[i][j]->aid]->effective_start;
+            idx2[i][j]->eff_aend = reads[idx2[i][j]->aid]->effective_end;
 
             if (idx2[i][j]->flags == 0) {//Where are flags set?
-                idx2[i][j]->bes = reads[idx2[i][j]->bid]->effective_start;
-                idx2[i][j]->bee = reads[idx2[i][j]->bid]->effective_end;
+                idx2[i][j]->eff_bstart = reads[idx2[i][j]->bid]->effective_start;
+                idx2[i][j]->eff_bend = reads[idx2[i][j]->bid]->effective_end;
             } else {//looks like an iverted match
-                idx2[i][j]->bes = idx2[i][j]->blen - reads[idx2[i][j]->bid]->effective_end;
-                idx2[i][j]->bee = idx2[i][j]->blen - reads[idx2[i][j]->bid]->effective_start;
+                idx2[i][j]->eff_bstart = idx2[i][j]->blen - reads[idx2[i][j]->bid]->effective_end;
+                idx2[i][j]->eff_bend = idx2[i][j]->blen - reads[idx2[i][j]->bid]->effective_start;
             }
 
 
@@ -353,11 +353,11 @@ int main(int argc, char *argv[]) {
             // aln[i]->bes, aln[i]->bee, aln[i]->abpos, aln[i]->aepos, aln[i]->bbpos, aln[i]->bepos);
             idx2[i][j]->trim_overlap();//What does this do?
             //printf("after %d %d %d %d ov %d %d %d %d\n", aln[i]->aes, aln[i]->aee,
-            // aln[i]->bes, aln[i]->bee, aln[i]->eabpos, aln[i]->eaepos, aln[i]->ebbpos, aln[i]->ebepos);
+            // aln[i]->bes, aln[i]->bee, aln[i]->eff_abpos, aln[i]->eff_aepos, aln[i]->eff_bbpos, aln[i]->eff_bepos);
             //num_finished ++;
             //if (num_finished%100000 == 0) printf("%lf percent finished\n", num_finished/double(aln.size())*100);
-            if (((idx2[i][j]->ebepos - idx2[i][j]->ebbpos) < ALN_THRESHOLD)
-                or ((idx2[i][j]->eaepos - idx2[i][j]->eabpos) < ALN_THRESHOLD))
+            if (((idx2[i][j]->eff_bepos - idx2[i][j]->eff_bbpos) < ALN_THRESHOLD)
+                or ((idx2[i][j]->eff_aepos - idx2[i][j]->eff_abpos) < ALN_THRESHOLD))
             {
                 idx2[i][j]->active = false;
                 idx2[i][j]->aln_type = NOT_ACTIVE;
@@ -460,8 +460,8 @@ int main(int argc, char *argv[]) {
                 if (reads[idx2[i][j]->bid]->active)
                     fprintf(out3,"%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->flags,
-                            idx2[i][j]->aln_type,  idx2[i][j]->eabpos, idx2[i][j]->eaepos, idx2[i][j]->ebbpos,
-                            idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
+                            idx2[i][j]->aln_type,  idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos,
+                            idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend, idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
             }
     }
 
@@ -528,47 +528,47 @@ int main(int argc, char *argv[]) {
 
                             /*if (idx2[i][j]->flags == 0)
                              fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos,
-                             idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes,
+                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
+                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else
                              fprintf(out, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos,
-                             idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes,
+                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
+                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
 
                             if (idx2[i][j]->flags == 0)
                              fprintf(out2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos,
-                             idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes,
+                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
+                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else
                              fprintf(out2, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos,
-                             idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes,
+                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
+                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             */
                             //remove certain hinges
 
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((idx2[i][j]->eabpos < hinges_vec[i][k].pos - 400) and (hinges_vec[i][k].type == 1))
+                                if ((idx2[i][j]->eff_abpos < hinges_vec[i][k].pos - 400) and (hinges_vec[i][k].type == 1))
                                     hinges_vec[i][k].active = false;
                             }
 
                             /*for (int k = 0; k < hinges_vec[idx2[i][j]->bid].size(); k++) {
                                 if ((hinges_vec[idx2[i][j]->bid][k].type == 1)
                                 and (idx2[i][j]->flags == 1) and
-                                (idx2[i][j]->ebepos > idx2[i][j]->blen - hinges_vec[idx2[i][j]->bid][k].pos + 300))
+                                (idx2[i][j]->eff_bepos > idx2[i][j]->blen - hinges_vec[idx2[i][j]->bid][k].pos + 300))
                                     hinges_vec[idx2[i][j]->bid][k].active2 = false;
 
                                 if ((hinges_vec[idx2[i][j]->bid][k].type == -1)
                                 and (idx2[i][j]->flags == 0)
-                                and (idx2[i][j]->ebepos > hinges_vec[idx2[i][j]->bid][k].pos + 300))
+                                and (idx2[i][j]->eff_bepos > hinges_vec[idx2[i][j]->bid][k].pos + 300))
                                     hinges_vec[idx2[i][j]->bid][k].active2 = false;
                             }*/
 
                             //if ((repeat_status_back[i])
-                            // and (idx2[i][j]->eabpos < marked_repeats[i].front().first - 200)) {
+                            // and (idx2[i][j]->eff_abpos < marked_repeats[i].front().first - 200)) {
                             //    repeat_status_back[i] = false;
                                 //printf("remove %d\n",i);
                             //}
@@ -582,37 +582,37 @@ int main(int argc, char *argv[]) {
 
                             /*if (idx2[i][j]->flags == 0)
                              fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos,
-                             idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes,
+                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
+                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else
                              fprintf(out, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos,
-                             idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes,
+                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
+                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
 
                             if (idx2[i][j]->flags == 0)
                              fprintf(out2, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos,
-                             idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes,
+                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
+                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else
                              fprintf(out2, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos,
-                             idx2[i][j]->eaepos, idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes,
+                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
+                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             */
                             // remove certain hinges
 
                             //if ((repeat_status_front[i])
-                            // and (idx2[i][j]->eaepos > marked_repeats[i].back().second + 200)
-                            // and (idx2[i][j]->eaepos > marked_repeats[i].front().second + 200)) {
+                            // and (idx2[i][j]->eff_aepos > marked_repeats[i].back().second + 200)
+                            // and (idx2[i][j]->eff_aepos > marked_repeats[i].front().second + 200)) {
                             //    repeat_status_front[i] = false;
                                 //printf("remove %d\n",i);
                             //}
 
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((idx2[i][j]->eaepos > hinges_vec[i][k].pos + 400) and (hinges_vec[i][k].type == -1))
+                                if ((idx2[i][j]->eff_aepos > hinges_vec[i][k].pos + 400) and (hinges_vec[i][k].type == -1))
                                     hinges_vec[i][k].active = false;
                             }
 
@@ -620,12 +620,12 @@ int main(int argc, char *argv[]) {
                             /*for (int k = 0; k < hinges_vec[idx2[i][j]->bid].size(); k++) {
                                 if ((hinges_vec[idx2[i][j]->bid][k].type == 1)
                                 and (idx2[i][j]->flags == 0)
-                                and (idx2[i][j]->ebbpos < hinges_vec[idx2[i][j]->bid][k].pos - 300))
+                                and (idx2[i][j]->eff_bbpos < hinges_vec[idx2[i][j]->bid][k].pos - 300))
                                     hinges_vec[idx2[i][j]->bid][k].active2 = false;
 
                                 if ((hinges_vec[idx2[i][j]->bid][k].type == -1)
                                 and (idx2[i][j]->flags == 1)
-                                and (idx2[i][j]->ebbpos < idx2[i][j]->blen - hinges_vec[idx2[i][j]->bid][k].pos - 300))
+                                and (idx2[i][j]->eff_bbpos < idx2[i][j]->blen - hinges_vec[idx2[i][j]->bid][k].pos - 300))
                                     hinges_vec[idx2[i][j]->bid][k].active2 = false;
                             }*/
 
@@ -681,25 +681,25 @@ int main(int argc, char *argv[]) {
 
                                 if (idx2[i][j]->flags == 0)
                                     fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                            idx2[i][j]->bes, idx2[i][j]->bee);
+                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
                                 else
                                     fprintf(out, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                            idx2[i][j]->bes, idx2[i][j]->bee);
+                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
 
                                 if (idx2[i][j]->flags == 0)
                                     fprintf(out2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                            idx2[i][j]->bes, idx2[i][j]->bee);
+                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
                                 else
                                     fprintf(out2, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                            idx2[i][j]->bes, idx2[i][j]->bee);
+                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
 
                             }
                         }
@@ -711,25 +711,25 @@ int main(int argc, char *argv[]) {
                             /*if (not repeat_status_front[i])*/ {
                                 if (idx2[i][j]->flags == 0)
                                     fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                            idx2[i][j]->bes, idx2[i][j]->bee);
+                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
                                 else
                                     fprintf(out, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                            idx2[i][j]->bes, idx2[i][j]->bee);
+                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
 
                                 if (idx2[i][j]->flags == 0)
                                     fprintf(out2, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                            idx2[i][j]->bes, idx2[i][j]->bee);
+                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
                                 else
                                     fprintf(out2, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                            idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                            idx2[i][j]->bes, idx2[i][j]->bee);
+                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
                             }
                         }
                         backward++;
@@ -752,24 +752,24 @@ int main(int argc, char *argv[]) {
                             or ((idx2[i][j]->flags == 1) and repeat_status_back[idx2[i][j]->bid])) {
                             if (idx2[i][j]->flags == 0)
                                 fprintf(out3, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                        idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                        idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                        idx2[i][j]->bes, idx2[i][j]->bee);
+                                        idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
                             else
                                 fprintf(out3, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                        idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                        idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                        idx2[i][j]->bes, idx2[i][j]->bee);
+                                        idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
                             if (idx2[i][j]->flags == 0)
                                 fprintf(out3, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                        idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                        idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                        idx2[i][j]->bes, idx2[i][j]->bee);
+                                        idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
                             else
                                 fprintf(out3, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                        idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                        idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                        idx2[i][j]->bes, idx2[i][j]->bee);
+                                        idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
                         }
 
 
@@ -781,25 +781,25 @@ int main(int argc, char *argv[]) {
                             or ((idx2[i][j]->flags == 1) and repeat_status_front[idx2[i][j]->bid])) {
                             if (idx2[i][j]->flags == 0)
                                 fprintf(out3, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                        idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                        idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                        idx2[i][j]->bes, idx2[i][j]->bee);
+                                        idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
                             else
                                 fprintf(out3, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                        idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                        idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                        idx2[i][j]->bes, idx2[i][j]->bee);
+                                        idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
 
                             if (idx2[i][j]->flags == 0)
                                 fprintf(out3, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                        idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                        idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                        idx2[i][j]->bes, idx2[i][j]->bee);
+                                        idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
                             else
                                 fprintf(out3, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                        idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eabpos, idx2[i][j]->eaepos,
-                                        idx2[i][j]->ebbpos, idx2[i][j]->ebepos, idx2[i][j]->aes, idx2[i][j]->aee,
-                                        idx2[i][j]->bes, idx2[i][j]->bee);
+                                        idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
+                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
+                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
                         }
 
                     }

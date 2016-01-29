@@ -284,16 +284,16 @@ int main(int argc, char *argv[]) {
 # pragma omp parallel for
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active) {
-                aln[i]->aes = reads[aln[i]->aid]->effective_start;
-                aln[i]->aee = reads[aln[i]->aid]->effective_end;
+                aln[i]->eff_astart = reads[aln[i]->aid]->effective_start;
+                aln[i]->eff_aend = reads[aln[i]->aid]->effective_end;
                 
 				if (aln[i]->flags == 0) {
-					aln[i]->bes = reads[aln[i]->bid]->effective_start;
-                	aln[i]->bee = reads[aln[i]->bid]->effective_end;
+					aln[i]->eff_bstart = reads[aln[i]->bid]->effective_start;
+                	aln[i]->eff_bend = reads[aln[i]->bid]->effective_end;
 				}
 				else {
-					aln[i]->bes = aln[i]->blen - reads[aln[i]->bid]->effective_end;
-                	aln[i]->bee = aln[i]->blen - reads[aln[i]->bid]->effective_start;
+					aln[i]->eff_bstart = aln[i]->blen - reads[aln[i]->bid]->effective_end;
+                	aln[i]->eff_bend = aln[i]->blen - reads[aln[i]->bid]->effective_start;
 				}
             }
         }

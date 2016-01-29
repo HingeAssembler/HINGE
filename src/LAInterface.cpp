@@ -2442,7 +2442,7 @@ int64 LAInterface::getAlignmentNumber() {
 void LOverlap::addtype(int THETA) {
 
 
-    if ((abpos > aes + THETA) and (aepos > aee - THETA) and (bbpos < bes + THETA) and (bepos < bee - THETA)) {
+    if ((abpos > eff_astart + THETA) and (aepos > eff_aend - THETA) and (bbpos < eff_bstart + THETA) and (bepos < eff_bend - THETA)) {
         aln_type = FORWARD;
     }
 	/**
@@ -2450,7 +2450,7 @@ void LOverlap::addtype(int THETA) {
 	 B:        ==========>
 	**/
 
-    else if (( abpos < aes + THETA) and (aepos < aee - THETA) and (bepos >  bee - THETA ) and (bbpos > bes + THETA)) {
+    else if (( abpos < eff_astart + THETA) and (aepos < eff_aend - THETA) and (bepos >  eff_bend - THETA ) and (bbpos > eff_bstart + THETA)) {
          aln_type = BACKWARD;
     }
 	/**
@@ -4454,15 +4454,26 @@ void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
 }
 
 
-void LOverlap::trim_overlap() {//What is going on here????
-    this->ebbpos = 0;
-    this->ebepos = 0;
-    this->eabpos = 0;
-    this->eaepos = 0;
+void LOverlap::trim_overlap() {
+    /**
+     * Trim overlap, the idea is the following: the reads are trimmed according to qualities and coverage,
+     * accordingly, the overlap needs to be trimmed, there are two ways, the first is simply to run DAligner
+     * on trimmed reads, the second is to trimmed the overlaps according to trace points, this function implements
+     * the latter.
+     */
+
+    //before trimming, the positions are abpos, bbpos, aepos and bepos, we add a eff_ prefix to it after trimming
+
+    this->eff_bbpos = 0;
+    this->eff_bepos = 0;
+    this->eff_abpos = 0;
+    this->eff_aepos = 0;
+
 
     std::vector<std::pair<int,int> > tps;
     tps.push_back(std::pair<int,int>(this->abpos, this->bbpos));
     int currenta = this->abpos;
+    // this for loop change trace points stored trace_pts[] into coordinate pairs vector: tps
     for (int j = 0; j < this->trace_pts_len/2-1; j++) {
         if (currenta % 100 != 0) currenta = int(ceil(currenta/100.0))*100;
         else currenta += 100;
@@ -4474,22 +4485,25 @@ void LOverlap::trim_overlap() {//What is going on here????
         printf("a%d b%d ", tps[j].first, tps[j].second);
     }
     printf("\n");
-    */
 
+     // for debugging
+     */
 
+    //for trace point pairs, get the first one that is in untrimmed regions for both reads
     for (int i = 0; i< tps.size(); i++) {
-        if ((tps[i].first >= this->aes) and (tps[i].second >= this->bes)) {
-            this->eabpos = tps[i].first;
-            this->ebbpos = tps[i].second;
+        if ((tps[i].first >= this->eff_astart) and (tps[i].second >= this->eff_bstart)) {
+            this->eff_abpos = tps[i].first;
+            this->eff_bbpos = tps[i].second;
             this->si = i;
             break;
         }
     }
 
+    //for trace point pairs, get the last one that is in untrimmed regions for both reads
     for (int i= (int)tps.size() - 1; i>=0; i--) {
-        if ((tps[i].first <= this->aee) and (tps[i].second <= this->bee)) {
-            this->eaepos = tps[i].first;
-            this->ebepos = tps[i].second;
+        if ((tps[i].first <= this->eff_aend) and (tps[i].second <= this->eff_bend)) {
+            this->eff_aepos = tps[i].first;
+            this->eff_bepos = tps[i].second;
             this->ei = i;
             break;
         }
@@ -4498,20 +4512,26 @@ void LOverlap::trim_overlap() {//What is going on here????
 }
 
 void LOverlap::addtype2(int max_overhang) {
-    int overhang = std::min(this->eabpos - this->aes, this->ebbpos - this->bes) + std::min(this->aee - this->eaepos, this->bee - this->ebepos);
+    /**
+     * addtype2 is a function for classifying overlaps, edges are classified into forward, backward, internal match, bcovera and acoverb,
+        it is based on effective positions, rather than positions
+     */
+
+    int overhang = std::min(this->eff_abpos - this->eff_astart, this->eff_bbpos - this->eff_bstart) + std::min(this->eff_aend - this->eff_aepos, this->eff_bend - this->eff_bepos);
+
     //int tol = 0;
     if (overhang > max_overhang)
         this->aln_type = INTERNAL;
-    else if ((this->eabpos - this->aes <= this->ebbpos - this->bes) and (this->aee - this->eaepos <= this->bee - this->ebepos ))
+    else if ((this->eff_abpos - this->eff_astart <= this->eff_bbpos - this->eff_bstart) and (this->eff_aend - this->eff_aepos <= this->eff_bend - this->eff_bepos))
         this->aln_type = BCOVEREA;
-    else if ((this->eabpos - this->aes >= this->ebbpos - this->bes) and (this->aee - this->eaepos  >= this->bee - this->ebepos))
+    else if ((this->eff_abpos - this->eff_astart >= this->eff_bbpos - this->eff_bstart) and (this->eff_aend - this->eff_aepos >= this->eff_bend - this->eff_bepos))
         this->aln_type = ACOVERB;
-    else if (this->eabpos - this->aes > this->ebbpos - this->bes) {
-        if ((this->bee - this->ebepos > 0) and (this->eabpos - this->aes > 0))
+    else if (this->eff_abpos - this->eff_astart > this->eff_bbpos - this->eff_bstart) {
+        if ((this->eff_bend - this->eff_bepos > 0) and (this->eff_abpos - this->eff_astart > 0))
             this->aln_type = FORWARD;
     }
     else {
-        if ((this->ebbpos - this->bes > 0) and (this->aee - this->eaepos > 0))
+        if ((this->eff_bbpos - this->eff_bstart > 0) and (this->eff_aend - this->eff_aepos > 0))
             this->aln_type = BACKWARD;
     }
 }
