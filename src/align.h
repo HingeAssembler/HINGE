@@ -78,9 +78,9 @@
      1 is the tick between the first and second character, and so on.  Our data structure
      is called a Path refering to its conceptualization in an edit graph.
 
-     A local alignment is specified by the point '(abpos,bbpos)' at which its path in
-     the underlying edit graph starts, and the point '(aepos,bepos)' at which it ends.
-     In otherwords A[abpos+1..aepos] is aligned to B[bbpos+1..bepos] (assuming X[1] is
+     A local alignment is specified by the point '(read_A_match_start_,read_B_match_start_)' at which its path in
+     the underlying edit graph starts, and the point '(read_A_match_end_,read_B_match_end_)' at which it ends.
+     In otherwords A[read_A_match_start_+1..read_A_match_end_] is aligned to B[read_B_match_start_+1..read_B_match_end_] (assuming X[1] is
      the *first* character of X).
 
      There are 'diffs' differences in an optimal local alignment between the beginning and
@@ -97,13 +97,13 @@
 
             d_0, b_0, d_1, b_1, ... d_n-1, b_n-1, d_n, b_n
 
-     to be interpreted as follows.  The alignment from (abpos,bbpos) to (aepos,bepos)
+     to be interpreted as follows.  The alignment from (read_A_match_start_,read_B_match_start_) to (read_A_match_end_,read_B_match_end_)
      passes through the n trace points for i in [1,n]:
 
-            (a_i,b_i) where a_i = floor(abpos/TS)*TS + i*TS
-                        and b_i = bbpos + (b_0 + b_1 + b_i-1)
+            (a_i,b_i) where a_i = floor(read_A_match_start_/TS)*TS + i*TS
+                        and b_i = read_B_match_start_ + (b_0 + b_1 + b_i-1)
 
-     where also let a_0,b_0 = abpos,bbpos and a_(n+1),b_(n+1) = aepos,bepos.  That is, the
+     where also let a_0,b_0 = read_A_match_start_,read_B_match_start_ and a_(n+1),b_(n+1) = read_A_match_end_,read_B_match_end_.  That is, the
      interior (i.e. i != 0 and i != n+1) trace points pass through every TS'th position of
      the aread where TS is the "trace spacing" employed when finding the alignment (see
      New_Align_Spec).  Typically TS is 100.  Then d_i is the number of differences in the
@@ -255,7 +255,7 @@ void Complement_Seq(char *a, int n);
      and managed by the caller.
 
      Compute_Trace_ALL does not require a sequence of pass-through points, as it computes the
-     best alignment between (path->abpos,path->bbpos) and (path->aepos,path->bepos) in the
+     best alignment between (path->read_A_match_start_,path->read_B_match_start_) and (path->read_A_match_end_,path->read_B_match_end_) in the
      edit graph between the sequences.  Compute_Trace_PTS computes a trace by computing the
      trace between successive pass through points.  It is much, much faster than Compute_Trace_ALL
      but at the tradeoff of not necessarily being optimal as pass-through points are not all

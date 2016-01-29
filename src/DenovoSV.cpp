@@ -50,7 +50,7 @@ std::string reverse_complement(std::string seq) {
 }
 
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
-    return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) < (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
+    return ((ovl1->read_A_match_end_ - ovl1->read_A_match_start_ + ovl1->read_B_match_end_ - ovl1->read_B_match_start_) < (ovl2->read_A_match_end_ - ovl2->read_A_match_start_ + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
 }
 
 
@@ -60,24 +60,24 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals)
     std::vector<std::pair<int, int > > ret;
     const int n = intervals.size();
     if(n == 1) {
-        ret.push_back(std::pair<int,int>(intervals[0]->abpos,intervals[0]->aepos));
+        ret.push_back(std::pair<int,int>(intervals[0]->read_A_match_start_, intervals[0]->read_A_match_end_));
     }
 
     sort(intervals.begin(),intervals.end(),compare_overlap); //sort according to left
 
-    int left=intervals[0]->abpos, right = intervals[0]->aepos; //left, right means maximal possible interval now
+    int left=intervals[0]->read_A_match_start_, right = intervals[0]->read_A_match_end_; //left, right means maximal possible interval now
 
     for(int i=1;i<n;++i)
     {
-        if(intervals[i]->abpos <= right)
+        if(intervals[i]->read_A_match_start_ <= right)
         {
-            right=std::max(right,intervals[i]->aepos);
+            right=std::max(right,intervals[i]->read_A_match_end_);
         }
         else
         {
             ret.push_back(std::pair<int, int>(left,right));
-            left = intervals[i]->abpos;
-            right = intervals[i]->aepos;
+            left = intervals[i]->read_A_match_start_;
+            right = intervals[i]->read_A_match_end_;
         }
     }
     ret.push_back(std::pair<int, int>(left,right));
@@ -116,8 +116,8 @@ int main(int argc, char ** argv) {
     }
 
     for (int i = 0; i < aln.size(); i++) {
-        if (aln[i]->diffs*2 / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) < 0.25 ) {
-            idx2[aln[i]->aid].push_back(aln[i]);
+        if (aln[i]->diffs*2 / float(aln[i]->read_B_match_end_ - aln[i]->read_B_match_start_ + aln[i]->read_A_match_end_ - aln[i]->read_A_match_start_) < 0.25 ) {
+            idx2[aln[i]->read_A_id].push_back(aln[i]);
         }
     }
 

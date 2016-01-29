@@ -1093,13 +1093,13 @@ void LAInterface::getAlignmentB(std::vector<int> &result, int from) {
         //else
         //  printf(" n");
         //printf("   [");
-        //Print_Number((int64) ovl->path.abpos,ai_wide,stdout);
+        //Print_Number((int64) ovl->path.read_A_match_start_,ai_wide,stdout);
         //printf("..");
-        //Print_Number((int64) ovl->path.aepos,ai_wide,stdout);
+        //Print_Number((int64) ovl->path.read_A_match_end_,ai_wide,stdout);
         //printf("] x [");
-        //Print_Number((int64) ovl->path.bbpos,bi_wide,stdout);
+        //Print_Number((int64) ovl->path.read_B_match_start_,bi_wide,stdout);
         //printf("..");
-        //Print_Number((int64) ovl->path.bepos,bi_wide,stdout);
+        //Print_Number((int64) ovl->path.read_B_match_end_,bi_wide,stdout);
         //printf("]");
 
         if ((ALIGN || CARTOON || REFERENCE) && (false)) {
@@ -1488,12 +1488,12 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
 
         memcpy(new_ovl->trace_pts, ovl->path.trace, ovl->path.tlen * sizeof(uint16));
 
-        new_ovl->aid = ovl->aread;
-        new_ovl->bid = ovl->bread;
-        new_ovl->abpos = ovl->path.abpos;
-		new_ovl->aepos = ovl->path.aepos;
-        new_ovl->bbpos = ovl->path.bbpos;
-        new_ovl->bepos = ovl->path.bepos;
+        new_ovl->read_A_id = ovl->aread;
+        new_ovl->read_B_id = ovl->bread;
+        new_ovl->read_A_match_start_ = ovl->path.abpos;
+		new_ovl->read_A_match_end_ = ovl->path.aepos;
+        new_ovl->read_B_match_start_ = ovl->path.bbpos;
+        new_ovl->read_B_match_end_ = ovl->path.bepos;
         new_ovl->alen = aln->alen;
         new_ovl->blen = aln->blen;
         new_ovl->diffs = ovl->path.diffs;
@@ -1592,12 +1592,12 @@ void LAInterface::getOverlapw(std::vector<LOverlap *> &result_vec, int from, int
         //memcpy(new_ovl->trace_pts, ovl->path.trace, ovl->path.tlen * sizeof(uint16));
 
         new_ovl->trace_pts = 0;
-        new_ovl->aid = ovl->aread;
-        new_ovl->bid = ovl->bread;
-        new_ovl->abpos = ovl->path.abpos;
-        new_ovl->aepos = ovl->path.aepos;
-        new_ovl->bbpos = ovl->path.bbpos;
-        new_ovl->bepos = ovl->path.bepos;
+        new_ovl->read_A_id = ovl->aread;
+        new_ovl->read_B_id = ovl->bread;
+        new_ovl->read_A_match_start_ = ovl->path.abpos;
+        new_ovl->read_A_match_end_ = ovl->path.aepos;
+        new_ovl->read_B_match_start_ = ovl->path.bbpos;
+        new_ovl->read_B_match_end_ = ovl->path.bepos;
         new_ovl->alen = aln->alen;
         new_ovl->blen = aln->blen;
         new_ovl->diffs = ovl->path.diffs;
@@ -1773,15 +1773,15 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
             new_al->flags = 0;
         //printf(" n");
         //printf("   [");
-        //Print_Number((int64) ovl->path.abpos,ai_wide,stdout);
+        //Print_Number((int64) ovl->path.read_A_match_start_,ai_wide,stdout);
         new_al->abpos = ovl->path.abpos;
         //printf("..");
-        //Print_Number((int64) ovl->path.aepos,ai_wide,stdout);
+        //Print_Number((int64) ovl->path.read_A_match_end_,ai_wide,stdout);
         new_al->aepos = ovl->path.aepos;
         //printf("] x [");
-        //Print_Number((int64) ovl->path.bbpos,bi_wide,stdout);
+        //Print_Number((int64) ovl->path.read_B_match_start_,bi_wide,stdout);
         //printf("..");
-        //Print_Number((int64) ovl->path.bepos,bi_wide,stdout);
+        //Print_Number((int64) ovl->path.read_B_match_end_,bi_wide,stdout);
         //printf("]");
         new_al->bbpos = ovl->path.bbpos;
         new_al->bepos = ovl->path.bepos;
@@ -1843,13 +1843,13 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
         //else
         //  printf(" n");
         //printf("   [");
-        //Print_Number((int64) ovl->path.abpos,ai_wide,stdout);
+        //Print_Number((int64) ovl->path.read_A_match_start_,ai_wide,stdout);
         //printf("..");
-        //Print_Number((int64) ovl->path.aepos,ai_wide,stdout);
+        //Print_Number((int64) ovl->path.read_A_match_end_,ai_wide,stdout);
         //printf("] x [");
-        //Print_Number((int64) ovl->path.bbpos,bi_wide,stdout);
+        //Print_Number((int64) ovl->path.read_B_match_start_,bi_wide,stdout);
         //printf("..");
-        //Print_Number((int64) ovl->path.bepos,bi_wide,stdout);
+        //Print_Number((int64) ovl->path.read_B_match_end_,bi_wide,stdout);
         //printf("]");
 
 
@@ -1888,20 +1888,20 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
 
                 }*/
 #ifdef DOALIGN
-                amin = ovl->path.abpos - BORDER;
+                amin = ovl->path.read_A_match_start_ - BORDER;
                 if (amin < 0) amin = 0;
-                amax = ovl->path.aepos + BORDER;
+                amax = ovl->path.read_A_match_end_ + BORDER;
                 if (amax > aln->alen) amax = aln->alen;
                 if (COMP(aln->flags)) {
-                    bmin = (aln->blen - ovl->path.bepos) - BORDER;
+                    bmin = (aln->blen - ovl->path.read_B_match_end_) - BORDER;
                     if (bmin < 0) bmin = 0;
-                    bmax = (aln->blen - ovl->path.bbpos) + BORDER;
+                    bmax = (aln->blen - ovl->path.read_B_match_start_) + BORDER;
                     if (bmax > aln->blen) bmax = aln->blen;
                 }
                 else {
-                    bmin = ovl->path.bbpos - BORDER;
+                    bmin = ovl->path.read_B_match_start_ - BORDER;
                     if (bmin < 0) bmin = 0;
-                    bmax = ovl->path.bepos + BORDER;
+                    bmax = ovl->path.read_B_match_end_ + BORDER;
                     if (bmax > aln->blen) bmax = aln->blen;
                 }
 
@@ -2176,15 +2176,15 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
             new_al->flags = 0;
         //printf(" n");
         //printf("   [");
-        //Print_Number((int64) ovl->path.abpos,ai_wide,stdout);
+        //Print_Number((int64) ovl->path.read_A_match_start_,ai_wide,stdout);
         new_al->abpos = ovl->path.abpos;
         //printf("..");
-        //Print_Number((int64) ovl->path.aepos,ai_wide,stdout);
+        //Print_Number((int64) ovl->path.read_A_match_end_,ai_wide,stdout);
         new_al->aepos = ovl->path.aepos;
         //printf("] x [");
-        //Print_Number((int64) ovl->path.bbpos,bi_wide,stdout);
+        //Print_Number((int64) ovl->path.read_B_match_start_,bi_wide,stdout);
         //printf("..");
-        //Print_Number((int64) ovl->path.bepos,bi_wide,stdout);
+        //Print_Number((int64) ovl->path.read_B_match_end_,bi_wide,stdout);
         //printf("]");
         new_al->bbpos = ovl->path.bbpos;
         new_al->bepos = ovl->path.bepos;
@@ -2246,13 +2246,13 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
         //else
         //  printf(" n");
         //printf("   [");
-        //Print_Number((int64) ovl->path.abpos,ai_wide,stdout);
+        //Print_Number((int64) ovl->path.read_A_match_start_,ai_wide,stdout);
         //printf("..");
-        //Print_Number((int64) ovl->path.aepos,ai_wide,stdout);
+        //Print_Number((int64) ovl->path.read_A_match_end_,ai_wide,stdout);
         //printf("] x [");
-        //Print_Number((int64) ovl->path.bbpos,bi_wide,stdout);
+        //Print_Number((int64) ovl->path.read_B_match_start_,bi_wide,stdout);
         //printf("..");
-        //Print_Number((int64) ovl->path.bepos,bi_wide,stdout);
+        //Print_Number((int64) ovl->path.read_B_match_end_,bi_wide,stdout);
         //printf("]");
 
 
@@ -2293,20 +2293,20 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
 
 //#define DOALIGN
 #ifdef DOALIGN
-                amin = ovl->path.abpos - BORDER;
+                amin = ovl->path.read_A_match_start_ - BORDER;
                 if (amin < 0) amin = 0;
-                amax = ovl->path.aepos + BORDER;
+                amax = ovl->path.read_A_match_end_ + BORDER;
                 if (amax > aln->alen) amax = aln->alen;
                 if (COMP(aln->flags)) {
-                    bmin = (aln->blen - ovl->path.bepos) - BORDER;
+                    bmin = (aln->blen - ovl->path.read_B_match_end_) - BORDER;
                     if (bmin < 0) bmin = 0;
-                    bmax = (aln->blen - ovl->path.bbpos) + BORDER;
+                    bmax = (aln->blen - ovl->path.read_B_match_start_) + BORDER;
                     if (bmax > aln->blen) bmax = aln->blen;
                 }
                 else {
-                    bmin = ovl->path.bbpos - BORDER;
+                    bmin = ovl->path.read_B_match_start_ - BORDER;
                     if (bmin < 0) bmin = 0;
-                    bmax = ovl->path.bepos + BORDER;
+                    bmax = ovl->path.read_B_match_end_ + BORDER;
                     if (bmax > aln->blen) bmax = aln->blen;
                 }
 
@@ -2442,7 +2442,8 @@ int64 LAInterface::getAlignmentNumber() {
 void LOverlap::addtype(int THETA) {
 
 
-    if ((abpos > eff_astart + THETA) and (aepos > eff_aend - THETA) and (bbpos < eff_bstart + THETA) and (bepos < eff_bend - THETA)) {
+    if ((read_A_match_start_ > eff_read_A_start_ + THETA) and (read_A_match_end_ > eff_read_A_end_ - THETA) and (read_B_match_start_ < eff_read_B_start_ + THETA) and (
+            read_B_match_end_ < eff_read_B_end_ - THETA)) {
         aln_type = FORWARD;
     }
 	/**
@@ -2450,17 +2451,19 @@ void LOverlap::addtype(int THETA) {
 	 B:        ==========>
 	**/
 
-    else if (( abpos < eff_astart + THETA) and (aepos < eff_aend - THETA) and (bepos >  eff_bend - THETA ) and (bbpos > eff_bstart + THETA)) {
+    else if ((read_A_match_start_ < eff_read_A_start_ + THETA) and (read_A_match_end_ < eff_read_A_end_ - THETA) and (
+            read_B_match_end_ > eff_read_B_end_ - THETA ) and (
+            read_B_match_start_ > eff_read_B_start_ + THETA)) {
          aln_type = BACKWARD;
     }
 	/**
 	 A:       ==========>
 	 B:  ==========>
 	**/
-    else if ((bbpos < CHI_THRESHOLD) and (bepos > blen - CHI_THRESHOLD) and (alen > blen) ) {
+    else if ((read_B_match_start_ < CHI_THRESHOLD) and (read_B_match_end_ > blen - CHI_THRESHOLD) and (alen > blen) ) {
         aln_type = COVERING;
     }
-    else if ((abpos < CHI_THRESHOLD) and (aepos > alen - CHI_THRESHOLD) and (blen > alen) ) {
+    else if ((read_A_match_start_ < CHI_THRESHOLD) and (read_A_match_end_ > alen - CHI_THRESHOLD) and (blen > alen) ) {
         aln_type = COVERED;
     }
         /**
@@ -2469,7 +2472,7 @@ void LOverlap::addtype(int THETA) {
         **/
 
 
-	//else if ((abpos > 0) and (bbpos<CHI_THRESHOLD)) {
+	//else if ((read_A_match_start_ > 0) and (read_B_match_start_<CHI_THRESHOLD)) {
 	//	aln_type = MISMATCH_RIGHT;
 	//}
 	///**
@@ -2477,14 +2480,14 @@ void LOverlap::addtype(int THETA) {
 	// B:      ===..xxxx===>
 	//**/
 	//
-	//else if ((aepos < alen) and (bepos > blen - CHI_THRESHOLD)) {
+	//else if ((read_A_match_end_ < alen) and (read_B_match_end_ > blen - CHI_THRESHOLD)) {
 	//	aln_type = MISMATCH_LEFT;
 	//}
 	///**
 	// A:   		xxxx..===>
 	// B:     ====xxxx..=>
 	//**/
-    //else if ((bbpos > 0) and (bepos < blen)) {
+    //else if ((read_B_match_start_ > 0) and (read_B_match_end_ < blen)) {
     //    aln_type = MIDDLE;
     //}
 }
@@ -4215,7 +4218,7 @@ std::vector<int> * LAInterface::getCoverage(std::vector<LOverlap *> alns) {
     std::vector<int> * res = new std::vector<int>( alns[0]->alen, 0 );
 
     for (int i = 0; i < alns.size(); i++) {
-        for (int j = alns[i]->abpos; j < alns[i]->aepos; j++)
+        for (int j = alns[i]->read_A_match_start_; j < alns[i]->read_A_match_end_; j++)
             (*res)[j] ++;
     }
 
@@ -4259,8 +4262,8 @@ void LAInterface::profileCoverage(std::vector<LOverlap *> &alignments, std::vect
     //Returns coverage, which is a pair of ints <i*reso, coverage at position i*reso of read a>
     std::vector<std::pair<int, int> > events;
     for (int i = 0; i < alignments.size(); i ++) {
-        events.push_back(std::pair<int, int>(alignments[i]->abpos + cutoff, 1));
-        events.push_back(std::pair<int, int>(alignments[i]->aepos - cutoff, -1));
+        events.push_back(std::pair<int, int>(alignments[i]->read_A_match_start_ + cutoff, 1));
+        events.push_back(std::pair<int, int>(alignments[i]->read_A_match_end_ - cutoff, -1));
     }
 
     std::sort(events.begin(), events.end(), compare_event);
@@ -4286,8 +4289,8 @@ void LAInterface::profileCoveragefine(std::vector<LOverlap *> &alignments, std::
     if (sz > est_coverage) sz = est_coverage;
 
     for (int i = 0; i < sz; i ++) {
-        events.push_back(std::pair<int, int>(alignments[i]->abpos + cutoff, 1));
-        events.push_back(std::pair<int, int>(alignments[i]->aepos - cutoff, -1));
+        events.push_back(std::pair<int, int>(alignments[i]->read_A_match_start_ + cutoff, 1));
+        events.push_back(std::pair<int, int>(alignments[i]->read_A_match_end_ - cutoff, -1));
     }
 
     std::sort(events.begin(), events.end(), compare_event);
@@ -4462,24 +4465,24 @@ void LOverlap::trim_overlap() {
      * the latter.
      */
 
-    //before trimming, the positions are abpos, bbpos, aepos and bepos, we add a eff_ prefix to it after trimming
+    //before trimming, the positions are read_A_match_start_, read_B_match_start_, read_A_match_end_ and read_B_match_end_, we add a eff_ prefix to it after trimming
 
-    this->eff_bbpos = 0;
-    this->eff_bepos = 0;
-    this->eff_abpos = 0;
-    this->eff_aepos = 0;
+    this->eff_read_B_match_start_ = 0;
+    this->eff_read_B_match_end_ = 0;
+    this->eff_read_A_match_start_ = 0;
+    this->eff_read_A_match_end_ = 0;
 
 
     std::vector<std::pair<int,int> > tps;
-    tps.push_back(std::pair<int,int>(this->abpos, this->bbpos));
-    int currenta = this->abpos;
+    tps.push_back(std::pair<int,int>(this->read_A_match_start_, this->read_B_match_start_));
+    int currenta = this->read_A_match_start_;
     // this for loop change trace points stored trace_pts[] into coordinate pairs vector: tps
     for (int j = 0; j < this->trace_pts_len/2-1; j++) {
         if (currenta % 100 != 0) currenta = int(ceil(currenta/100.0))*100;
         else currenta += 100;
         tps.push_back(std::pair<int,int>(currenta, tps.back().second + this->trace_pts[2*j + 1]));
     }
-    tps.push_back(std::pair<int,int>(this->aepos, this->bepos));
+    tps.push_back(std::pair<int,int>(this->read_A_match_end_, this->read_B_match_end_));
 
     /*for (int j = 0; j < tps.size(); j++) {
         printf("a%d b%d ", tps[j].first, tps[j].second);
@@ -4491,9 +4494,9 @@ void LOverlap::trim_overlap() {
 
     //for trace point pairs, get the first one that is in untrimmed regions for both reads
     for (int i = 0; i< tps.size(); i++) {
-        if ((tps[i].first >= this->eff_astart) and (tps[i].second >= this->eff_bstart)) {
-            this->eff_abpos = tps[i].first;
-            this->eff_bbpos = tps[i].second;
+        if ((tps[i].first >= this->eff_read_A_start_) and (tps[i].second >= this->eff_read_B_start_)) {
+            this->eff_read_A_match_start_ = tps[i].first;
+            this->eff_read_B_match_start_ = tps[i].second;
             this->si = i;
             break;
         }
@@ -4501,9 +4504,9 @@ void LOverlap::trim_overlap() {
 
     //for trace point pairs, get the last one that is in untrimmed regions for both reads
     for (int i= (int)tps.size() - 1; i>=0; i--) {
-        if ((tps[i].first <= this->eff_aend) and (tps[i].second <= this->eff_bend)) {
-            this->eff_aepos = tps[i].first;
-            this->eff_bepos = tps[i].second;
+        if ((tps[i].first <= this->eff_read_A_end_) and (tps[i].second <= this->eff_read_B_end_)) {
+            this->eff_read_A_match_end_ = tps[i].first;
+            this->eff_read_B_match_end_ = tps[i].second;
             this->ei = i;
             break;
         }
@@ -4517,22 +4520,71 @@ void LOverlap::addtype2(int max_overhang) {
         it is based on effective positions, rather than positions
      */
 
-    int overhang = std::min(this->eff_abpos - this->eff_astart, this->eff_bbpos - this->eff_bstart) + std::min(this->eff_aend - this->eff_aepos, this->eff_bend - this->eff_bepos);
+    int overhang = std::min(this->eff_read_A_match_start_ - this->eff_read_A_start_, this->eff_read_B_match_start_ - this->eff_read_B_start_) + std::min(this->eff_read_A_end_ - this->eff_read_A_match_end_, this->eff_read_B_end_ - this->eff_read_B_match_end_);
 
     //int tol = 0;
     if (overhang > max_overhang)
         this->aln_type = INTERNAL;
-    else if ((this->eff_abpos - this->eff_astart <= this->eff_bbpos - this->eff_bstart) and (this->eff_aend - this->eff_aepos <= this->eff_bend - this->eff_bepos))
-        this->aln_type = BCOVEREA;
-    else if ((this->eff_abpos - this->eff_astart >= this->eff_bbpos - this->eff_bstart) and (this->eff_aend - this->eff_aepos >= this->eff_bend - this->eff_bepos))
+    else if ((this->eff_read_A_match_start_ - this->eff_read_A_start_ <= this->eff_read_B_match_start_ - this->eff_read_B_start_) and (this->eff_read_A_end_ - this->eff_read_A_match_end_ <= this->eff_read_B_end_ - this->eff_read_B_match_end_))
+        this->aln_type = BCOVERA;
+    else if ((this->eff_read_A_match_start_ - this->eff_read_A_start_ >= this->eff_read_B_match_start_ - this->eff_read_B_start_) and (this->eff_read_A_end_ - this->eff_read_A_match_end_ >= this->eff_read_B_end_ - this->eff_read_B_match_end_))
         this->aln_type = ACOVERB;
-    else if (this->eff_abpos - this->eff_astart > this->eff_bbpos - this->eff_bstart) {
-        if ((this->eff_bend - this->eff_bepos > 0) and (this->eff_abpos - this->eff_astart > 0))
+    else if (this->eff_read_A_match_start_ - this->eff_read_A_start_ > this->eff_read_B_match_start_ - this->eff_read_B_start_) {
+        if ((this->eff_read_B_end_ - this->eff_read_B_match_end_ > 0) and (this->eff_read_A_match_start_ - this->eff_read_A_start_ > 0))
             this->aln_type = FORWARD;
     }
     else {
-        if ((this->eff_bbpos - this->eff_bstart > 0) and (this->eff_aend - this->eff_aepos > 0))
+        if ((this->eff_read_B_match_start_ - this->eff_read_B_start_ > 0) and (this->eff_read_A_end_ - this->eff_read_A_match_end_ > 0))
             this->aln_type = BACKWARD;
     }
 }
 
+void LOverlap::AddTypesAsymmetric(int max_overhang) {
+    //Getting a parameter max_overhang, which is the maximum overlap that one can attribute to bad DAligner ends
+    //The function sets the class variable aln_type according to the relative positions of the reads.
+    //Possible things it can set to are:
+    // BCOVERA, ACOVERB, INTERNAL, FORWARD, FORWARD_INTERNAL, BACKWARD, BACKWARD_INTERNAL
+    int overhang_read_A_left = this->eff_read_A_match_start_ - this->eff_read_A_start_;
+    int overhang_read_A_right = this->eff_read_A_end_ - this->eff_read_A_match_end_;
+    int overhang_read_B_left = this->eff_read_B_match_start_ - this->eff_read_B_start_;
+    int overhang_read_B_right = this->eff_read_B_match_start_ - this->eff_read_B_start_;
+
+    if (this->flags == 1) {
+        //Exchange overhang left and right of read B if match is reverse complemented
+        overhang_read_B_left = this->eff_read_B_end_ - this->eff_read_B_match_end_;
+        overhang_read_B_right = this->eff_read_B_match_start_ - this->eff_read_B_start_;
+    }
+
+
+    if (std::max(overhang_read_A_left, overhang_read_A_right) < max_overhang)
+        this->aln_type = BCOVERA;
+    else if (std::max(overhang_read_B_left, overhang_read_B_right) < max_overhang)
+        this->aln_type = ACOVERB;
+    else if ((std::min(overhang_read_A_left, overhang_read_A_right) > max_overhang))
+        this->aln_type = INTERNAL;
+    else if (overhang_read_A_left <= max_overhang) {
+        //Check if read B if a left extension. As we've handled internal,
+        //we know that this is a BACKWARD or BACKWARD_INTERNAL match
+        if (overhang_read_B_right > max_overhang) {
+            //Alignment internal in B. (It may be an overlap or a non extending overlap)
+            this->aln_type = BACKWARD_INTERNAL;
+        }
+        else {
+            //Alignment is a overlap on B.
+            this->aln_type = BACKWARD;
+        }
+    }
+    else if (overhang_read_A_right <= max_overhang) {
+        //Check if read B if a right extension. As we've handled internal,
+        //we know that this is a FORWARD or FORWARD_INTERNAL match
+        if (overhang_read_B_left > max_overhang) {
+            //Alignment internal in B. (It may be an overlap or a non extending overlap)
+            this->aln_type = FORWARD_INTERNAL;
+        }
+        else {
+            //Alignment is a overlap on B.
+            this->aln_type = FORWARD;
+        }
+    }
+
+}

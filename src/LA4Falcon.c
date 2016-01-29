@@ -541,7 +541,7 @@ int main(int argc, char *argv[])
             match = 1;
           }
 
-        // printf(" %7d %7d\n",ovl->path.abpos,ovl->path.aepos);
+        // printf(" %7d %7d\n",ovl->path.read_A_match_start_,ovl->path.read_A_match_end_);
         // continue;
 
         if (!(FALCON || M4OVL) ) {
@@ -655,7 +655,7 @@ int main(int argc, char *argv[])
 /*#undef TEST_ALN_OUT
 #ifdef TEST_ALN_OUT
                 {
-                    tps = ((ovl->path.aepos-1)/tspace - ovl->path.abpos/tspace);
+                    tps = ((ovl->path.read_A_match_end_-1)/tspace - ovl->path.read_A_match_start_/tspace);
                     if (small)
                         Decompress_TraceTo16(ovl);
                     Load_Read(db1, ovl->aread, abuffer, 0);

@@ -47,7 +47,7 @@ std::ostream& operator<<(std::ostream& out, const aligntype value){
         INSERT_ELEMENT(MISMATCH_RIGHT);
         INSERT_ELEMENT(COVERED);
         INSERT_ELEMENT(COVERING);
-        INSERT_ELEMENT(UNDIFINED);
+        INSERT_ELEMENT(UNDEFINED);
         INSERT_ELEMENT(MIDDLE);
 #undef INSERT_ELEMENT
     }
@@ -170,27 +170,27 @@ std::vector<int> get_mapping(std::string aln_tag1, std::string aln_tag2) {
 
 
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
-    return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
+    return ((ovl1->read_A_match_end_ - ovl1->read_A_match_start_ + ovl1->read_B_match_end_ - ovl1->read_B_match_start_) > (ovl2->read_A_match_end_ - ovl2->read_A_match_start_ + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
 }
 
 bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2) {
     int sum1 = 0;
     int sum2 = 0;
-    for (int i = 0; i < ovl1->size(); i++) sum1 += (*ovl1)[i]->aepos - (*ovl1)[i]->abpos + (*ovl1)[i]->bepos - (*ovl1)[i]->bbpos;
-    for (int i = 0; i < ovl2->size(); i++) sum2 += (*ovl2)[i]->aepos - (*ovl2)[i]->abpos + (*ovl2)[i]->bepos - (*ovl2)[i]->bbpos;
+    for (int i = 0; i < ovl1->size(); i++) sum1 += (*ovl1)[i]->read_A_match_end_ - (*ovl1)[i]->read_A_match_start_ + (*ovl1)[i]->read_B_match_end_ - (*ovl1)[i]->read_B_match_start_;
+    for (int i = 0; i < ovl2->size(); i++) sum2 += (*ovl2)[i]->read_A_match_end_ - (*ovl2)[i]->read_A_match_start_ + (*ovl2)[i]->read_B_match_end_ - (*ovl2)[i]->read_B_match_start_;
     return sum1 > sum2;
 }
 
 bool compare_pos(LOverlap * ovl1, LOverlap * ovl2) {
-    return (ovl1->abpos) > (ovl2->abpos);
+    return (ovl1->read_A_match_start_) > (ovl2->read_A_match_start_);
 }
 
 bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
-    return ovl1->abpos < ovl2->abpos;
+    return ovl1->read_A_match_start_ < ovl2->read_A_match_start_;
 }
 
 bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
-    return ovl1->abpos > ovl2->abpos;
+    return ovl1->read_A_match_start_ > ovl2->read_A_match_start_;
 }
 
 std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
@@ -201,25 +201,25 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int c
     if (n == 0) return ret;
 
     if(n == 1) {
-        ret.push_back(std::pair<int,int>(intervals[0]->abpos,intervals[0]->aepos));
+        ret.push_back(std::pair<int,int>(intervals[0]->read_A_match_start_, intervals[0]->read_A_match_end_));
         return ret;
     }
 
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
 
-    int left=intervals[0]->abpos + cutoff, right = intervals[0]->aepos - cutoff; //left, right means maximal possible interval now
+    int left= intervals[0]->read_A_match_start_ + cutoff, right = intervals[0]->read_A_match_end_ - cutoff; //left, right means maximal possible interval now
 
     for(int i = 1; i < n; i++)
     {
-        if(intervals[i]->abpos + cutoff <= right)
+        if(intervals[i]->read_A_match_start_ + cutoff <= right)
         {
-            right=std::max(right,intervals[i]->aepos - cutoff);
+            right=std::max(right, intervals[i]->read_A_match_end_ - cutoff);
         }
         else
         {
             ret.push_back(std::pair<int, int>(left,right));
-            left = intervals[i]->abpos + cutoff;
-            right = intervals[i]->aepos - cutoff;
+            left = intervals[i]->read_A_match_start_ + cutoff;
+            right = intervals[i]->read_A_match_end_ - cutoff;
         }
     }
     ret.push_back(std::pair<int, int>(left,right));
@@ -231,12 +231,12 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
 
     if (intervals.size() > min_cov) {
-        ret.first = intervals[min_cov]->abpos;
+        ret.first = intervals[min_cov]->read_A_match_start_;
     } else
         ret.first = 0;
     sort(intervals.begin(),intervals.end(),compare_overlap_aepos); //sort according to left
     if (intervals.size() > min_cov) {
-        ret.second = intervals[min_cov]->aepos;
+        ret.second = intervals[min_cov]->read_A_match_end_;
     } else
         ret.second = 0;
     return ret;
@@ -332,20 +332,20 @@ int main(int argc, char *argv[]) {
     //        idx[std::pair<int, int>(aln[i]->aid, aln[i]->bid)] = std::vector<LOverlap *>();
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
-            idx[aln[i]->aid][aln[i]->bid] = std::vector<LOverlap *>();
+            idx[aln[i]->read_A_id][aln[i]->read_B_id] = std::vector<LOverlap *>();
         }
     }
 
 
     for (int i = 0; i < aln.size(); i++) {
     if (aln[i]->active) {
-	    has_overlap[aln[i]->aid].insert(aln[i]->bid);
+	    has_overlap[aln[i]->read_A_id].insert(aln[i]->read_B_id);
         }
     }
 
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
-            idx3[aln[i]->aid].push_back(aln[i]);
+            idx3[aln[i]->read_A_id].push_back(aln[i]);
         }
     }
 
@@ -353,13 +353,13 @@ int main(int argc, char *argv[]) {
     std::cout<<"add data"<<std::endl;
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
-            idx[aln[i]->aid][aln[i]->bid].push_back(aln[i]);
+            idx[aln[i]->read_A_id][aln[i]->read_B_id].push_back(aln[i]);
         }
     }
     std::cout<<"add data"<<std::endl;
 
 
-    //sort each a,b pair according to abpos:
+    //sort each a,b pair according to read_A_match_start_:
     /*for (int i = 0; i < n_read; i++)
         for (std::set<int>::iterator j = has_overlap[i].begin(); j != has_overlap[i].end(); j++) {
             std::sort(idx[std::pair<int,int>(i, *j)].begin(), idx[std::pair<int,int>(i, *j)].end(), compare_pos);
@@ -425,25 +425,25 @@ int main(int argc, char *argv[]) {
 # pragma omp parallel for
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active)
-            if ((not reads[aln[i]->aid]->active) or (not reads[aln[i]->bid]->active) or
-                (aln[i]->diffs * 2 / float(aln[i]->bepos - aln[i]->bbpos + aln[i]->aepos - aln[i]->abpos) >
-                 QUALITY_THRESHOLD) or (aln[i]->aepos - aln[i]->abpos < ALN_THRESHOLD))
+            if ((not reads[aln[i]->read_A_id]->active) or (not reads[aln[i]->read_B_id]->active) or
+                (aln[i]->diffs * 2 / float(aln[i]->read_B_match_end_ - aln[i]->read_B_match_start_ + aln[i]->read_A_match_end_ - aln[i]->read_A_match_start_) >
+                 QUALITY_THRESHOLD) or (aln[i]->read_A_match_end_ - aln[i]->read_A_match_start_ < ALN_THRESHOLD))
                 aln[i]->active = false;
         }
 
 # pragma omp parallel for
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active) {
-                aln[i]->eff_astart = reads[aln[i]->aid]->effective_start;
-                aln[i]->eff_aend = reads[aln[i]->aid]->effective_end;
+                aln[i]->eff_read_A_start_ = reads[aln[i]->read_A_id]->effective_start;
+                aln[i]->eff_read_A_end_ = reads[aln[i]->read_A_id]->effective_end;
 
 				if (aln[i]->flags == 0) {
-					aln[i]->eff_bstart = reads[aln[i]->bid]->effective_start;
-                	aln[i]->eff_bend = reads[aln[i]->bid]->effective_end;
+					aln[i]->eff_read_B_start_ = reads[aln[i]->read_B_id]->effective_start;
+                	aln[i]->eff_read_B_end_ = reads[aln[i]->read_B_id]->effective_end;
 				}
 				else {
-					aln[i]->eff_bstart = aln[i]->blen - reads[aln[i]->bid]->effective_end;
-                	aln[i]->eff_bend = aln[i]->blen - reads[aln[i]->bid]->effective_start;
+					aln[i]->eff_read_B_start_ = aln[i]->blen - reads[aln[i]->read_B_id]->effective_end;
+                	aln[i]->eff_read_B_end_ = aln[i]->blen - reads[aln[i]->read_B_id]->effective_start;
 				}
             }
         }
@@ -461,7 +461,7 @@ int main(int argc, char *argv[]) {
         idx3.clear();
         for (int i = 0; i < aln.size(); i++) {
             if (aln[i]->active) {
-                idx3[aln[i]->aid].push_back(aln[i]);
+                idx3[aln[i]->read_A_id].push_back(aln[i]);
             }
         }
     }
@@ -545,7 +545,7 @@ int main(int argc, char *argv[]) {
 # pragma omp parallel for
             for (int ii = 0; ii < n_aln; ii++) {
             if (aln[ii]->active)
-            if ((not reads[aln[ii]->aid]->active) or (not reads[aln[ii]->bid]->active))
+            if ((not reads[aln[ii]->read_A_id]->active) or (not reads[aln[ii]->read_B_id]->active))
                 aln[ii]->active = false;
             }
 
@@ -647,8 +647,8 @@ int main(int argc, char *argv[]) {
 
             if (idx3[std::get<0>(edgelist[i]).id][num_passed]->active) {
                 //put it in
-                int start = idx3[std::get<0>(edgelist[i]).id][num_passed]->bbpos;
-                int end = idx3[std::get<0>(edgelist[i]).id][num_passed]->bepos;
+                int start = idx3[std::get<0>(edgelist[i]).id][num_passed]->read_B_match_start_;
+                int end = idx3[std::get<0>(edgelist[i]).id][num_passed]->read_B_match_end_;
                 std::string bsub = reads[idx3[std::get<0>(edgelist[i]).id][num_passed]->bid]->bases;
                 input_seq[num_chosen] = (char *)calloc( 100000 , sizeof(char));
                 if (idx3[std::get<0>(edgelist[i]).id][num_passed]->flags == 0)
@@ -711,7 +711,7 @@ int main(int argc, char *argv[]) {
         int bid = std::get<1>(edgelist[i]).id;
         bool found = false;
         for (int j = 0; j < idx_aln[std::get<0>(edgelist[i]).id].size(); j++) {
-            //printf("%d %d %d %d\n",bid, idx_aln[aid][j]->bid, idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos, std::get<2>(edgelist[i]));
+            //printf("%d %d %d %d\n",bid, idx_aln[aid][j]->bid, idx_aln[aid][j]->read_A_match_end_ - idx_aln[aid][j]->read_A_match_start_, std::get<2>(edgelist[i]));
             if ((idx_aln[aid][j]->bid == bid) and \
             (idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos == std::get<2>(edgelist[i]))) {
                 selected.push_back(idx_aln[aid][j]);
@@ -786,7 +786,7 @@ int main(int argc, char *argv[]) {
 
 		for (int j = 0; j < currentalns.size(); j++) {
     		//std::cout << std::get<0>(edgelist[i]).id << " " << std::get<1>(edgelist[i]).id << " " << currentalns[j]->aln_type << std::endl;
-    		if (currentalns[j]->aepos - currentalns[j]->abpos == std::get<2>(edgelist[i]) ) currentaln = currentalns[j];
+    		if (currentalns[j]->read_A_match_end_ - currentalns[j]->read_A_match_start_ == std::get<2>(edgelist[i]) ) currentaln = currentalns[j];
 		}
 
 		if (currentaln == NULL) exit(1);
@@ -825,51 +825,51 @@ int main(int argc, char *argv[]) {
 		blen = currentaln->blen;
 
 		if (std::get<0>(edgelist[i]).strand == 0) {
-			abpos = currentaln->abpos;
-			aepos = currentaln->aepos;
+			abpos = currentaln->read_A_match_start_;
+			aepos = currentaln->read_A_match_end_;
 
-			aes = currentaln->eff_astart;
-			aee = currentaln->eff_aend;
+			aes = currentaln->eff_read_A_start_;
+			aee = currentaln->eff_read_A_end_;
 
 		} else {
-			abpos = alen - currentaln->aepos;
-			aepos = alen - currentaln->abpos;
+			abpos = alen - currentaln->read_A_match_end_;
+			aepos = alen - currentaln->read_A_match_start_;
 
-			aes = alen - currentaln->eff_aend;
-			aee = alen - currentaln->eff_astart;
+			aes = alen - currentaln->eff_read_A_end_;
+			aee = alen - currentaln->eff_read_A_start_;
 		}
 
 		if (((std::get<1>(edgelist[i]).strand == 0) and (currentaln->flags == 0)) or ((std::get<1>(edgelist[i]).strand == 1) and (currentaln->flags == 1))) {
-			bbpos = currentaln->bbpos;
-			bepos = currentaln->bepos;
+			bbpos = currentaln->read_B_match_start_;
+			bepos = currentaln->read_B_match_end_;
 
-			bes = currentaln->eff_bstart;
-			bee = currentaln->eff_bend;
+			bes = currentaln->eff_read_B_start_;
+			bee = currentaln->eff_read_B_end_;
 
 		} else {
-			bbpos = blen - currentaln->bepos;
-			bepos = blen - currentaln->bbpos;
+			bbpos = blen - currentaln->read_B_match_end_;
+			bepos = blen - currentaln->read_B_match_start_;
 
-			bes = blen - currentaln->eff_bend;
-			bee = blen - currentaln->eff_bstart;
+			bes = blen - currentaln->eff_read_B_end_;
+			bee = blen - currentaln->eff_read_B_start_;
 
 		}
 
-		//printf("[[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", abpos, aepos, aes, aee, bbpos, bepos, bes, bee);
+		//printf("[[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", read_A_match_start_, read_A_match_end_, aes, aee, read_B_match_start_, read_B_match_end_, bes, bee);
 
         LOverlap *new_ovl = new LOverlap();
-        new_ovl->abpos = abpos;
-        new_ovl->aepos = aepos;
-        new_ovl->bbpos = bbpos;
-        new_ovl->bepos = bepos;
-        new_ovl->eff_aend = aee;
-        new_ovl->eff_astart = aes;
-        new_ovl->eff_bend = bee;
-        new_ovl->eff_bstart = bes;
+        new_ovl->read_A_match_start_ = abpos;
+        new_ovl->read_A_match_end_ = aepos;
+        new_ovl->read_B_match_start_ = bbpos;
+        new_ovl->read_B_match_end_ = bepos;
+        new_ovl->eff_read_A_end_ = aee;
+        new_ovl->eff_read_A_start_ = aes;
+        new_ovl->eff_read_B_end_ = bee;
+        new_ovl->eff_read_B_start_ = bes;
         new_ovl->alen = currentaln->alen;
         new_ovl->blen = currentaln->blen;
-        new_ovl->aid = std::get<0>(edgelist[i]).id;
-        new_ovl->bid = std::get<1>(edgelist[i]).id;
+        new_ovl->read_A_id = std::get<0>(edgelist[i]).id;
+        new_ovl->read_B_id = std::get<1>(edgelist[i]).id;
 
 
         bedges.push_back(new_ovl);
@@ -877,7 +877,7 @@ int main(int argc, char *argv[]) {
 
 
         /*for (int j = 0; j < pitfalls[i+1].size(); j++)
-            if ((pitfalls[i+1][j].first > bepos ) and ( pitfalls[i+1][j].second<blen)) {
+            if ((pitfalls[i+1][j].first > read_B_match_end_ ) and ( pitfalls[i+1][j].second<blen)) {
                 //printf("read %d:", range[i+1]);
                 //printf("[%d %d]\n", pitfalls[i + 1][j].first, pitfalls[i + 1][j].second);
                 //fix the pit fall
@@ -888,16 +888,16 @@ int main(int argc, char *argv[]) {
         */
 
         //printf("%d,%s\n", str2.size(), str2.c_str());
-        //printf("ref:%s\n", next_seq.substr(bepos - str2.size(), str2.size()).c_str());
+        //printf("ref:%s\n", next_seq.substr(read_B_match_end_ - str2.size(), str2.size()).c_str());
 
 
         //filling the pit holes !!
-        //show all the gaps in [bepos <--> blen]
+        //show all the gaps in [read_B_match_end_ <--> blen]
         /*printf("read: %d ", range[i+1]);
         for (int j = 0; j < pitfalls[i+1].size(); j++)
             printf("[%d %d] ", pitfalls[i+1][j].first, pitfalls[i+1][j].second);
         printf("read a %d b %d\n",std::get<0>(edgelist[i]).id,std::get<1>(edgelist[i]).id);
-        printf("alen %d bepos: %d blen: %d\n", alen, bepos, blen);
+        printf("alen %d read_B_match_end_: %d blen: %d\n", alen, read_B_match_end_, blen);
         printf("\n");*/
 
 
@@ -930,18 +930,18 @@ int main(int argc, char *argv[]) {
 
         int trim = EDGE_TRIM;
         for (int j = 0; j < pitfalls[i+1].size(); j++)
-            if ((pitfalls[i+1][j].first > this_alignment->bepos ) and ( pitfalls[i+1][j].second<this_alignment->blen)) {
+            if ((pitfalls[i+1][j].first > this_alignment->read_B_match_end_ ) and ( pitfalls[i+1][j].second<this_alignment->blen)) {
                 printf("read %d: the pitfall is:", range[i+1]);
                 printf("[%d %d]\n", pitfalls[i + 1][j].first, pitfalls[i + 1][j].second);
                 //fix the pit fall
-                //next_trim = next_alignment->aepos - pitfalls[i + 1][j].first;
+                //next_trim = next_alignment->read_A_match_end_ - pitfalls[i + 1][j].first;
                 //printf("longer next trim:%d\n", next_trim);
 
-                if (pitfalls[i + 1][j].first > next_alignment->aepos)
+                if (pitfalls[i + 1][j].first > next_alignment->read_A_match_end_)
                     printf("fine, this will be removed in next alignment\n");
                 else {
                     std::string fix = get_aligned_seq_middle(next_aln_tag1, next_aln_tag2,
-                    pitfalls[i + 1][j].first-next_alignment->abpos - 20 , pitfalls[i + 1][j].second - next_alignment->abpos + 20);
+                    pitfalls[i + 1][j].first-next_alignment->read_A_match_start_ - 20 , pitfalls[i + 1][j].second - next_alignment->read_A_match_start_ + 20);
                     printf("fix will be:%s\n",fix.c_str());
 
 					if (fix.size() > 0) {
@@ -957,11 +957,11 @@ int main(int argc, char *argv[]) {
         std::string str2 = get_aligned_seq_end(aln_tag1, aln_tag2, trim);
 
         //printf("%d,%s\n", str2.size(), str2.c_str());
-        //printf("ref:%s\n", next_seq.substr(this_alignment->bepos - str2.size(), str2.size()).c_str());
+        //printf("ref:%s\n", next_seq.substr(this_alignment->read_B_match_end_ - str2.size(), str2.size()).c_str());
 
-        sequence.erase(sequence.end() - (this_alignment->alen - this_alignment->aepos), sequence.end());
+        sequence.erase(sequence.end() - (this_alignment->alen - this_alignment->read_A_match_end_), sequence.end());
         sequence.erase(sequence.end() - trim, sequence.end());
-        next_seq.erase(next_seq.begin(), next_seq.begin() + this_alignment->bepos - str2.size());
+        next_seq.erase(next_seq.begin(), next_seq.begin() + this_alignment->read_B_match_end_ - str2.size());
         sequence += next_seq;
 
 
@@ -979,7 +979,7 @@ int main(int argc, char *argv[]) {
     << " " << mappings.size() << " " << coverages.size() <<  std::endl;
 
     /*for (int i = 0; i < bedges.size() - 1; i++) {
-        printf("%d %d %d %d %d\n", bedges[i]->bbpos, bedges[i]->bepos, bedges[i+1]->abpos, bedges[i+1]->aepos, bedges[i]->bepos - bedges[i+1]->abpos);
+        printf("%d %d %d %d %d\n", bedges[i]->read_B_match_start_, bedges[i]->read_B_match_end_, bedges[i+1]->read_A_match_start_, bedges[i+1]->read_A_match_end_, bedges[i]->read_B_match_end_ - bedges[i+1]->read_A_match_start_);
     }*/
 
 
@@ -988,7 +988,7 @@ int main(int argc, char *argv[]) {
 
 
     printf("%d %d\n", mappings[0][800], mappings[0][1000]); // debug output
-    printf("%s\n%s\n", breads[0].substr(bedges[0]->abpos+800,50).c_str(),breads[1].substr(bedges[0]->bbpos+ mappings[0][800],50).c_str() ); //debug output
+    printf("%s\n%s\n", breads[0].substr(bedges[0]->read_A_match_start_ + 800, 50).c_str(), breads[1].substr(bedges[0]->read_B_match_start_ + mappings[0][800], 50).c_str() ); //debug output
 
 
     std::vector<std::vector<std::pair<int, int>>> lanes;
@@ -1012,25 +1012,25 @@ int main(int argc, char *argv[]) {
     while (current_starting_read < n_bb_reads-1) {
         int currentread = current_starting_read;
         int additional_offset = 0;
-        while (bedges[current_starting_read]->abpos + current_starting_space*tspace + current_starting_offset + additional_offset < bedges[current_starting_read]->aepos - EDGE_SAFE) {
-            int waypoint = bedges[current_starting_read]->abpos + tspace * current_starting_space + current_starting_offset + additional_offset;
-            //if ((waypoint - bedges[current_starting_read]->abpos) < EDGE_SAFE)
+        while (bedges[current_starting_read]->read_A_match_start_ + current_starting_space * tspace + current_starting_offset + additional_offset < bedges[current_starting_read]->read_A_match_end_ - EDGE_SAFE) {
+            int waypoint = bedges[current_starting_read]->read_A_match_start_ + tspace * current_starting_space + current_starting_offset + additional_offset;
+            //if ((waypoint - bedges[current_starting_read]->read_A_match_start_) < EDGE_SAFE)
             //    waypoint += EDGE_SAFE;
 
-            //int next_waypoint = mappings[currentread][waypoint - bedges[current_starting_read]->abpos] + bedges[current_starting_read]->bbpos;
+            //int next_waypoint = mappings[currentread][waypoint - bedges[current_starting_read]->read_A_match_start_] + bedges[current_starting_read]->read_B_match_start_;
             std::vector<std::pair<int,int> > lane;
 
-            while ((waypoint > bedges[currentread]->abpos) and (waypoint < bedges[ currentread ]->aepos)) {
+            while ((waypoint > bedges[currentread]->read_A_match_start_) and (waypoint < bedges[ currentread ]->read_A_match_end_)) {
 
                 printf("%d %d\n",currentread, waypoint);
                 trace_pts[currentread].push_back(waypoint);
 
 
-                /*if (waypoint > bedges[currentread]->aepos - EDGE_SAFE) {
+                /*if (waypoint > bedges[currentread]->read_A_match_end_ - EDGE_SAFE) {
                     printf("Reaching the end, neglect low coverage\n");
                 }
 
-                if ((coverages[currentread]->at(waypoint) < MIN_COV2) and (waypoint < bedges[currentread]->aepos - EDGE_SAFE)) {
+                if ((coverages[currentread]->at(waypoint) < MIN_COV2) and (waypoint < bedges[currentread]->read_A_match_end_ - EDGE_SAFE)) {
                     revert = true;
                     printf("Low coverage, revert\n");
                     break;
@@ -1040,7 +1040,7 @@ int main(int argc, char *argv[]) {
                 lane.push_back(std::pair<int,int>(currentread, waypoint));
                 if (currentread>rmax) rmax = currentread;
                 //int previous_wp = waypoint;
-                waypoint  = mappings[currentread][waypoint - bedges[currentread]->abpos] + bedges[currentread]->bbpos;
+                waypoint  = mappings[currentread][waypoint - bedges[currentread]->read_A_match_start_] + bedges[currentread]->read_B_match_start_;
                 //printf("%s\n%s\n", breads[currentread].substr(previous_wp,50).c_str(), breads[currentread+1].substr(waypoint,50).c_str());
                 currentread ++;
                 if (currentread >= n_bb_reads) break;
@@ -1076,7 +1076,7 @@ int main(int argc, char *argv[]) {
         if (trace_pts[current_starting_read].size() == 0)
             current_starting_offset = 0;
         else
-            current_starting_offset = trace_pts[current_starting_read].back() - bedges[current_starting_read]->abpos;
+            current_starting_offset = trace_pts[current_starting_read].back() - bedges[current_starting_read]->read_A_match_start_;
     }
 
 
@@ -1258,7 +1258,7 @@ int main(int argc, char *argv[]) {
 
     /*for (int i = 0; i < mapping.size(); i++)
         printf("%d %d\n", i, mapping[i]);
-    printf("[%d %d], [%d %d]\n", bedges[0]->abpos, bedges[0]->aepos, bedges[0]->bbpos, bedges[0]->bepos);*/
+    printf("[%d %d], [%d %d]\n", bedges[0]->read_A_match_start_, bedges[0]->read_A_match_end_, bedges[0]->read_B_match_start_, bedges[0]->read_B_match_end_);*/
 
     std::cout<<sequence.size()<<std::endl;
     std::cout<<draft_assembly.size()<<std::endl;

@@ -49,7 +49,7 @@ std::ostream& operator<<(std::ostream& out, const aligntype value){
         INSERT_ELEMENT(MISMATCH_RIGHT);
         INSERT_ELEMENT(COVERED);
         INSERT_ELEMENT(COVERING);
-        INSERT_ELEMENT(UNDIFINED);
+        INSERT_ELEMENT(UNDEFINED);
         INSERT_ELEMENT(MIDDLE);
 #undef INSERT_ELEMENT
     }
@@ -62,7 +62,7 @@ std::ostream& operator<<(std::ostream& out, const aligntype value){
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
     //Returns True if the sum of the match lengths of the two reads in ovl1 > the sum of the  overlap lengths of the two reads in ovl2
     //Returns False otherwise.
-    return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
+    return ((ovl1->read_A_match_end_ - ovl1->read_A_match_start_ + ovl1->read_B_match_end_ - ovl1->read_B_match_start_) > (ovl2->read_A_match_end_ - ovl2->read_A_match_start_ + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
 }
 
 bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2) {
@@ -70,25 +70,25 @@ bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vect
     //Returns False otherwise
     int sum1 = 0;
     int sum2 = 0;
-    for (int i = 0; i < ovl1->size(); i++) sum1 += (*ovl1)[i]->aepos - (*ovl1)[i]->abpos + (*ovl1)[i]->bepos - (*ovl1)[i]->bbpos;
-    for (int i = 0; i < ovl2->size(); i++) sum2 += (*ovl2)[i]->aepos - (*ovl2)[i]->abpos + (*ovl2)[i]->bepos - (*ovl2)[i]->bbpos;
+    for (int i = 0; i < ovl1->size(); i++) sum1 += (*ovl1)[i]->read_A_match_end_ - (*ovl1)[i]->read_A_match_start_ + (*ovl1)[i]->read_B_match_end_ - (*ovl1)[i]->read_B_match_start_;
+    for (int i = 0; i < ovl2->size(); i++) sum2 += (*ovl2)[i]->read_A_match_end_ - (*ovl2)[i]->read_A_match_start_ + (*ovl2)[i]->read_B_match_end_ - (*ovl2)[i]->read_B_match_start_;
     return sum1 > sum2;
 }
 
 bool compare_pos(LOverlap * ovl1, LOverlap * ovl2) {
     //True if ovl1 starts earlier than ovl2 on read a.
-    return (ovl1->abpos) > (ovl2->abpos);
+    return (ovl1->read_A_match_start_) > (ovl2->read_A_match_start_);
 }
 
 bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
     //True if ovl2 starts earlier than ovl1 on read a.
     //flips the two argumenst in compare_pos
-    return ovl1->abpos < ovl2->abpos;
+    return ovl1->read_A_match_start_ < ovl2->read_A_match_start_;
 }
 
 bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
     //Same as compare_pos?
-    return ovl1->abpos > ovl2->abpos;
+    return ovl1->read_A_match_start_ > ovl2->read_A_match_start_;
 }
 
 std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
@@ -100,28 +100,28 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int c
     if (n == 0) return ret;
 
     if(n == 1) {
-        ret.push_back(std::pair<int,int>(intervals[0]->abpos,intervals[0]->aepos));
+        ret.push_back(std::pair<int,int>(intervals[0]->read_A_match_start_, intervals[0]->read_A_match_end_));
         return ret;
     }
 
     //Where is sort defined ? Is this std::sort?
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left (start position of overlap beginning on a)
 
-    int left=intervals[0]->abpos + cutoff, right = intervals[0]->aepos - cutoff; //left, right means maximal possible interval now
+    int left= intervals[0]->read_A_match_start_ + cutoff, right = intervals[0]->read_A_match_end_ - cutoff; //left, right means maximal possible interval now
 
     for(int i = 1; i < n; i++) //Ovl1 ~ Ovl2 if Ovl1 and Ovl2 have a nonzero intersection. (that is both the b read maps to the same position on the a read)
     //This defines a chain of  connected overlaps. This for loop returns a a vector ret which
     // is a pair of <start of connected overlaps, end of connected overlaps>
     {
-        if(intervals[i]->abpos + cutoff <= right)
+        if(intervals[i]->read_A_match_start_ + cutoff <= right)
         {
-            right=std::max(right,intervals[i]->aepos - cutoff);
+            right=std::max(right, intervals[i]->read_A_match_end_ - cutoff);
         }
         else
         {
             ret.push_back(std::pair<int, int>(left,right));
-            left = intervals[i]->abpos + cutoff;
-            right = intervals[i]->aepos - cutoff;
+            left = intervals[i]->read_A_match_start_ + cutoff;
+            right = intervals[i]->read_A_match_end_ - cutoff;
         }
     }
     ret.push_back(std::pair<int, int>(left,right));
@@ -133,18 +133,18 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
 //Returns <start_pos, end_pos>
 //start_pos : the first position at which Read a of the overlaps have at least min_cov matches on it.
 //end_pos : the last position that the  (#overlaps- min_cov)th read (in order of start positions ends).
-//Should compare_overlap_aepos actually compare aepos? If that is done, then the end_pos will be the last position
+//Should compare_overlap_aepos actually compare read_A_match_end_? If that is done, then the end_pos will be the last position
 // on the a read so that all positions beyond have less than min_cov matches on them
     Interval ret;
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
 
     if (intervals.size() > min_cov) {
-        ret.first = intervals[min_cov]->abpos;
+        ret.first = intervals[min_cov]->read_A_match_start_;
     } else
         ret.first = 0;
     sort(intervals.begin(),intervals.end(),compare_overlap_aepos); //sort according to left
     if (intervals.size() > min_cov) {
-        ret.second = intervals[min_cov]->aepos;
+        ret.second = intervals[min_cov]->read_A_match_end_;
     } else
         ret.second = 0;
     return ret;
@@ -153,7 +153,7 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
 bool bridge(LOverlap* ovl, int s, int e){
     //Returns True if [s e] on read a is bridged by ovl. False else.
     //Put 500 in a typedef perhaps?
-    return ((ovl->abpos < s - 500) and (ovl->aepos > e + 500));
+    return ((ovl->read_A_match_start_ < s - 500) and (ovl->read_A_match_end_ > e + 500));
 }
 
 
@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
-            idx3[aln[i]->aid].push_back(aln[i]);
+            idx3[aln[i]->read_A_id].push_back(aln[i]);
         }
     }
 
@@ -277,12 +277,12 @@ int main(int argc, char *argv[]) {
 
 
     for (int i = 0; i < aln.size(); i++) {
-        idx[aln[i]->aid][aln[i]->bid] = std::vector<LOverlap *>();
+        idx[aln[i]->read_A_id][aln[i]->read_B_id] = std::vector<LOverlap *>();
     }
     std::cout << "flag6" <<std::endl;
 
     for (int i = 0; i < aln.size(); i++) {
-        idx[aln[i]->aid][aln[i]->bid].push_back(aln[i]);
+        idx[aln[i]->read_A_id][aln[i]->read_B_id].push_back(aln[i]);
     }
     std::cout << "flag7" << std::endl;
 
@@ -493,8 +493,8 @@ int main(int argc, char *argv[]) {
                 bool bridged = true;
                 int support = 0;
                 for (int k = 0; k < idx2[i].size(); k++) {
-                    //printf("%d %d %d %d\n", idx3[i][k]->abpos, idx3[i][k]->aepos, maskvec[i].first, repeat_anno[i][j].first);
-                    if ((idx2[i][k]->abpos < maskvec[i].first + 200) and (idx2[i][k]->aepos > repeat_anno[i][j].first - 300) and (idx2[i][k]->aepos < repeat_anno[i][j].first + 300)) {
+                    //printf("%d %d %d %d\n", idx3[i][k]->read_A_match_start_, idx3[i][k]->read_A_match_end_, maskvec[i].first, repeat_anno[i][j].first);
+                    if ((idx2[i][k]->read_A_match_start_ < maskvec[i].first + 200) and (idx2[i][k]->read_A_match_end_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_end_ < repeat_anno[i][j].first + 300)) {
                         support ++;
                         if (support > 7) {
                             bridged = false;
@@ -508,7 +508,7 @@ int main(int argc, char *argv[]) {
                 bool bridged = true;
                 int support = 0;
                 for (int k = 0; k < idx2[i].size(); k++) {
-                    if ((idx2[i][k]->abpos > repeat_anno[i][j].first - 300) and (idx2[i][k]->abpos < repeat_anno[i][j].first + 300) and (idx2[i][k]->aepos > maskvec[i].second - 200)) {
+                    if ((idx2[i][k]->read_A_match_start_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_start_ < repeat_anno[i][j].first + 300) and (idx2[i][k]->read_A_match_end_ > maskvec[i].second - 200)) {
                         support ++;
                         if (support > 7) { // heuristic here
                             bridged = false;
