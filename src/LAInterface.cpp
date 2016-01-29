@@ -4399,10 +4399,10 @@ void LOverlap::addtype2(int max_overhang) {
         this->aln_type = ACOVERB;
     else if (this->eabpos - this->aes > this->ebbpos - this->bes) {
         if ((this->bee - this->ebepos > 0) and (this->eabpos - this->aes > 0))
-        this->aln_type = FORWARD;
+            this->aln_type = FORWARD;
     }
     else {
         if ((this->ebbpos - this->bes > 0) and (this->aee - this->eaepos > 0))
-        this->aln_type = BACKWARD;
+            this->aln_type = BACKWARD;
     }
 }
