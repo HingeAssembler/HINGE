@@ -98,10 +98,17 @@ rm ecoli.*.ecoli.*
 LAmerge ecoli.las ecoli.*.las
 rm ecoli.*.las # we only need ecoli.las
 
+# Old pipeline
 Greedy_best_ovl ecoli ecoli.las ecoli_greedy.edges greedy.ini
 prune.py ecoli_greedy.edges
 draft_assembly.py ecoli.edges
 Unitig_consensus ecoli ecoli.las ecoli.linear.edges ecoli.draft.fasta greedy.ini
+
+# New pipeline
+Reads_filter ecoli ecoli.las ecoli.mas greedy.ini
+NSG ecoli ecoli.las ecoli.edges greedy.ini
+analyse2.py ecoli.edges.1
+# consensus has not finished yet
 
 correct_head.py ecoli.draft.fasta ecoli.draft.pb.fasta 
 fasta2DB draft ecoli.draft.pb.fasta

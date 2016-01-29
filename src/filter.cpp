@@ -25,12 +25,13 @@
 #define LAST_READ_SYMBOL  '$'
 
 
-typedef std::tuple<Node, Node, int> Edge_w;
+typedef std::tuple<Node, Node, int> Edge_w; //Edge with weight
 
-typedef std::pair<Node, Node> Edge_nw;
+typedef std::pair<Node, Node> Edge_nw; //Edge without weights
 
 
 static int ORDER(const void *l, const void *r) {
+    //Returns the difference between l and r. Why void pointer?
     int x = *((int32 *) l);
     int y = *((int32 *) r);
     return (x - y);
@@ -38,6 +39,7 @@ static int ORDER(const void *l, const void *r) {
 
 
 std::ostream& operator<<(std::ostream& out, const aligntype value){
+    //What is this doing?
     static std::map<aligntype, std::string> strings;
     if (strings.size() == 0){
 #define INSERT_ELEMENT(p) strings[p] = #p
@@ -58,10 +60,14 @@ std::ostream& operator<<(std::ostream& out, const aligntype value){
 
 
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
+    //Returns True if the sum of the match lengths of the two reads in ovl1 > the sum of the  overlap lengths of the two reads in ovl2
+    //Returns False otherwise.
     return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
 }
 
 bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2) {
+    //Returns True if the sum of matches over both reads for overlaps in ovl1  > sum of matches over both reads for overlaps in ovl2
+    //Returns False otherwise
     int sum1 = 0;
     int sum2 = 0;
     for (int i = 0; i < ovl1->size(); i++) sum1 += (*ovl1)[i]->aepos - (*ovl1)[i]->abpos + (*ovl1)[i]->bepos - (*ovl1)[i]->bbpos;
@@ -70,22 +76,27 @@ bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vect
 }
 
 bool compare_pos(LOverlap * ovl1, LOverlap * ovl2) {
+    //True if ovl1 starts earlier than ovl2 on read a.
     return (ovl1->abpos) > (ovl2->abpos);
 }
 
 bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
+    //True if ovl2 starts earlier than ovl1 on read a.
+    //flips the two argumenst in compare_pos
     return ovl1->abpos < ovl2->abpos;
 }
 
 bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
+    //Same as compare_pos?
     return ovl1->abpos > ovl2->abpos;
 }
 
 std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
+//Returns sections of read a which are covered by overlaps. Each overlap is considered as <start_pos+cutoff,end_pos-cutoff>.
 {
     //std::cout<<"Merge"<<std::endl;
     std::vector<std::pair<int, int > > ret;
-    int n = intervals.size();
+    int n = intervals.size(); // Length of the vector intervals
     if (n == 0) return ret;
 
     if(n == 1) {
@@ -93,11 +104,14 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int c
         return ret;
     }
 
-    sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
+    //Where is sort defined ? Is this std::sort?
+    sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left (start position of overlap beginning on a)
 
     int left=intervals[0]->abpos + cutoff, right = intervals[0]->aepos - cutoff; //left, right means maximal possible interval now
 
-    for(int i = 1; i < n; i++)
+    for(int i = 1; i < n; i++) //Ovl1 ~ Ovl2 if Ovl1 and Ovl2 have a nonzero intersection. (that is both the b read maps to the same position on the a read)
+    //This defines a chain of  connected overlaps. This for loop returns a a vector ret which
+    // is a pair of <start of connected overlaps, end of connected overlaps>
     {
         if(intervals[i]->abpos + cutoff <= right)
         {
@@ -114,7 +128,13 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int c
     return ret;
 }
 
+//Interval = pair<int, int>. Defined in LAInterface.h
 Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
+//Returns <start_pos, end_pos>
+//start_pos : the first position at which Read a of the overlaps have at least min_cov matches on it.
+//end_pos : the last position that the  (#overlaps- min_cov)th read (in order of start positions ends).
+//Should compare_overlap_aepos actually compare aepos? If that is done, then the end_pos will be the last position
+// on the a read so that all positions beyond have less than min_cov matches on them
     Interval ret;
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
 
@@ -131,6 +151,8 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
 }
 
 bool bridge(LOverlap* ovl, int s, int e){
+    //Returns True if [s e] on read a is bridged by ovl. False else.
+    //Put 500 in a typedef perhaps?
     return ((ovl->abpos < s - 500) and (ovl->aepos > e + 500));
 }
 
@@ -138,34 +160,34 @@ bool bridge(LOverlap* ovl, int s, int e){
 int main(int argc, char *argv[]) {
 
     LAInterface la;
-	char * name_db = argv[1];
-	char * name_las = argv[2];
+	char * name_db = argv[1]; //.db file of reads to load
+	char * name_las = argv[2];//.las file of alignments
     char * name_mask = argv[3];
-    char * name_config = argv[4];
+    char * name_config = argv[4];//name of the configuration file, in INI format
 	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.openDB(name_db);
-    std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
+    std::cout<<"# Reads:" << la.getReadNumber() << std::endl; // output some statistics 
     la.openAlignmentFile(name_las);
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
 
 	int n_aln = la.getAlignmentNumber();
 	int n_read = la.getReadNumber();
-    std::vector<LOverlap *> aln;
+    std::vector<LOverlap *> aln;//Vector of pointers to all alignments
 	la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
-    std::vector<Read *> reads;
+    std::vector<Read *> reads; //Vector of pointers to all reads
     la.getRead(reads,0,n_read);
 	std::vector<std::vector<int>>  QV;
-	la.getQV(QV,0,n_read);
+	la.getQV(QV,0,n_read); // load QV track from .db file 
     std::cout << "input data finished" <<std::endl;
 
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
     }
-
-    std::cout << "flag0" <<std::endl;
-
+    //Binarize QV vector, 40 is the threshold
+    
     std::vector<std::pair<int, int> > QV_mask;
+    // QV_mask is the mask based on QV for reads, for each read, it has one pair [start, end]
 
     for (int i = 0; i < n_read; i++) {
         int s = 0, e = 0;
@@ -185,8 +207,8 @@ int main(int argc, char *argv[]) {
                 e = j+1;
             }
         }
-
-        QV_mask.push_back(std::pair<int, int>(maxs*la.tspace, maxe*la.tspace));
+	// get the longest consecutive region that has good QV 
+        QV_mask.push_back(std::pair<int, int>(maxs*la.tspace, maxe*la.tspace)); // tspace the the interval of trace points
         // create mask by QV
     }
 
@@ -201,7 +223,7 @@ int main(int argc, char *argv[]) {
         printf("[%d %d]", QV_mask[i].first, QV_mask[i].second);
         printf("\n");
     }
-    //for debug
+    //display, for debug
     */
 
     INIReader reader(name_config);
@@ -217,9 +239,9 @@ int main(int argc, char *argv[]) {
     int MIN_COV = reader.GetInteger("filter", "min_cov", -1);
     int CUT_OFF = reader.GetInteger("filter", "cut_off", -1);
     int THETA = reader.GetInteger("filter", "theta", -1);
-	int N_PROC = reader.GetInteger("running", "n_proc", 4);
-    int EST_COV = reader.GetInteger("filter", "ec", 0);
-    int reso = 40;
+    int N_PROC = reader.GetInteger("running", "n_proc", 4);
+    int EST_COV = reader.GetInteger("filter", "ec", 0); // load the estimated coverage (probably from other programs) from ini file, if it is zero, then estimate it
+    int reso = 40; // resolution of masks, repeat annotation, coverage, etc  = 40 basepairs 
 
     omp_set_num_threads(N_PROC);
 
@@ -248,7 +270,7 @@ int main(int argc, char *argv[]) {
     std::cout << "flag4" <<std::endl;
 
 # pragma omp parallel for
-    for (int i = 0; i < n_read; i++) {
+    for (int i = 0; i < n_read; i++) {// sort overlaps of a reads
         std::sort(idx3[i].begin(), idx3[i].end(), compare_overlap);
     }
     std::cout << "flag5" <<std::endl;
@@ -292,13 +314,16 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < n_read; i ++) {
         std::vector<std::pair<int, int> > coverage;
+        //TODO : Implement set based gradient
         std::vector<std::pair<int, int> > cg;
-        la.profileCoverage(idx2[i], coverage, reso, CUT_OFF);
+        //profileCoverage: get the coverage based on pile-o-gram
+        la.profileCoverage(idx3[i], coverage, reso, CUT_OFF);
         cov << "read " << i <<" ";
         for (int j = 0; j < coverage.size(); j++)
             cov << coverage[j].first << ","  << coverage[j].second << " ";
         cov << std::endl;
 
+        //Computes coverage gradients.
         if (coverage.size() >= 2)
             for (int j = 0; j < coverage.size() - 1; j++) {
                 cg.push_back(std::pair<int,int>(coverage[j].first, coverage[j+1].second - coverage[j].second));
@@ -311,6 +336,7 @@ int main(int argc, char *argv[]) {
 
     int num_slot = 0;
     int total_cov = 0;
+    //Finding the average coverage, probing a small proportion of reads
     for (int i = 0; i < n_read/500; i++) {
         for (int j = 0; j < coverages[i].size(); j++) {
             //printf("%d\n", coverages[i][j].second);
@@ -321,23 +347,14 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Estimated coverage:" << total_cov / float(num_slot) << std::endl;
     int cov_est = total_cov / num_slot;
+    //get estimated coverage
 
 
-    //if (EST_COV != 0) cov_est = EST_COV;
-    //std::cout << "Estimated coverage:" << cov_est << std::endl;
-
-    /*coverages.clear();
-    for (int i = 0; i < n_read; i ++) {
-        std::vector<std::pair<int, int> > coverage;
-        la.profileCoveragefine(idx3[i], coverage, reso, CUT_OFF, total_cov/num_slot);
-        cov << "read " << i <<" ";
-        for (int j = 0; j < coverage.size(); j++)
-            cov << coverage[j].first << ","  << coverage[j].second << " ";
-        cov << std::endl;
-        coverages.push_back(coverage);
-    }*/
+    if (EST_COV != 0) cov_est = EST_COV;
+    std::cout << "Estimated coverage:" << cov_est << std::endl; //if the coverage is specified by ini file, cover the estimated one
 
     std::vector<std::pair<int, int>> maskvec;
+    // mask vector, same format as mask_QV
     if (MIN_COV < cov_est/3)
         MIN_COV = cov_est/3;
 
@@ -347,6 +364,8 @@ int main(int argc, char *argv[]) {
             coverages[i][j].second -= MIN_COV;
             if (coverages[i][j].second < 0) coverages[i][j].second = 0;
         }
+
+        //get the longest consecutive region that has decent coverage, decent coverage = estimated coverage / 3
         int start = 0;
         int end = start;
         int maxlen = 0, maxstart = 0, maxend = 0;
@@ -376,16 +395,15 @@ int main(int argc, char *argv[]) {
 
         //maskvec.push_back(std::pair<int, int>(maxstart + 200, maxend - 200));
         maskvec.push_back(std::pair<int, int>(std::max(maxstart + 200, QV_mask[i].first), std::min(maxend - 200, QV_mask[i].second)));
+        
+        //get the interestion of two masks
     }
-
-
-
 
 
     //binarize coverage gradient;
 
     std::vector<std::vector<std::pair<int, int> > > repeat_anno;
-
+    //detect repeats based on coverage gradient, mark it has rising (1) or falling (-1)
     for (int i = 0; i < n_read; i++) {
         std::vector<std::pair<int, int> > anno;
         for (int j = 0; j < cgs[i].size(); j++) {
@@ -400,7 +418,7 @@ int main(int argc, char *argv[]) {
 
     int gap_thre = 300;
 
-    // clean it a bit
+    // clean it a bit, merge consecutive 1, or consecutive -1, or adjacent 1 and -1 if their position is within gap_threshold (could be bursty error)
     for (int i = 0; i < n_read; i++) {
         for (std::vector<std::pair<int, int> >::iterator iter = repeat_anno[i].begin(); iter < repeat_anno[i].end(); ) {
             if (iter+1 < repeat_anno[i].end()){
@@ -450,7 +468,6 @@ int main(int argc, char *argv[]) {
                 if (not bridged) active = false;
             }
 
-
         }
         if (not active) {
             //printf("read %d comes from homologus recombination\n", i);
@@ -460,11 +477,11 @@ int main(int argc, char *argv[]) {
         if (repeat_anno[i].size() > 0)
         if (repeat_anno[i].back().second == 1)
             rep << repeat_anno[i].back().first<<" " << -1 << " ";
-
         rep << std::endl;
     }
     // need a better hinge detection
 
+	// get hinges from repeat annotation information
     std::unordered_map<int, std::vector<std::pair<int, int>> > hinges;
     // n_read pos -1 = in_hinge 1 = out_hinge
 
@@ -493,7 +510,7 @@ int main(int argc, char *argv[]) {
                 for (int k = 0; k < idx2[i].size(); k++) {
                     if ((idx2[i][k]->abpos > repeat_anno[i][j].first - 300) and (idx2[i][k]->abpos < repeat_anno[i][j].first + 300) and (idx2[i][k]->aepos > maskvec[i].second - 200)) {
                         support ++;
-                        if (support > 7) {
+                        if (support > 7) { // heuristic here
                             bridged = false;
                             break;
                         }
@@ -502,11 +519,10 @@ int main(int argc, char *argv[]) {
                 if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_anno[i][j].first, 1));
 
             }
-
         }
-
     }
 
+	//output hinges
     for (int i = 0; i < n_read; i++) {
         hg << i << " ";
         for (int j = 0; j < hinges[i].size(); j++) {
