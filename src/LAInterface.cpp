@@ -4345,7 +4345,7 @@ void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
 }
 
 
-void LOverlap::trim_overlap() {
+void LOverlap::trim_overlap() {//What is going on here????
     this->ebbpos = 0;
     this->ebepos = 0;
     this->eabpos = 0;
