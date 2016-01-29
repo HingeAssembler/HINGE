@@ -21,7 +21,7 @@ Important:
 
 - explain trim_overlap and addType2. Variables are very confusing
 
-- Alignments added to each read. Isn't it just the first overlap? (longest one)
+- Line 309: Alignments added to each read. Isn't it just the first overlap? (longest one).
 
 - Is line 515, is the sign reversed?
 
