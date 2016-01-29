@@ -15,3 +15,6 @@ the actual read extends longer.
 - Before doing the hinge test (say, at a rising edge), you should check whether there is any read that extends from the 
 annotation event until the end of the (effective) read. If there isn't, place a hinge anyway. Otherwise, do the current test
 
+
+
+- explain trim_overlap and addType2. Variables are very confusing
