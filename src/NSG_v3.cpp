@@ -268,6 +268,8 @@ int main(int argc, char *argv[]) {
         free(line);
 
     int num_active_read = 0;
+
+    //This seems to be an unnecessary stub
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) num_active_read ++;
     }
@@ -302,8 +304,8 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < n_read; i++) {
         for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin(); it!=idx[i].end(); it++) {
-            std::sort(it->second.begin(), it->second.end(), compare_overlap);
-            if (it->second.size() > 0)
+            std::sort(it->second.begin(), it->second.end(), compare_overlap);//Sort overlaps by lengths
+            if (it->second.size() > 0)//Is this not just max? Why sort?
                 idx2[i].push_back(it->second[0]);
         }
     }
