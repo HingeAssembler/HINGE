@@ -16,5 +16,14 @@ the actual read extends longer.
 annotation event until the end of the (effective) read. If there isn't, place a hinge anyway. Otherwise, do the current test
 
 
+Important:
+
 
 - explain trim_overlap and addType2. Variables are very confusing
+
+- Alignments added to each read. Isn't it just the first overlap? (longest one)
+
+- Is line 515, is the sign reversed?
+
+
+
