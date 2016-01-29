@@ -154,6 +154,8 @@ public:
 
     void getOverlap(std::vector<LOverlap *> &, int from, int to); // get overlap(simplified version of alignment) with a read in a range
 
+    void getOverlapw(std::vector<LOverlap *> &, int from, int to); // get overlap(simplified version of alignment) with a read in a range
+
     void getOverlap(std::vector<LOverlap *> &, int n);
 
     void getAlignment(std::vector<LAlignment *> &, int from, int to); // get alignment with 'A read' in a range
@@ -201,7 +203,6 @@ public:
     void profileCoveragefine(std::vector<LOverlap *> &alignments, std::vector<std::pair<int, int> > & coverage,int reso, int cutoff, int est_coverage);
 
     void repeatDetect(std::vector<std::pair<int, int> > & coverage, std::vector<std::pair<int, int> > & repeat);
-
 
 };
 

@@ -8,9 +8,10 @@ from parse_alignment import *
 filename,filename2 = sys.argv[1:3]
 alignmentname = sys.argv[3]
 readarg = sys.argv[4]
+k = int(sys.argv[5])
 
 
-stream = subprocess.Popen(["LA4Awesome", filename, filename2 , alignmentname ,readarg, '-F'],
+stream = subprocess.Popen(["LA4Awesome", filename, filename2 , alignmentname ,readarg],
                                   stdout=subprocess.PIPE, bufsize=1)
 
 alignments = parse_alignment2(stream.stdout) # generator
@@ -27,15 +28,15 @@ mapping = {}
 
 for key,value in d.items():
     value.sort(key = lambda x:x[2]-x[1], reverse=True)
-    aln = value[0]
-    
-    if aln[0] == 'n':
-        mapping[str(key)] = (aln[1], aln[2],aln[-1], 0)
-        mapping[str(key)+'\''] = (aln[2], aln[1],aln[-1], 1)
-    else:
-        mapping[str(key)] = (aln[2], aln[1], aln[-1], 1)
-        mapping[str(key)+'\''] = (aln[1], aln[2], aln[-1], 0)
-    
+    alns = value[:k]
+    for aln in alns:
+        if not mapping.has_key(str(key)):
+            mapping[str(key)] = [(aln[1], aln[2],aln[-1], 1-int(aln[0] == 'n'))]
+            mapping[str(key)+'\''] = [(aln[2], aln[1],aln[-1], int(aln[0] == 'n'))]
+        else:
+            mapping[str(key)].append((aln[1], aln[2],aln[-1], 1-int(aln[0] == 'n')))
+            mapping[str(key)+'\''].append((aln[2], aln[1],aln[-1], int(aln[0] == 'n')))
+            
 #print mapping
 import ujson
-ujson.dump(mapping,open(filename+'.mapping.json','w'))
+ujson.dump(mapping,open(filename2+'.mapping.json','w'))

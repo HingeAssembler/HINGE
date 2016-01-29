@@ -14,6 +14,8 @@
 #include "align.h"
 #include "DB.h"
 
+#include <unordered_map>
+
 
 void Read::showRead() {
     std::cout << "read #" << id << std::endl;
@@ -1427,6 +1429,9 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
     for (j = 0; j < novl; j++)
         //  Read it in
     {
+        if (j % (novl/100) == 0) {
+            printf("%d percent finished\n", j/(novl/100));
+        }
         Read_Overlap(input, ovl);
         if (ovl->path.tlen > tmax) {
             tmax = ((int) 1.2 * ovl->path.tlen) + 100;
@@ -1487,6 +1492,110 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
         new_ovl->bid = ovl->bread;
         new_ovl->abpos = ovl->path.abpos;
 		new_ovl->aepos = ovl->path.aepos;
+        new_ovl->bbpos = ovl->path.bbpos;
+        new_ovl->bepos = ovl->path.bepos;
+        new_ovl->alen = aln->alen;
+        new_ovl->blen = aln->blen;
+        new_ovl->diffs = ovl->path.diffs;
+        new_ovl->tlen = ovl->path.tlen;
+        new_ovl->tps = tps;
+        result_vec.push_back(new_ovl);
+    }
+    free(trace);
+}
+
+void LAInterface::getOverlapw(std::vector<LOverlap *> &result_vec, int from, int to) {
+
+    int j;
+    uint16 *trace;
+    int tmax;
+    int in, npt, idx, ar;
+    int64 tps;
+
+    aln->path = &(ovl->path);
+
+    tmax = 1000;
+    trace = (uint16 *) Malloc(sizeof(uint16) * tmax, "Allocating trace vector");
+    if (trace == NULL)
+        exit(1);
+    in = 0;
+
+    pts = new int[4];
+    pts[0] = from + 1;
+    pts[1] = to + 0;
+    pts[2] = INT32_MAX;
+
+    npt = pts[0];
+    idx = 1;
+
+    //  For each record do
+
+    for (j = 0; j < novl; j++)
+        //  Read it in
+    {
+        if (j % (novl/100) == 0) {
+            printf("%d percent finished\n", j/(novl/100));
+        }
+        Read_Overlap(input, ovl);
+        if (ovl->path.tlen > tmax) {
+            tmax = ((int) 1.2 * ovl->path.tlen) + 100;
+            trace = (uint16 *) Realloc(trace, sizeof(uint16) * tmax, "Allocating trace vector");
+            if (trace == NULL)
+                exit(1);
+        }
+        ovl->path.trace = (void *) trace;
+        Read_Trace(input, ovl, tbytes);
+        //  Determine if it should be displayed
+
+        ar = ovl->aread + 1;
+        if (in) {
+            while (ar > npt) {
+                npt = pts[idx++];
+                if (ar < npt) {
+                    in = 0;
+                    break;
+                }
+                npt = pts[idx++];
+            }
+        }
+        else {
+            while (ar >= npt) {
+                npt = pts[idx++];
+                if (ar <= npt) {
+                    in = 1;
+                    break;
+                }
+                npt = pts[idx++];
+            }
+        }
+        if (!in)
+            continue;
+
+        aln->alen = db1->reads[ovl->aread].rlen;
+        aln->blen = db2->reads[ovl->bread].rlen;
+        aln->flags = ovl->flags;
+        tps = ovl->path.tlen / 2;
+        LOverlap *new_ovl = new LOverlap();
+
+        if (COMP(ovl->flags))
+        {   new_ovl->flags = 1;
+        }
+        else {
+            new_ovl->flags = 0;
+        }
+
+        if (small)
+            Decompress_TraceTo16(ovl);
+
+        new_ovl->trace_pts_len = ovl->path.tlen;
+        //new_ovl->trace_pts = (uint16 *)malloc(ovl->path.tlen * sizeof(uint16));
+        //memcpy(new_ovl->trace_pts, ovl->path.trace, ovl->path.tlen * sizeof(uint16));
+
+        new_ovl->trace_pts = 0;
+        new_ovl->aid = ovl->aread;
+        new_ovl->bid = ovl->bread;
+        new_ovl->abpos = ovl->path.abpos;
+        new_ovl->aepos = ovl->path.aepos;
         new_ovl->bbpos = ovl->path.bbpos;
         new_ovl->bepos = ovl->path.bepos;
         new_ovl->alen = aln->alen;
@@ -4405,3 +4514,4 @@ void LOverlap::addtype2(int max_overhang) {
         this->aln_type = BACKWARD;
     }
 }
+

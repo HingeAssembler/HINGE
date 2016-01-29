@@ -163,6 +163,8 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
     }
 
+    std::cout << "flag0" <<std::endl;
+
     std::vector<std::pair<int, int> > QV_mask;
 
     for (int i = 0; i < n_read; i++) {
@@ -188,6 +190,7 @@ int main(int argc, char *argv[]) {
         // create mask by QV
     }
 
+    std::cout << "flag2" <<std::endl;
 
     /*for (int i = 0; i < 200; i++) {
         printf("read %d: ",i+1);
@@ -200,7 +203,6 @@ int main(int argc, char *argv[]) {
     }
     //for debug
     */
-
 
     INIReader reader(name_config);
     if (reader.ParseError() < 0) {
@@ -222,10 +224,19 @@ int main(int argc, char *argv[]) {
     omp_set_num_threads(N_PROC);
 
     std::vector<std::vector <LOverlap * > >idx3; // this is the pileup
+    std::vector<std::vector <LOverlap * > >idx2; // this is the deduplicated pileup
+
+    std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx; //unordered_map from (aid, bid) to alignments in a vector
+
+
 
     for (int i = 0; i< n_read; i++) {
         idx3.push_back(std::vector<LOverlap *>());
+        idx2.push_back(std::vector<LOverlap *>());
+        idx.push_back(std::unordered_map<int, std::vector<LOverlap *>> ());
     }
+
+    std::cout << "flag3" <<std::endl;
 
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
@@ -233,10 +244,39 @@ int main(int argc, char *argv[]) {
         }
     }
 
+
+    std::cout << "flag4" <<std::endl;
+
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {
         std::sort(idx3[i].begin(), idx3[i].end(), compare_overlap);
     }
+    std::cout << "flag5" <<std::endl;
+
+
+    for (int i = 0; i < aln.size(); i++) {
+        idx[aln[i]->aid][aln[i]->bid] = std::vector<LOverlap *>();
+    }
+    std::cout << "flag6" <<std::endl;
+
+    for (int i = 0; i < aln.size(); i++) {
+        idx[aln[i]->aid][aln[i]->bid].push_back(aln[i]);
+    }
+    std::cout << "flag7" << std::endl;
+
+# pragma omp parallel for
+    for (int i = 0; i < n_read; i++) {
+        for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin(); it!=idx[i].end(); it++) {
+            std::sort(it->second.begin(), it->second.end(), compare_overlap);
+            if (it->second.size() > 0)
+                idx2[i].push_back(it->second[0]);
+        }
+    }
+
+    std::cout<<"sorting" << std::endl;
+
+
+    std::cout<<"sorted" << std::endl;
 
     std::cout<<"profile coverage" << std::endl;
     std::ofstream cov(std::string(name_db) + ".coverage.txt");
@@ -253,7 +293,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i ++) {
         std::vector<std::pair<int, int> > coverage;
         std::vector<std::pair<int, int> > cg;
-        la.profileCoverage(idx3[i], coverage, reso, CUT_OFF);
+        la.profileCoverage(idx2[i], coverage, reso, CUT_OFF);
         cov << "read " << i <<" ";
         for (int j = 0; j < coverage.size(); j++)
             cov << coverage[j].first << ","  << coverage[j].second << " ";
@@ -273,7 +313,7 @@ int main(int argc, char *argv[]) {
     int total_cov = 0;
     for (int i = 0; i < n_read/500; i++) {
         for (int j = 0; j < coverages[i].size(); j++) {
-            printf("%d\n", coverages[i][j].second);
+            //printf("%d\n", coverages[i][j].second);
             total_cov += coverages[i][j].second;
             num_slot ++;
         }
@@ -283,8 +323,8 @@ int main(int argc, char *argv[]) {
     int cov_est = total_cov / num_slot;
 
 
-    if (EST_COV != 0) cov_est = EST_COV;
-    std::cout << "Estimated coverage:" << cov_est << std::endl;
+    //if (EST_COV != 0) cov_est = EST_COV;
+    //std::cout << "Estimated coverage:" << cov_est << std::endl;
 
     /*coverages.clear();
     for (int i = 0; i < n_read; i ++) {
@@ -337,8 +377,6 @@ int main(int argc, char *argv[]) {
         //maskvec.push_back(std::pair<int, int>(maxstart + 200, maxend - 200));
         maskvec.push_back(std::pair<int, int>(std::max(maxstart + 200, QV_mask[i].first), std::min(maxend - 200, QV_mask[i].second)));
     }
-
-
 
 
 
@@ -402,8 +440,8 @@ int main(int argc, char *argv[]) {
 
                 //test bridging
 
-                for (int k = 0; k < idx3[i].size(); k++) {
-                    if (bridge(idx3[i][k], s, e)) {
+                for (int k = 0; k < idx2[i].size(); k++) {
+                    if (bridge(idx2[i][k], s, e)) {
                         bridged = true;
                         break;
                     }
@@ -437,9 +475,9 @@ int main(int argc, char *argv[]) {
             if (repeat_anno[i][j].second == -1) { // look for in hinges, negative gradient
                 bool bridged = true;
                 int support = 0;
-                for (int k = 0; k < idx3[i].size(); k++) {
+                for (int k = 0; k < idx2[i].size(); k++) {
                     //printf("%d %d %d %d\n", idx3[i][k]->abpos, idx3[i][k]->aepos, maskvec[i].first, repeat_anno[i][j].first);
-                    if ((idx3[i][k]->abpos < maskvec[i].first + 200) and (idx3[i][k]->aepos > repeat_anno[i][j].first - 300) and (idx3[i][k]->aepos < repeat_anno[i][j].first + 300)) {
+                    if ((idx2[i][k]->abpos < maskvec[i].first + 200) and (idx2[i][k]->aepos > repeat_anno[i][j].first - 300) and (idx2[i][k]->aepos < repeat_anno[i][j].first + 300)) {
                         support ++;
                         if (support > 7) {
                             bridged = false;
@@ -452,8 +490,8 @@ int main(int argc, char *argv[]) {
             } else { // look for out_hinges, positive gradient
                 bool bridged = true;
                 int support = 0;
-                for (int k = 0; k < idx3[i].size(); k++) {
-                    if ((idx3[i][k]->abpos > repeat_anno[i][j].first - 300) and (idx3[i][k]->abpos < repeat_anno[i][j].first + 300) and (idx3[i][k]->aepos > maskvec[i].second - 200)) {
+                for (int k = 0; k < idx2[i].size(); k++) {
+                    if ((idx2[i][k]->abpos > repeat_anno[i][j].first - 300) and (idx2[i][k]->abpos < repeat_anno[i][j].first + 300) and (idx2[i][k]->aepos > maskvec[i].second - 200)) {
                         support ++;
                         if (support > 7) {
                             bridged = false;
