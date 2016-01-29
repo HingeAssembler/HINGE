@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
         num_overlaps += idx2[i].size();
     }
     std::cout<<num_overlaps << " overlaps" << std::endl;
-
+//Figure out contained read
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {
         bool contained = false;
@@ -361,7 +361,7 @@ int main(int argc, char *argv[]) {
             maximal_reads << i << std::endl;
         }
     }
-    std::cout<<"remove contained reads, active reads:" << num_active_read<< std::endl;
+    std::cout<<"removed contained reads, active reads:" << num_active_read<< std::endl;
 
     for (int iter = 0; iter < N_ITER; iter++) {
         int remove = 0;
