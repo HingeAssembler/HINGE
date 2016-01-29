@@ -28,7 +28,8 @@ public:
 };
 
 enum aligntype {
-    FORWARD, BACKWARD, ACOVERB, BCOVEREA, UNDIFINED, INTERNAL, NOT_ACTIVE, COVERING, COVERED, MIDDLE, MISMATCH_LEFT, MISMATCH_RIGHT // different type of alignment
+    FORWARD, BACKWARD, ACOVERB, BCOVEREA, UNDIFINED, INTERNAL, NOT_ACTIVE, COVERING,
+	COVERED, MIDDLE, MISMATCH_LEFT, MISMATCH_RIGHT, FORWARD_INTERNAL, REVERSE_INTERNAL // different type of alignment
 /**
  * FORWARD: Alignment and extend to the right
  * BACKWARD: extend to the left
@@ -37,6 +38,8 @@ enum aligntype {
  * MISMATCH_LEFT: read a has a chimeric section on the left, and read b align with the rest of read a and extend it to the left
  * MISMATCH_RIGHT: read a has a chimeric section on the right, read b align with the rest of read a and extend it to the right
  * UNDIFINED: any other exceptions
+ * FORWARD_INTERNAL : forward on read A internal on B
+ * REVERSE_INTERNAL : reverse on read A internal on B
 **/
 
 } ;
@@ -87,6 +90,7 @@ public:
     aligntype aln_type = UNDIFINED;
     void addtype(int); // depreciated
     void addtype2(int max_overhang); //classify overlaps
+    void AddTypesAsymmetric(int max_overhang);
     static const int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
 	bool active = true;
     uint16 *trace_pts;
