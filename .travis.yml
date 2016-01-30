@@ -5,13 +5,12 @@ compiler: gcc
 install: brew update
       && brew unlink cmake
       && brew install cmake
-    
+
 script: ./build.sh && ./test.sh
 
-os: osx
-
 notifications:
-	email:
-		- xf1280@gmail.com
-		- govinda.kamath@gmail.com
-		- ilanshom@gmail.com
+  email:
+    - xf1280@gmail.com
+    - govinda.kamath@gmail.com
+    - ilanshom@gmail.com
+
