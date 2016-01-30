@@ -593,7 +593,7 @@ int main(int argc, char *argv[]) {
                             //remove certain hinges
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
                                 if ((matches_backward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos - 400)
-                                    and (hinges_vec[i][k].type == 1))
+                                    and (hinges_vec[i][k].type == -1))
                                     hinges_vec[i][k].active = false;
                             }
                         }
