@@ -362,14 +362,15 @@ int main(int argc, char *argv[]) {
                 //Figure out if read is contained
                 contained= contained or ProcessAlignment(it->second[0],read[(it->second[0]->read_A_id_],
                                                          read[(it->second[0]->read_B_id_], ALN_THRESHOLD, THETA);
-                if (contained) reads[i]->active = false;
                 //Filter matches that matter.
+                //TODO Figure out a way to do this more efficiently
                 if ((it->second[0]->match_type_== FORWARD) or (it->second[0]->match_type_== FORWARD_INTERNAL))
                     matches_forward.push_back(it->second[0]);
                 else if ((it->second[0]->match_type_== BACKWARD) or (it->second[0]->match_type_== BACKWARD_INTERNAL))
                     matches_backward.push_back(it->second[0]);
             }
         }
+        if (contained) reads[i]->active = false;
     }
 
     int num_overlaps = 0;
