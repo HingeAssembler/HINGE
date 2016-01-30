@@ -1764,8 +1764,8 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
         aln->flags = ovl->flags;
         tps = ovl->path.tlen / 2;
         LAlignment *new_al = new LAlignment();
-        new_al->aid = ovl->aread;
-        new_al->bid = ovl->bread;
+        new_al->read_A_id_ = ovl->aread;
+        new_al->read_B_id_ = ovl->bread;
 
         if (COMP(ovl->flags))
             //printf(" c");
@@ -2167,8 +2167,8 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
         aln->flags = ovl->flags;
         tps = ovl->path.tlen / 2;
         LAlignment *new_al = new LAlignment();
-        new_al->aid = ovl->aread;
-        new_al->bid = ovl->bread;
+        new_al->read_A_id_ = ovl->aread;
+        new_al->read_B_id_ = ovl->bread;
 
         if (COMP(ovl->flags))
             //printf(" c");
@@ -3463,8 +3463,8 @@ int LAInterface::showAlignmentTags(LAlignment *alignment) {
     char * bbuffer = New_Read_Buffer(db2);
 
 
-    char * aseq = Load_Subread(db1, alignment->aid, amin, amax, abuffer, 0);
-    char * bseq = Load_Subread(db2, alignment->bid, bmin, bmax, bbuffer, 0);
+    char * aseq = Load_Subread(db1, alignment->read_A_id_, amin, amax, abuffer, 0);
+    char * bseq = Load_Subread(db2, alignment->read_B_id_, bmin, bmax, bbuffer, 0);
 
 
     alignment->aseq = aseq - amin;
@@ -3661,8 +3661,8 @@ std::pair<std::string, std::string> LAInterface::getAlignmentTags(LAlignment *al
     char * bbuffer = New_Read_Buffer(db2);
 
 
-    char * aseq = Load_Subread(db1, alignment->aid, amin, amax, abuffer, 0);
-    char * bseq = Load_Subread(db2, alignment->bid, bmin, bmax, bbuffer, 0);
+    char * aseq = Load_Subread(db1, alignment->read_A_id_, amin, amax, abuffer, 0);
+    char * bseq = Load_Subread(db2, alignment->read_B_id_, bmin, bmax, bbuffer, 0);
 
 
     alignment->aseq = aseq - amin;
@@ -4139,8 +4139,8 @@ int LAInterface::recoverAlignment(LAlignment *alignment) {
     aln->alen = alignment->alen;
     aln->blen = alignment->blen;
     aln->flags = (uint32)alignment->flags;
-    ovl->aread = alignment->aid;
-    ovl->bread = alignment->bid;
+    ovl->aread = alignment->read_A_id_;
+    ovl->bread = alignment->read_B_id_;
 
     path->trace = (uint16 *)malloc(path->tlen * sizeof(uint16));
     memcpy(path->trace, alignment->trace_pts, path->tlen * sizeof(uint16));

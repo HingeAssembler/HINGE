@@ -342,32 +342,32 @@ int main(int argc, char *argv[]) {
 
                     if ((*idx2[i][j])[0]->active) {
                         for (int kk = 0; kk < idx2[i][j]->size(); kk++) {
-                            if ((reads[(*idx2[i][j])[kk]->bid]->active) and ((*idx2[i][j])[kk]->active))
-                            if (((*idx2[i][j])[kk]->aln_type == FORWARD) and (cf < 1)) {
+                            if ((reads[(*idx2[i][j])[kk]->read_B_id_]->active) and ((*idx2[i][j])[kk]->active))
+                            if (((*idx2[i][j])[kk]->match_type_ == FORWARD) and (cf < 1)) {
                                 cf += 1;
                                 //add edge
-                                if ((*idx2[i][j])[kk]->flags == 1) { // n = 0, c = 1 n:this read itself, c:reverse complement
+                                if ((*idx2[i][j])[kk]->reverse_complement_match_ == 1) { // n = 0, c = 1 n:this read itself, c:reverse complement
                                     edgelist.push_back(
-                                            std::make_tuple(Node((*idx2[i][j])[kk]->aid, 0),
-                                                                  Node((*idx2[i][j])[kk]->bid, 1), (*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
+                                            std::make_tuple(Node((*idx2[i][j])[kk]->read_A_id_, 0),
+                                                                  Node((*idx2[i][j])[kk]->read_B_id_, 1), (*idx2[i][j])[kk]->read_A_match_end_ -(*idx2[i][j])[kk]->read_A_match_start_));
                                 } else {
                                     edgelist.push_back(
-                                            std::make_tuple(Node((*idx2[i][j])[kk]->aid, 0),
-                                                                  Node((*idx2[i][j])[kk]->bid, 0), (*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
+                                            std::make_tuple(Node((*idx2[i][j])[kk]->read_A_id_, 0),
+                                                                  Node((*idx2[i][j])[kk]->read_B_id_, 0), (*idx2[i][j])[kk]->read_A_match_end_ -(*idx2[i][j])[kk]->read_A_match_start_));
                                 }
                             }
-                            if ((reads[(*idx2[i][j])[kk]->bid]->active) and ((*idx2[i][j])[kk]->active))
-                            if (((*idx2[i][j])[kk]->aln_type == BACKWARD) and (cb < 1)) {
+                            if ((reads[(*idx2[i][j])[kk]->read_B_id_]->active) and ((*idx2[i][j])[kk]->active))
+                            if (((*idx2[i][j])[kk]->match_type_ == BACKWARD) and (cb < 1)) {
                                 cb += 1;
                                 //add edge
-                                if ((*idx2[i][j])[kk]->flags == 1) {
+                                if ((*idx2[i][j])[kk]->reverse_complement_match_ == 1) {
                                     edgelist.push_back(
-                                            std::make_tuple(Node((*idx2[i][j])[kk]->aid, 1),
-                                                                  Node((*idx2[i][j])[kk]->bid, 0), (*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
+                                            std::make_tuple(Node((*idx2[i][j])[kk]->read_A_id_, 1),
+                                                                  Node((*idx2[i][j])[kk]->read_B_id_, 0), (*idx2[i][j])[kk]->read_A_match_end_ -(*idx2[i][j])[kk]->read_A_match_start_));
                                 } else {
                                     edgelist.push_back(
-                                            std::make_tuple(Node((*idx2[i][j])[kk]->aid, 1),
-                                                                  Node((*idx2[i][j])[kk]->bid, 1),(*idx2[i][j])[kk]->aepos -(*idx2[i][j])[kk]->abpos));
+                                            std::make_tuple(Node((*idx2[i][j])[kk]->read_A_id_, 1),
+                                                                  Node((*idx2[i][j])[kk]->read_B_id_, 1),(*idx2[i][j])[kk]->read_A_match_end_ -(*idx2[i][j])[kk]->read_A_match_start_));
                                 }
                             }
                             if ((cf >= 1) and (cb >= 1)) break;

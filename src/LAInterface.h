@@ -54,9 +54,9 @@ public:
     char * bseq;
 
 
-	void show() {printf("%d %d %d [%d...%d] x [%d...%d] %d diffs\n",aid,bid,flags,abpos,aepos,bbpos,bepos,diffs); };
-    int aid; // id of read a
-    int bid; // id of read b
+	void show() {printf("%d %d %d [%d...%d] x [%d...%d] %d diffs\n", read_A_id_, read_B_id_,flags,abpos,aepos,bbpos,bepos,diffs); };
+    int read_A_id_; // id of read a
+    int read_B_id_; // id of read b
     int alen; // length of read a
     int blen; // length of read b
     int *trace; // trace

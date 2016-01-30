@@ -430,10 +430,10 @@ int main(int argc, char *argv[]) {
         if (reads[i]->active)
             for (std::unordered_map<int, LOverlap*>::iterator it = idx3[i].begin(); it!=idx3[i].end(); it++) {
                 int aid = i;
-                int bid = it->second->bid;
+                int bid = it->second->read_B_id_;
                 idx3[aid][bid]->weight =
-                        idx3[aid][bid]->eff_aepos - idx3[aid][bid]->eff_abpos
-                        + idx3[bid][aid]->eff_aepos - idx3[bid][aid]->eff_abpos;
+                        idx3[aid][bid]->eff_read_A_match_end_ - idx3[aid][bid]->eff_read_A_match_start_
+                        + idx3[bid][aid]->eff_read_A_match_end_ - idx3[bid][aid]->eff_read_A_match_start_;
                 /*if (idx3[aid][bid]->match_type_ == FORWARD) {
                     if (idx3[aid][bid]->reverse_complement_match_ == 0) idx3[bid][aid]->match_type_ = BACKWARD;
                     else idx3[bid][aid]->match_type_ = FORWARD;

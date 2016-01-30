@@ -366,14 +366,14 @@ int main(int argc, char *argv[]) {
             std::sort(it->second.begin(), it->second.end(), compare_overlap);//Sort overlaps by lengths
             if (it->second.size() > 0) {
                 //Figure out if read is contained
-                contained= contained or ProcessAlignment(it->second[0],read[(it->second[0]->read_A_id_],
-                                                         read[(it->second[0]->read_B_id_], ALN_THRESHOLD, THETA);
+                contained = contained or ProcessAlignment(it->second[0],reads[it->second[0]->read_A_id_],
+                                                         reads[it->second[0]->read_B_id_], ALN_THRESHOLD, THETA);
                 //Filter matches that matter.
                 //TODO Figure out a way to do this more efficiently
                 if ((it->second[0]->match_type_== FORWARD) or (it->second[0]->match_type_== FORWARD_INTERNAL))
-                    matches_forward.push_back(it->second[0]);
+                    matches_forward[i].push_back(it->second[0]);
                 else if ((it->second[0]->match_type_== BACKWARD) or (it->second[0]->match_type_== BACKWARD_INTERNAL))
-                    matches_backward.push_back(it->second[0]);
+                    matches_backward[i].push_back(it->second[0]);
             }
         }
         if (contained) reads[i]->active = false;
@@ -453,10 +453,10 @@ int main(int argc, char *argv[]) {
         if (reads[i]->active)
             for (std::unordered_map<int, LOverlap*>::iterator it = idx3[i].begin(); it!=idx3[i].end(); it++) {
                 int aid = i;
-                int bid = it->second->bid;
+                int bid = it->second->read_B_id_;
                 idx3[aid][bid]->weight =
-                        idx3[aid][bid]->eff_aepos - idx3[aid][bid]->eff_abpos
-                        + idx3[bid][aid]->eff_aepos - idx3[bid][aid]->eff_abpos;
+                        idx3[aid][bid]->eff_read_A_match_end_ - idx3[aid][bid]->eff_read_A_match_start_
+                        + idx3[bid][aid]->eff_read_A_match_end_ - idx3[bid][aid]->eff_read_A_match_start_;
             }
     }
 

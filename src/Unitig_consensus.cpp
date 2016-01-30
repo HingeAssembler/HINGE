@@ -492,8 +492,8 @@ int main(int argc, char *argv[]) {
 						//std::sort( idx2[i][j]->begin(), idx2[i][j]->end(), compare_overlap );
 
                         for (int kk = 0; kk < idx2[i][j]->size(); kk++) {
-                            if (reads[(*idx2[i][j])[kk]->bid]->active)
-                            if (((*idx2[i][j])[kk]->aln_type == FORWARD) and (cf < 1)) {
+                            if (reads[(*idx2[i][j])[kk]->read_B_id_]->active)
+                            if (((*idx2[i][j])[kk]->match_type_ == FORWARD) and (cf < 1)) {
                                 cf += 1;
                                 //add edge
                                 /*if ((*idx2[i][j])[kk]->reverse_complement_match_ == 1) { // n = 0, c = 1
@@ -506,8 +506,8 @@ int main(int argc, char *argv[]) {
                                                                   Node((*idx2[i][j])[kk]->bid, 0)));
                                 }*/
                             }
-                            if (reads[(*idx2[i][j])[kk]->bid]->active)
-                            if (((*idx2[i][j])[kk]->aln_type == BACKWARD) and (cb < 1)) {
+                            if (reads[(*idx2[i][j])[kk]->read_B_id_]->active)
+                            if (((*idx2[i][j])[kk]->match_type_ == BACKWARD) and (cb < 1)) {
                                 cb += 1;
                                 //add edge
                                 /*if ((*idx2[i][j])[kk]->reverse_complement_match_ == 1) {
@@ -703,7 +703,7 @@ int main(int argc, char *argv[]) {
     la.getAlignment(full_alns, range);
 
     for (auto i:full_alns) {
-        idx_aln[i->aid].push_back(i);
+        idx_aln[i->read_A_id_].push_back(i);
     }
 
     for (int i = 0; i < edgelist.size(); i++) {
@@ -712,7 +712,7 @@ int main(int argc, char *argv[]) {
         bool found = false;
         for (int j = 0; j < idx_aln[std::get<0>(edgelist[i]).id].size(); j++) {
             //printf("%d %d %d %d\n",bid, idx_aln[aid][j]->bid, idx_aln[aid][j]->read_A_match_end_ - idx_aln[aid][j]->read_A_match_start_, std::get<2>(edgelist[i]));
-            if ((idx_aln[aid][j]->bid == bid) and \
+            if ((idx_aln[aid][j]->read_B_id_ == bid) and \
             (idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos == std::get<2>(edgelist[i]))) {
                 selected.push_back(idx_aln[aid][j]);
                 found = true;
@@ -734,7 +734,7 @@ int main(int argc, char *argv[]) {
         la.recoverAlignment(selected[i]);
         //printf("%d %d\n",selected[i]->tlen, selected[i]->trace_pts_len);
         std::pair<std::string, std::string> res = la.getAlignmentTags(selected[i]);
-        aln_tags_map[selected[i]->aid][selected[i]->bid] = res;
+        aln_tags_map[selected[i]->read_A_id_][selected[i]->read_B_id_] = res;
         aln_tags_list.push_back(res);
     }
 
