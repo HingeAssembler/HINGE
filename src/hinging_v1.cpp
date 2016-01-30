@@ -134,11 +134,17 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
 }
 
 bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_THRESHOLD, int THETA){
+    //Function takes as input pointers to a match, and the read_A and read_B of that match, set constants
+    //ALN_THRESHOLD and THETA
+    //It inputs the effective read start and end into the match class object
+    //Next it trims match
+    //Finally it figures out the type of match we have here by calling AddTypesAsymmetric() on the
+    //class object
     bool contained;
     match->eff_read_A_start_ = read_A->effective_start;
     match->eff_read_A_end_ = read_A->effective_end;
 
-    if (match->reverse_complement_match_ == 0) {//Where are reverse_complement_match_ set?
+    if (match->reverse_complement_match_ == 0) {
         match->eff_read_B_start_ = read_B->effective_start;
         match->eff_read_B_end_ = read_B->effective_end;
     } else {//looks like an inverted match
@@ -154,7 +160,7 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
         match->active = false;
         match->match_type_ = NOT_ACTIVE;
     } else {
-        match->addtype2(THETA);
+        match->AddTypesAsymmetric(THETA);
         if (match->match_type_ == BCOVERA)
             contained = true;
     }
@@ -352,11 +358,12 @@ int main(int argc, char *argv[]) {
         bool contained=false;
         for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin(); it!=idx[i].end(); it++) {
             std::sort(it->second.begin(), it->second.end(), compare_overlap);//Sort overlaps by lengths
-            if (it->second.size() > 0) {//Is this not just max? Why sort?
+            if (it->second.size() > 0) {
+                //Figure out if read is contained
                 contained= contained or ProcessAlignment(it->second[0],read[(it->second[0]->read_A_id_],
                                                          read[(it->second[0]->read_B_id_], ALN_THRESHOLD, THETA);
                 if (contained) reads[i]->active = false;
-
+                //Filter matches that matter.
                 if ((it->second[0]->match_type_== FORWARD) or (it->second[0]->match_type_== FORWARD_INTERNAL))
                     matches_forward.push_back(it->second[0]);
                 else if ((it->second[0]->match_type_== BACKWARD) or (it->second[0]->match_type_== BACKWARD_INTERNAL))
@@ -370,37 +377,6 @@ int main(int argc, char *argv[]) {
         num_overlaps += idx2[i].size();
     }
     std::cout<<num_overlaps << " overlaps" << std::endl;
-//Figure out contained read
-# pragma omp parallel for
-    for (int i = 0; i < n_read; i++) {
-        bool contained = false;
-        for (int j = 0; j < idx2[i].size(); j++){
-            idx2[i][j]->eff_read_A_start_ = reads[idx2[i][j]->read_A_id_]->effective_start;
-            idx2[i][j]->eff_read_A_end_ = reads[idx2[i][j]->read_A_id_]->effective_end;
-
-            if (idx2[i][j]->reverse_complement_match_ == 0) {//Where are reverse_complement_match_ set?
-                idx2[i][j]->eff_read_B_start_ = reads[idx2[i][j]->read_B_id_]->effective_start;
-                idx2[i][j]->eff_read_B_end_ = reads[idx2[i][j]->read_B_id_]->effective_end;
-            } else {//looks like an inverted match
-                idx2[i][j]->eff_read_B_start_ = idx2[i][j]->blen - reads[idx2[i][j]->read_B_id_]->effective_end;
-                idx2[i][j]->eff_read_B_end_ = idx2[i][j]->blen - reads[idx2[i][j]->read_B_id_]->effective_start;
-            }
-
-            idx2[i][j]->trim_overlap();//What does this do?
-
-            if (((idx2[i][j]->eff_read_B_match_end_ - idx2[i][j]->eff_read_B_match_start_) < ALN_THRESHOLD)
-                or ((idx2[i][j]->eff_read_A_match_end_ - idx2[i][j]->eff_read_A_match_start_) < ALN_THRESHOLD))
-            {
-                idx2[i][j]->active = false;
-                idx2[i][j]->match_type_ = NOT_ACTIVE;
-            } else {
-                idx2[i][j]->addtype2(THETA);
-                if (idx2[i][j]->match_type_ == BCOVERA)
-                    contained = true;
-            }
-        }
-        if (contained) reads[i]->active = false;
-    }
 
     num_active_read = 0;
     for (int i = 0; i < n_read; i++) {
