@@ -37,8 +37,8 @@ static int ORDER(const void *l, const void *r) {
 }
 
 
-std::ostream& operator<<(std::ostream& out, const aligntype value){
-    static std::map<aligntype, std::string> strings;
+std::ostream& operator<<(std::ostream& out, const MatchType value){
+    static std::map<MatchType, std::string> strings;
     if (strings.size() == 0){
 #define INSERT_ELEMENT(p) strings[p] = #p
         INSERT_ELEMENT(FORWARD);
@@ -197,20 +197,20 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
-            idx[aln[i]->read_A_id][aln[i]->read_B_id] = std::vector<LOverlap *>();
+            idx[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
         }
     }
 
 
     for (int i = 0; i < aln.size(); i++) {
     if (aln[i]->active) {
-	    has_overlap[aln[i]->read_A_id].insert(aln[i]->read_B_id);
+	    has_overlap[aln[i]->read_A_id_].insert(aln[i]->read_B_id_);
         }
     }
 
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
-            idx3[aln[i]->read_A_id].push_back(aln[i]);
+            idx3[aln[i]->read_A_id_].push_back(aln[i]);
         }
     }
 
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
     std::cout<<"index data"<<std::endl;
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
-            idx[aln[i]->read_A_id][aln[i]->read_B_id].push_back(aln[i]);
+            idx[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
         }
     }
     std::cout<<"index data"<<std::endl;
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
         std::cout << "num active reads " << num_active << std::endl;
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active)
-            if ((not reads[aln[i]->read_A_id]->active) or (not reads[aln[i]->read_B_id]->active) or
+            if ((not reads[aln[i]->read_A_id_]->active) or (not reads[aln[i]->read_B_id_]->active) or
                 (aln[i]->diffs * 2 /  float(aln[i]->read_B_match_end_ - aln[i]->read_B_match_start_ + aln[i]->read_A_match_end_ - aln[i]->read_A_match_start_) >
                  QUALITY_THRESHOLD) or (aln[i]->read_A_match_end_ - aln[i]->read_A_match_start_ < ALN_THRESHOLD))
                 aln[i]->active = false;
@@ -284,16 +284,16 @@ int main(int argc, char *argv[]) {
 # pragma omp parallel for
         for (int i = 0; i < n_aln; i++) {
             if (aln[i]->active) {
-                aln[i]->eff_read_A_start_ = reads[aln[i]->read_A_id]->effective_start;
-                aln[i]->eff_read_A_end_ = reads[aln[i]->read_A_id]->effective_end;
+                aln[i]->eff_read_A_start_ = reads[aln[i]->read_A_id_]->effective_start;
+                aln[i]->eff_read_A_end_ = reads[aln[i]->read_A_id_]->effective_end;
                 
-				if (aln[i]->flags == 0) {
-					aln[i]->eff_read_B_start_ = reads[aln[i]->read_B_id]->effective_start;
-                	aln[i]->eff_read_B_end_ = reads[aln[i]->read_B_id]->effective_end;
+				if (aln[i]->reverse_complemented_match_ == 0) {
+					aln[i]->eff_read_B_start_ = reads[aln[i]->read_B_id_]->effective_start;
+                	aln[i]->eff_read_B_end_ = reads[aln[i]->read_B_id_]->effective_end;
 				}
 				else {
-					aln[i]->eff_read_B_start_ = aln[i]->blen - reads[aln[i]->read_B_id]->effective_end;
-                	aln[i]->eff_read_B_end_ = aln[i]->blen - reads[aln[i]->read_B_id]->effective_start;
+					aln[i]->eff_read_B_start_ = aln[i]->blen - reads[aln[i]->read_B_id_]->effective_end;
+                	aln[i]->eff_read_B_end_ = aln[i]->blen - reads[aln[i]->read_B_id_]->effective_start;
 				}
             }
         }
@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
         idx3.clear();
         for (int i = 0; i < aln.size(); i++) {
             if (aln[i]->active) {
-                idx3[aln[i]->read_A_id].push_back(aln[i]);
+                idx3[aln[i]->read_A_id_].push_back(aln[i]);
             }
         }
     }
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
                             for (int k = 0; k < idx2[i][j].size(); k++) {
                                 std::cout << " " << idx2[i][j][k]->active << " " << "[" << idx2[i][j][k]->read_A_match_start_ << "," <<
                                 idx2[i][j][k]->read_A_match_end_ << "]/" << idx2[i][j][k]->alen << " " << "[" << idx2[i][j][k]->read_B_match_start_ <<
-                                "," << idx2[i][j][k]->read_B_match_end_ << "]/" << idx2[i][j][k]->blen << " " << idx2[i][j][k]->aln_type <<
+                                "," << idx2[i][j][k]->read_B_match_end_ << "]/" << idx2[i][j][k]->blen << " " << idx2[i][j][k]->match_type_ <<
                                 std::endl;
                             }
                         }
@@ -403,7 +403,7 @@ int main(int argc, char *argv[]) {
 # pragma omp parallel for
             for (int ii = 0; ii < n_aln; ii++) {
             if (aln[ii]->active)
-            if ((not reads[aln[ii]->read_A_id]->active) or (not reads[aln[ii]->read_B_id]->active))
+            if ((not reads[aln[ii]->read_A_id_]->active) or (not reads[aln[ii]->read_B_id_]->active))
                 aln[ii]->active = false;
             }
 

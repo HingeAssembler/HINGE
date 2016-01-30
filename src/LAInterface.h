@@ -27,7 +27,7 @@ public:
     void showRead();
 };
 
-enum aligntype {
+enum MatchType {
     FORWARD, BACKWARD, ACOVERB, BCOVERA, UNDEFINED, INTERNAL, NOT_ACTIVE, COVERING,
 	COVERED, MIDDLE, MISMATCH_LEFT, MISMATCH_RIGHT, FORWARD_INTERNAL, BACKWARD_INTERNAL // different type of alignment
 /**
@@ -68,16 +68,18 @@ public:
     int aepos, bepos; // end position of read a and b
     int flags; // flag = 1 : 'c', flag = 0 : 'n'
     int tps;
-    aligntype aln_type;
+    MatchType aln_type;
 	bool active = true;
 };
 
 class LOverlap { // LOverlap is a simplified version of LAlignment, no trace
 public:
     LOverlap() { };
-	void show() {printf("%d %d %d [%d...%d]/%d x [%d...%d]/%d %d diffs, %d type\n", read_A_id, read_B_id, flags,
-						read_A_match_start_, read_A_match_end_, alen, read_B_match_start_, read_B_match_end_, blen, diffs, aln_type); };
-    int read_A_id, read_B_id;
+	void show() {printf("%d %d %d [%d...%d]/%d x [%d...%d]/%d %d diffs, %d type\n", read_A_id_, read_B_id_,
+						reverse_complemented_match_,
+						read_A_match_start_, read_A_match_end_, alen, read_B_match_start_, read_B_match_end_, blen, diffs,
+						match_type_); };
+    int read_A_id_, read_B_id_;
     int alen; // length of read a
     int blen; // length of read b
     int tlen;
@@ -86,9 +88,9 @@ public:
     int read_A_match_end_, read_B_match_end_; // starting position and ending position of alignment in read b
     int eff_read_A_match_start_, eff_read_B_match_start_, eff_read_A_match_end_, eff_read_B_match_end_;
     int tps;
-    int flags; //flags, reverse complement = 1, same direction = 0
+    int reverse_complemented_match_; //reverse_complemented_match_, reverse complement = 1, same direction = 0
     int eff_read_A_start_, eff_read_A_end_, eff_read_B_start_, eff_read_B_end_;
-    aligntype aln_type = UNDEFINED;
+    MatchType match_type_ = UNDEFINED;
     void addtype(int); // depreciated
     void addtype2(int max_overhang); //classify overlaps
     void AddTypesAsymmetric(int max_overhang);

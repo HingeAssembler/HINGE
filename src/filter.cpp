@@ -38,9 +38,9 @@ static int ORDER(const void *l, const void *r) {
 }
 
 
-std::ostream& operator<<(std::ostream& out, const aligntype value){
+std::ostream& operator<<(std::ostream& out, const MatchType value){
     //What is this doing?
-    static std::map<aligntype, std::string> strings;
+    static std::map<MatchType, std::string> strings;
     if (strings.size() == 0){
 #define INSERT_ELEMENT(p) strings[p] = #p
         INSERT_ELEMENT(FORWARD);
@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
-            idx3[aln[i]->read_A_id].push_back(aln[i]);
+            idx3[aln[i]->read_A_id_].push_back(aln[i]);
         }
     }
 
@@ -277,12 +277,12 @@ int main(int argc, char *argv[]) {
 
 
     for (int i = 0; i < aln.size(); i++) {
-        idx[aln[i]->read_A_id][aln[i]->read_B_id] = std::vector<LOverlap *>();
+        idx[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
     }
     std::cout << "flag6" <<std::endl;
 
     for (int i = 0; i < aln.size(); i++) {
-        idx[aln[i]->read_A_id][aln[i]->read_B_id].push_back(aln[i]);
+        idx[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
     }
     std::cout << "flag7" << std::endl;
 

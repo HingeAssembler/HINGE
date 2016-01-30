@@ -37,8 +37,8 @@ static int ORDER(const void *l, const void *r) {
 }
 
 
-std::ostream& operator<<(std::ostream& out, const aligntype value){
-    static std::map<aligntype, std::string> strings;
+std::ostream& operator<<(std::ostream& out, const MatchType value){
+    static std::map<MatchType, std::string> strings;
     if (strings.size() == 0){
 #define INSERT_ELEMENT(p) strings[p] = #p
         INSERT_ELEMENT(FORWARD);

@@ -117,7 +117,7 @@ int main(int argc, char ** argv) {
 
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->diffs*2 / float(aln[i]->read_B_match_end_ - aln[i]->read_B_match_start_ + aln[i]->read_A_match_end_ - aln[i]->read_A_match_start_) < 0.25 ) {
-            idx2[aln[i]->read_A_id].push_back(aln[i]);
+            idx2[aln[i]->read_A_id_].push_back(aln[i]);
         }
     }
 
