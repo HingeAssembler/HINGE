@@ -344,20 +344,8 @@ int main(int argc, char *argv[]) {
                 idx2[i][j]->eff_read_B_end_ = idx2[i][j]->blen - reads[idx2[i][j]->read_B_id_]->effective_start;
             }
 
-
-            /*for (int j = 0; j < aln[i]->trace_pts_len; j++) {
-                std::cout << aln[i]->trace_pts[j] << " ";
-            }
-            std::cout<<std::endl;*/
-            //printf("before %d %d %d %d ov %d %d %d %d\n", aln[i]->aes, aln[i]->aee,
-            // aln[i]->bes, aln[i]->bee, aln[i]->read_A_match_start_,
-            // aln[i]->read_A_match_end_, aln[i]->read_B_match_start_, aln[i]->read_B_match_end_);
             idx2[i][j]->trim_overlap();//What does this do?
-            //printf("after %d %d %d %d ov %d %d %d %d\n", aln[i]->aes, aln[i]->aee,
-            // aln[i]->bes, aln[i]->bee, aln[i]->eff_read_A_match_start_, aln[i]->eff_read_A_match_end_,
-            // aln[i]->eff_read_B_match_start_, aln[i]->eff_read_B_match_end_);
-            //num_finished ++;
-            //if (num_finished%100000 == 0) printf("%lf percent finished\n", num_finished/double(aln.size())*100);
+
             if (((idx2[i][j]->eff_read_B_match_end_ - idx2[i][j]->eff_read_B_match_start_) < ALN_THRESHOLD)
                 or ((idx2[i][j]->eff_read_A_match_end_ - idx2[i][j]->eff_read_A_match_start_) < ALN_THRESHOLD))
             {
