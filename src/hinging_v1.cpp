@@ -635,7 +635,7 @@ int main(int argc, char *argv[]) {
 
 
 
-    //Perform greedy graph construction
+    //Perform greedy graph construction and write outputs
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
             int forward = 0;
