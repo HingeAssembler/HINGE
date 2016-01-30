@@ -618,7 +618,6 @@ int main(int argc, char *argv[]) {
 
 
     // filter hinges
-    //
     std::vector<bool> repeat_status_front;
     std::vector<bool> repeat_status_back;
 
