@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     std::vector<Edge_w> edgelist, edgelist_ms; // save output to edgelist
     //std::unordered_map<int, std::vector <LOverlap * > >idx3,idx4;
     // this is the pileup
-    std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx; 
+    std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx;
     /*
     	idx is a vector of length n_read, each element idx3[read A id] is a map, 
     	from read B id to a vector of overlaps
@@ -214,6 +214,11 @@ int main(int argc, char *argv[]) {
 		idx3 is a vector of length n_read, each element idx3[read A id] is a map, 
 		from read read B id to the best overlap of read A and read B
 	*/
+    std::vector<std::vector<LOverlap *>> matches_forward, matches_backward;
+    //matches_forward is the vector of vectors where matches_forward[read_id] is a vector of matches of read_id
+    //of type FORWARD, and FORWARD_INTERNAL
+    //matches_backward is the vector of vectors where matches_backward[read_id] is a vector of matches of read_id
+    //of type BACKWARD, and BACKWARD_INTERNAL
 
     FILE * mask_file;
     mask_file = fopen(name_mask.c_str(), "r");
@@ -295,12 +300,13 @@ int main(int argc, char *argv[]) {
     }
     std::cout<<"active reads:" << num_active_read<< std::endl;
 
-    //for (int i = 0; i < homo_reads.size(); i++) // filter reads with homologous recombinations
-    //    reads[homo_reads[i]]->active = false;
-
     for (int i = 0; i < n_read; i++) {
+        //An initialisation for loop
+        //TODO Preallocate memory. Much more efficient.
         idx.push_back(std::unordered_map<int, std::vector<LOverlap *> >());
         idx2.push_back(std::vector<LOverlap *>());
+        matches_forward.push_back(std::vector<LOverlap *>());
+        matches_backward.push_back(std::vector<LOverlap *>());
     }
 
 //int num_finished = 0;
@@ -426,14 +432,6 @@ int main(int argc, char *argv[]) {
                 idx3[aid][bid]->weight =
                         idx3[aid][bid]->eff_aepos - idx3[aid][bid]->eff_abpos
                         + idx3[bid][aid]->eff_aepos - idx3[bid][aid]->eff_abpos;
-                /*if (idx3[aid][bid]->match_type_ == FORWARD) {
-                    if (idx3[aid][bid]->reverse_complement_match_ == 0) idx3[bid][aid]->match_type_ = BACKWARD;
-                    else idx3[bid][aid]->match_type_ = FORWARD;
-                }
-                if (idx3[aid][bid]->match_type_ == BACKWARD) {
-                    if (idx3[aid][bid]->reverse_complement_match_ == 0) idx3[bid][aid]->match_type_ = FORWARD;
-                    else idx3[bid][aid]->match_type_ = BACKWARD;
-                }*/
             }
     }
 
