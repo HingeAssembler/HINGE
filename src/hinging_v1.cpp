@@ -19,6 +19,7 @@
 #include "../../../../usr/include/c++/4.6/bits/stringfwd.h"
 #include "../../../../usr/include/c++/4.6/bits/stl_vector.h"
 #include "../../../../usr/include/unistd.h"
+#include "../../../../usr/include/stdlib.h"
 #include <tuple>
 
 
@@ -195,6 +196,30 @@ public:
     Hinge(int pos, int t, bool active):pos(pos),type(t), active(active), active2(false) {};
     Hinge():pos(0),type(1), active(true) {};
 };
+
+bool isValidHinge(LOverlap *match, std::vector<Hinge> &read_hinges){
+    //Returns true if read_hinges (a vector of all hinges corresponding to a read )
+    // has a hinge of appropriate type within tolerance from positions of start of the
+    // overlap on read_B of the overlap given.
+    int tolerance=100;
+    int position=match->eff_read_B_match_start_;
+    int type;
+    if (match->match_type_==FORWARD_INTERNAL)
+        type=1;
+    else if (match->match_type_==BACKWARD_INTERNAL)
+        type=-1;
+
+    if (match->reverse_complement_match_==1){
+        type=-type;
+        position=match->eff_read_B_match_end_;
+    }
+
+    bool valid=false;
+    for (int index=0; index < read_hinges.size(); index++){
+        if ((abs(position-read_hinges[index]->pos) < tolerance) and (type==read_hinges[index]->hinge_type))
+            valid=true;
+    return valid;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -772,47 +797,61 @@ int main(int argc, char *argv[]) {
     }
 
 
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->active) {
+            for (int j = 0; j < matches_forward[i].size(); j++){
+
+            }
+            for (int j = 0; j < matches_backward[i].size(); j++){
+
+            }
+        }
+    }
 
 
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
 
             for (int j = 0; j < idx2[i].size(); j++)
-                if (idx2[i][j]->active) {
-                    if ((idx2[i][j]->match_type_ == FORWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
-                        if (repeat_status_back[i]) // choose the correct repeat status (with hinges)
-                        if (((idx2[i][j]->reverse_complement_match_ == 0) and
-                                repeat_status_front[idx2[i][j]->read_B_id_])
-                            or ((idx2[i][j]->reverse_complement_match_ == 1) and
-                                repeat_status_back[idx2[i][j]->read_B_id_])) {
-                            if (idx2[i][j]->reverse_complement_match_ == 0)
-                                fprintf(out3, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
-                                        idx2[i][j]->read_B_id_, idx2[i][j]->weight,
-                                        idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
-                                        idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_,
-                                        idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
-                                        idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
+                if (matches_forward[i][j]->active) {
+                    if ((reads[matches_forward[i][j]->read_B_id_]->active) and
+                        ((matches_forward[i][j]->match_type_ == FORWARD)
+                            or ((matches_forward[i][j]->match_type_ == FORWARD_INTERNAL) 
+                                and isValidHinge(matches_forward[i][j],
+                                        hinges_vec[matches_forward[i][j]->read_B_id_])))) 
+                    {
+                        if (((matches_forward[i][j]->reverse_complement_match_ == 0) and
+                                repeat_status_front[matches_forward[i][j]->read_B_id_])
+                            or ((matches_forward[i][j]->reverse_complement_match_ == 1) and
+                                repeat_status_back[matches_forward[i][j]->read_B_id_])) {
+                            if (matches_forward[i][j]->reverse_complement_match_ == 0)
+                                fprintf(out3, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", matches_forward[i][j]->read_A_id_,
+                                        matches_forward[i][j]->read_B_id_, matches_forward[i][j]->weight,
+                                        matches_forward[i][j]->eff_read_A_match_start_, matches_forward[i][j]->eff_read_A_match_end_,
+                                        matches_forward[i][j]->eff_read_B_match_start_, matches_forward[i][j]->eff_read_B_match_end_,
+                                        matches_forward[i][j]->eff_read_A_start_, matches_forward[i][j]->eff_read_A_end_,
+                                        matches_forward[i][j]->eff_read_B_start_, matches_forward[i][j]->eff_read_B_end_);
                             else
-                                fprintf(out3, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
-                                        idx2[i][j]->read_B_id_, idx2[i][j]->weight,
-                                        idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
-                                        idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_,
-                                        idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
-                                        idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
-                            if (idx2[i][j]->reverse_complement_match_ == 0)
-                                fprintf(out3, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
-                                        idx2[i][j]->read_A_id_, idx2[i][j]->weight,
-                                        idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
-                                        idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_,
-                                        idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
-                                        idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
+                                fprintf(out3, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", matches_forward[i][j]->read_A_id_,
+                                        matches_forward[i][j]->read_B_id_, matches_forward[i][j]->weight,
+                                        matches_forward[i][j]->eff_read_A_match_start_, matches_forward[i][j]->eff_read_A_match_end_,
+                                        matches_forward[i][j]->eff_read_B_match_start_, matches_forward[i][j]->eff_read_B_match_end_,
+                                        matches_forward[i][j]->eff_read_A_start_, matches_forward[i][j]->eff_read_A_end_,
+                                        matches_forward[i][j]->eff_read_B_start_, matches_forward[i][j]->eff_read_B_end_);
+                            if (matches_forward[i][j]->reverse_complement_match_ == 0)
+                                fprintf(out3, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", matches_forward[i][j]->read_B_id_,
+                                        matches_forward[i][j]->read_A_id_, matches_forward[i][j]->weight,
+                                        matches_forward[i][j]->eff_read_A_match_start_, matches_forward[i][j]->eff_read_A_match_end_,
+                                        matches_forward[i][j]->eff_read_B_match_start_, matches_forward[i][j]->eff_read_B_match_end_,
+                                        matches_forward[i][j]->eff_read_A_start_, matches_forward[i][j]->eff_read_A_end_,
+                                        matches_forward[i][j]->eff_read_B_start_, matches_forward[i][j]->eff_read_B_end_);
                             else
-                                fprintf(out3, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
-                                        idx2[i][j]->read_A_id_, idx2[i][j]->weight,
-                                        idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
-                                        idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_,
-                                        idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
-                                        idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
+                                fprintf(out3, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", matches_forward[i][j]->read_B_id_,
+                                        matches_forward[i][j]->read_A_id_, matches_forward[i][j]->weight,
+                                        matches_forward[i][j]->eff_read_A_match_start_, matches_forward[i][j]->eff_read_A_match_end_,
+                                        matches_forward[i][j]->eff_read_B_match_start_, matches_forward[i][j]->eff_read_B_match_end_,
+                                        matches_forward[i][j]->eff_read_A_start_, matches_forward[i][j]->eff_read_A_end_,
+                                        matches_forward[i][j]->eff_read_B_start_, matches_forward[i][j]->eff_read_B_end_);
                         }
 
 
