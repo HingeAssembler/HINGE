@@ -48,13 +48,17 @@ std::ostream& operator<<(std::ostream& out, const MatchType value){
 
 
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
-    return ((ovl1->read_A_match_end_ - ovl1->read_A_match_start_ + ovl1->read_B_match_end_ - ovl1->read_B_match_start_) >
-            (ovl2->read_A_match_end_ - ovl2->read_A_match_start_ + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
+    return ((ovl1->read_A_match_end_ - ovl1->read_A_match_start_
+             + ovl1->read_B_match_end_ - ovl1->read_B_match_start_) >
+            (ovl2->read_A_match_end_ - ovl2->read_A_match_start_
+             + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
 }
 
 bool compare_overlap_effective(LOverlap * ovl1, LOverlap * ovl2) {
-    return ((ovl1->eff_read_A_match_end_ - ovl1->eff_read_A_match_start_ + ovl1->eff_read_B_match_end_ - ovl1->eff_read_B_match_start_) >
-            (ovl2->eff_read_A_match_end_ - ovl2->eff_read_A_match_start_ + ovl2->eff_read_B_match_end_ - ovl2->eff_read_B_match_start_));
+    return ((ovl1->eff_read_A_match_end_ - ovl1->eff_read_A_match_start_
+             + ovl1->eff_read_B_match_end_ - ovl1->eff_read_B_match_start_) >
+            (ovl2->eff_read_A_match_end_ - ovl2->eff_read_A_match_start_
+             + ovl2->eff_read_B_match_end_ - ovl2->eff_read_B_match_start_));
 }
 
 bool compare_overlap_weight(LOverlap * ovl1, LOverlap * ovl2) {
@@ -65,9 +69,11 @@ bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vect
     int sum1 = 0;
     int sum2 = 0;
     for (int i = 0; i < ovl1->size(); i++)
-        sum1 += (*ovl1)[i]->read_A_match_end_ - (*ovl1)[i]->read_A_match_start_ + (*ovl1)[i]->read_B_match_end_ - (*ovl1)[i]->read_B_match_start_;
+        sum1 += (*ovl1)[i]->read_A_match_end_ - (*ovl1)[i]->read_A_match_start_
+                + (*ovl1)[i]->read_B_match_end_ - (*ovl1)[i]->read_B_match_start_;
     for (int i = 0; i < ovl2->size(); i++)
-        sum2 += (*ovl2)[i]->read_A_match_end_ - (*ovl2)[i]->read_A_match_start_ + (*ovl2)[i]->read_B_match_end_ - (*ovl2)[i]->read_B_match_start_;
+        sum2 += (*ovl2)[i]->read_A_match_end_ - (*ovl2)[i]->read_A_match_start_
+                + (*ovl2)[i]->read_B_match_end_ - (*ovl2)[i]->read_B_match_start_;
     return sum1 > sum2;
 }
 
