@@ -565,46 +565,42 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < n_read; i++) {
         //This is in essence the filtering step
+        //For each read find the best forward match, and remove all incoming hinges starting after the start
+        //of the match corresponding to this.
         if (reads[i]->active) {
             int forward = 0;
             int backward = 0;
-            for (int j = 0; j < idx2[i].size(); j++)
-                if (idx2[i][j]->active) {
-                    if ((idx2[i][j]->match_type_ == FORWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
+            for (int j = 0; j < matches_forward[i].size(); j++) {
+                if (matches_forward[i][j]->active) {
+                    if ((matches_forward[i][j]->match_type_ == FORWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
                         if (forward < 1) {
-
-
                             //remove certain hinges
-
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((idx2[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos - 400)
+                                if ((matches_forward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos - 400)
                                     and (hinges_vec[i][k].type == 1))
                                     hinges_vec[i][k].active = false;
                             }
-
-
-
                         }
                         forward++;
                     }
-                    else if ((idx2[i][j]->match_type_ == BACKWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
+                }
+            }
+
+            for (int j = 0; j < matches_backward[i].size(); j++) {
+                if (matches_backward[i][j]->active) {
+                    if ((matches_backward[i][j]->match_type_ == backward) and (reads[idx2[i][j]->read_B_id_]->active)) {
                         if (backward < 1) {
-
-
-                            // remove certain hinges
-
-
+                            //remove certain hinges
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((idx2[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos + 400)
-                                    and (hinges_vec[i][k].type == -1))
+                                if ((matches_backward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos - 400)
+                                    and (hinges_vec[i][k].type == 1))
                                     hinges_vec[i][k].active = false;
                             }
-
-
                         }
                         backward++;
                     }
                 }
+            }
         }
     }
 
