@@ -430,10 +430,15 @@ int main(int argc, char *argv[]) {
     num_overlaps = 0;
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active)
-        for (int j = 0; j < idx2[i].size(); j++)
-            if (reads[idx2[i][j]->read_B_id_]->active) num_overlaps++;
+        for (int j = 0; j < matches_forward[i].size(); j++) {
+            if (reads[matches_forward[i][j]->read_B_id_]->active) num_overlaps++;
+            if (reads[matches_backward[i][j]->read_B_id_]->active) num_overlaps++;
+        }
     }
     std::cout<<num_overlaps << " overlaps" << std::endl;
+    /******************************************************************************************
+     * Done till here : GK, IS.
+     ******************************************************************************************/
 
     for (int i = 0; i < n_read; i++) {
         idx3.push_back(std::unordered_map<int, LOverlap*>() );
