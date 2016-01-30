@@ -4461,9 +4461,9 @@ void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
 void LOverlap::trim_overlap() {
     /**
      * Trim overlap: the reads are trimmed according to qualities and coverage,
-     * accordingly, the overlap needs to be trimmed, there are two ways, the first is simply to run DAligner
-     * on trimmed reads, the second is to trimmed the overlaps according to trace points, this function implements
-     * the latter.
+     * To be consistent, the overlap needs to be trimmed.
+     * Rather than running DAligner on trimmed reads, this function  trims the overlap according to trace points.
+     * It finds the trace point that are not trimmed in both reads.
      */
 
     //before trimming, the positions are read_A_match_start_, read_B_match_start_, read_A_match_end_
@@ -4475,8 +4475,8 @@ void LOverlap::trim_overlap() {
     this->eff_read_A_match_end_ = 0;
 
 
-    std::vector<std::pair<int,int> > tps;
-    tps.push_back(std::pair<int,int>(this->read_A_match_start_, this->read_B_match_start_));
+    std::vector<std::pair<int,int> > trace_points;
+    trace_points.push_back(std::pair<int,int>(this->read_A_match_start_, this->read_B_match_start_));
     int current_position_read_A = this->read_A_match_start_;
     // this for loop change trace points stored trace_pts[] into coordinate pairs vector: tps
     for (int j = 0; j < this->trace_pts_len/2-1; j++) {
@@ -4484,9 +4484,9 @@ void LOverlap::trim_overlap() {
             current_position_read_A = int(ceil(current_position_read_A / 100.0)) * 100;
         else
             current_position_read_A += 100;
-        tps.push_back(std::pair<int,int>(current_position_read_A, tps.back().second + this->trace_pts[2 * j + 1]));
+        trace_points.push_back(std::pair<int,int>(current_position_read_A, trace_points.back().second + this->trace_pts[2 * j + 1]));
     }
-    tps.push_back(std::pair<int,int>(this->read_A_match_end_, this->read_B_match_end_));
+    trace_points.push_back(std::pair<int,int>(this->read_A_match_end_, this->read_B_match_end_));
 
     /*for (int j = 0; j < tps.size(); j++) {
         printf("a%d b%d ", tps[j].first, tps[j].second);
@@ -4497,21 +4497,21 @@ void LOverlap::trim_overlap() {
      */
 
     //for trace point pairs, get the first one that is in untrimmed regions for both reads
-    for (int i = 0; i< tps.size(); i++) {
-        if ((tps[i].first >= this->eff_read_A_start_) and (tps[i].second >= this->eff_read_B_start_)) {
-            this->eff_read_A_match_start_ = tps[i].first;
-            this->eff_read_B_match_start_ = tps[i].second;
-            this->si = i;
+    for (int i = 0; i< trace_points.size(); i++) {
+        if ((trace_points[i].first >= this->eff_read_A_start_) and (trace_points[i].second >= this->eff_read_B_start_)) {
+            this->eff_read_A_match_start_ = trace_points[i].first;
+            this->eff_read_B_match_start_ = trace_points[i].second;
+            this->eff_start_trace_point_index_ = i;
             break;
         }
     }
 
     //for trace point pairs, get the last one that is in untrimmed regions for both reads
-    for (int i= (int)tps.size() - 1; i>=0; i--) {
-        if ((tps[i].first <= this->eff_read_A_end_) and (tps[i].second <= this->eff_read_B_end_)) {
-            this->eff_read_A_match_end_ = tps[i].first;
-            this->eff_read_B_match_end_ = tps[i].second;
-            this->ei = i;
+    for (int i= (int) trace_points.size() - 1; i >= 0; i--) {
+        if ((trace_points[i].first <= this->eff_read_A_end_) and (trace_points[i].second <= this->eff_read_B_end_)) {
+            this->eff_read_A_match_end_ = trace_points[i].first;
+            this->eff_read_B_match_end_ = trace_points[i].second;
+            this->eff_end_trace_point_index_ = i;
             break;
         }
     }

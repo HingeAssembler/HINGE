@@ -99,7 +99,7 @@ public:
     uint16 *trace_pts;
     int trace_pts_len;
     void trim_overlap();
-    int si,ei;
+    int eff_start_trace_point_index_, eff_end_trace_point_index_;
     int weight;
 };
 
