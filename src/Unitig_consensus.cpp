@@ -437,7 +437,7 @@ int main(int argc, char *argv[]) {
                 aln[i]->eff_read_A_start_ = reads[aln[i]->read_A_id_]->effective_start;
                 aln[i]->eff_read_A_end_ = reads[aln[i]->read_A_id_]->effective_end;
 
-				if (aln[i]->reverse_complemented_match_ == 0) {
+				if (aln[i]->reverse_complement_match_ == 0) {
 					aln[i]->eff_read_B_start_ = reads[aln[i]->read_B_id_]->effective_start;
                 	aln[i]->eff_read_B_end_ = reads[aln[i]->read_B_id_]->effective_end;
 				}
@@ -496,7 +496,7 @@ int main(int argc, char *argv[]) {
                             if (((*idx2[i][j])[kk]->aln_type == FORWARD) and (cf < 1)) {
                                 cf += 1;
                                 //add edge
-                                /*if ((*idx2[i][j])[kk]->reverse_complemented_match_ == 1) { // n = 0, c = 1
+                                /*if ((*idx2[i][j])[kk]->reverse_complement_match_ == 1) { // n = 0, c = 1
                                     edgelist.push_back(
                                             std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 0),
                                                                   Node((*idx2[i][j])[kk]->bid, 1)));
@@ -510,7 +510,7 @@ int main(int argc, char *argv[]) {
                             if (((*idx2[i][j])[kk]->aln_type == BACKWARD) and (cb < 1)) {
                                 cb += 1;
                                 //add edge
-                                /*if ((*idx2[i][j])[kk]->reverse_complemented_match_ == 1) {
+                                /*if ((*idx2[i][j])[kk]->reverse_complement_match_ == 1) {
                                     edgelist.push_back(
                                             std::pair<Node, Node>(Node((*idx2[i][j])[kk]->aid, 1),
                                                                   Node((*idx2[i][j])[kk]->bid, 0)));
@@ -651,7 +651,7 @@ int main(int argc, char *argv[]) {
                 int end = idx3[std::get<0>(edgelist[i]).id][num_passed]->read_B_match_end_;
                 std::string bsub = reads[idx3[std::get<0>(edgelist[i]).id][num_passed]->bid]->bases;
                 input_seq[num_chosen] = (char *)calloc( 100000 , sizeof(char));
-                if (idx3[std::get<0>(edgelist[i]).id][num_passed]->reverse_complemented_match_ == 0)
+                if (idx3[std::get<0>(edgelist[i]).id][num_passed]->reverse_complement_match_ == 0)
                     strcpy(input_seq[num_chosen], bsub.substr(start, end-start).c_str());
                 else
                     strcpy(input_seq[num_chosen], reverse_complement(bsub.substr(start, end-start)).c_str());
@@ -839,7 +839,7 @@ int main(int argc, char *argv[]) {
 			aee = alen - currentaln->eff_read_A_start_;
 		}
 
-		if (((std::get<1>(edgelist[i]).strand == 0) and (currentaln->reverse_complemented_match_ == 0)) or ((std::get<1>(edgelist[i]).strand == 1) and (currentaln->reverse_complemented_match_ == 1))) {
+		if (((std::get<1>(edgelist[i]).strand == 0) and (currentaln->reverse_complement_match_ == 0)) or ((std::get<1>(edgelist[i]).strand == 1) and (currentaln->reverse_complement_match_ == 1))) {
 			bbpos = currentaln->read_B_match_start_;
 			bepos = currentaln->read_B_match_end_;
 

@@ -287,7 +287,7 @@ int main(int argc, char *argv[]) {
                 aln[i]->eff_read_A_start_ = reads[aln[i]->read_A_id_]->effective_start;
                 aln[i]->eff_read_A_end_ = reads[aln[i]->read_A_id_]->effective_end;
                 
-				if (aln[i]->reverse_complemented_match_ == 0) {
+				if (aln[i]->reverse_complement_match_ == 0) {
 					aln[i]->eff_read_B_start_ = reads[aln[i]->read_B_id_]->effective_start;
                 	aln[i]->eff_read_B_end_ = reads[aln[i]->read_B_id_]->effective_end;
 				}

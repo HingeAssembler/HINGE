@@ -660,7 +660,7 @@ int main(int argc, char *argv[])
                         Decompress_TraceTo16(ovl);
                     Load_Read(db1, ovl->aread, abuffer, 0);
                     Load_Read(db2, ovl->bread, bbuffer, 0);
-                    if (COMP(aln->reverse_complemented_match_))
+                    if (COMP(aln->reverse_complement_match_))
                         Complement_Seq(bbuffer, aln->blen);
                     Compute_Trace_PTS(aln,work,tspace);
                     int tlen  = aln->path->tlen;

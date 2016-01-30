@@ -76,7 +76,7 @@ class LOverlap { // LOverlap is a simplified version of LAlignment, no trace
 public:
     LOverlap() { };
 	void show() {printf("%d %d %d [%d...%d]/%d x [%d...%d]/%d %d diffs, %d type\n", read_A_id_, read_B_id_,
-						reverse_complemented_match_,
+						reverse_complement_match_,
 						read_A_match_start_, read_A_match_end_, alen, read_B_match_start_, read_B_match_end_, blen, diffs,
 						match_type_); };
     int read_A_id_, read_B_id_;
@@ -88,7 +88,7 @@ public:
     int read_A_match_end_, read_B_match_end_; // starting position and ending position of alignment in read b
     int eff_read_A_match_start_, eff_read_B_match_start_, eff_read_A_match_end_, eff_read_B_match_end_;
     int tps;
-    int reverse_complemented_match_; //reverse_complemented_match_, reverse complement = 1, same direction = 0
+    int reverse_complement_match_; //reverse_complement_match_, reverse complement = 1, same direction = 0
     int eff_read_A_start_, eff_read_A_end_, eff_read_B_start_, eff_read_B_end_;
     MatchType match_type_ = UNDEFINED;
     void addtype(int); // depreciated

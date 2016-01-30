@@ -1089,7 +1089,7 @@ void LAInterface::getAlignmentB(std::vector<int> &result, int from) {
             //Print_Number((int64) ovl->bread+1,br_wide+1,stdout);
             result.push_back(ovl->bread);
         }
-        //if (COMP(ovl->reverse_complemented_match_))
+        //if (COMP(ovl->reverse_complement_match_))
         //  printf(" c");
         //else
         //  printf(" n");
@@ -1475,10 +1475,10 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
         LOverlap *new_ovl = new LOverlap();
 
         if (COMP(ovl->flags))
-        {   new_ovl->reverse_complemented_match_ = 1;
+        {   new_ovl->reverse_complement_match_ = 1;
         }
         else {
-            new_ovl->reverse_complemented_match_ = 0;
+            new_ovl->reverse_complement_match_ = 0;
         }
 
         if (small)
@@ -1579,10 +1579,10 @@ void LAInterface::getOverlapw(std::vector<LOverlap *> &result_vec, int from, int
         LOverlap *new_ovl = new LOverlap();
 
         if (COMP(ovl->flags))
-        {   new_ovl->reverse_complemented_match_ = 1;
+        {   new_ovl->reverse_complement_match_ = 1;
         }
         else {
-            new_ovl->reverse_complemented_match_ = 0;
+            new_ovl->reverse_complement_match_ = 0;
         }
 
         if (small)
@@ -1839,7 +1839,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
             //Print_Number((int64) ovl->bread+1,br_wide+1,stdout);
             //result.push_back(ovl->bread);
         }
-        //if (COMP(ovl->reverse_complemented_match_))
+        //if (COMP(ovl->reverse_complement_match_))
         //  printf(" c");
         //else
         //  printf(" n");
@@ -1893,7 +1893,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
                 if (amin < 0) amin = 0;
                 amax = ovl->path.read_A_match_end_ + BORDER;
                 if (amax > aln->alen) amax = aln->alen;
-                if (COMP(aln->reverse_complemented_match_)) {
+                if (COMP(aln->reverse_complement_match_)) {
                     bmin = (aln->blen - ovl->path.read_B_match_end_) - BORDER;
                     if (bmin < 0) bmin = 0;
                     bmax = (aln->blen - ovl->path.read_B_match_start_) + BORDER;
@@ -1911,7 +1911,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
 
 
                 aln->aseq = aseq - amin;
-                if (COMP(aln->reverse_complemented_match_)) {
+                if (COMP(aln->reverse_complement_match_)) {
                     Complement_Seq(bseq, bmax - bmin);
                     aln->bseq = bseq - (aln->blen - bmax);
                 }
@@ -2242,7 +2242,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
             //Print_Number((int64) ovl->bread+1,br_wide+1,stdout);
             //result.push_back(ovl->bread);
         }
-        //if (COMP(ovl->reverse_complemented_match_))
+        //if (COMP(ovl->reverse_complement_match_))
         //  printf(" c");
         //else
         //  printf(" n");
@@ -2298,7 +2298,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
                 if (amin < 0) amin = 0;
                 amax = ovl->path.read_A_match_end_ + BORDER;
                 if (amax > aln->alen) amax = aln->alen;
-                if (COMP(aln->reverse_complemented_match_)) {
+                if (COMP(aln->reverse_complement_match_)) {
                     bmin = (aln->blen - ovl->path.read_B_match_end_) - BORDER;
                     if (bmin < 0) bmin = 0;
                     bmax = (aln->blen - ovl->path.read_B_match_start_) + BORDER;
@@ -2316,7 +2316,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
 
 
                 aln->aseq = aseq - amin;
-                if (COMP(aln->reverse_complemented_match_)) {
+                if (COMP(aln->reverse_complement_match_)) {
                     Complement_Seq(bseq, bmax - bmin);
                     aln->bseq = bseq - (aln->blen - bmax);
                 }
@@ -4555,7 +4555,7 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     int overhang_read_B_left = this->eff_read_B_match_start_ - this->eff_read_B_start_;
     int overhang_read_B_right = this->eff_read_B_match_start_ - this->eff_read_B_start_;
 
-    if (this->reverse_complemented_match_ == 1) {
+    if (this->reverse_complement_match_ == 1) {
         //Exchange overhang left and right of read B if match is reverse complemented
         overhang_read_B_left = this->eff_read_B_end_ - this->eff_read_B_match_end_;
         overhang_read_B_right = this->eff_read_B_match_start_ - this->eff_read_B_start_;

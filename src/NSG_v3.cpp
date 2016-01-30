@@ -336,7 +336,7 @@ int main(int argc, char *argv[]) {
             idx2[i][j]->eff_read_A_start_ = reads[idx2[i][j]->read_A_id_]->effective_start;
             idx2[i][j]->eff_read_A_end_ = reads[idx2[i][j]->read_A_id_]->effective_end;
 
-            if (idx2[i][j]->reverse_complemented_match_ == 0) {//Where are reverse_complemented_match_ set?
+            if (idx2[i][j]->reverse_complement_match_ == 0) {//Where are reverse_complement_match_ set?
                 idx2[i][j]->eff_read_B_start_ = reads[idx2[i][j]->read_B_id_]->effective_start;
                 idx2[i][j]->eff_read_B_end_ = reads[idx2[i][j]->read_B_id_]->effective_end;
             } else {//looks like an iverted match
@@ -435,11 +435,11 @@ int main(int argc, char *argv[]) {
                         idx3[aid][bid]->eff_aepos - idx3[aid][bid]->eff_abpos
                         + idx3[bid][aid]->eff_aepos - idx3[bid][aid]->eff_abpos;
                 /*if (idx3[aid][bid]->match_type_ == FORWARD) {
-                    if (idx3[aid][bid]->reverse_complemented_match_ == 0) idx3[bid][aid]->match_type_ = BACKWARD;
+                    if (idx3[aid][bid]->reverse_complement_match_ == 0) idx3[bid][aid]->match_type_ = BACKWARD;
                     else idx3[bid][aid]->match_type_ = FORWARD;
                 }
                 if (idx3[aid][bid]->match_type_ == BACKWARD) {
-                    if (idx3[aid][bid]->reverse_complemented_match_ == 0) idx3[bid][aid]->match_type_ = FORWARD;
+                    if (idx3[aid][bid]->reverse_complement_match_ == 0) idx3[bid][aid]->match_type_ = FORWARD;
                     else idx3[bid][aid]->match_type_ = BACKWARD;
                 }*/
             }
@@ -459,7 +459,7 @@ int main(int argc, char *argv[]) {
             for (int j = 0; j < idx2[i].size(); j++) {
                 if (reads[idx2[i][j]->read_B_id_]->active)
                     fprintf(out3, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
-                            idx2[i][j]->read_A_id_, idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->reverse_complemented_match_,
+                            idx2[i][j]->read_A_id_, idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->reverse_complement_match_,
                             idx2[i][j]->match_type_, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_,
                             idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_, idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
             }
@@ -526,7 +526,7 @@ int main(int argc, char *argv[]) {
                     if ((idx2[i][j]->match_type_ == FORWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
                         if (forward < 1) {
 
-                            /*if (idx2[i][j]->reverse_complemented_match_ == 0)
+                            /*if (idx2[i][j]->reverse_complement_match_ == 0)
                              fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                              idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_,
                              idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
@@ -537,7 +537,7 @@ int main(int argc, char *argv[]) {
                              idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
 
-                            if (idx2[i][j]->reverse_complemented_match_ == 0)
+                            if (idx2[i][j]->reverse_complement_match_ == 0)
                              fprintf(out2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                              idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_,
                              idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
@@ -557,12 +557,12 @@ int main(int argc, char *argv[]) {
 
                             /*for (int k = 0; k < hinges_vec[idx2[i][j]->bid].size(); k++) {
                                 if ((hinges_vec[idx2[i][j]->bid][k].type == 1)
-                                and (idx2[i][j]->reverse_complemented_match_ == 1) and
+                                and (idx2[i][j]->reverse_complement_match_ == 1) and
                                 (idx2[i][j]->eff_read_B_match_end_ > idx2[i][j]->blen - hinges_vec[idx2[i][j]->bid][k].pos + 300))
                                     hinges_vec[idx2[i][j]->bid][k].active2 = false;
 
                                 if ((hinges_vec[idx2[i][j]->bid][k].type == -1)
-                                and (idx2[i][j]->reverse_complemented_match_ == 0)
+                                and (idx2[i][j]->reverse_complement_match_ == 0)
                                 and (idx2[i][j]->eff_read_B_match_end_ > hinges_vec[idx2[i][j]->bid][k].pos + 300))
                                     hinges_vec[idx2[i][j]->bid][k].active2 = false;
                             }*/
@@ -580,7 +580,7 @@ int main(int argc, char *argv[]) {
                     else if ((idx2[i][j]->match_type_ == BACKWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
                         if (backward < 1) {
 
-                            /*if (idx2[i][j]->reverse_complemented_match_ == 0)
+                            /*if (idx2[i][j]->reverse_complement_match_ == 0)
                              fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                              idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_,
                              idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
@@ -591,7 +591,7 @@ int main(int argc, char *argv[]) {
                              idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
 
-                            if (idx2[i][j]->reverse_complemented_match_ == 0)
+                            if (idx2[i][j]->reverse_complement_match_ == 0)
                              fprintf(out2, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                              idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_,
                              idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
@@ -619,12 +619,12 @@ int main(int argc, char *argv[]) {
 
                             /*for (int k = 0; k < hinges_vec[idx2[i][j]->bid].size(); k++) {
                                 if ((hinges_vec[idx2[i][j]->bid][k].type == 1)
-                                and (idx2[i][j]->reverse_complemented_match_ == 0)
+                                and (idx2[i][j]->reverse_complement_match_ == 0)
                                 and (idx2[i][j]->eff_read_B_match_start_ < hinges_vec[idx2[i][j]->bid][k].pos - 300))
                                     hinges_vec[idx2[i][j]->bid][k].active2 = false;
 
                                 if ((hinges_vec[idx2[i][j]->bid][k].type == -1)
-                                and (idx2[i][j]->reverse_complemented_match_ == 1)
+                                and (idx2[i][j]->reverse_complement_match_ == 1)
                                 and (idx2[i][j]->eff_read_B_match_start_ < idx2[i][j]->blen - hinges_vec[idx2[i][j]->bid][k].pos - 300))
                                     hinges_vec[idx2[i][j]->bid][k].active2 = false;
                             }*/
@@ -679,7 +679,7 @@ int main(int argc, char *argv[]) {
                         /*if (not repeat_status_back[i])*/ {
                             if (forward < 1) {
 
-                                if (idx2[i][j]->reverse_complemented_match_ == 0)
+                                if (idx2[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
                                             idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
                                             idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
@@ -690,7 +690,7 @@ int main(int argc, char *argv[]) {
                                             idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
                                             idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
 
-                                if (idx2[i][j]->reverse_complemented_match_ == 0)
+                                if (idx2[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
                                             idx2[i][j]->read_A_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
                                             idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
@@ -709,7 +709,7 @@ int main(int argc, char *argv[]) {
                         if (backward < 1) {
 
                             /*if (not repeat_status_front[i])*/ {
-                                if (idx2[i][j]->reverse_complemented_match_ == 0)
+                                if (idx2[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
                                             idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
                                             idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
@@ -720,7 +720,7 @@ int main(int argc, char *argv[]) {
                                             idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
                                             idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
 
-                                if (idx2[i][j]->reverse_complemented_match_ == 0)
+                                if (idx2[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out2, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
                                             idx2[i][j]->read_A_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
                                             idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
@@ -748,9 +748,9 @@ int main(int argc, char *argv[]) {
                 if (idx2[i][j]->active) {
                     if ((idx2[i][j]->match_type_ == FORWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
                         if (repeat_status_back[i]) // choose the correct repeat status (with hinges)
-                        if (((idx2[i][j]->reverse_complemented_match_ == 0) and repeat_status_front[idx2[i][j]->read_B_id_])
-                            or ((idx2[i][j]->reverse_complemented_match_ == 1) and repeat_status_back[idx2[i][j]->read_B_id_])) {
-                            if (idx2[i][j]->reverse_complemented_match_ == 0)
+                        if (((idx2[i][j]->reverse_complement_match_ == 0) and repeat_status_front[idx2[i][j]->read_B_id_])
+                            or ((idx2[i][j]->reverse_complement_match_ == 1) and repeat_status_back[idx2[i][j]->read_B_id_])) {
+                            if (idx2[i][j]->reverse_complement_match_ == 0)
                                 fprintf(out3, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
                                         idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
                                         idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
@@ -760,7 +760,7 @@ int main(int argc, char *argv[]) {
                                         idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
                                         idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
                                         idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
-                            if (idx2[i][j]->reverse_complemented_match_ == 0)
+                            if (idx2[i][j]->reverse_complement_match_ == 0)
                                 fprintf(out3, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
                                         idx2[i][j]->read_A_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
                                         idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
@@ -777,9 +777,9 @@ int main(int argc, char *argv[]) {
                     }
                     else if  ((idx2[i][j]->match_type_ == BACKWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
                         if (repeat_status_front[i])
-                        if (((idx2[i][j]->reverse_complemented_match_ == 0) and repeat_status_back[idx2[i][j]->read_B_id_])
-                            or ((idx2[i][j]->reverse_complemented_match_ == 1) and repeat_status_front[idx2[i][j]->read_B_id_])) {
-                            if (idx2[i][j]->reverse_complemented_match_ == 0)
+                        if (((idx2[i][j]->reverse_complement_match_ == 0) and repeat_status_back[idx2[i][j]->read_B_id_])
+                            or ((idx2[i][j]->reverse_complement_match_ == 1) and repeat_status_front[idx2[i][j]->read_B_id_])) {
+                            if (idx2[i][j]->reverse_complement_match_ == 0)
                                 fprintf(out3, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
                                         idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
                                         idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
@@ -790,7 +790,7 @@ int main(int argc, char *argv[]) {
                                         idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
                                         idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
 
-                            if (idx2[i][j]->reverse_complemented_match_ == 0)
+                            if (idx2[i][j]->reverse_complement_match_ == 0)
                                 fprintf(out3, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
                                         idx2[i][j]->read_A_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
                                         idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,

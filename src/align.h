@@ -158,7 +158,7 @@ typedef struct
 
 typedef struct
   { Path   *path;
-    uint32  flags;        /* Pipeline status and complementation reverse_complemented_match_          */
+    uint32  flags;        /* Pipeline status and complementation reverse_complement_match_          */
     char   *aseq;         /* Pointer to A sequence                              */
     char   *bseq;         /* Pointer to B sequence                              */
     int     alen;         /* Length of A sequence                               */
@@ -331,7 +331,7 @@ void Complement_Seq(char *a, int n);
 
 typedef struct {
   Path    path;         /* Path: begin- and end-point of alignment + diffs    */
-  uint32  flags;        /* Pipeline status and complementation reverse_complemented_match_          */
+  uint32  flags;        /* Pipeline status and complementation reverse_complement_match_          */
   int     aread;        /* Id # of A sequence                                 */
   int     bread;        /* Id # of B sequence                                 */
 } Overlap;

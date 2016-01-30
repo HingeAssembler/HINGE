@@ -1851,7 +1851,7 @@ Path *Local_Alignment(Alignment *align, Work_Data *ework, Align_Spec *espec,
     int     a, h;
 
     printf("\nA-path (%d,%d)->(%d,%d)",apath->read_A_match_start_,apath->read_B_match_start_,apath->read_A_match_end_,apath->read_B_match_end_);
-    printf(" %c\n",(COMP(align->reverse_complemented_match_) ? 'c' : 'n'));
+    printf(" %c\n",(COMP(align->reverse_complement_match_) ? 'c' : 'n'));
     a = apath->read_B_match_start_;
     for (h = 1; h < apath->tlen; h += 2)
       { int dif = trace[h-1];
@@ -1865,7 +1865,7 @@ Path *Local_Alignment(Alignment *align, Work_Data *ework, Align_Spec *espec,
     int     a, h;
 
     printf("\nB-path (%d,%d)->(%d,%d)",bpath->read_A_match_start_,bpath->read_B_match_start_,bpath->read_A_match_end_,bpath->read_B_match_end_);
-    printf(" %c [%d,%d]\n",(COMP(align->reverse_complemented_match_) ? 'c' : 'n'),align->blen,align->alen);
+    printf(" %c [%d,%d]\n",(COMP(align->reverse_complement_match_) ? 'c' : 'n'),align->blen,align->alen);
     a = bpath->read_B_match_start_;
     for (h = 1; h < bpath->tlen; h += 2)
       { int dif = trace[h-1];
@@ -3018,7 +3018,7 @@ int Find_Extension(Alignment *align, Work_Data *ework, Align_Spec *espec,
     int     a, h;
 
     printf("\nA-path (%d,%d)->(%d,%d)",apath->read_A_match_start_,apath->read_B_match_start_,apath->read_A_match_end_,apath->read_B_match_end_);
-    printf(" %c\n",(COMP(align->reverse_complemented_match_) ? 'c' : 'n'));
+    printf(" %c\n",(COMP(align->reverse_complement_match_) ? 'c' : 'n'));
     a = apath->read_B_match_start_;
     for (h = 1; h < apath->tlen; h += 2)
       { int dif = trace[h-1];
