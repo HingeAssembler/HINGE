@@ -11,7 +11,9 @@ install: sudo apt-get install build-essential &&
          ./configure &&
          make &&
          sudo make install &&
-         cmake --version
+         cmake --version &&
+         pwd &&
+         cd ..
  
 script: ./build.sh && ./test.sh
 
