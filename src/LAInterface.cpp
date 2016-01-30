@@ -4484,7 +4484,8 @@ void LOverlap::trim_overlap() {
             current_position_read_A = int(ceil(current_position_read_A / 100.0)) * 100;
         else
             current_position_read_A += 100;
-        trace_points.push_back(std::pair<int,int>(current_position_read_A, trace_points.back().second + this->trace_pts[2 * j + 1]));
+        trace_points.push_back(std::pair<int,int>(current_position_read_A,
+                                                  trace_points.back().second + this->trace_pts[2 * j + 1]));
     }
     trace_points.push_back(std::pair<int,int>(this->read_A_match_end_, this->read_B_match_end_));
 
@@ -4498,7 +4499,8 @@ void LOverlap::trim_overlap() {
 
     //for trace point pairs, get the first one that is in untrimmed regions for both reads
     for (int i = 0; i< trace_points.size(); i++) {
-        if ((trace_points[i].first >= this->eff_read_A_start_) and (trace_points[i].second >= this->eff_read_B_start_)) {
+        if ((trace_points[i].first >= this->eff_read_A_start_) and
+                (trace_points[i].second >= this->eff_read_B_start_)) {
             this->eff_read_A_match_start_ = trace_points[i].first;
             this->eff_read_B_match_start_ = trace_points[i].second;
             this->eff_start_trace_point_index_ = i;
