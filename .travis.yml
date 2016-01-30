@@ -19,7 +19,7 @@ install: sudo apt-get install build-essential &&
          gcc-4.8 --version &&
          which gcc-4.8
 
-script: ./build.sh && ./test.sh
+script: ./build.sh
 
 notifications:
   email:
