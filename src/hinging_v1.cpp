@@ -894,7 +894,7 @@ int main(int argc, char *argv[]) {
 
                         }
                         else if ((matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)
-                                 and isValidHinge(matches_backward[i][j], hinges_vec[matches_backward[i][j]->read_B_id_])){
+                                 and isValidHinge(matches_backward[i][j], hinges_vec[matches_backward[i][j]->read_B_id_])) {
 
                             PrintOverlapToFile(out3,matches_backward[i][j]);
                             edges_backward[i].push_back(matches_backward[i][j]);
