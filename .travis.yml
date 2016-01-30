@@ -9,7 +9,7 @@ install: sudo apt-get install build-essential &&
          tar xf cmake-3.2.2.tar.gz &&
          cd cmake-3.2.2 &&
          ./configure &&
-         make &&
+         make -j 8 &&
          sudo make install &&
          cmake --version &&
          pwd &&
