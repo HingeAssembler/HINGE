@@ -375,7 +375,7 @@ int main(int argc, char *argv[]) {
 
     int num_overlaps = 0;
     for (int i = 0; i < n_read; i++) {//Isn't this just 0 or 1?
-        num_overlaps += idx2[i].size();
+        num_overlaps += matches_forward.size()+ matches_backward.size();
     }
     std::cout<<num_overlaps << " overlaps" << std::endl;
 
@@ -388,7 +388,8 @@ int main(int argc, char *argv[]) {
     }
     std::cout<<"removed contained reads, active reads:" << num_active_read<< std::endl;
 
-    for (int iter = 0; iter < N_ITER; iter++) {
+    /*TODO : Do not know what is going on here. Need to fix
+     * for (int iter = 0; iter < N_ITER; iter++) {
         int remove = 0;
 # pragma omp parallel for reduction(+:remove)
         for (int i = 0; i < n_read; i++) {
@@ -412,7 +413,7 @@ int main(int argc, char *argv[]) {
             }
         }
         printf("remove %d reads\n", remove);
-    }
+    }*/
 
     num_active_read = 0;
     for (int i = 0; i < n_read; i++) {
