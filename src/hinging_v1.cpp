@@ -133,6 +133,33 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
     return ret;
 }
 
+bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_THRESHOLD, int THETA){
+    bool contained;
+    match->eff_read_A_start_ = read_A->effective_start;
+    match->eff_read_A_end_ = read_A->effective_end;
+
+    if (match->reverse_complement_match_ == 0) {//Where are reverse_complement_match_ set?
+        match->eff_read_B_start_ = read_B->effective_start;
+        match->eff_read_B_end_ = read_B->effective_end;
+    } else {//looks like an inverted match
+        match->eff_read_B_start_ = match->blen - read_B->effective_end;
+        match->eff_read_B_end_ = match->blen - read_B->effective_start;
+    }
+
+    match->trim_overlap();//What does this do?
+
+    if (((match->eff_read_B_match_end_ - match->eff_read_B_match_start_) < ALN_THRESHOLD)
+        or ((match->eff_read_A_match_end_ - match->eff_read_A_match_start_) < ALN_THRESHOLD))
+    {
+        match->active = false;
+        match->match_type_ = NOT_ACTIVE;
+    } else {
+        match->addtype2(THETA);
+        if (match->match_type_ == BCOVERA)
+            contained = true;
+    }
+    return contained;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -322,14 +349,18 @@ int main(int argc, char *argv[]) {
     std::cout<<"index finished" <<std::endl;
 
     for (int i = 0; i < n_read; i++) {
+        bool contained=false;
         for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin(); it!=idx[i].end(); it++) {
             std::sort(it->second.begin(), it->second.end(), compare_overlap);//Sort overlaps by lengths
             if (it->second.size() > 0) {//Is this not just max? Why sort?
-                idx2[i].push_back(it->second[0]);
+                contained= contained or ProcessAlignment(it->second[0],read[(it->second[0]->read_A_id_],
+                                                         read[(it->second[0]->read_B_id_], ALN_THRESHOLD, THETA);
+                if (contained) reads[i]->active = false;
+
                 if ((it->second[0]->match_type_== FORWARD) or (it->second[0]->match_type_== FORWARD_INTERNAL))
-                    matches_forward.push_back(std::vector<LOverlap *>());
+                    matches_forward.push_back(it->second[0]);
                 else if ((it->second[0]->match_type_== BACKWARD) or (it->second[0]->match_type_== BACKWARD_INTERNAL))
-                    matches_backward.push_back(std::vector<LOverlap *>());
+                    matches_backward.push_back(it->second[0]);
             }
         }
     }
@@ -350,7 +381,7 @@ int main(int argc, char *argv[]) {
             if (idx2[i][j]->reverse_complement_match_ == 0) {//Where are reverse_complement_match_ set?
                 idx2[i][j]->eff_read_B_start_ = reads[idx2[i][j]->read_B_id_]->effective_start;
                 idx2[i][j]->eff_read_B_end_ = reads[idx2[i][j]->read_B_id_]->effective_end;
-            } else {//looks like an iverted match
+            } else {//looks like an inverted match
                 idx2[i][j]->eff_read_B_start_ = idx2[i][j]->blen - reads[idx2[i][j]->read_B_id_]->effective_end;
                 idx2[i][j]->eff_read_B_end_ = idx2[i][j]->blen - reads[idx2[i][j]->read_B_id_]->effective_start;
             }
@@ -495,7 +526,6 @@ int main(int argc, char *argv[]) {
             hinges_vec[i].push_back(Hinge(marked_hinges[i][j].first, marked_hinges[i][j].second , true));
             if (reads[i]->active) {
                 n ++;
-                //printf("%d %d %d\n", i, marked_hinges[i][j].first, marked_hinges[i][j].second);
             }
         }
     }
