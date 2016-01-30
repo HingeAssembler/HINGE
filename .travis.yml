@@ -9,3 +9,9 @@ install: brew update
 script: ./build.sh && ./test.sh
 
 os: osx
+
+notifications:
+	email:
+		- xf1280@gmail.com
+		- govinda.kamath@gmail.com
+		- ilanshom@gmail.com
