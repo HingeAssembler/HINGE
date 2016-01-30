@@ -324,8 +324,13 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin(); it!=idx[i].end(); it++) {
             std::sort(it->second.begin(), it->second.end(), compare_overlap);//Sort overlaps by lengths
-            if (it->second.size() > 0)//Is this not just max? Why sort?
+            if (it->second.size() > 0) {//Is this not just max? Why sort?
                 idx2[i].push_back(it->second[0]);
+                if ((it->second[0]->match_type_== FORWARD) or (it->second[0]->match_type_== FORWARD_INTERNAL))
+                    matches_forward.push_back(std::vector<LOverlap *>());
+                else if ((it->second[0]->match_type_== BACKWARD) or (it->second[0]->match_type_== BACKWARD_INTERNAL))
+                    matches_backward.push_back(std::vector<LOverlap *>());
+            }
         }
     }
 
