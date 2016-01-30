@@ -1,4 +1,4 @@
-#include <stdio.h>
+2#include <stdio.h>
 #include <unordered_map>
 #include "DB.h"
 #include "align.h"
@@ -27,8 +27,8 @@
 
 #define HINGED_EDGE 1
 #define UNHINGED_EDGE -1
-#define REVERSE_COMPLEMENT_MATCH -1
-#define SAME_DIRECTION_MATCH 1
+#define REVERSE_COMPLEMENT_MATCH 1
+#define SAME_DIRECTION_MATCH 0
 
 typedef std::tuple<Node, Node, int> Edge_w;
 
@@ -225,6 +225,44 @@ bool isValidHinge(LOverlap *match, std::vector<Hinge> &read_hinges){
     return valid;
 }
 
+
+
+
+
+
+
+
+
+void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
+
+    int direction = match->reverse_complement_match_;
+    int hinged;
+
+    if ((match->match_type_ == FORWARD) or (match->match_type_ == BACKWARD)) {
+        hinged = UNHINGED_EDGE;
+    }
+    else if ((match->match_type_ == FORWARD_INTERNAL) or (match->match_type_ == BACKWARD_INTERNAL))
+    {
+        hinged = HINGED_EDGE;
+    }
+
+    fprintf(file_pointer, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
+        match->read_A_id_,
+        match->read_B_id_, match->weight,
+        direction, hinged,
+        match->eff_read_A_match_start_,
+        match->eff_read_A_match_end_,
+        match->eff_read_B_match_start_,
+        match->eff_read_B_match_end_,
+        match->eff_read_A_start_,
+        match->eff_read_A_end_,
+        match->eff_read_B_start_,
+        match->eff_read_B_end_);
+
+}
+
+
+
 int main(int argc, char *argv[]) {
 
 
@@ -310,6 +348,16 @@ int main(int argc, char *argv[]) {
     //of type FORWARD, and FORWARD_INTERNAL
     //matches_backward is the vector of vectors where matches_backward[read_id] is a vector of matches of read_id
     //of type BACKWARD, and BACKWARD_INTERNAL
+
+
+    std::vector<std::vector<LOverlap *>> edges_forward, edges_backward; 
+    // edges_forward is a "filtered" version of matches_forward, where every (active) read has at exactly one outgoing match
+    // edges_backward is a "filtered" version of matches_backward, where every (active) read has at exactly one incoming match
+
+
+    std::vector<std::vector<LOverlap *>> intersection_edges_forward, intersection_edges_backward; 
+
+
 
     FILE * mask_file;
     mask_file = fopen(name_mask.c_str(), "r");
@@ -398,6 +446,10 @@ int main(int argc, char *argv[]) {
         idx2.push_back(std::vector<LOverlap *>());
         matches_forward.push_back(std::vector<LOverlap *>());
         matches_backward.push_back(std::vector<LOverlap *>());
+        edges_forward.push_back(std::vector<LOverlap *>());
+        edges_backward.push_back(std::vector<LOverlap *>());
+        intersection_edges_forward.push_back(std::vector<LOverlap *>());
+        intersection_edges_backward.push_back(std::vector<LOverlap *>());
     }
 
 //int num_finished = 0;
@@ -559,7 +611,13 @@ int main(int argc, char *argv[]) {
     FILE * out2;
     out = fopen((std::string(argv[3]) + ".1").c_str(), "w");
     out2 = fopen((std::string(argv[3]) + ".2").c_str(), "w");
+
+    // Output file for matches 
     out3 = fopen((std::string(argv[3]) + ".hinges").c_str(), "w");
+
+    // Output file for edges
+    out4 = fopen((std:string(argv[3]) + ".hinges.edges").c_str(),"w");
+
 
 
     std::unordered_map<int, std::vector<Hinge> > hinges_vec;
@@ -808,69 +866,19 @@ int main(int argc, char *argv[]) {
                 if (matches_forward[i][j]->active) {
                     if ((reads[matches_forward[i][j]->read_B_id_]->active)) {
                         if ((matches_forward[i][j]->match_type_ == FORWARD)){
-                            if (matches_forward[i][j]->reverse_complement_match_ == 0) {
-                                fprintf(out3, "%d %d %d  %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                                        matches_forward[i][j]->read_A_id_,
-                                        matches_forward[i][j]->read_B_id_, matches_forward[i][j]->weight,
-                                        SAME_DIRECTION_MATCH, UNHINGED_EDGE,
-                                        matches_forward[i][j]->eff_read_A_match_start_,
-                                        matches_forward[i][j]->eff_read_A_match_end_,
-                                        matches_forward[i][j]->eff_read_B_match_start_,
-                                        matches_forward[i][j]->eff_read_B_match_end_,
-                                        matches_forward[i][j]->eff_read_A_start_,
-                                        matches_forward[i][j]->eff_read_A_end_,
-                                        matches_forward[i][j]->eff_read_B_start_,
-                                        matches_forward[i][j]->eff_read_B_end_);
-                                break;
-                            }
-                            else {
-                                fprintf(out3, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                                        matches_forward[i][j]->read_A_id_,
-                                        matches_forward[i][j]->read_B_id_, matches_forward[i][j]->weight, 
-                                        REVERSE_COMPLEMENT_MATCH, UNHINGED_EDGE,
-                                        matches_forward[i][j]->eff_read_A_match_start_,
-                                        matches_forward[i][j]->eff_read_A_match_end_,
-                                        matches_forward[i][j]->eff_read_B_match_start_,
-                                        matches_forward[i][j]->eff_read_B_match_end_,
-                                        matches_forward[i][j]->eff_read_A_start_,
-                                        matches_forward[i][j]->eff_read_A_end_,
-                                        matches_forward[i][j]->eff_read_B_start_,
-                                        matches_forward[i][j]->eff_read_B_end_);
-                                break;
-                            }
+
+                            PrintOverlapToFile(out3,matches_forward[i][j]);
+                            edges_forward[i].push_back(matches_forward[i][j]);
+                            break;
+
                         }
                         else if ((matches_forward[i][j]->match_type_ == FORWARD_INTERNAL)
                                 and isValidHinge(matches_forward[i][j], hinges_vec[matches_forward[i][j]->read_B_id_])){
-                            if (matches_forward[i][j]->reverse_complement_match_ == 0) {
-                                fprintf(out3, "%d %d %d  %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                                        matches_forward[i][j]->read_A_id_,
-                                        matches_forward[i][j]->read_B_id_, matches_forward[i][j]->weight,
-                                        SAME_DIRECTION_MATCH, HINGED_EDGE,
-                                        matches_forward[i][j]->eff_read_A_match_start_,
-                                        matches_forward[i][j]->eff_read_A_match_end_,
-                                        matches_forward[i][j]->eff_read_B_match_start_,
-                                        matches_forward[i][j]->eff_read_B_match_end_,
-                                        matches_forward[i][j]->eff_read_A_start_,
-                                        matches_forward[i][j]->eff_read_A_end_,
-                                        matches_forward[i][j]->eff_read_B_start_,
-                                        matches_forward[i][j]->eff_read_B_end_);
-                                break;
-                            }
-                            else {
-                                fprintf(out3, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                                        matches_forward[i][j]->read_A_id_,
-                                        matches_forward[i][j]->read_B_id_, matches_forward[i][j]->weight,
-                                        REVERSE_COMPLEMENT_MATCH, HINGED_EDGE,
-                                        matches_forward[i][j]->eff_read_A_match_start_,
-                                        matches_forward[i][j]->eff_read_A_match_end_,
-                                        matches_forward[i][j]->eff_read_B_match_start_,
-                                        matches_forward[i][j]->eff_read_B_match_end_,
-                                        matches_forward[i][j]->eff_read_A_start_,
-                                        matches_forward[i][j]->eff_read_A_end_,
-                                        matches_forward[i][j]->eff_read_B_start_,
-                                        matches_forward[i][j]->eff_read_B_end_);
-                                break;
-                            }
+
+                            PrintOverlapToFile(out3,matches_forward[i][j]);
+                            edges_forward[i].push_back(matches_forward[i][j]);
+                            break;
+
                         }
                     }
                 }
@@ -878,70 +886,56 @@ int main(int argc, char *argv[]) {
             for (int j = 0; j < matches_backward[i].size(); j++){
                 if (matches_backward[i][j]->active) {
                     if ((reads[matches_backward[i][j]->read_B_id_]->active)) {
-                        if ((matches_backward[i][j]->match_type_ == backward)){
-                            if (matches_backward[i][j]->reverse_complement_match_ == 0) {
-                                fprintf(out3, "%d %d %d  %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                                        matches_backward[i][j]->read_A_id_,
-                                        matches_backward[i][j]->read_B_id_, matches_backward[i][j]->weight,
-                                        SAME_DIRECTION_MATCH, UNHINGED_EDGE,
-                                        matches_backward[i][j]->eff_read_A_match_start_,
-                                        matches_backward[i][j]->eff_read_A_match_end_,
-                                        matches_backward[i][j]->eff_read_B_match_start_,
-                                        matches_backward[i][j]->eff_read_B_match_end_,
-                                        matches_backward[i][j]->eff_read_A_start_,
-                                        matches_backward[i][j]->eff_read_A_end_,
-                                        matches_backward[i][j]->eff_read_B_start_,
-                                        matches_backward[i][j]->eff_read_B_end_);
-                                break;
-                            }
-                            else {
-                                fprintf(out3, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                                        matches_backward[i][j]->read_A_id_,
-                                        matches_backward[i][j]->read_B_id_, matches_backward[i][j]->weight,
-                                        REVERSE_COMPLEMENT_MATCH, UNHINGED_EDGE,
-                                        matches_backward[i][j]->eff_read_A_match_start_,
-                                        matches_backward[i][j]->eff_read_A_match_end_,
-                                        matches_backward[i][j]->eff_read_B_match_start_,
-                                        matches_backward[i][j]->eff_read_B_match_end_,
-                                        matches_backward[i][j]->eff_read_A_start_,
-                                        matches_backward[i][j]->eff_read_A_end_,
-                                        matches_backward[i][j]->eff_read_B_start_,
-                                        matches_backward[i][j]->eff_read_B_end_);
-                                break;
-                            }
+                        if ((matches_backward[i][j]->match_type_ == BACKWARD)){
+
+                            PrintOverlapToFile(out3,matches_backward[i][j]);
+                            edges_backward[i].push_back(matches_backward[i][j]);
+                            break;
+
                         }
-                        else if ((matches_backward[i][j]->match_type_ == backward_INTERNAL)
+                        else if ((matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)
                                  and isValidHinge(matches_backward[i][j], hinges_vec[matches_backward[i][j]->read_B_id_])){
-                            if (matches_backward[i][j]->reverse_complement_match_ == 0) {
-                                fprintf(out3, "%d %d %d  %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                                        matches_backward[i][j]->read_A_id_,
-                                        matches_backward[i][j]->read_B_id_, matches_backward[i][j]->weight,
-                                        SAME_DIRECTION_MATCH, HINGED_EDGE,
-                                        matches_backward[i][j]->eff_read_A_match_start_,
-                                        matches_backward[i][j]->eff_read_A_match_end_,
-                                        matches_backward[i][j]->eff_read_B_match_start_,
-                                        matches_backward[i][j]->eff_read_B_match_end_,
-                                        matches_backward[i][j]->eff_read_A_start_,
-                                        matches_backward[i][j]->eff_read_A_end_,
-                                        matches_backward[i][j]->eff_read_B_start_,
-                                        matches_backward[i][j]->eff_read_B_end_);
-                                break;
-                            }
-                            else {
-                                fprintf(out3, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                                        matches_backward[i][j]->read_A_id_,
-                                        matches_backward[i][j]->read_B_id_, matches_backward[i][j]->weight,
-                                        REVERSE_COMPLEMENT_MATCH, HINGED_EDGE,
-                                        matches_backward[i][j]->eff_read_A_match_start_,
-                                        matches_backward[i][j]->eff_read_A_match_end_,
-                                        matches_backward[i][j]->eff_read_B_match_start_,
-                                        matches_backward[i][j]->eff_read_B_match_end_,
-                                        matches_backward[i][j]->eff_read_A_start_,
-                                        matches_backward[i][j]->eff_read_A_end_,
-                                        matches_backward[i][j]->eff_read_B_start_,
-                                        matches_backward[i][j]->eff_read_B_end_);
-                                break;
-                            }
+
+                            PrintOverlapToFile(out3,matches_backward[i][j]);
+                            edges_backward[i].push_back(matches_backward[i][j]);
+                            break;
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    // Find intersection forward edges
+    // For each edge in edges_forward, push it into intersection_edges_forward if:
+    // - It ends in a hinge, or
+    // - It doesn't end in a hinge, but it is picked as a reverse edges as well
+    for (int i=0; i < edges_forward.size(); i++) {
+        if (edges_forward[i].size() > 0) {  // size should be either zero or one
+            if (edges_forward[i][0]->match_type_ == FORWARD_INTERNAL) {
+                intersection_edges_forward[i].push_back(edges_forward[i][0]);
+            }
+            else { // match_type_ should be FORWARD
+
+                int read_B_id = edges_forward[i][0]->read_B_id_;
+
+                if (edges_forward[i][0]->reverse_complement_match_ != 1) {
+                    if (edges_backward[read_B_id].size() > 0) {
+                        if ((edges_backward[read_B_id][0]->match_type_ == BACKWARD) and
+                                (edges_backward[read_B_id][0]->read_B_id_ == i)) {
+                            PrintOverlapToFile(out4,edges_forward[i][0]);
+                            intersection_edges_forward[i].push_back(edges_forward[i][0]);
+                        }
+                    }
+                }
+                else { // reverse complement match
+                    if (edges_forward[read_B_id].size() > 0) {
+                        if ((edges_forward[read_B_id][0]->match_type_ == FORWARD) and
+                                (edges_forward[read_B_id][0]->read_B_id_ == i)) {
+                            PrintOverlapToFile(out4,edges_forward[i][0]);
+                            intersection_edges_forward[i].push_back(edges_forward[i][0]);
                         }
                     }
                 }
@@ -951,11 +945,44 @@ int main(int argc, char *argv[]) {
 
 
 
-    //printf("%d %d %d\n", n_read, repeat_status_front.size(), repeat_status_back.size());
 
-    //
-    //second pass, for those with repeats
-    //
+    // Find intersection backward edges
+    // For each edge in edges_forward, push it into intersection_edges_forward if:
+    // - It ends in a hinge, or
+    // - It doesn't end in a hinge, but it is picked as a reverse edges as well
+    for (int i=0; i < edges_backward.size(); i++) {
+        if (edges_backward[i].size() > 0) {  // size should be either zero or one
+            if (edges_backward[i][0]->match_type_ == BACKWARD_INTERNAL) {
+                intersection_edges_backward[i].push_back(edges_backward[i][0]);
+            }
+            else { // match_type_ should be FORWARD
+
+                int read_B_id = edges_backward[i][0]->read_B_id_;
+
+                if (edges_backward[i][0]->reverse_complement_match_ != 1) {
+                    if (edges_forward[read_B_id].size() > 0) {
+                        if ((edges_forward[read_B_id][0]->match_type_ == FORWARD) and
+                                (edges_forward[read_B_id][0]->read_B_id_ == i)) {
+                            PrintOverlapToFile(out4,edges_backward[i][0]);
+                            intersection_edges_backward[i].push_back(edges_backward[i][0]);
+                        }
+                    }
+                }
+                else { // reverse complement match
+                    if (edges_backward[read_B_id].size() > 0) {
+                        if ((edges_backward[read_B_id][0]->match_type_ == BACKWARD) and
+                                (edges_backward[read_B_id][0]->read_B_id_ == i)) {
+                            PrintOverlapToFile(out4,edges_backward[i][0]);
+                            intersection_edges_backward[i].push_back(edges_backward[i][0]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
 
     std::cout<<"sort and output finished" <<std::endl;
 
