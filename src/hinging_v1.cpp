@@ -11,15 +11,7 @@
 #include <set>
 #include <omp.h>
 #include "INIReader.h"
-#include "../../../../usr/include/c++/4.6/iostream"
-#include "../../../../usr/include/c++/4.6/bits/ostream.tcc"
-#include "../../../../usr/include/c++/4.6/ostream"
-#include "../../../../usr/include/stdio.h"
-#include "../../../../usr/include/c++/4.6/bits/stl_algo.h"
-#include "../../../../usr/include/c++/4.6/bits/stringfwd.h"
-#include "../../../../usr/include/c++/4.6/bits/stl_vector.h"
-#include "../../../../usr/include/unistd.h"
-#include "../../../../usr/include/stdlib.h"
+
 #include <tuple>
 
 
