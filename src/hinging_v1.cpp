@@ -11,15 +11,6 @@
 #include <set>
 #include <omp.h>
 #include "INIReader.h"
-#include "../../../../usr/include/c++/4.6/iostream"
-#include "../../../../usr/include/c++/4.6/bits/ostream.tcc"
-#include "../../../../usr/include/c++/4.6/ostream"
-#include "../../../../usr/include/stdio.h"
-#include "../../../../usr/include/c++/4.6/bits/stl_algo.h"
-#include "../../../../usr/include/c++/4.6/bits/stringfwd.h"
-#include "../../../../usr/include/c++/4.6/bits/stl_vector.h"
-#include "../../../../usr/include/unistd.h"
-#include "../../../../usr/include/stdlib.h"
 #include <tuple>
 
 
@@ -171,7 +162,7 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
         match->eff_read_B_end_ = match->blen - read_B->effective_start;
     }
 
-    match->trim_overlap();//What does this do?
+    match->trim_overlap();
 
     if (((match->eff_read_B_match_end_ - match->eff_read_B_match_start_) < ALN_THRESHOLD)
         or ((match->eff_read_A_match_end_ - match->eff_read_A_match_start_) < ALN_THRESHOLD))
@@ -205,9 +196,9 @@ bool isValidHinge(LOverlap *match, std::vector<Hinge> &read_hinges){
     //Returns true if read_hinges (a vector of all hinges corresponding to a read )
     // has a hinge of appropriate type within tolerance from positions of start of the
     // overlap on read_B of the overlap given.
-    int tolerance=100;
+    int tolerance=100;//TODO put as #define
     int position=match->eff_read_B_match_start_;
-    int type;
+    int type; //TODO : Make enum
     if (match->match_type_==FORWARD_INTERNAL)
         type=1;
     else if (match->match_type_==BACKWARD_INTERNAL)
@@ -348,7 +339,7 @@ int main(int argc, char *argv[]) {
 
 
     std::vector<std::vector<LOverlap *>> intersection_edges_forward, intersection_edges_backward; 
-
+    //Stores the intersection of edges constructing the intersection list of edges
 
 
     FILE * mask_file;
@@ -477,7 +468,7 @@ int main(int argc, char *argv[]) {
 
     int num_overlaps = 0;
     for (int i = 0; i < n_read; i++) {//Isn't this just 0 or 1?
-        num_overlaps += matches_forward.size()+ matches_backward.size();
+        num_overlaps += matches_forward[i].size()+ matches_backward[i].size();
     }
     std::cout<<num_overlaps << " overlaps" << std::endl;
 
@@ -489,33 +480,6 @@ int main(int argc, char *argv[]) {
         }
     }
     std::cout<<"removed contained reads, active reads:" << num_active_read<< std::endl;
-
-    /*TODO : Do not know what is going on here. Need to fix
-     * for (int iter = 0; iter < N_ITER; iter++) {
-        int remove = 0;
-# pragma omp parallel for reduction(+:remove)
-        for (int i = 0; i < n_read; i++) {
-            if (reads[i]->active) {
-                int forward = 0;
-                int backward = 0;
-                for (int j = 0; j < idx2[i].size(); j++)
-                    if (idx2[i][j]->active) {
-                        //idx2[i][j]->show();
-                        //std::cout<<idx2[i][j]->match_type_ << std::endl;
-                        if ((idx2[i][j]->match_type_ == FORWARD)
-                            and (reads[idx2[i][j]->read_B_id_]->active)) forward++;
-                        else if ((idx2[i][j]->match_type_ == BACKWARD)
-                                 and (reads[idx2[i][j]->read_B_id_]->active)) backward++;
-                    }
-                if ((forward == 0) or (backward == 0)) {
-                    reads[i]->active = false;
-                    remove ++;
-                }
-                //printf("read %d forward %d backward %d\n", i, forward, backward);
-            }
-        }
-        printf("remove %d reads\n", remove);
-    }*/
 
     num_active_read = 0;
     for (int i = 0; i < n_read; i++) {
@@ -533,26 +497,6 @@ int main(int argc, char *argv[]) {
     }
     std::cout<<num_overlaps << " overlaps" << std::endl;
 
-
-//    for (int i = 0; i < n_read; i++) {
-//        idx3.push_back(std::unordered_map<int, LOverlap*>() );
-//        if (reads[i]->active)
-//        for (int j = 0; j < idx2[i].size(); j++) {
-//            if (reads[idx2[i][j]->read_B_id_]->active)
-//                idx3[i][idx2[i][j]->read_B_id_] = idx2[i][j];
-//        }
-//    }
-//
-//    for (int i = 0; i < n_read; i++) {
-//        if (reads[i]->active)
-//            for (std::unordered_map<int, LOverlap*>::iterator it = idx3[i].begin(); it!=idx3[i].end(); it++) {
-//                int aid = i;
-//                int bid = it->second->read_B_id_;
-//                idx3[aid][bid]->weight =
-//                        idx3[aid][bid]->eff_read_A_match_end_ - idx3[aid][bid]->eff_read_A_match_start_
-//                        + idx3[bid][aid]->eff_read_A_match_end_ - idx3[bid][aid]->eff_read_A_match_start_;
-//            }
-//    }
 
 
 # pragma omp parallel for
