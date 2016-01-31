@@ -150,7 +150,7 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
     //Next it trims match
     //Finally it figures out the type of match we have here by calling AddTypesAsymmetric() on the
     //class object
-    bool contained;
+    bool contained=false;
     match->eff_read_A_start_ = read_A->effective_start;
     match->eff_read_A_end_ = read_A->effective_end;
 
