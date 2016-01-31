@@ -325,12 +325,12 @@ int main(int argc, char *argv[]) {
     	idx is a vector of length n_read, each element idx3[read A id] is a map, 
     	from read B id to a vector of overlaps
     */
-    std::vector<std::vector<LOverlap *>> idx2;
+    //std::vector<std::vector<LOverlap *>> idx2;
     /*
     	idx2 is a vector of length n_read, each element idx2[read A id] is a vector, 
     	for each read B, we put the best overlap into that vector
     */
-    std::vector<std::unordered_map<int, LOverlap *>> idx3;
+    //std::vector<std::unordered_map<int, LOverlap *>> idx3;
 	/*
 		idx3 is a vector of length n_read, each element idx3[read A id] is a map, 
 		from read read B id to the best overlap of read A and read B
@@ -435,7 +435,7 @@ int main(int argc, char *argv[]) {
         //An initialisation for loop
         //TODO Preallocate memory. Much more efficient.
         idx.push_back(std::unordered_map<int, std::vector<LOverlap *> >());
-        idx2.push_back(std::vector<LOverlap *>());
+        //idx2.push_back(std::vector<LOverlap *>());
         matches_forward.push_back(std::vector<LOverlap *>());
         matches_backward.push_back(std::vector<LOverlap *>());
         edges_forward.push_back(std::vector<LOverlap *>());
@@ -652,7 +652,8 @@ int main(int argc, char *argv[]) {
             int backward = 0;
             for (int j = 0; j < matches_forward[i].size(); j++) {
                 if (matches_forward[i][j]->active) {
-                    if ((matches_forward[i][j]->match_type_ == FORWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
+                    if ((matches_forward[i][j]->match_type_ == FORWARD) and
+                            (reads[matches_forward[i][j]->read_B_id_]->active)) {
                         if (forward < 1) {
                             //remove certain hinges
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
@@ -668,7 +669,8 @@ int main(int argc, char *argv[]) {
 
             for (int j = 0; j < matches_backward[i].size(); j++) {
                 if (matches_backward[i][j]->active) {
-                    if ((matches_backward[i][j]->match_type_ == backward) and (reads[idx2[i][j]->read_B_id_]->active)) {
+                    if ((matches_backward[i][j]->match_type_ == BACKWARD) and
+                            (reads[matches_backward[i][j]->read_B_id_]->active)) {
                         if (backward < 1) {
                             //remove certain hinges
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
