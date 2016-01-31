@@ -11,10 +11,6 @@
 #include <set>
 #include <omp.h>
 #include "INIReader.h"
-<<<<<<< HEAD
-=======
-
->>>>>>> c65184c0f1f717809cb5afec027a840892e93cda
 #include <tuple>
 
 
