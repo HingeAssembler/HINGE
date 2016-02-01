@@ -4469,10 +4469,10 @@ void LOverlap::trim_overlap() {
     //before trimming, the positions are read_A_match_start_, read_B_match_start_, read_A_match_end_
     // and read_B_match_end_, we add a eff_ prefix to it after trimming
 
-    this->eff_read_B_match_start_ = 0;
-    this->eff_read_B_match_end_ = 0;
-    this->eff_read_A_match_start_ = 0;
-    this->eff_read_A_match_end_ = 0;
+    this->eff_read_B_match_start_ = this->read_B_match_start_;
+    this->eff_read_B_match_end_ = this->read_B_match_end_;
+    this->eff_read_A_match_start_ = this->read_A_match_start_;
+    this->eff_read_A_match_end_ = this->read_A_match_end_;
 
 
     std::vector<std::pair<int,int> > trace_points;
