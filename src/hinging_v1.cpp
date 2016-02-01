@@ -150,34 +150,59 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
     //Next it trims match
     //Finally it figures out the type of match we have here by calling AddTypesAsymmetric() on the
     //class object
+
+    //std::cout<<" In ProcessAlignment"<<std::endl;
     bool contained=false;
     match->eff_read_A_start_ = read_A->effective_start;
     match->eff_read_A_end_ = read_A->effective_end;
 
-    if (match->reverse_complement_match_ == 0) {
-        match->eff_read_B_start_ = read_B->effective_start;
-        match->eff_read_B_end_ = read_B->effective_end;
-    } else {//looks like an inverted match
-        match->eff_read_B_start_ = match->blen - read_B->effective_end;
-        match->eff_read_B_end_ = match->blen - read_B->effective_start;
-    }
+
+    match->eff_read_B_start_ = read_B->effective_start;
+    match->eff_read_B_end_ = read_B->effective_end;
+
 
     match->trim_overlap();
-
+    //std::cout<< contained<<std::endl;
     if (((match->eff_read_B_match_end_ - match->eff_read_B_match_start_) < ALN_THRESHOLD)
         or ((match->eff_read_A_match_end_ - match->eff_read_A_match_start_) < ALN_THRESHOLD))
-    {
+    {   std::ofstream ofs ("Hinging.if.txt", std::ofstream::app);
+        ofs << "In deactivating match "
+        <<  "Read A start " << read_A->effective_start
+        << " Read A end " << read_A->effective_end
+        << " Read A match start "<<  match->eff_read_A_match_start_
+        << " Read A match end " << match->eff_read_A_match_end_
+        << " Read B start " << read_B->effective_start
+        << " Read B end " << read_B->effective_end
+        << " Read B match start "<<  match->eff_read_B_match_start_
+        << " Read B match end " << match->eff_read_B_match_end_
+        << " Match direction "<< match->reverse_complement_match_
+        << "\n" << std::endl;
+        ofs.close();
         match->active = false;
         match->match_type_ = NOT_ACTIVE;
     } else {
         match->AddTypesAsymmetric(THETA);
-        if (match->match_type_ == BCOVERA)
+        if (match->match_type_ == BCOVERA) {
+            std::ofstream ofs ("Hinging.else.txt", std::ofstream::app);
+            ofs <<  "Read A start " << read_A->effective_start
+                    << " Read A end " << read_A->effective_end
+                    << " Read A match start "<<  match->eff_read_A_match_start_
+                    << " Read A match end " << match->eff_read_A_match_end_
+                    <<  "Read B start " << read_B->effective_start
+                    << " Read B end " << read_B->effective_end
+                    << " Read B match start "<<  match->eff_read_B_match_start_
+                    << " Read B match end " << match->eff_read_B_match_end_
+                    << " Match direction "<< match->reverse_complement_match_
+                    << std::endl;
             contained = true;
+            ofs.close();
+        }
+        //std::cout<< contained<< std::endl;
     }
 
     match->weight =
             match->eff_read_A_match_end_ - match->eff_read_A_match_start_
-            + match->eff_read_A_match_end_ - match->eff_read_A_match_start_;
+            + match->eff_read_B_match_end_ - match->eff_read_B_match_start_;
     
     return contained;
 }
@@ -439,7 +464,7 @@ int main(int argc, char *argv[]) {
     int num_overlaps = 0;
     int num_forward_overlaps(0),num_forward_internal_overlaps(0), num_reverse_overlaps(0),
             num_reverse_internal_overlaps(0);
-# pragma omp parallel for
+//# pragma omp parallel for
     for (int i = 0; i < aln.size(); i++) {
         idx[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
     }
@@ -447,12 +472,14 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < aln.size(); i++) {
         idx[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
     }
-    std::cout<<"index finished" <<std::endl;
+    std::cout<<"index finished" << "Number reads "<< n_read <<std::endl;
 
     for (int i = 0; i < n_read; i++) {
         bool contained=false;
+        //std::cout<< "Testing opt " << i << std::endl;
         for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin(); it!=idx[i].end(); it++) {
             std::sort(it->second.begin(), it->second.end(), compare_overlap);//Sort overlaps by lengths
+            //std::cout<<"Giving input to ProcessAlignment "<<it->second.size() <<std::endl;
             if (it->second.size() > 0) {
                 //Figure out if read is contained
                 contained = contained or ProcessAlignment(it->second[0],reads[it->second[0]->read_A_id_],
