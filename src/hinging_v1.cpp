@@ -12,6 +12,7 @@
 #include <omp.h>
 #include "INIReader.h"
 #include <tuple>
+#include <iomanip>
 
 
 #define LAST_READ_SYMBOL  '$'
@@ -167,12 +168,16 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
         or ((match->eff_read_A_match_end_ - match->eff_read_A_match_start_) < ALN_THRESHOLD))
     {   std::ofstream ofs ("Hinging.if.txt", std::ofstream::app);
         ofs << "In deactivating match "
-        <<  "Read A start " << read_A->effective_start
-        << " Read A end " << read_A->effective_end
+        << "Read A id "<< match->read_A_id_ << " "<< read_A->id
+        << " Read A eff start " << read_A->effective_start
+        << " Read A eff end " << read_A->effective_end
+        << " Read A length " << read_A->len
         << " Read A match start "<<  match->eff_read_A_match_start_
         << " Read A match end " << match->eff_read_A_match_end_
+        << "Read B id "<< match->read_B_id_ << " "<< read_B->id
         << " Read B start " << read_B->effective_start
         << " Read B end " << read_B->effective_end
+        << " Read B length " << read_B->len
         << " Read B match start "<<  match->eff_read_B_match_start_
         << " Read B match end " << match->eff_read_B_match_end_
         << " Match direction "<< match->reverse_complement_match_
@@ -184,16 +189,27 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
         match->AddTypesAsymmetric(THETA);
         if (match->match_type_ == BCOVERA) {
             std::ofstream ofs ("Hinging.else.txt", std::ofstream::app);
-            ofs <<  "Read A start " << read_A->effective_start
-                    << " Read A end " << read_A->effective_end
-                    << " Read A match start "<<  match->eff_read_A_match_start_
-                    << " Read A match end " << match->eff_read_A_match_end_
-                    <<  "Read B start " << read_B->effective_start
-                    << " Read B end " << read_B->effective_end
-                    << " Read B match start "<<  match->eff_read_B_match_start_
-                    << " Read B match end " << match->eff_read_B_match_end_
-                    << " Match direction "<< match->reverse_complement_match_
-                    << std::endl;
+            ofs <<  "===============================================\n"
+                << "Read A id "<< std::setfill('0') << std::setw(5) <<match->read_A_id_
+                << " " << std::setfill('0') << std::setw(5) << read_A->id
+                << "\nRead B id "  << std::setfill('0') << std::setw(5) << match->read_B_id_
+                << " "<< std::setfill('0') << std::setw(5) <<  read_B->id
+                << "\nRead A eff start "<< std::setfill('0') << std::setw(5)  << read_A->effective_start
+                << " Read A eff end "<< std::setfill('0') << std::setw(5)  << read_A->effective_end
+                << " Read A length " << std::setfill('0') << std::setw(5)  << read_A->len
+                << " Read A match start "<< std::setfill('0') << std::setw(5) <<  match->read_A_match_start_
+                << " Read A eff match start " << std::setfill('0') << std::setw(5) <<  match->eff_read_A_match_start_
+                << " Read A match end " << std::setfill('0') << std::setw(5)  << match->read_A_match_end_
+                << " Read A eff match end " << std::setfill('0') << std::setw(5)  << match->eff_read_A_match_end_
+                << "\nRead B eff start "  << std::setfill('0') << std::setw(5) << read_B->effective_start
+                << " Read B eff end " << std::setfill('0') << std::setw(5)  << read_B->effective_end
+                << " Read B length " << std::setfill('0') << std::setw(5)  << read_B->len
+                << " Read B match start "<< std::setfill('0') << std::setw(5) <<  match->read_B_match_start_
+                << " Read B eff match start " << std::setfill('0') << std::setw(5) <<  match->eff_read_B_match_start_
+                << " Read B match end " << std::setfill('0') << std::setw(5)  << match->read_B_match_end_
+                << " Read B eff match end "  << std::setfill('0') << std::setw(5)  << match->eff_read_B_match_end_
+                << "\nMatch direction "  << std::setfill('0') << std::setw(5)  << match->reverse_complement_match_
+                << "\n" << std::endl;
             contained = true;
             ofs.close();
         }
