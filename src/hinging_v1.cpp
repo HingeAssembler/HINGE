@@ -436,7 +436,9 @@ int main(int argc, char *argv[]) {
     }
 
 //int num_finished = 0;
-
+    int num_overlaps = 0;
+    int num_forward_overlaps(0),num_forward_internal_overlaps(0), num_reverse_overlaps(0),
+            num_reverse_internal_overlaps(0);
 # pragma omp parallel for
     for (int i = 0; i < aln.size(); i++) {
         idx[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
@@ -466,7 +468,7 @@ int main(int argc, char *argv[]) {
         if (contained) reads[i]->active = false;
     }
 
-    int num_overlaps = 0;
+
     for (int i = 0; i < n_read; i++) {//Isn't this just 0 or 1?
         num_overlaps += matches_forward[i].size()+ matches_backward[i].size();
     }
@@ -488,8 +490,11 @@ int main(int argc, char *argv[]) {
     std::cout<<"active reads:" << num_active_read<< std::endl;
 
     num_overlaps = 0;
-    int num_forward_overlaps(0),num_forward_internal_overlaps(0), num_reverse_overlaps(0),
-            num_reverese_internal_overlaps(0);
+    num_forward_overlaps=0;
+    num_forward_internal_overlaps=0;
+    num_reverse_overlaps=0;
+    num_reverse_internal_overlaps=0;
+
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
             for (int j = 0; j < matches_forward[i].size(); j++) {
@@ -505,16 +510,16 @@ int main(int argc, char *argv[]) {
                 if (reads[matches_backward[i][j]->read_B_id_]->active) {
                     num_overlaps++;
                     if (matches_backward[i][j]->match_type_==BACKWARD)
-                        num_forward_overlaps++;
+                        num_reverse_overlaps++;
                     else if (matches_backward[i][j]->match_type_==BACKWARD_INTERNAL)
-                        num_forward_internal_overlaps++;
+                        num_reverse_internal_overlaps++;
                 }
             }
         }
     }
     std::cout<<num_overlaps << " overlaps " << num_forward_overlaps << " fwd overlaps "
     << num_forward_internal_overlaps << " fwd internal overlaps "<< num_reverse_overlaps
-    << " backward overlaps " << num_reverese_internal_overlaps
+    << " backward overlaps " << num_reverse_internal_overlaps
     << " backward internal overlaps "<< std::endl;
 
 

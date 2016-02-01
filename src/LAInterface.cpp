@@ -4553,7 +4553,7 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     int overhang_read_A_left = this->eff_read_A_match_start_ - this->eff_read_A_start_;
     int overhang_read_A_right = this->eff_read_A_end_ - this->eff_read_A_match_end_;
     int overhang_read_B_left = this->eff_read_B_match_start_ - this->eff_read_B_start_;
-    int overhang_read_B_right = this->eff_read_B_match_start_ - this->eff_read_B_start_;
+    int overhang_read_B_right = this->eff_read_B_end_ - this->eff_read_B_match_end_;
 
     if (this->reverse_complement_match_ == 1) {
         //Exchange overhang left and right of read B if match is reverse complemented
