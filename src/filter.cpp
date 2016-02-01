@@ -110,8 +110,8 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int c
     int left= intervals[0]->read_A_match_start_ + cutoff, right = intervals[0]->read_A_match_end_ - cutoff; //left, right means maximal possible interval now
 
     for(int i = 1; i < n; i++) //Ovl1 ~ Ovl2 if Ovl1 and Ovl2 have a nonzero intersection. (that is both the b read maps to the same position on the a read)
-    //This defines a chain of  connected overlaps. This for loop returns a a vector ret which
-    // is a pair of <start of connected overlaps, end of connected overlaps>
+        //This defines a chain of  connected overlaps. This for loop returns a a vector ret which
+        // is a pair of <start of connected overlaps, end of connected overlaps>
     {
         if(intervals[i]->read_A_match_start_ + cutoff <= right)
         {
@@ -160,32 +160,32 @@ bool bridge(LOverlap* ovl, int s, int e){
 int main(int argc, char *argv[]) {
 
     LAInterface la;
-	char * name_db = argv[1]; //.db file of reads to load
-	char * name_las = argv[2];//.las file of alignments
+    char * name_db = argv[1]; //.db file of reads to load
+    char * name_las = argv[2];//.las file of alignments
     char * name_mask = argv[3];
     char * name_config = argv[4];//name of the configuration file, in INI format
-	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
+    printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.openDB(name_db);
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl; // output some statistics 
     la.openAlignmentFile(name_las);
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
 
-	int n_aln = la.getAlignmentNumber();
-	int n_read = la.getReadNumber();
+    int n_aln = la.getAlignmentNumber();
+    int n_read = la.getReadNumber();
     std::vector<LOverlap *> aln;//Vector of pointers to all alignments
-	la.resetAlignment();
+    la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
     std::vector<Read *> reads; //Vector of pointers to all reads
     la.getRead(reads,0,n_read);
-	std::vector<std::vector<int>>  QV;
-	la.getQV(QV,0,n_read); // load QV track from .db file 
+    std::vector<std::vector<int>>  QV;
+    la.getQV(QV,0,n_read); // load QV track from .db file
     std::cout << "input data finished" <<std::endl;
 
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
     }
     //Binarize QV vector, 40 is the threshold
-    
+
     std::vector<std::pair<int, int> > QV_mask;
     // QV_mask is the mask based on QV for reads, for each read, it has one pair [start, end]
 
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
         int max = 0, maxs = s, maxe = e;
 
         for (int j = 0; j < QV[i].size(); j++) {
-            if (QV[i][j] == 1) {
+            if ((QV[i][j] == 1) and (j<QV[i].size() - 1)) {
                 e ++;
             }
             else {
@@ -207,12 +207,12 @@ int main(int argc, char *argv[]) {
                 e = j+1;
             }
         }
-	// get the longest consecutive region that has good QV 
+        // get the longest consecutive region that has good QV
+        //printf("maxs %d maxe %d size%d\n",maxs, maxe,QV[i].size());
         QV_mask.push_back(std::pair<int, int>(maxs*la.tspace, maxe*la.tspace)); // tspace the the interval of trace points
         // create mask by QV
     }
 
-    std::cout << "flag2" <<std::endl;
 
     /*for (int i = 0; i < 200; i++) {
         printf("read %d: ",i+1);
@@ -222,9 +222,9 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j < QV[i].size(); j++) printf("%d ", QV[i][j]);
         printf("[%d %d]", QV_mask[i].first, QV_mask[i].second);
         printf("\n");
-    }
+    }*/
     //display, for debug
-    */
+
 
     INIReader reader(name_config);
     if (reader.ParseError() < 0) {
@@ -258,7 +258,6 @@ int main(int argc, char *argv[]) {
         idx.push_back(std::unordered_map<int, std::vector<LOverlap *>> ());
     }
 
-    std::cout << "flag3" <<std::endl;
 
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
@@ -267,24 +266,20 @@ int main(int argc, char *argv[]) {
     }
 
 
-    std::cout << "flag4" <<std::endl;
 
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {// sort overlaps of a reads
         std::sort(idx3[i].begin(), idx3[i].end(), compare_overlap);
     }
-    std::cout << "flag5" <<std::endl;
 
 
     for (int i = 0; i < aln.size(); i++) {
         idx[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
     }
-    std::cout << "flag6" <<std::endl;
 
     for (int i = 0; i < aln.size(); i++) {
         idx[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
     }
-    std::cout << "flag7" << std::endl;
 
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {
@@ -395,7 +390,7 @@ int main(int argc, char *argv[]) {
 
         //maskvec.push_back(std::pair<int, int>(maxstart + 200, maxend - 200));
         maskvec.push_back(std::pair<int, int>(std::max(maxstart + 200, QV_mask[i].first), std::min(maxend - 200, QV_mask[i].second)));
-        
+
         //get the interestion of two masks
     }
 
@@ -443,8 +438,8 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         rep << i << " ";
         if (repeat_anno[i].size() > 0)
-            if (repeat_anno[i].front().second == -1)
-                rep << -1 << " "<<repeat_anno[i].front().first<<" ";
+        if (repeat_anno[i].front().second == -1)
+            rep << -1 << " "<<repeat_anno[i].front().first<<" ";
         bool active = true;
         for (int j = 0; j < repeat_anno[i].size(); j++) {
             if (j+1<repeat_anno[i].size())
@@ -481,7 +476,7 @@ int main(int argc, char *argv[]) {
     }
     // need a better hinge detection
 
-	// get hinges from repeat annotation information
+    // get hinges from repeat annotation information
     std::unordered_map<int, std::vector<std::pair<int, int>> > hinges;
     // n_read pos -1 = in_hinge 1 = out_hinge
 
@@ -522,7 +517,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-	//output hinges
+    //output hinges
     for (int i = 0; i < n_read; i++) {
         hg << i << " ";
         for (int j = 0; j < hinges[i].size(); j++) {
