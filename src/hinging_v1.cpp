@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
 	int N_PROC = (int)reader.GetInteger("running", "n_proc", 4);
 
     omp_set_num_threads(N_PROC);
-
+    std::cout << "In 308"<< std::endl;
     //std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read);
     // unordered_map from (aid) to alignments in a vector
     std::vector<Edge_w> edgelist, edgelist_ms; // save output to edgelist
@@ -488,14 +488,34 @@ int main(int argc, char *argv[]) {
     std::cout<<"active reads:" << num_active_read<< std::endl;
 
     num_overlaps = 0;
+    int num_forward_overlaps(0),num_forward_internal_overlaps(0), num_reverse_overlaps(0),
+            num_reverese_internal_overlaps(0);
     for (int i = 0; i < n_read; i++) {
-        if (reads[i]->active)
-        for (int j = 0; j < matches_forward[i].size(); j++) {
-            if (reads[matches_forward[i][j]->read_B_id_]->active) num_overlaps++;
-            if (reads[matches_backward[i][j]->read_B_id_]->active) num_overlaps++;
+        if (reads[i]->active) {
+            for (int j = 0; j < matches_forward[i].size(); j++) {
+                if (reads[matches_forward[i][j]->read_B_id_]->active) {
+                    num_overlaps++;
+                    if (matches_forward[i][j]->match_type_==FORWARD)
+                        num_forward_overlaps++;
+                    else if (matches_forward[i][j]->match_type_==FORWARD_INTERNAL)
+                        num_forward_internal_overlaps++;
+                }
+            }
+            for (int j = 0; j < matches_backward[i].size(); j++) {
+                if (reads[matches_backward[i][j]->read_B_id_]->active) {
+                    num_overlaps++;
+                    if (matches_backward[i][j]->match_type_==BACKWARD)
+                        num_forward_overlaps++;
+                    else if (matches_backward[i][j]->match_type_==BACKWARD_INTERNAL)
+                        num_forward_internal_overlaps++;
+                }
+            }
         }
     }
-    std::cout<<num_overlaps << " overlaps" << std::endl;
+    std::cout<<num_overlaps << " overlaps " << num_forward_overlaps << " fwd overlaps "
+    << num_forward_internal_overlaps << " fwd internal overlaps "<< num_reverse_overlaps
+    << " backward overlaps " << num_reverese_internal_overlaps
+    << " backward internal overlaps "<< std::endl;
 
 
 
