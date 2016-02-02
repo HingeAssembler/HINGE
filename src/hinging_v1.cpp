@@ -162,7 +162,7 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
     match->eff_read_B_end_ = read_B->effective_end;
 
 
-    match->trim_overlap();
+    match->TrimOverlapNaive();
     //std::cout<< contained<<std::endl;
     if (((match->eff_read_B_match_end_ - match->eff_read_B_match_start_) < ALN_THRESHOLD)
         or ((match->eff_read_A_match_end_ - match->eff_read_A_match_start_) < ALN_THRESHOLD))

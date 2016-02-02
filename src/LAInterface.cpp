@@ -4522,6 +4522,14 @@ void LOverlap::trim_overlap() {
 
 }
 
+
+void LOverlap::TrimOverlapNaive(){
+    this->eff_read_B_match_start_ = std::max (this->read_B_match_start_,this->eff_read_B_start_);
+    this->eff_read_B_match_end_ = std::min (this->read_B_match_end_,this->eff_read_B_end_);
+    this->eff_read_A_match_start_ = std::max (this->read_A_match_start_,this->eff_read_A_start_);
+    this->eff_read_A_match_end_ = std::min (this->read_A_match_end_,this->eff_read_A_end_);;
+}
+
 void LOverlap::addtype2(int max_overhang) {
     /**
      * addtype2 is a function for classifying overlaps, edges are classified into forward, backward, internal match, bcovera and acoverb,
