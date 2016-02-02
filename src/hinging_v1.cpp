@@ -585,16 +585,17 @@ int main(int argc, char *argv[]) {
 
                 }
             }
+            //std::cout <<"First for done "<<std::endl;
             for (int j = 0; j < matches_backward[i].size(); j++) {
                 if (reads[matches_backward[i][j]->read_B_id_]->active) {
                     num_overlaps++;
                     if (matches_backward[i][j]->match_type_==BACKWARD) {
                         num_reverse_overlaps++;
-                        rev_complemented_bck_matches+=matches_forward[i][j]->reverse_complement_match_;
+                        rev_complemented_bck_matches+=matches_backward[i][j]->reverse_complement_match_;
                     }
                     else if (matches_backward[i][j]->match_type_==BACKWARD_INTERNAL) {
                         num_reverse_internal_overlaps++;
-                        rev_complemented_bck_int_matches+=matches_forward[i][j]->reverse_complement_match_;
+                        rev_complemented_bck_int_matches+=matches_backward[i][j]->reverse_complement_match_;
                     }
                     if (matches_backward[i][j]->reverse_complement_match_==1)
                         rev_complemented_matches++;
