@@ -495,7 +495,7 @@ int main(int argc, char *argv[]) {
 //int num_finished = 0;
     int num_overlaps = 0;
     int num_forward_overlaps(0),num_forward_internal_overlaps(0), num_reverse_overlaps(0),
-            num_reverse_internal_overlaps(0);
+            num_reverse_internal_overlaps(0), rev_complemented_matches(0);
 //# pragma omp parallel for
     for (int i = 0; i < aln.size(); i++) {
         idx[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
@@ -522,6 +522,8 @@ int main(int argc, char *argv[]) {
                     matches_forward[i].push_back(it->second[0]);
                 else if ((it->second[0]->match_type_== BACKWARD) or (it->second[0]->match_type_== BACKWARD_INTERNAL))
                     matches_backward[i].push_back(it->second[0]);
+                if (it->second[0]->reverse_complement_match_==1)
+                    rev_complemented_matches++;
             }
         }
         if (contained) reads[i]->active = false;
@@ -553,6 +555,7 @@ int main(int argc, char *argv[]) {
     num_forward_internal_overlaps=0;
     num_reverse_overlaps=0;
     num_reverse_internal_overlaps=0;
+    rev_complemented_matches=0;
 
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
@@ -563,6 +566,7 @@ int main(int argc, char *argv[]) {
                         num_forward_overlaps++;
                     else if (matches_forward[i][j]->match_type_==FORWARD_INTERNAL)
                         num_forward_internal_overlaps++;
+
                 }
             }
             for (int j = 0; j < matches_backward[i].size(); j++) {
@@ -572,6 +576,8 @@ int main(int argc, char *argv[]) {
                         num_reverse_overlaps++;
                     else if (matches_backward[i][j]->match_type_==BACKWARD_INTERNAL)
                         num_reverse_internal_overlaps++;
+                    if (matches_backward[i][j]->reverse_complement_match_==1)
+                        rev_complemented_matches++;
                 }
             }
         }
