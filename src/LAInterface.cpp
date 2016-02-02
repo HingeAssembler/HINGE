@@ -4581,25 +4581,25 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     else if (overhang_read_A_left <= max_overhang) {
         //Check if read B if a left extension. As we've handled internal,
         //we know that this is a BACKWARD or BACKWARD_INTERNAL match
-        if ((overhang_read_B_right > max_overhang) and (overhang_read_B_left > max_overhang)) {
+        if ((overhang_read_B_right <= max_overhang) and (overhang_read_B_left >= max_overhang)) {
             //Alignment internal in B. (It may be an overlap or a non extending overlap)
-            this->match_type_ = BACKWARD_INTERNAL;
-        }
-        else if (overhang_read_B_left > max_overhang) {
-            //Alignment is a overlap on B.
             this->match_type_ = BACKWARD;
+        }
+        else if (overhang_read_B_right > max_overhang) {
+            //Alignment is a overlap on B.
+            this->match_type_ = BACKWARD_INTERNAL;
         }
     }
     else if (overhang_read_A_right <= max_overhang) {
         //Check if read B if a right extension. As we've handled internal,
         //we know that this is a FORWARD or FORWARD_INTERNAL match
-        if ((overhang_read_B_left > max_overhang) and (overhang_read_B_right > max_overhang)) {
+        if ((overhang_read_B_left <= max_overhang) and (overhang_read_B_right >= max_overhang)) {
             //Alignment internal in B. (It may be an overlap or a non extending overlap)
-            this->match_type_ = FORWARD_INTERNAL;
-        }
-        else if  (overhang_read_B_right > max_overhang) {
-            //Alignment is a overlap on B.
             this->match_type_ = FORWARD;
+        }
+        else if (overhang_read_B_left >= max_overhang) {
+            //Alignment is a overlap on B.
+            this->match_type_ = FORWARD_INTERNAL;
         }
     else{
             this->match_type_ =UNDEFINED;
