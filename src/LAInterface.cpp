@@ -4491,13 +4491,13 @@ void LOverlap::trim_overlap() {
     }
     trace_points.push_back(std::pair<int,int>(this->read_A_match_end_, this->read_B_match_end_));
 
-    /*for (int j = 0; j < tps.size(); j++) {
-        printf("a%d b%d ", tps[j].first, tps[j].second);
+    /*for (int j = 0; j < trace_points.size(); j++) {
+        printf("a%d b%d ", trace_points[j].first, trace_points[j].second);
     }
     printf("\n");
 
      // for debugging
-     */
+    */
 
     //for trace point pairs, get the first one that is in untrimmed regions for both reads
     for (int i = 0; i< trace_points.size(); i++) {
@@ -4565,17 +4565,21 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     int overhang_read_B_left = this->eff_read_B_match_start_ - this->eff_read_B_start_;
     int overhang_read_B_right = this->eff_read_B_end_ - this->eff_read_B_match_end_;
 
-    if (this->reverse_complement_match_ == 1) {
+    /*if (this->reverse_complement_match_ == 1) {
         //Exchange overhang left and right of read B if match is reverse complemented
         overhang_read_B_left = this->eff_read_B_end_ - this->eff_read_B_match_end_;
         overhang_read_B_right = this->eff_read_B_match_start_ - this->eff_read_B_start_;
-    }
+    }*/
 
 
-    if (std::max(overhang_read_A_left, overhang_read_A_right) < max_overhang)
+    if ((std::max(overhang_read_A_left, overhang_read_A_right) < max_overhang)
+        and ((overhang_read_A_left <= overhang_read_B_left)
+             and (overhang_read_A_right <= overhang_read_B_right)))
         this->match_type_ = BCOVERA;
-    else if (std::max(overhang_read_B_left, overhang_read_B_right) < max_overhang)
-        this->match_type_ = ACOVERB;
+    else if ((std::max(overhang_read_B_left, overhang_read_B_right) < max_overhang)
+         and (overhang_read_A_left >= overhang_read_B_left)
+              and (overhang_read_A_right >= overhang_read_B_right))
+    this->match_type_ = ACOVERB;
     else if ((std::min(overhang_read_A_left, overhang_read_A_right) > max_overhang))
         this->match_type_ = INTERNAL;
     else if (overhang_read_A_left <= max_overhang) {

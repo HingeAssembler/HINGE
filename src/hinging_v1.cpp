@@ -151,22 +151,35 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
     //Next it trims match
     //Finally it figures out the type of match we have here by calling AddTypesAsymmetric() on the
     //class object
-
     //std::cout<<" In ProcessAlignment"<<std::endl;
     bool contained=false;
     match->eff_read_A_start_ = read_A->effective_start;
     match->eff_read_A_end_ = read_A->effective_end;
 
+    if (match->reverse_complement_match_ == 0) {
+        match->eff_read_B_start_ = read_B->effective_start;
+        match->eff_read_B_end_ = read_B->effective_end;
+    } else {
+        match->eff_read_B_start_ = read_B->len - read_B->effective_end;
+        match->eff_read_B_end_ = read_B->len - read_B->effective_start;
+    }
 
-    match->eff_read_B_start_ = read_B->effective_start;
-    match->eff_read_B_end_ = read_B->effective_end;
+    /*printf("bef %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_, match->reverse_complement_match_,
+        match->read_A_match_start_, match->read_A_match_end_, match->read_B_match_start_, match->read_B_match_end_,
+           match->eff_read_A_start_, match->eff_read_A_end_, match->eff_read_B_start_, match->eff_read_B_end_
+    );*/
 
+    match->trim_overlap();
 
-    match->TrimOverlapNaive();
+    /*printf("aft %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_, match->reverse_complement_match_,
+           match->eff_read_A_match_start_, match->eff_read_A_match_end_, match->eff_read_B_match_start_, match->eff_read_B_match_end_,
+           match->eff_read_A_start_, match->eff_read_A_end_, match->eff_read_B_start_, match->eff_read_B_end_
+    );*/
     //std::cout<< contained<<std::endl;
     if (((match->eff_read_B_match_end_ - match->eff_read_B_match_start_) < ALN_THRESHOLD)
         or ((match->eff_read_A_match_end_ - match->eff_read_A_match_start_) < ALN_THRESHOLD))
-    {   std::ofstream ofs ("Hinging.if.txt", std::ofstream::app);
+
+    {   /*std::ofstream ofs ("Hinging.if.txt", std::ofstream::app);
         ofs << "In deactivating match "
         << "Read A id "<< match->read_A_id_ << " "<< read_A->id
         << " Read A eff start " << read_A->effective_start
@@ -182,13 +195,13 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
         << " Read B match end " << match->eff_read_B_match_end_
         << " Match direction "<< match->reverse_complement_match_
         << "\n" << std::endl;
-        ofs.close();
+        ofs.close();*/
         match->active = false;
         match->match_type_ = NOT_ACTIVE;
     } else {
         match->AddTypesAsymmetric(THETA);
         if (match->match_type_ == BCOVERA) {
-            std::ofstream ofs ("Hinging.else.txt", std::ofstream::app);
+            /*std::ofstream ofs ("Hinging.else.txt", std::ofstream::app);
             ofs <<  "===============================================\n"
                 << "Read A id "<< std::setfill('0') << std::setw(5) <<match->read_A_id_
                 << " " << std::setfill('0') << std::setw(5) << read_A->id
@@ -209,9 +222,9 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
                 << " Read B match end " << std::setfill('0') << std::setw(5)  << match->read_B_match_end_
                 << " Read B eff match end "  << std::setfill('0') << std::setw(5)  << match->eff_read_B_match_end_
                 << "\nMatch direction "  << std::setfill('0') << std::setw(5)  << match->reverse_complement_match_
-                << "\n" << std::endl;
+                << "\n" << std::endl;*/
             contained = true;
-            ofs.close();
+            //ofs.close();
         }
         //std::cout<< contained<< std::endl;
     }
@@ -362,7 +375,7 @@ int main(int argc, char *argv[]) {
 	int N_PROC = (int)reader.GetInteger("running", "n_proc", 4);
 
     omp_set_num_threads(N_PROC);
-    std::cout << "In 308"<< std::endl;
+    //std::cout << "In 308"<< std::endl;
     //std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read);
     // unordered_map from (aid) to alignments in a vector
     std::vector<Edge_w> edgelist, edgelist_ms; // save output to edgelist
@@ -504,6 +517,31 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < aln.size(); i++) {
         idx[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
     }
+
+    int n_overlaps = 0;
+    int n_rev_overlaps = 0;
+    for (int i = 0; i < aln.size(); i++) {
+        n_overlaps ++;
+        n_rev_overlaps += aln[i]->reverse_complement_match_;
+    }
+
+    printf("overlaps %d rev_overlaps %d\n",n_overlaps,n_rev_overlaps);
+
+    n_overlaps = 0;
+    n_rev_overlaps = 0;
+
+    for (int i = 0; i < n_read; i++)
+        for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin(); it!=idx[i].end(); it++)
+        {
+            for (int j = 0; j < it->second.size(); j++) {
+                n_overlaps ++;
+                n_rev_overlaps += it->second[j]->reverse_complement_match_;
+            }
+        }
+
+    printf("overlaps %d rev_overlaps %d\n",n_overlaps,n_rev_overlaps);
+
+
     std::cout<<"index finished. " << "Number reads "<< n_read <<std::endl;
 
     for (int i = 0; i < n_read; i++) {
