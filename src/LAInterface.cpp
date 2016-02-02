@@ -4491,6 +4491,12 @@ void LOverlap::trim_overlap() {
     }
     trace_points.push_back(std::pair<int,int>(this->read_A_match_end_, this->read_B_match_end_));
 
+
+
+    //printf("[%6d %6d] [%6d %6d]\n", this->eff_read_A_start_, this->eff_read_A_end_, this->eff_read_B_start_, this->eff_read_B_end_);
+
+    //printf("[%6d %6d] [%6d %6d]\n", this->eff_read_A_match_start_, this->eff_read_A_match_end_, this->eff_read_B_match_start_, this->eff_read_B_match_end_);
+
     /*for (int j = 0; j < trace_points.size(); j++) {
         printf("a%d b%d ", trace_points[j].first, trace_points[j].second);
     }
@@ -4498,6 +4504,9 @@ void LOverlap::trim_overlap() {
 
      // for debugging
     */
+
+    this->eff_start_trace_point_index_ = trace_points.size();
+    this->eff_end_trace_point_index_ = 0;
 
     //for trace point pairs, get the first one that is in untrimmed regions for both reads
     for (int i = 0; i< trace_points.size(); i++) {
@@ -4519,6 +4528,24 @@ void LOverlap::trim_overlap() {
             break;
         }
     }
+
+    if (this->eff_start_trace_point_index_ >= this->eff_end_trace_point_index_)
+    {
+        this->active = false;
+    }
+
+    /*printf("[%6d %6d] [%6d %6d]\n", this->eff_read_A_match_start_, this->eff_read_A_match_end_, this->eff_read_B_match_start_, this->eff_read_B_match_end_);
+
+    int overhang_read_A_left = this->eff_read_A_match_start_ - this->eff_read_A_start_;
+    int overhang_read_A_right = this->eff_read_A_end_ - this->eff_read_A_match_end_;
+    int overhang_read_B_left = this->eff_read_B_match_start_ - this->eff_read_B_start_;
+    int overhang_read_B_right = this->eff_read_B_end_ - this->eff_read_B_match_end_;
+
+    printf("trim A_left %6d, A_right %6d, B_left %6d, B_right %6d\n",
+           overhang_read_A_left, overhang_read_A_right,
+           overhang_read_B_left, overhang_read_B_right);
+
+    */
 
 }
 
@@ -4565,6 +4592,10 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     int overhang_read_B_left = this->eff_read_B_match_start_ - this->eff_read_B_start_;
     int overhang_read_B_right = this->eff_read_B_end_ - this->eff_read_B_match_end_;
 
+
+    //printf("     A_left %6d, A_right %6d, B_left %6d, B_right %6d\n",
+    //       overhang_read_A_left, overhang_read_A_right,
+    //       overhang_read_B_left, overhang_read_B_right);
     /*if (this->reverse_complement_match_ == 1) {
         //Exchange overhang left and right of read B if match is reverse complemented
         overhang_read_B_left = this->eff_read_B_end_ - this->eff_read_B_match_end_;
@@ -4572,13 +4603,13 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     }*/
 
 
-    if ((std::max(overhang_read_A_left, overhang_read_A_right) < max_overhang)
-        and ((overhang_read_A_left <= overhang_read_B_left)
-             and (overhang_read_A_right <= overhang_read_B_right)))
+    if (std::max(overhang_read_A_left, overhang_read_A_right) < max_overhang)
+       // and ((overhang_read_A_left <= overhang_read_B_left)
+       //      and (overhang_read_A_right <= overhang_read_B_right)))
         this->match_type_ = BCOVERA;
-    else if ((std::max(overhang_read_B_left, overhang_read_B_right) < max_overhang)
-         and (overhang_read_A_left >= overhang_read_B_left)
-              and (overhang_read_A_right >= overhang_read_B_right))
+    else if (std::max(overhang_read_B_left, overhang_read_B_right) < max_overhang)
+         //and (overhang_read_A_left >= overhang_read_B_left)
+         //     and (overhang_read_A_right >= overhang_read_B_right))
     this->match_type_ = ACOVERB;
     else if ((std::min(overhang_read_A_left, overhang_read_A_right) > max_overhang))
         this->match_type_ = INTERNAL;
@@ -4610,7 +4641,7 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
         }
     }
 
-    std::ofstream ofs ("overlapt.txt", std::ofstream::app);
+    /*std::ofstream ofs ("overlapt.txt", std::ofstream::app);
     ofs <<  "===============================================\n"
     << "Read A id "<< std::setfill('0') << std::setw(5) <<this->read_A_id_
     << "\nRead B id "  << std::setfill('0') << std::setw(5) << this->read_B_id_
@@ -4631,6 +4662,5 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     << "\nReverse complement "  << std::setfill('0') << std::setw(5)  << this->reverse_complement_match_
     << "\nMatch type "<<this->match_type_
     << "\n" << std::endl;
-    ofs.close();
-
+    ofs.close();*/
 }
