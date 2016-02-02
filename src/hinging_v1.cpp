@@ -504,7 +504,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < aln.size(); i++) {
         idx[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
     }
-    std::cout<<"index finished" << "Number reads "<< n_read <<std::endl;
+    std::cout<<"index finished. " << "Number reads "<< n_read <<std::endl;
 
     for (int i = 0; i < n_read; i++) {
         bool contained=false;
@@ -522,8 +522,6 @@ int main(int argc, char *argv[]) {
                     matches_forward[i].push_back(it->second[0]);
                 else if ((it->second[0]->match_type_== BACKWARD) or (it->second[0]->match_type_== BACKWARD_INTERNAL))
                     matches_backward[i].push_back(it->second[0]);
-                if (it->second[0]->reverse_complement_match_==1)
-                    rev_complemented_matches++;
             }
         }
         if (contained) reads[i]->active = false;
@@ -533,13 +531,17 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < n_read; i++) {//Isn't this just 0 or 1?
         num_overlaps += matches_forward[i].size()+ matches_backward[i].size();
+        for (int j=0; j < matches_forward[i].size(); j++)
+            rev_complemented_matches+= matches_forward[i][j]->reverse_complement_match_;
+        for (int j=0; j < matches_backward[i].size(); j++)
+            rev_complemented_matches+= matches_backward[i][j]->reverse_complement_match_;
     }
     std::cout<<num_overlaps << " overlaps" << std::endl;
 
     std::cout<<num_overlaps << " overlaps " << num_forward_overlaps << " fwd overlaps "
     << num_forward_internal_overlaps << " fwd internal overlaps "<< num_reverse_overlaps
     << " backward overlaps " << num_reverse_internal_overlaps
-    << " backward internal overlaps "<< rev_complemented_matches << "Reverse complement overlaps" << std::endl;
+    << " backward internal overlaps "<< rev_complemented_matches << " reverse complement overlaps" << std::endl;
 
     num_active_read = 0;
     for (int i = 0; i < n_read; i++) {
@@ -591,7 +593,7 @@ int main(int argc, char *argv[]) {
     std::cout<<num_overlaps << " overlaps " << num_forward_overlaps << " fwd overlaps "
     << num_forward_internal_overlaps << " fwd internal overlaps "<< num_reverse_overlaps
     << " backward overlaps " << num_reverse_internal_overlaps
-    << " backward internal overlaps "<< rev_complemented_matches << "Reverse complement overlaps" << std::endl;
+    << " backward internal overlaps "<< rev_complemented_matches << " reverse complement overlaps" << std::endl;
 
 
 
