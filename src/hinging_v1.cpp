@@ -574,6 +574,8 @@ int main(int argc, char *argv[]) {
                         num_forward_overlaps++;
                     else if (matches_forward[i][j]->match_type_==FORWARD_INTERNAL)
                         num_forward_internal_overlaps++;
+                    if (matches_forward[i][j]->reverse_complement_match_==1)
+                        rev_complemented_matches++;
 
                 }
             }
