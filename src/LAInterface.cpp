@@ -16,6 +16,8 @@
 
 #include <unordered_map>
 #include <tgmath.h>
+#include <iomanip>
+#include <fstream>
 
 
 void Read::showRead() {
@@ -4571,11 +4573,11 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     else if (overhang_read_A_left <= max_overhang) {
         //Check if read B if a left extension. As we've handled internal,
         //we know that this is a BACKWARD or BACKWARD_INTERNAL match
-        if (overhang_read_B_right > max_overhang) {
+        if ((overhang_read_B_right > max_overhang) and (overhang_read_B_left > max_overhang)) {
             //Alignment internal in B. (It may be an overlap or a non extending overlap)
             this->match_type_ = BACKWARD_INTERNAL;
         }
-        else {
+        else if (overhang_read_B_left > max_overhang) {
             //Alignment is a overlap on B.
             this->match_type_ = BACKWARD;
         }
@@ -4583,14 +4585,40 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     else if (overhang_read_A_right <= max_overhang) {
         //Check if read B if a right extension. As we've handled internal,
         //we know that this is a FORWARD or FORWARD_INTERNAL match
-        if (overhang_read_B_left > max_overhang) {
+        if ((overhang_read_B_left > max_overhang) and (overhang_read_B_right > max_overhang)) {
             //Alignment internal in B. (It may be an overlap or a non extending overlap)
             this->match_type_ = FORWARD_INTERNAL;
         }
-        else {
+        else if  (overhang_read_B_right > max_overhang) {
             //Alignment is a overlap on B.
             this->match_type_ = FORWARD;
         }
+    else{
+            this->match_type_ =UNDEFINED;
+        }
     }
+
+    std::ofstream ofs ("overlapt.txt", std::ofstream::app);
+    ofs <<  "===============================================\n"
+    << "Read A id "<< std::setfill('0') << std::setw(5) <<this->read_A_id_
+    << "\nRead B id "  << std::setfill('0') << std::setw(5) << this->read_B_id_
+    << "\nRead A eff start "<< std::setfill('0') << std::setw(5)  << this->eff_read_A_start_
+    << " Read A eff end "<< std::setfill('0') << std::setw(5)  << this->eff_read_A_end_
+    << " Read A length " << std::setfill('0') << std::setw(5)  << this->alen
+    << " Read A match start "<< std::setfill('0') << std::setw(5) <<  this->read_A_match_start_
+    << " Read A eff match start " << std::setfill('0') << std::setw(5) <<  this->eff_read_A_match_start_
+    << " Read A match end " << std::setfill('0') << std::setw(5)  << this->read_A_match_end_
+    << " Read A eff match end " << std::setfill('0') << std::setw(5)  << this->eff_read_A_match_end_
+    << "\nRead B eff start "  << std::setfill('0') << std::setw(5) << this->eff_read_B_start_
+    << " Read B eff end " << std::setfill('0') << std::setw(5)  << this->eff_read_B_end_
+    << " Read B length " << std::setfill('0') << std::setw(5)  << this->blen
+    << " Read B match start "<< std::setfill('0') << std::setw(5) <<  this->read_B_match_start_
+    << " Read B eff match start " << std::setfill('0') << std::setw(5) <<  this->eff_read_B_match_start_
+    << " Read B match end " << std::setfill('0') << std::setw(5)  << this->read_B_match_end_
+    << " Read B eff match end "  << std::setfill('0') << std::setw(5)  << this->eff_read_B_match_end_
+    << "\nReverse complement "  << std::setfill('0') << std::setw(5)  << this->reverse_complement_match_
+    << "\nMatch type "<<this->match_type_
+    << "\n" << std::endl;
+    ofs.close();
 
 }

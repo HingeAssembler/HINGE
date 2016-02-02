@@ -514,8 +514,9 @@ int main(int argc, char *argv[]) {
             //std::cout<<"Giving input to ProcessAlignment "<<it->second.size() <<std::endl;
             if (it->second.size() > 0) {
                 //Figure out if read is contained
-                contained = contained or ProcessAlignment(it->second[0],reads[it->second[0]->read_A_id_],
+                bool contained_alignment = ProcessAlignment(it->second[0],reads[it->second[0]->read_A_id_],
                                                          reads[it->second[0]->read_B_id_], ALN_THRESHOLD, THETA);
+                contained=contained or contained_alignment;
                 //Filter matches that matter.
                 //TODO Figure out a way to do this more efficiently
                 if ((it->second[0]->match_type_== FORWARD) or (it->second[0]->match_type_== FORWARD_INTERNAL))
