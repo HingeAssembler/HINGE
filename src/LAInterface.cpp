@@ -4585,7 +4585,7 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
             //Alignment internal in B. (It may be an overlap or a non extending overlap)
             this->match_type_ = BACKWARD;
         }
-        else if (overhang_read_B_right > max_overhang) {
+        else if ((overhang_read_B_right >= max_overhang) and (overhang_read_B_left >= max_overhang)) {
             //Alignment is a overlap on B.
             this->match_type_ = BACKWARD_INTERNAL;
         }
@@ -4597,7 +4597,7 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
             //Alignment internal in B. (It may be an overlap or a non extending overlap)
             this->match_type_ = FORWARD;
         }
-        else if (overhang_read_B_left >= max_overhang) {
+        else if ((overhang_read_B_left >= max_overhang) and (overhang_read_B_right >= max_overhang)) {
             //Alignment is a overlap on B.
             this->match_type_ = FORWARD_INTERNAL;
         }
