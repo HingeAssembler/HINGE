@@ -564,16 +564,22 @@ int main(int argc, char *argv[]) {
     num_reverse_overlaps=0;
     num_reverse_internal_overlaps=0;
     rev_complemented_matches=0;
+    int rev_complemented_fwd_matches(0),rev_complemented_bck_matches(0), rev_complemented_fwd_int_matches(0),
+        rev_complemented_bck_int_matches(0);
 
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
             for (int j = 0; j < matches_forward[i].size(); j++) {
                 if (reads[matches_forward[i][j]->read_B_id_]->active) {
                     num_overlaps++;
-                    if (matches_forward[i][j]->match_type_==FORWARD)
+                    if (matches_forward[i][j]->match_type_==FORWARD) {
                         num_forward_overlaps++;
-                    else if (matches_forward[i][j]->match_type_==FORWARD_INTERNAL)
+                        rev_complemented_fwd_matches+=matches_forward[i][j]->reverse_complement_match_;
+                    }
+                    else if (matches_forward[i][j]->match_type_==FORWARD_INTERNAL) {
                         num_forward_internal_overlaps++;
+                        rev_complemented_fwd_int_matches+=matches_forward[i][j]->reverse_complement_match_;
+                    }
                     if (matches_forward[i][j]->reverse_complement_match_==1)
                         rev_complemented_matches++;
 
@@ -582,10 +588,14 @@ int main(int argc, char *argv[]) {
             for (int j = 0; j < matches_backward[i].size(); j++) {
                 if (reads[matches_backward[i][j]->read_B_id_]->active) {
                     num_overlaps++;
-                    if (matches_backward[i][j]->match_type_==BACKWARD)
+                    if (matches_backward[i][j]->match_type_==BACKWARD) {
                         num_reverse_overlaps++;
-                    else if (matches_backward[i][j]->match_type_==BACKWARD_INTERNAL)
+                        rev_complemented_bck_matches+=matches_forward[i][j]->reverse_complement_match_;
+                    }
+                    else if (matches_backward[i][j]->match_type_==BACKWARD_INTERNAL) {
                         num_reverse_internal_overlaps++;
+                        rev_complemented_bck_int_matches+=matches_forward[i][j]->reverse_complement_match_;
+                    }
                     if (matches_backward[i][j]->reverse_complement_match_==1)
                         rev_complemented_matches++;
                 }
@@ -595,7 +605,11 @@ int main(int argc, char *argv[]) {
     std::cout<<num_overlaps << " overlaps " << num_forward_overlaps << " fwd overlaps "
     << num_forward_internal_overlaps << " fwd internal overlaps "<< num_reverse_overlaps
     << " backward overlaps " << num_reverse_internal_overlaps
-    << " backward internal overlaps "<< rev_complemented_matches << " reverse complement overlaps" << std::endl;
+    << " backward internal overlaps "<< rev_complemented_matches << " reverse complement overlaps\n"
+    << rev_complemented_fwd_matches <<" rev cmplment fwd matches "
+    << rev_complemented_fwd_int_matches << " rev cmplement fwd int matches "
+    << rev_complemented_bck_matches << " rev cmplment bck matches "
+    << rev_complemented_bck_int_matches << " rev cmplement bck int matches " << std::endl;
 
 
 
