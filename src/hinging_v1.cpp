@@ -896,7 +896,7 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-    
+
     num_overlaps = 0;
     num_forward_overlaps=0;
     num_forward_internal_overlaps=0;
