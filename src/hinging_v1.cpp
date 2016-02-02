@@ -530,10 +530,16 @@ int main(int argc, char *argv[]) {
     }
 
 
+
     for (int i = 0; i < n_read; i++) {//Isn't this just 0 or 1?
         num_overlaps += matches_forward[i].size()+ matches_backward[i].size();
     }
     std::cout<<num_overlaps << " overlaps" << std::endl;
+
+    std::cout<<num_overlaps << " overlaps " << num_forward_overlaps << " fwd overlaps "
+    << num_forward_internal_overlaps << " fwd internal overlaps "<< num_reverse_overlaps
+    << " backward overlaps " << num_reverse_internal_overlaps
+    << " backward internal overlaps "<< rev_complemented_matches << "Reverse complement overlaps" << std::endl;
 
     num_active_read = 0;
     for (int i = 0; i < n_read; i++) {
@@ -585,7 +591,7 @@ int main(int argc, char *argv[]) {
     std::cout<<num_overlaps << " overlaps " << num_forward_overlaps << " fwd overlaps "
     << num_forward_internal_overlaps << " fwd internal overlaps "<< num_reverse_overlaps
     << " backward overlaps " << num_reverse_internal_overlaps
-    << " backward internal overlaps "<< std::endl;
+    << " backward internal overlaps "<< rev_complemented_matches << "Reverse complement overlaps" << std::endl;
 
 
 
