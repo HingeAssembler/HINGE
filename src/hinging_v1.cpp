@@ -527,7 +527,7 @@ int main(int argc, char *argv[]) {
 
     printf("overlaps %d rev_overlaps %d\n",n_overlaps,n_rev_overlaps);
 
-    n_overlaps = 0;
+    /*n_overlaps = 0;
     n_rev_overlaps = 0;
 
     for (int i = 0; i < n_read; i++)
@@ -539,8 +539,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-    printf("overlaps %d rev_overlaps %d\n",n_overlaps,n_rev_overlaps);
-
+    printf("overlaps %d rev_overlaps %d\n",n_overlaps,n_rev_overlaps);*/
 
     std::cout<<"index finished. " << "Number reads "<< n_read <<std::endl;
 
@@ -552,20 +551,20 @@ int main(int argc, char *argv[]) {
             //std::cout<<"Giving input to ProcessAlignment "<<it->second.size() <<std::endl;
             if (it->second.size() > 0) {
                 //Figure out if read is contained
-                bool contained_alignment = ProcessAlignment(it->second[0],reads[it->second[0]->read_A_id_],
-                                                         reads[it->second[0]->read_B_id_], ALN_THRESHOLD, THETA);
+                LOverlap * ovl = it->second[0];
+                bool contained_alignment = ProcessAlignment(ovl,reads[ovl->read_A_id_],
+                                                         reads[ovl->read_B_id_], ALN_THRESHOLD, THETA);
                 contained=contained or contained_alignment;
                 //Filter matches that matter.
                 //TODO Figure out a way to do this more efficiently
-                if ((it->second[0]->match_type_== FORWARD) or (it->second[0]->match_type_== FORWARD_INTERNAL))
+                if ((ovl->match_type_== FORWARD) or (ovl->match_type_== FORWARD_INTERNAL))
                     matches_forward[i].push_back(it->second[0]);
-                else if ((it->second[0]->match_type_== BACKWARD) or (it->second[0]->match_type_== BACKWARD_INTERNAL))
+                else if ((ovl->match_type_== BACKWARD) or (ovl->match_type_== BACKWARD_INTERNAL))
                     matches_backward[i].push_back(it->second[0]);
             }
         }
         if (contained) reads[i]->active = false;
     }
-
 
 
     for (int i = 0; i < n_read; i++) {//Isn't this just 0 or 1?
@@ -577,10 +576,7 @@ int main(int argc, char *argv[]) {
     }
     std::cout<<num_overlaps << " overlaps" << std::endl;
 
-    std::cout<<num_overlaps << " overlaps " << num_forward_overlaps << " fwd overlaps "
-    << num_forward_internal_overlaps << " fwd internal overlaps "<< num_reverse_overlaps
-    << " backward overlaps " << num_reverse_internal_overlaps
-    << " backward internal overlaps "<< rev_complemented_matches << " reverse complement overlaps" << std::endl;
+    std::cout<<num_overlaps << " overlaps " << rev_complemented_matches << " reverse complement overlaps" << std::endl;
 
     num_active_read = 0;
     for (int i = 0; i < n_read; i++) {
@@ -661,6 +657,50 @@ int main(int argc, char *argv[]) {
         }
     }
 
+
+    // temporary
+    FILE * G_out;
+    G_out = fopen("edges.g_out.txt","w");
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->active) {
+            for (int j = 0; j < matches_forward[i].size(); j++) {
+                if (reads[matches_forward[i][j]->read_B_id_]->active) {
+                    fprintf(G_out, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
+                            matches_forward[i][j]->read_A_id_, matches_forward[i][j]->read_B_id_,
+                            matches_forward[i][j]->weight, matches_forward[i][j]->reverse_complement_match_,
+                            matches_forward[i][j]->match_type_, matches_forward[i][j]->eff_read_A_match_start_,
+                            matches_forward[i][j]->eff_read_A_match_end_,
+                            matches_forward[i][j]->eff_read_B_match_start_,
+                            matches_forward[i][j]->eff_read_B_match_end_,
+                            matches_forward[i][j]->eff_read_A_start_, matches_forward[i][j]->eff_read_A_end_,
+                            matches_forward[i][j]->eff_read_B_start_, matches_forward[i][j]->eff_read_B_end_);
+                    break;
+                }
+            }
+        }
+    }
+
+    fprintf(G_out, "bkw\n");
+
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->active) {
+            for (int j = 0; j < matches_backward[i].size(); j++) {
+                if (reads[matches_backward[i][j]->read_B_id_]->active) {
+                    fprintf(G_out, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
+                            matches_backward[i][j]->read_A_id_, matches_backward[i][j]->read_B_id_,
+                            matches_backward[i][j]->weight, matches_backward[i][j]->reverse_complement_match_,
+                            matches_backward[i][j]->match_type_, matches_backward[i][j]->eff_read_A_match_start_,
+                            matches_backward[i][j]->eff_read_A_match_end_,
+                            matches_backward[i][j]->eff_read_B_match_start_,
+                            matches_backward[i][j]->eff_read_B_match_end_,
+                            matches_backward[i][j]->eff_read_A_start_, matches_backward[i][j]->eff_read_A_end_,
+                            matches_backward[i][j]->eff_read_B_start_, matches_backward[i][j]->eff_read_B_end_);
+                    break;
+                }
+            }
+        }
+    }
+
     FILE * out3;
     out3 = fopen("edges.fwd.backup.txt","w");
     for (int i = 0; i < n_read; i++) {
@@ -668,8 +708,8 @@ int main(int argc, char *argv[]) {
             for (int j = 0; j < matches_forward[i].size(); j++) {
                 if (reads[matches_forward[i][j]->read_B_id_]->active)
                     fprintf(out3, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
-                            matches_forward[i][j]->read_A_id_, matches_forward[i][j]->read_B_id_, 
-                            matches_forward[i][j]->weight, matches_forward[i][j]->reverse_complement_match_, 
+                            matches_forward[i][j]->read_A_id_, matches_forward[i][j]->read_B_id_,
+                            matches_forward[i][j]->weight, matches_forward[i][j]->reverse_complement_match_,
                             matches_forward[i][j]->match_type_, matches_forward[i][j]->eff_read_A_match_start_,
                             matches_forward[i][j]->eff_read_A_match_end_,
                             matches_forward[i][j]->eff_read_B_match_start_, matches_forward[i][j]->eff_read_B_match_end_,
@@ -738,9 +778,46 @@ int main(int argc, char *argv[]) {
     printf("%d active hinges\n", n);
 
 
+    /**
+     * Switch to naive hinge filtering
+     * Keep the hinge only if there are HINGE_READS reads that start near the hinge and continue to the end of the read
+     */
+
+    int HINGE_READS = 5;
+
+    for (int i = 0; i < n_read; i++) {
+        for (int j = 0; j < hinges_vec[i].size(); j++) {
+            int num_near_hinge_reads = 0;
+            if ((reads[i]->active) and (hinges_vec[i][j].active) and (hinges_vec[i][j].type == 1)) {
+                // count reads that start near the hinge and continue to the end of the read
+                printf("read %d hinge %d type %d ", i, j, 1);
+                num_near_hinge_reads = 0;
+                for (int k = 0; k < matches_forward[i].size(); k ++ ) {
+                    if ((matches_forward[i][k]->match_type_ == FORWARD) and
+                            (reads[matches_forward[i][k]->read_B_id_]->active)
+                            and abs((matches_forward[i][k]->eff_read_A_match_start_ -  hinges_vec[i][j].pos ) < 300))
+                        num_near_hinge_reads ++;
+                }
+                printf("num %d\n", num_near_hinge_reads);
+            } else if ((reads[i]->active) and (hinges_vec[i][j].active) and (hinges_vec[i][j].type == -1)) {
+                printf("read %d hinge %d type %d ", i, j, -1);
+                num_near_hinge_reads = 0;
+                for (int k = 0; k < matches_backward[i].size(); k ++ ) {
+                    if ((matches_backward[i][k]->match_type_ == BACKWARD) and
+                            (reads[matches_backward[i][k]->read_B_id_]->active)
+                            and (abs(matches_backward[i][k]->eff_read_A_match_end_ -  hinges_vec[i][j].pos ) < 300))
+                        num_near_hinge_reads ++;
+                }
+                printf("num %d\n", num_near_hinge_reads);
+            }
+            if (num_near_hinge_reads != HINGE_READS) hinges_vec[i][j].active = false;
+        }
+    }
 
 
 
+
+/*
     for (int i = 0; i < n_read; i++) {
         //This is in essence the filtering step
         //For each read find the best forward match, and remove all incoming hinges starting after the start
@@ -784,7 +861,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-
+*/
     n = 0;
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < hinges_vec[i].size(); j++) {
@@ -984,6 +1061,7 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
     std::cout<<num_overlaps << " overlaps " << num_forward_overlaps << " fwd overlaps "
     << num_forward_internal_overlaps << " fwd internal overlaps "<< num_reverse_overlaps
     << " backward overlaps " << num_reverse_internal_overlaps
