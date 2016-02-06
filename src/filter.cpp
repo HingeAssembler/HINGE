@@ -489,7 +489,7 @@ int main(int argc, char *argv[]) {
                 int support = 0;
                 for (int k = 0; k < idx2[i].size(); k++) {
                     //printf("%d %d %d %d\n", idx3[i][k]->read_A_match_start_, idx3[i][k]->read_A_match_end_, maskvec[i].first, repeat_anno[i][j].first);
-                    if ((idx2[i][k]->read_A_match_start_ < maskvec[i].first + 200) and (idx2[i][k]->read_A_match_end_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_end_ < repeat_anno[i][j].first + 300)) {
+                    if (/*(idx2[i][k]->read_A_match_start_ < maskvec[i].first + 200) and*/ (idx2[i][k]->read_A_match_end_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_end_ < repeat_anno[i][j].first + 300)) {
                         support ++;
                         if (support > 7) {
                             bridged = false;
@@ -503,7 +503,7 @@ int main(int argc, char *argv[]) {
                 bool bridged = true;
                 int support = 0;
                 for (int k = 0; k < idx2[i].size(); k++) {
-                    if ((idx2[i][k]->read_A_match_start_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_start_ < repeat_anno[i][j].first + 300) and (idx2[i][k]->read_A_match_end_ > maskvec[i].second - 200)) {
+                    if ((idx2[i][k]->read_A_match_start_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_start_ < repeat_anno[i][j].first + 300) /*and (idx2[i][k]->read_A_match_end_ > maskvec[i].second - 200)*/) {
                         support ++;
                         if (support > 7) { // heuristic here
                             bridged = false;
