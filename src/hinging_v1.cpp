@@ -1123,7 +1123,7 @@ int main(int argc, char *argv[]) {
                 if (matches_forward[i][j]->active) {
                     if ((reads[matches_forward[i][j]->read_B_id_]->active)) {
                         if ((matches_forward[i][j]->match_type_ == FORWARD)){
-                            fprintf(out3,"Printed from forward\n");
+                            //fprintf(out3,"Printed from forward\n");
                             PrintOverlapToFile(out3,matches_forward[i][j]);
                             edges_forward[i].push_back(matches_forward[i][j]);
 
@@ -1132,7 +1132,7 @@ int main(int argc, char *argv[]) {
                         }
                         else if ((matches_forward[i][j]->match_type_ == FORWARD_INTERNAL)
                                 and isValidHinge(matches_forward[i][j], hinges_vec[matches_forward[i][j]->read_B_id_])){
-                            fprintf(out3,"Printed from forward internal\n");
+                            //fprintf(out3,"Printed from forward internal\n");
                             PrintOverlapToFile(out3,matches_forward[i][j]);
                             edges_forward[i].push_back(matches_forward[i][j]);
                             break;
@@ -1145,7 +1145,7 @@ int main(int argc, char *argv[]) {
                 if (matches_backward[i][j]->active) {
                     if ((reads[matches_backward[i][j]->read_B_id_]->active)) {
                         if ((matches_backward[i][j]->match_type_ == BACKWARD)){
-                            fprintf(out3,"Printed from backward\n");
+                            //fprintf(out3,"Printed from backward\n");
                             PrintOverlapToFile(out3,matches_backward[i][j]);
                             edges_backward[i].push_back(matches_backward[i][j]);
                             break;
@@ -1153,7 +1153,7 @@ int main(int argc, char *argv[]) {
                         }
                         else if ((matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)
                                  and isValidHinge(matches_backward[i][j], hinges_vec[matches_backward[i][j]->read_B_id_])) {
-                            fprintf(out3,"Printed from backward internal\n");
+                            //fprintf(out3,"Printed from backward internal\n");
                             PrintOverlapToFile(out3,matches_backward[i][j]);
                             edges_backward[i].push_back(matches_backward[i][j]);
                             break;
