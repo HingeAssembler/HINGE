@@ -840,8 +840,8 @@ int main(int argc, char *argv[]) {
                                 if ((matches_forward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos - 400)
                                     and (hinges_vec[i][k].type == 1))
                                 {
-                                    //hinges_vec[i][k].active = false;
-                                    if (hinges_vec[matches_forward[i][j]->read_B_id_].size() > 0) {
+                                    hinges_vec[i][k].active = false;
+                                    /*if (hinges_vec[matches_forward[i][j]->read_B_id_].size() > 0) {
 
                                         // test if two hinges are close
 
@@ -856,9 +856,12 @@ int main(int argc, char *argv[]) {
                                         //if (abs(delta) < 300)
                                             hinges_vec[i][k].active = false;
 
-                                    }printf("%d %d bridged %d pos %d\n",i,j,matches_forward[i][j]->eff_read_A_match_start_, hinges_vec[i][k].pos);
+                                    }*/
+                                    printf("%d %d bridged %d pos %d\n",i,j,matches_forward[i][j]->eff_read_A_match_start_, hinges_vec[i][k].pos);
                                     // so there should be an hinge on matches_forward[i][j]->read_B
                                     printf("%d\n", (hinges_vec[matches_forward[i][j]->read_B_id_]).size());
+
+                                    printf("A %d B %d\n", matches_forward[i][j]->read_A_id_ ,matches_forward[i][j]->read_B_id_);
 
                                 }
 
@@ -879,8 +882,8 @@ int main(int argc, char *argv[]) {
                                 if ((matches_backward[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos + 400)
                                     and (hinges_vec[i][k].type == -1))
                                 {
-                                    //hinges_vec[i][k].active = false;
-                                    if (hinges_vec[matches_backward[i][j]->read_B_id_].size() > 0) {
+                                    hinges_vec[i][k].active = false;
+                                    /*if (hinges_vec[matches_backward[i][j]->read_B_id_].size() > 0) {
 
 
                                         // test if two hinges are close
@@ -895,10 +898,12 @@ int main(int argc, char *argv[]) {
                                         //if (abs(delta) < 300)
                                             hinges_vec[i][k].active = false;
 
-                                    }
+                                    }*/
                                     printf("%d %d bridged %d pos %d\n",i,j,matches_backward[i][j]->eff_read_A_match_end_, hinges_vec[i][k].pos);
+
                                     printf("%d\n", (hinges_vec[matches_backward[i][j]->read_B_id_]).size());
 
+                                    printf("A %d B %d\n", matches_backward[i][j]->read_A_id_ ,matches_backward[i][j]->read_B_id_);
 
                                 }
                             }

@@ -162,8 +162,8 @@ int main(int argc, char *argv[]) {
     LAInterface la;
     char * name_db = argv[1]; //.db file of reads to load
     char * name_las = argv[2];//.las file of alignments
-    char * name_mask = argv[3];
-    char * name_config = argv[4];//name of the configuration file, in INI format
+    //char * name_mask = argv[3]; // depreciated
+    char * name_config = argv[3];//name of the configuration file, in INI format
     printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.openDB(name_db);
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl; // output some statistics 
@@ -301,6 +301,8 @@ int main(int argc, char *argv[]) {
     std::ofstream rep(std::string(name_db) + ".repeat.txt");
     std::ofstream filtered(std::string(name_db) + ".filtered.fasta");
     std::ofstream hg(std::string(name_db) + ".hinges.txt");
+    std::ofstream mask(std::string(name_db) + ".mas");
+
 
 
 
@@ -353,7 +355,6 @@ int main(int argc, char *argv[]) {
     if (MIN_COV < cov_est/3)
         MIN_COV = cov_est/3;
 
-    std::ofstream mask(name_mask);
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < coverages[i].size(); j++) {
             coverages[i][j].second -= MIN_COV;
@@ -380,7 +381,7 @@ int main(int argc, char *argv[]) {
                 end = start;
             }
         }
-        //mask << i << " " << maxstart << " " << maxend << std::endl;
+        //std::cout << i << " " << maxstart << " " << maxend << std::endl;
         mask << i << " " << std::max(maxstart, QV_mask[i].first) << " " << std::min(maxend, QV_mask[i].second) << std::endl;
         int s = std::max(maxstart, QV_mask[i].first);
         int l = std::min(maxend, QV_mask[i].second) - std::max(maxstart, QV_mask[i].first);
@@ -389,10 +390,14 @@ int main(int argc, char *argv[]) {
         filtered << reads[i]->bases.substr(s,l) << std::endl;
 
         //maskvec.push_back(std::pair<int, int>(maxstart + 200, maxend - 200));
-        maskvec.push_back(std::pair<int, int>(std::max(maxstart + 100, QV_mask[i].first), std::min(maxend - 100, QV_mask[i].second)));
-
+        maskvec.push_back(std::pair<int, int>(std::max(maxstart, QV_mask[i].first), std::min(maxend, QV_mask[i].second)));
         //get the interestion of two masks
     }
+
+    /*for (int i = 0; i < maskvec.size(); i++) {
+        printf("read %d %d %d\n", i, maskvec[i].first, maskvec[i].second);
+        printf("QV: read %d %d %d\n", i, QV_mask[i].first, QV_mask[i].second);
+    }*/
 
 
     //binarize coverage gradient;
@@ -401,7 +406,7 @@ int main(int argc, char *argv[]) {
     //detect repeats based on coverage gradient, mark it has rising (1) or falling (-1)
     for (int i = 0; i < n_read; i++) {
         std::vector<std::pair<int, int> > anno;
-        for (int j = 0; j < cgs[i].size(); j++) {
+        for (int j = 0; j < cgs[i].size()-1; j++) { // changed, remove the last one
             //std::cout<< i << " " << cgs[i][j].first << " " << cgs[i][j].second << std::endl;
             if ((cgs[i][j].first >= maskvec[i].first) and (cgs[i][j].first <= maskvec[i].second)) {
                 if (cgs[i][j].second > cov_est / 2) anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
@@ -489,7 +494,7 @@ int main(int argc, char *argv[]) {
                 int support = 0;
                 for (int k = 0; k < idx2[i].size(); k++) {
                     //printf("%d %d %d %d\n", idx3[i][k]->read_A_match_start_, idx3[i][k]->read_A_match_end_, maskvec[i].first, repeat_anno[i][j].first);
-                    if ((idx2[i][k]->read_A_match_start_ < maskvec[i].first + 300) and (idx2[i][k]->read_A_match_end_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_end_ < repeat_anno[i][j].first + 300)) {
+                    if (/*(idx2[i][k]->read_A_match_start_ < maskvec[i].first + 300) and */(idx2[i][k]->read_A_match_end_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_end_ < repeat_anno[i][j].first + 300)) {
                         support ++;
                         if (support > 7) {
                             bridged = false;
@@ -503,7 +508,7 @@ int main(int argc, char *argv[]) {
                 bool bridged = true;
                 int support = 0;
                 for (int k = 0; k < idx2[i].size(); k++) {
-                    if ((idx2[i][k]->read_A_match_start_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_start_ < repeat_anno[i][j].first + 300) and (idx2[i][k]->read_A_match_end_ > maskvec[i].second - 300)) {
+                    if ((idx2[i][k]->read_A_match_start_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_start_ < repeat_anno[i][j].first + 300)/* and (idx2[i][k]->read_A_match_end_ > maskvec[i].second - 300)*/) {
                         support ++;
                         if (support > 7) { // heuristic here
                             bridged = false;
