@@ -472,7 +472,6 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                // it looks like we are not using the bridging info
 
                 if (not bridged) active = false;
 //                if (bridged) active = false;  // is this what we are supposed to do here??
