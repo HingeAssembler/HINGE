@@ -456,18 +456,16 @@ int main(int argc, char *argv[]) {
 
                 bool bridged = false;
 
+                // We will delete the annotation corresponding to bridged repeats
+                std::vector< int > to_delete;
+
                 //test bridging
 
                 for (int k = 0; k < idx2[i].size(); k++) {
                     if (bridge(idx2[i][k], s, e)) {
                         bridged = true;
-
-
-                        // Ilan: added these two lines to make sure that hinges are not added
-                        // if the repeat is bridged. It eems that we were forgetting to do that.
-                        repeat_anno[i].erase(repeat_anno[i].begin()+j);
-                        repeat_anno[i].erase(repeat_anno[i].begin()+j+1);
-
+                        to_delete.push_back(j);
+                        to_delete.push_back(j+1);
                         break;
                     }
                 }
@@ -476,6 +474,10 @@ int main(int argc, char *argv[]) {
                 if (not bridged) active = false;
 //                if (bridged) active = false;  // is this what we are supposed to do here??
             }
+
+        for (int j = 0; j < to_delete.size(); j++) {
+            repeat_anno[i].erase(repeat_anno[i].begin()+to_delete[j]);
+        }
 
         }
         if (not active) {
