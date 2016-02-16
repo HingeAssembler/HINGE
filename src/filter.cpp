@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
     la.getRead(reads,0,n_read);
     std::vector<std::vector<int>>  QV;
     la.getQV(QV,0,n_read); // load QV track from .db file
-    std::cout << "input data finished" <<std::endl;
+    std::cout << "input data finished.!." <<std::endl;
 
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
@@ -461,11 +461,21 @@ int main(int argc, char *argv[]) {
                 for (int k = 0; k < idx2[i].size(); k++) {
                     if (bridge(idx2[i][k], s, e)) {
                         bridged = true;
+
+
+                        // Ilan: added these two lines to make sure that hinges are not added
+                        // if the repeat is bridged. It eems that we were forgetting to do that.
+                        repeat_anno[i].erase(repeat_anno[i].begin()+j);
+                        repeat_anno[i].erase(repeat_anno[i].begin()+j+1);
+
                         break;
                     }
                 }
 
+                // it looks like we are not using the bridging info
+
                 if (not bridged) active = false;
+//                if (bridged) active = false;  // is this what we are supposed to do here??
             }
 
         }
