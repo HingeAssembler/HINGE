@@ -446,6 +446,10 @@ int main(int argc, char *argv[]) {
         if (repeat_anno[i].front().second == -1)
             rep << -1 << " "<<repeat_anno[i].front().first<<" ";
         bool active = true;
+
+        // We will delete the annotation corresponding to bridged repeats
+        std::vector< int > to_delete;
+
         for (int j = 0; j < repeat_anno[i].size(); j++) {
             if (j+1<repeat_anno[i].size())
             if ((repeat_anno[i][j].second == 1) and (repeat_anno[i][j+1].second == -1)) {
@@ -462,23 +466,29 @@ int main(int argc, char *argv[]) {
                     if (bridge(idx2[i][k], s, e)) {
                         bridged = true;
 
-
-                        // Ilan: added these two lines to make sure that hinges are not added
-                        // if the repeat is bridged. It eems that we were forgetting to do that.
-                        repeat_anno[i].erase(repeat_anno[i].begin()+j);
-                        repeat_anno[i].erase(repeat_anno[i].begin()+j+1);
+                        // Rather than deleting in here, we'll save the indices and
+                        // delete later
+                        to_delete.push_back(j);
+                        to_delete.push_back(j+1);
+//                        repeat_anno[i].erase(repeat_anno[i].begin()+j);
+//                        repeat_anno[i].erase(repeat_anno[i].begin()+j+1);
 
                         break;
                     }
                 }
 
-                // it looks like we are not using the bridging info
+
 
                 if (not bridged) active = false;
 //                if (bridged) active = false;  // is this what we are supposed to do here??
             }
 
         }
+
+        for (int j = 0; j < to_delete.size(); j++) {
+            repeat_anno[i].erase(repeat_anno[i].begin()+to_delete[j]);
+        }
+
         if (not active) {
             //printf("read %d comes from homologus recombination\n", i);
             homo << i << std::endl;
