@@ -446,6 +446,10 @@ int main(int argc, char *argv[]) {
         if (repeat_anno[i].front().second == -1)
             rep << -1 << " "<<repeat_anno[i].front().first<<" ";
         bool active = true;
+
+        // We will delete the annotation corresponding to bridged repeats
+        std::vector< int > to_delete;
+
         for (int j = 0; j < repeat_anno[i].size(); j++) {
             if (j+1<repeat_anno[i].size())
             if ((repeat_anno[i][j].second == 1) and (repeat_anno[i][j+1].second == -1)) {
@@ -456,8 +460,6 @@ int main(int argc, char *argv[]) {
 
                 bool bridged = false;
 
-                // We will delete the annotation corresponding to bridged repeats
-                std::vector< int > to_delete;
 
                 //test bridging
 
