@@ -548,12 +548,16 @@ int main(int argc, char *argv[]) {
 
     std::cout<<"index finished. " << "Number reads "<< n_read <<std::endl;
 
+
+
     for (int i = 0; i < n_read; i++) {
         bool contained=false;
         //std::cout<< "Testing opt " << i << std::endl;
         for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin(); it!=idx[i].end(); it++) {
             std::sort(it->second.begin(), it->second.end(), compare_overlap);//Sort overlaps by lengths
             //std::cout<<"Giving input to ProcessAlignment "<<it->second.size() <<std::endl;
+
+
             if (it->second.size() > 0) {
                 //Figure out if read is contained
                 LOverlap * ovl = it->second[0];
@@ -566,7 +570,12 @@ int main(int argc, char *argv[]) {
                     matches_forward[i].push_back(it->second[0]);
                 else if ((ovl->match_type_== BACKWARD) or (ovl->match_type_== BACKWARD_INTERNAL))
                     matches_backward[i].push_back(it->second[0]);
+
+
             }
+
+
+
         }
         if (contained) reads[i]->active = false;
     }
@@ -827,17 +836,19 @@ int main(int argc, char *argv[]) {
         //This is in essence the filtering step
         //For each read find the best forward match, and remove all incoming hinges starting after the start
         //of the match corresponding to this.
+        //Update 2/19: Now, we remove any in-hinge (out-hinge) if there is a FORWARD or FORWARD_INTERNAL match
+        // (BACKWARD or BACKWARD_INTERNAL) that starts on or before (after) the hinge. 40 is error margin.
         if (reads[i]->active) {
             int forward = 0;
             int backward = 0;
             for (int j = 0; j < matches_forward[i].size(); j++) {
                 if (matches_forward[i][j]->active) {
-                    if ((matches_forward[i][j]->match_type_ == FORWARD) and
+                    if (((matches_forward[i][j]->match_type_ == FORWARD) or (matches_forward[i][j]->match_type_ == FORWARD_INTERNAL)) and
                             (reads[matches_forward[i][j]->read_B_id_]->active)) {
                         //if (forward < 1) {
                             //remove certain hinges
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((matches_forward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos - 400)
+                                if ((matches_forward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos + 40)
                                     and (hinges_vec[i][k].type == 1))
                                 {
                                     hinges_vec[i][k].active = false;
@@ -874,12 +885,12 @@ int main(int argc, char *argv[]) {
 
             for (int j = 0; j < matches_backward[i].size(); j++) {
                 if (matches_backward[i][j]->active) {
-                    if ((matches_backward[i][j]->match_type_ == BACKWARD) and
+                    if (((matches_backward[i][j]->match_type_ == BACKWARD) or (matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)) and
                             (reads[matches_backward[i][j]->read_B_id_]->active)) {
                        // if (backward < 1) {
                             //remove certain hinges
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((matches_backward[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos + 400)
+                                if ((matches_backward[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos - 40)
                                     and (hinges_vec[i][k].type == -1))
                                 {
                                     hinges_vec[i][k].active = false;
@@ -1145,12 +1156,20 @@ int main(int argc, char *argv[]) {
                         else if ((matches_forward[i][j]->match_type_ == FORWARD_INTERNAL)
                                 //and isValidHinge(matches_forward[i][j], hinges_vec[matches_forward[i][j]->read_B_id_])
                                   and (hinges_vec[matches_forward[i][j]->read_B_id_].size() > 0)){
-                            if ((hinges_vec[matches_forward[i][j]->read_B_id_][0].type == 1) and (hinges_vec[matches_forward[i][j]->read_B_id_][0].active)) {
+
+                            // In the case of a forward_internal match we check whether the hinge on read B is an in-hinge
+                            // (or an out-hinge if it's a reverse complement match)
+
+                            if ((hinges_vec[matches_forward[i][j]->read_B_id_][0].type == (1-2*matches_forward[i][j]->reverse_complement_match_) )
+                                and (hinges_vec[matches_forward[i][j]->read_B_id_][0].active)) {
                                 fprintf(out3, "Printed from forward internal\n");
                                 PrintOverlapToFile(out3, matches_forward[i][j]);
                                 PrintOverlapToFile(out4, matches_forward[i][j]);
                                 edges_forward[i].push_back(matches_forward[i][j]);
                                 //break;
+
+//                                forward = 1;
+
                             }
                         }
                     }
@@ -1161,6 +1180,7 @@ int main(int argc, char *argv[]) {
                     if ((reads[matches_backward[i][j]->read_B_id_]->active)) {
 
                         //printf("hinge size %d\n", hinges_vec[matches_backward[i][j]->read_B_id_].size());
+
 
                         if ((matches_backward[i][j]->match_type_ == BACKWARD) and (backward == 0)){
                             //fprintf(out3,"Printed from backward\n");
@@ -1173,13 +1193,22 @@ int main(int argc, char *argv[]) {
                         else if ((matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)
                                   //and isValidHinge(matches_backward[i][j], hinges_vec[matches_backward[i][j]->read_B_id_])
                                 and (hinges_vec[matches_backward[i][j]->read_B_id_].size() > 0)) {
-                            if ((hinges_vec[matches_backward[i][j]->read_B_id_][0].type == -1) and (hinges_vec[matches_backward[i][j]->read_B_id_][0].active)) {
+
+                            // In the case of a backward_internal match we check whether the hinge on read B is an in-hinge
+                            // (or an in-hinge if it's a reverse complement match)
+
+                            if ((hinges_vec[matches_backward[i][j]->read_B_id_][0].type == (-1 + 2*matches_backward[i][j]->reverse_complement_match_) )
+                                    and (hinges_vec[matches_backward[i][j]->read_B_id_][0].active)) {
                                 fprintf(out3, "Printed from backward internal\n");
                                 PrintOverlapToFile(out3, matches_backward[i][j]);
                                 PrintOverlapToFile(out4, matches_backward[i][j]);
                                 edges_backward[i].push_back(matches_backward[i][j]);
                                 //break;
+
+//                                backward = 1;
+
                             }
+
                         }
                     }
                 }
