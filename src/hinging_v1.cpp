@@ -1142,10 +1142,10 @@ int main(int argc, char *argv[]) {
                 if (matches_forward[i][j]->active) {
 
 
-                    if ((reads[matches_forward[i][j]->read_B_id_]->active)) {
+                    if ((reads[matches_forward[i][j]->read_B_id_]->active) and (forward == 0)) {
                         //printf("hinge size %d\n", hinges_vec[matches_forward[i][j]->read_B_id_].size());
 
-                        if ((matches_forward[i][j]->match_type_ == FORWARD) and (forward == 0)){
+                        if ((matches_forward[i][j]->match_type_ == FORWARD)){
                             //fprintf(out3,"Printed from forward\n");
                             PrintOverlapToFile(out3,matches_forward[i][j]);
                             edges_forward[i].push_back(matches_forward[i][j]);
@@ -1168,7 +1168,7 @@ int main(int argc, char *argv[]) {
                                 edges_forward[i].push_back(matches_forward[i][j]);
                                 //break;
 
-//                                forward = 1;
+                                forward = 1;
 
                             }
                         }
@@ -1177,12 +1177,12 @@ int main(int argc, char *argv[]) {
             }
             for (int j = 0; j < matches_backward[i].size(); j++){
                 if (matches_backward[i][j]->active) {
-                    if ((reads[matches_backward[i][j]->read_B_id_]->active)) {
+                    if ((reads[matches_backward[i][j]->read_B_id_]->active)and (backward == 0)) {
 
                         //printf("hinge size %d\n", hinges_vec[matches_backward[i][j]->read_B_id_].size());
 
 
-                        if ((matches_backward[i][j]->match_type_ == BACKWARD) and (backward == 0)){
+                        if ((matches_backward[i][j]->match_type_ == BACKWARD) ){
                             //fprintf(out3,"Printed from backward\n");
                             PrintOverlapToFile(out3,matches_backward[i][j]);
                             edges_backward[i].push_back(matches_backward[i][j]);
@@ -1205,7 +1205,7 @@ int main(int argc, char *argv[]) {
                                 edges_backward[i].push_back(matches_backward[i][j]);
                                 //break;
 
-//                                backward = 1;
+                                backward = 1;
 
                             }
 
