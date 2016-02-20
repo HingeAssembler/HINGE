@@ -484,9 +484,6 @@ int main(int argc, char *argv[]) {
 //                if (bridged) active = false;  // is this what we are supposed to do here??
             }
 
-        for (int j = 0; j < to_delete.size(); j++) {
-            repeat_anno[i].erase(repeat_anno[i].begin()+to_delete[j]);
-        }
 
         }
 
