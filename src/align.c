@@ -1816,7 +1816,7 @@ Path *Local_Alignment(Alignment *align, Work_Data *ework, Align_Spec *espec,
 #ifdef DEBUG_PASSES
   printf("F1 (%d,%d) ~ %d => (%d,%d) %d\n",
          (2*anti+(low+hgh))/4,(anti-(low+hgh))/4,hgh-low,
-         apath->aepos,apath->bepos,apath->diffs);
+         apath->read_A_match_end_,apath->read_B_match_end_,apath->diffs);
 #endif
 
   if (reverse_wave(work,spec,align,bpath,low,low,anti,minp,maxp))
@@ -1824,7 +1824,7 @@ Path *Local_Alignment(Alignment *align, Work_Data *ework, Align_Spec *espec,
 
 #ifdef DEBUG_PASSES
   printf("R1 (%d,%d) => (%d,%d) %d\n",
-         (anti+low)/2,(anti-low)/2,apath->abpos,apath->bbpos,apath->diffs);
+         (anti+low)/2,(anti-low)/2,apath->read_A_match_start_,apath->read_B_match_start_,apath->diffs);
 #endif
 
   if (COMP(align->flags))
@@ -1850,9 +1850,9 @@ Path *Local_Alignment(Alignment *align, Work_Data *ework, Align_Spec *espec,
   { uint16 *trace = (uint16 *) apath->trace;
     int     a, h;
 
-    printf("\nA-path (%d,%d)->(%d,%d)",apath->abpos,apath->bbpos,apath->aepos,apath->bepos);
-    printf(" %c\n",(COMP(align->flags) ? 'c' : 'n'));
-    a = apath->bbpos;
+    printf("\nA-path (%d,%d)->(%d,%d)",apath->read_A_match_start_,apath->read_B_match_start_,apath->read_A_match_end_,apath->read_B_match_end_);
+    printf(" %c\n",(COMP(align->reverse_complement_match_) ? 'c' : 'n'));
+    a = apath->read_B_match_start_;
     for (h = 1; h < apath->tlen; h += 2)
       { int dif = trace[h-1];
         int del = trace[h];
@@ -1864,9 +1864,9 @@ Path *Local_Alignment(Alignment *align, Work_Data *ework, Align_Spec *espec,
   { uint16 *trace = (uint16 *) bpath->trace;
     int     a, h;
 
-    printf("\nB-path (%d,%d)->(%d,%d)",bpath->abpos,bpath->bbpos,bpath->aepos,bpath->bepos);
-    printf(" %c [%d,%d]\n",(COMP(align->flags) ? 'c' : 'n'),align->blen,align->alen);
-    a = bpath->bbpos;
+    printf("\nB-path (%d,%d)->(%d,%d)",bpath->read_A_match_start_,bpath->read_B_match_start_,bpath->read_A_match_end_,bpath->read_B_match_end_);
+    printf(" %c [%d,%d]\n",(COMP(align->reverse_complement_match_) ? 'c' : 'n'),align->blen,align->alen);
+    a = bpath->read_B_match_start_;
     for (h = 1; h < bpath->tlen; h += 2)
       { int dif = trace[h-1];
         int del = trace[h];
@@ -2999,7 +2999,7 @@ int Find_Extension(Alignment *align, Work_Data *ework, Align_Spec *espec,
       apath->bepos = (anti+diag)/2;
 #ifdef DEBUG_PASSES
       printf("E1 (%d,%d) => (%d,%d) %d\n",
-             (anti+diag)/2,(anti-diag)/2,apath->abpos,apath->bbpos,apath->diffs);
+             (anti+diag)/2,(anti-diag)/2,apath->read_A_match_start_,apath->read_B_match_start_,apath->diffs);
 #endif
     }
   else
@@ -3009,7 +3009,7 @@ int Find_Extension(Alignment *align, Work_Data *ework, Align_Spec *espec,
       apath->bbpos = (anti+diag)/2;
 #ifdef DEBUG_PASSES
       printf("F1 (%d,%d) => (%d,%d) %d\n",
-             (anti+diag)/2,(anti-diag)/2,apath->aepos,apath->bepos,apath->diffs);
+             (anti+diag)/2,(anti-diag)/2,apath->read_A_match_end_,apath->read_B_match_end_,apath->diffs);
 #endif
      }
 
@@ -3017,9 +3017,9 @@ int Find_Extension(Alignment *align, Work_Data *ework, Align_Spec *espec,
   { uint16 *trace = (uint16 *) apath->trace;
     int     a, h;
 
-    printf("\nA-path (%d,%d)->(%d,%d)",apath->abpos,apath->bbpos,apath->aepos,apath->bepos);
-    printf(" %c\n",(COMP(align->flags) ? 'c' : 'n'));
-    a = apath->bbpos;
+    printf("\nA-path (%d,%d)->(%d,%d)",apath->read_A_match_start_,apath->read_B_match_start_,apath->read_A_match_end_,apath->read_B_match_end_);
+    printf(" %c\n",(COMP(align->reverse_complement_match_) ? 'c' : 'n'));
+    a = apath->read_B_match_start_;
     for (h = 1; h < apath->tlen; h += 2)
       { int dif = trace[h-1];
         int del = trace[h];

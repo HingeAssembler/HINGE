@@ -218,7 +218,7 @@ typedef struct
     int64   boff;   //  Offset (in bytes) of compressed read in 'bases' file, or offset of
                     //    uncompressed bases in memory block
     int64   coff;   //  Offset (in bytes) of compressed quiva streams in 'quiva' file
-    int     flags;  //  QV of read + flags above
+    int     flags;  //  QV of read + reverse_complement_match_ above
   } HITS_READ;
 
 //  A track can be of 3 types:

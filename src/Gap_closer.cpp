@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
 	
 	
 	for (int i = 0; i < n_alns; i++)
-		idx[res[i]->bid].push_back(res[i]);
+		idx[res[i]->read_B_id_].push_back(res[i]);
 	
 	for (int i = 0; i < n_reads; i++)
 		std::sort(idx[i].begin(), idx[i].end(), compare_overlap);

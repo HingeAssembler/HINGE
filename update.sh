@@ -13,5 +13,5 @@ then rsync -rizP --delete --exclude '.*' --exclude 'build' $1@shannon.stanford.e
 fi
 
 if [ "$2" == "update" ];
-then ssh -t $1@shannon.stanford.edu "cd /data/pacbio_assembly/AwesomeAssembler && ./build.sh"
+then ssh -t $1@shannon.stanford.edu "cd /data/pacbio_assembly/AwesomeAssembler && ./build.sh && ./setup.sh"
 fi

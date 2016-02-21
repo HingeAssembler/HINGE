@@ -37,8 +37,8 @@ static int ORDER(const void *l, const void *r) {
 }
 
 
-std::ostream& operator<<(std::ostream& out, const aligntype value){
-    static std::map<aligntype, std::string> strings;
+std::ostream& operator<<(std::ostream& out, const MatchType value){
+    static std::map<MatchType, std::string> strings;
     if (strings.size() == 0){
 #define INSERT_ELEMENT(p) strings[p] = #p
         INSERT_ELEMENT(FORWARD);
@@ -47,7 +47,7 @@ std::ostream& operator<<(std::ostream& out, const aligntype value){
         INSERT_ELEMENT(MISMATCH_RIGHT);
         INSERT_ELEMENT(COVERED);
         INSERT_ELEMENT(COVERING);
-        INSERT_ELEMENT(UNDIFINED);
+        INSERT_ELEMENT(UNDEFINED);
         INSERT_ELEMENT(MIDDLE);
 #undef INSERT_ELEMENT
     }
@@ -84,27 +84,27 @@ std::string reverse_complement(std::string seq) {
 
 
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
-    return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
+    return ((ovl1->read_A_match_end_ - ovl1->read_A_match_start_ + ovl1->read_B_match_end_ - ovl1->read_B_match_start_) > (ovl2->read_A_match_end_ - ovl2->read_A_match_start_ + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
 }
 
 bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2) {
     int sum1 = 0;
     int sum2 = 0;
-    for (int i = 0; i < ovl1->size(); i++) sum1 += (*ovl1)[i]->aepos - (*ovl1)[i]->abpos + (*ovl1)[i]->bepos - (*ovl1)[i]->bbpos;
-    for (int i = 0; i < ovl2->size(); i++) sum2 += (*ovl2)[i]->aepos - (*ovl2)[i]->abpos + (*ovl2)[i]->bepos - (*ovl2)[i]->bbpos;
+    for (int i = 0; i < ovl1->size(); i++) sum1 += (*ovl1)[i]->read_A_match_end_ - (*ovl1)[i]->read_A_match_start_ + (*ovl1)[i]->read_B_match_end_ - (*ovl1)[i]->read_B_match_start_;
+    for (int i = 0; i < ovl2->size(); i++) sum2 += (*ovl2)[i]->read_A_match_end_ - (*ovl2)[i]->read_A_match_start_ + (*ovl2)[i]->read_B_match_end_ - (*ovl2)[i]->read_B_match_start_;
     return sum1 > sum2;
 }
 
 bool compare_pos(LOverlap * ovl1, LOverlap * ovl2) {
-    return (ovl1->abpos) > (ovl2->abpos);
+    return (ovl1->read_A_match_start_) > (ovl2->read_A_match_start_);
 }
 
 bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
-    return ovl1->abpos < ovl2->abpos;
+    return ovl1->read_A_match_start_ < ovl2->read_A_match_start_;
 }
 
 bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
-    return ovl1->abpos > ovl2->abpos;
+    return ovl1->read_A_match_start_ > ovl2->read_A_match_start_;
 }
 
 std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
@@ -115,25 +115,25 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int c
     if (n == 0) return ret;
 
     if(n == 1) {
-        ret.push_back(std::pair<int,int>(intervals[0]->abpos,intervals[0]->aepos));
+        ret.push_back(std::pair<int,int>(intervals[0]->read_A_match_start_, intervals[0]->read_A_match_end_));
         return ret;
     }
 
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
 
-    int left=intervals[0]->abpos + cutoff, right = intervals[0]->aepos - cutoff; //left, right means maximal possible interval now
+    int left= intervals[0]->read_A_match_start_ + cutoff, right = intervals[0]->read_A_match_end_ - cutoff; //left, right means maximal possible interval now
 
     for(int i = 1; i < n; i++)
     {
-        if(intervals[i]->abpos + cutoff <= right)
+        if(intervals[i]->read_A_match_start_ + cutoff <= right)
         {
-            right=std::max(right,intervals[i]->aepos - cutoff);
+            right=std::max(right, intervals[i]->read_A_match_end_ - cutoff);
         }
         else
         {
             ret.push_back(std::pair<int, int>(left,right));
-            left = intervals[i]->abpos + cutoff;
-            right = intervals[i]->aepos - cutoff;
+            left = intervals[i]->read_A_match_start_ + cutoff;
+            right = intervals[i]->read_A_match_end_ - cutoff;
         }
     }
     ret.push_back(std::pair<int, int>(left,right));
@@ -145,12 +145,12 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
 
     if (intervals.size() > min_cov) {
-        ret.first = intervals[min_cov]->abpos;
+        ret.first = intervals[min_cov]->read_A_match_start_;
     } else
         ret.first = 0;
     sort(intervals.begin(),intervals.end(),compare_overlap_aepos); //sort according to left
     if (intervals.size() > min_cov) {
-        ret.second = intervals[min_cov]->aepos;
+        ret.second = intervals[min_cov]->read_A_match_end_;
     } else
         ret.second = 0;
     return ret;

@@ -38,9 +38,9 @@ static int ORDER(const void *l, const void *r) {
 }
 
 
-std::ostream& operator<<(std::ostream& out, const aligntype value){
+std::ostream& operator<<(std::ostream& out, const MatchType value){
     //What is this doing?
-    static std::map<aligntype, std::string> strings;
+    static std::map<MatchType, std::string> strings;
     if (strings.size() == 0){
 #define INSERT_ELEMENT(p) strings[p] = #p
         INSERT_ELEMENT(FORWARD);
@@ -49,7 +49,7 @@ std::ostream& operator<<(std::ostream& out, const aligntype value){
         INSERT_ELEMENT(MISMATCH_RIGHT);
         INSERT_ELEMENT(COVERED);
         INSERT_ELEMENT(COVERING);
-        INSERT_ELEMENT(UNDIFINED);
+        INSERT_ELEMENT(UNDEFINED);
         INSERT_ELEMENT(MIDDLE);
 #undef INSERT_ELEMENT
     }
@@ -62,7 +62,7 @@ std::ostream& operator<<(std::ostream& out, const aligntype value){
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
     //Returns True if the sum of the match lengths of the two reads in ovl1 > the sum of the  overlap lengths of the two reads in ovl2
     //Returns False otherwise.
-    return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
+    return ((ovl1->read_A_match_end_ - ovl1->read_A_match_start_ + ovl1->read_B_match_end_ - ovl1->read_B_match_start_) > (ovl2->read_A_match_end_ - ovl2->read_A_match_start_ + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
 }
 
 bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2) {
@@ -70,25 +70,25 @@ bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vect
     //Returns False otherwise
     int sum1 = 0;
     int sum2 = 0;
-    for (int i = 0; i < ovl1->size(); i++) sum1 += (*ovl1)[i]->aepos - (*ovl1)[i]->abpos + (*ovl1)[i]->bepos - (*ovl1)[i]->bbpos;
-    for (int i = 0; i < ovl2->size(); i++) sum2 += (*ovl2)[i]->aepos - (*ovl2)[i]->abpos + (*ovl2)[i]->bepos - (*ovl2)[i]->bbpos;
+    for (int i = 0; i < ovl1->size(); i++) sum1 += (*ovl1)[i]->read_A_match_end_ - (*ovl1)[i]->read_A_match_start_ + (*ovl1)[i]->read_B_match_end_ - (*ovl1)[i]->read_B_match_start_;
+    for (int i = 0; i < ovl2->size(); i++) sum2 += (*ovl2)[i]->read_A_match_end_ - (*ovl2)[i]->read_A_match_start_ + (*ovl2)[i]->read_B_match_end_ - (*ovl2)[i]->read_B_match_start_;
     return sum1 > sum2;
 }
 
 bool compare_pos(LOverlap * ovl1, LOverlap * ovl2) {
     //True if ovl1 starts earlier than ovl2 on read a.
-    return (ovl1->abpos) > (ovl2->abpos);
+    return (ovl1->read_A_match_start_) > (ovl2->read_A_match_start_);
 }
 
 bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
     //True if ovl2 starts earlier than ovl1 on read a.
     //flips the two argumenst in compare_pos
-    return ovl1->abpos < ovl2->abpos;
+    return ovl1->read_A_match_start_ < ovl2->read_A_match_start_;
 }
 
 bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
     //Same as compare_pos?
-    return ovl1->abpos > ovl2->abpos;
+    return ovl1->read_A_match_start_ > ovl2->read_A_match_start_;
 }
 
 std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
@@ -100,28 +100,28 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int c
     if (n == 0) return ret;
 
     if(n == 1) {
-        ret.push_back(std::pair<int,int>(intervals[0]->abpos,intervals[0]->aepos));
+        ret.push_back(std::pair<int,int>(intervals[0]->read_A_match_start_, intervals[0]->read_A_match_end_));
         return ret;
     }
 
     //Where is sort defined ? Is this std::sort?
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left (start position of overlap beginning on a)
 
-    int left=intervals[0]->abpos + cutoff, right = intervals[0]->aepos - cutoff; //left, right means maximal possible interval now
+    int left= intervals[0]->read_A_match_start_ + cutoff, right = intervals[0]->read_A_match_end_ - cutoff; //left, right means maximal possible interval now
 
     for(int i = 1; i < n; i++) //Ovl1 ~ Ovl2 if Ovl1 and Ovl2 have a nonzero intersection. (that is both the b read maps to the same position on the a read)
-    //This defines a chain of  connected overlaps. This for loop returns a a vector ret which
-    // is a pair of <start of connected overlaps, end of connected overlaps>
+        //This defines a chain of  connected overlaps. This for loop returns a a vector ret which
+        // is a pair of <start of connected overlaps, end of connected overlaps>
     {
-        if(intervals[i]->abpos + cutoff <= right)
+        if(intervals[i]->read_A_match_start_ + cutoff <= right)
         {
-            right=std::max(right,intervals[i]->aepos - cutoff);
+            right=std::max(right, intervals[i]->read_A_match_end_ - cutoff);
         }
         else
         {
             ret.push_back(std::pair<int, int>(left,right));
-            left = intervals[i]->abpos + cutoff;
-            right = intervals[i]->aepos - cutoff;
+            left = intervals[i]->read_A_match_start_ + cutoff;
+            right = intervals[i]->read_A_match_end_ - cutoff;
         }
     }
     ret.push_back(std::pair<int, int>(left,right));
@@ -133,18 +133,18 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
 //Returns <start_pos, end_pos>
 //start_pos : the first position at which Read a of the overlaps have at least min_cov matches on it.
 //end_pos : the last position that the  (#overlaps- min_cov)th read (in order of start positions ends).
-//Should compare_overlap_aepos actually compare aepos? If that is done, then the end_pos will be the last position
+//Should compare_overlap_aepos actually compare read_A_match_end_? If that is done, then the end_pos will be the last position
 // on the a read so that all positions beyond have less than min_cov matches on them
     Interval ret;
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
 
     if (intervals.size() > min_cov) {
-        ret.first = intervals[min_cov]->abpos;
+        ret.first = intervals[min_cov]->read_A_match_start_;
     } else
         ret.first = 0;
     sort(intervals.begin(),intervals.end(),compare_overlap_aepos); //sort according to left
     if (intervals.size() > min_cov) {
-        ret.second = intervals[min_cov]->aepos;
+        ret.second = intervals[min_cov]->read_A_match_end_;
     } else
         ret.second = 0;
     return ret;
@@ -153,39 +153,39 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
 bool bridge(LOverlap* ovl, int s, int e){
     //Returns True if [s e] on read a is bridged by ovl. False else.
     //Put 500 in a typedef perhaps?
-    return ((ovl->abpos < s - 500) and (ovl->aepos > e + 500));
+    return ((ovl->read_A_match_start_ < s - 500) and (ovl->read_A_match_end_ > e + 500));
 }
 
 
 int main(int argc, char *argv[]) {
 
     LAInterface la;
-	char * name_db = argv[1]; //.db file of reads to load
-	char * name_las = argv[2];//.las file of alignments
-    char * name_mask = argv[3];
-    char * name_config = argv[4];//name of the configuration file, in INI format
-	printf("name of db: %s, name of .las file %s\n", name_db, name_las);
+    char * name_db = argv[1]; //.db file of reads to load
+    char * name_las = argv[2];//.las file of alignments
+    //char * name_mask = argv[3]; // depreciated
+    char * name_config = argv[3];//name of the configuration file, in INI format
+    printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.openDB(name_db);
     std::cout<<"# Reads:" << la.getReadNumber() << std::endl; // output some statistics 
     la.openAlignmentFile(name_las);
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
 
-	int n_aln = la.getAlignmentNumber();
-	int n_read = la.getReadNumber();
+    int n_aln = la.getAlignmentNumber();
+    int n_read = la.getReadNumber();
     std::vector<LOverlap *> aln;//Vector of pointers to all alignments
-	la.resetAlignment();
+    la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
     std::vector<Read *> reads; //Vector of pointers to all reads
     la.getRead(reads,0,n_read);
-	std::vector<std::vector<int>>  QV;
-	la.getQV(QV,0,n_read); // load QV track from .db file 
-    std::cout << "input data finished" <<std::endl;
+    std::vector<std::vector<int>>  QV;
+    la.getQV(QV,0,n_read); // load QV track from .db file
+    std::cout << "input data finished.!." <<std::endl;
 
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
     }
     //Binarize QV vector, 40 is the threshold
-    
+
     std::vector<std::pair<int, int> > QV_mask;
     // QV_mask is the mask based on QV for reads, for each read, it has one pair [start, end]
 
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
         int max = 0, maxs = s, maxe = e;
 
         for (int j = 0; j < QV[i].size(); j++) {
-            if (QV[i][j] == 1) {
+            if ((QV[i][j] == 1) and (j<QV[i].size() - 1)) {
                 e ++;
             }
             else {
@@ -207,12 +207,12 @@ int main(int argc, char *argv[]) {
                 e = j+1;
             }
         }
-	// get the longest consecutive region that has good QV 
+        // get the longest consecutive region that has good QV
+        //printf("maxs %d maxe %d size%d\n",maxs, maxe,QV[i].size());
         QV_mask.push_back(std::pair<int, int>(maxs*la.tspace, maxe*la.tspace)); // tspace the the interval of trace points
         // create mask by QV
     }
 
-    std::cout << "flag2" <<std::endl;
 
     /*for (int i = 0; i < 200; i++) {
         printf("read %d: ",i+1);
@@ -222,9 +222,9 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j < QV[i].size(); j++) printf("%d ", QV[i][j]);
         printf("[%d %d]", QV_mask[i].first, QV_mask[i].second);
         printf("\n");
-    }
+    }*/
     //display, for debug
-    */
+
 
     INIReader reader(name_config);
     if (reader.ParseError() < 0) {
@@ -258,33 +258,28 @@ int main(int argc, char *argv[]) {
         idx.push_back(std::unordered_map<int, std::vector<LOverlap *>> ());
     }
 
-    std::cout << "flag3" <<std::endl;
 
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
-            idx3[aln[i]->aid].push_back(aln[i]);
+            idx3[aln[i]->read_A_id_].push_back(aln[i]);
         }
     }
 
 
-    std::cout << "flag4" <<std::endl;
 
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {// sort overlaps of a reads
         std::sort(idx3[i].begin(), idx3[i].end(), compare_overlap);
     }
-    std::cout << "flag5" <<std::endl;
 
 
     for (int i = 0; i < aln.size(); i++) {
-        idx[aln[i]->aid][aln[i]->bid] = std::vector<LOverlap *>();
+        idx[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
     }
-    std::cout << "flag6" <<std::endl;
 
     for (int i = 0; i < aln.size(); i++) {
-        idx[aln[i]->aid][aln[i]->bid].push_back(aln[i]);
+        idx[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
     }
-    std::cout << "flag7" << std::endl;
 
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {
@@ -306,6 +301,8 @@ int main(int argc, char *argv[]) {
     std::ofstream rep(std::string(name_db) + ".repeat.txt");
     std::ofstream filtered(std::string(name_db) + ".filtered.fasta");
     std::ofstream hg(std::string(name_db) + ".hinges.txt");
+    std::ofstream mask(std::string(name_db) + ".mas");
+
 
 
 
@@ -358,7 +355,6 @@ int main(int argc, char *argv[]) {
     if (MIN_COV < cov_est/3)
         MIN_COV = cov_est/3;
 
-    std::ofstream mask(name_mask);
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < coverages[i].size(); j++) {
             coverages[i][j].second -= MIN_COV;
@@ -385,7 +381,7 @@ int main(int argc, char *argv[]) {
                 end = start;
             }
         }
-        //mask << i << " " << maxstart << " " << maxend << std::endl;
+        //std::cout << i << " " << maxstart << " " << maxend << std::endl;
         mask << i << " " << std::max(maxstart, QV_mask[i].first) << " " << std::min(maxend, QV_mask[i].second) << std::endl;
         int s = std::max(maxstart, QV_mask[i].first);
         int l = std::min(maxend, QV_mask[i].second) - std::max(maxstart, QV_mask[i].first);
@@ -394,10 +390,14 @@ int main(int argc, char *argv[]) {
         filtered << reads[i]->bases.substr(s,l) << std::endl;
 
         //maskvec.push_back(std::pair<int, int>(maxstart + 200, maxend - 200));
-        maskvec.push_back(std::pair<int, int>(std::max(maxstart + 200, QV_mask[i].first), std::min(maxend - 200, QV_mask[i].second)));
-        
+        maskvec.push_back(std::pair<int, int>(std::max(maxstart, QV_mask[i].first), std::min(maxend, QV_mask[i].second)));
         //get the interestion of two masks
     }
+
+    /*for (int i = 0; i < maskvec.size(); i++) {
+        printf("read %d %d %d\n", i, maskvec[i].first, maskvec[i].second);
+        printf("QV: read %d %d %d\n", i, QV_mask[i].first, QV_mask[i].second);
+    }*/
 
 
     //binarize coverage gradient;
@@ -406,7 +406,7 @@ int main(int argc, char *argv[]) {
     //detect repeats based on coverage gradient, mark it has rising (1) or falling (-1)
     for (int i = 0; i < n_read; i++) {
         std::vector<std::pair<int, int> > anno;
-        for (int j = 0; j < cgs[i].size(); j++) {
+        for (int j = 0; j < cgs[i].size()-1; j++) { // changed, remove the last one
             //std::cout<< i << " " << cgs[i][j].first << " " << cgs[i][j].second << std::endl;
             if ((cgs[i][j].first >= maskvec[i].first) and (cgs[i][j].first <= maskvec[i].second)) {
                 if (cgs[i][j].second > cov_est / 2) anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
@@ -443,9 +443,13 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         rep << i << " ";
         if (repeat_anno[i].size() > 0)
-            if (repeat_anno[i].front().second == -1)
-                rep << -1 << " "<<repeat_anno[i].front().first<<" ";
+        if (repeat_anno[i].front().second == -1)
+            rep << -1 << " "<<repeat_anno[i].front().first<<" ";
         bool active = true;
+
+        // We will delete the annotation corresponding to bridged repeats
+        std::vector< int > to_delete;
+
         for (int j = 0; j < repeat_anno[i].size(); j++) {
             if (j+1<repeat_anno[i].size())
             if ((repeat_anno[i][j].second == 1) and (repeat_anno[i][j+1].second == -1)) {
@@ -456,19 +460,37 @@ int main(int argc, char *argv[]) {
 
                 bool bridged = false;
 
+
                 //test bridging
 
                 for (int k = 0; k < idx2[i].size(); k++) {
                     if (bridge(idx2[i][k], s, e)) {
                         bridged = true;
+
+                        // Rather than deleting in here, we'll save the indices and
+                        // delete later
+                        to_delete.push_back(j);
+                        to_delete.push_back(j+1);
+//                        repeat_anno[i].erase(repeat_anno[i].begin()+j);
+//                        repeat_anno[i].erase(repeat_anno[i].begin()+j+1);
+
+
                         break;
                     }
                 }
 
+
                 if (not bridged) active = false;
+//                if (bridged) active = false;  // is this what we are supposed to do here??
             }
 
+
         }
+
+        for (int j = 0; j < to_delete.size(); j++) {
+            repeat_anno[i].erase(repeat_anno[i].begin()+to_delete[j]);
+        }
+
         if (not active) {
             //printf("read %d comes from homologus recombination\n", i);
             homo << i << std::endl;
@@ -481,7 +503,7 @@ int main(int argc, char *argv[]) {
     }
     // need a better hinge detection
 
-	// get hinges from repeat annotation information
+    // get hinges from repeat annotation information
     std::unordered_map<int, std::vector<std::pair<int, int>> > hinges;
     // n_read pos -1 = in_hinge 1 = out_hinge
 
@@ -493,8 +515,8 @@ int main(int argc, char *argv[]) {
                 bool bridged = true;
                 int support = 0;
                 for (int k = 0; k < idx2[i].size(); k++) {
-                    //printf("%d %d %d %d\n", idx3[i][k]->abpos, idx3[i][k]->aepos, maskvec[i].first, repeat_anno[i][j].first);
-                    if ((idx2[i][k]->abpos < maskvec[i].first + 200) and (idx2[i][k]->aepos > repeat_anno[i][j].first - 300) and (idx2[i][k]->aepos < repeat_anno[i][j].first + 300)) {
+                    //printf("%d %d %d %d\n", idx3[i][k]->read_A_match_start_, idx3[i][k]->read_A_match_end_, maskvec[i].first, repeat_anno[i][j].first);
+                    if (/*(idx2[i][k]->read_A_match_start_ < maskvec[i].first + 300) and */(idx2[i][k]->read_A_match_end_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_end_ < repeat_anno[i][j].first + 300)) {
                         support ++;
                         if (support > 7) {
                             bridged = false;
@@ -508,7 +530,7 @@ int main(int argc, char *argv[]) {
                 bool bridged = true;
                 int support = 0;
                 for (int k = 0; k < idx2[i].size(); k++) {
-                    if ((idx2[i][k]->abpos > repeat_anno[i][j].first - 300) and (idx2[i][k]->abpos < repeat_anno[i][j].first + 300) and (idx2[i][k]->aepos > maskvec[i].second - 200)) {
+                    if ((idx2[i][k]->read_A_match_start_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_start_ < repeat_anno[i][j].first + 300)/* and (idx2[i][k]->read_A_match_end_ > maskvec[i].second - 300)*/) {
                         support ++;
                         if (support > 7) { // heuristic here
                             bridged = false;
@@ -522,7 +544,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-	//output hinges
+    //output hinges
     for (int i = 0; i < n_read; i++) {
         hg << i << " ";
         for (int j = 0; j < hinges[i].size(); j++) {

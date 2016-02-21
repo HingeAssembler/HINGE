@@ -12,3 +12,5 @@ mkdir build
 cd $pwd/src/build
 cmake ..
 make -j 8
+
+cd $pwd

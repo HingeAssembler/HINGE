@@ -27,9 +27,9 @@ public:
     void showRead();
 };
 
-enum aligntype {
-    FORWARD, BACKWARD, ACOVERB, BCOVEREA, UNDIFINED, INTERNAL, NOT_ACTIVE, COVERING,
-	COVERED, MIDDLE, MISMATCH_LEFT, MISMATCH_RIGHT, FORWARD_INTERNAL, REVERSE_INTERNAL // different type of alignment
+enum MatchType {
+    FORWARD, BACKWARD, ACOVERB, BCOVERA, UNDEFINED, INTERNAL, NOT_ACTIVE, COVERING,
+	COVERED, MIDDLE, MISMATCH_LEFT, MISMATCH_RIGHT, FORWARD_INTERNAL, BACKWARD_INTERNAL // different type of alignment
 /**
  * FORWARD: Alignment and extend to the right
  * BACKWARD: extend to the left
@@ -37,9 +37,9 @@ enum aligntype {
  * COVERED: read a covered by read b
  * MISMATCH_LEFT: read a has a chimeric section on the left, and read b align with the rest of read a and extend it to the left
  * MISMATCH_RIGHT: read a has a chimeric section on the right, read b align with the rest of read a and extend it to the right
- * UNDIFINED: any other exceptions
+ * UNDEFINED: any other exceptions
  * FORWARD_INTERNAL : forward on read A internal on B
- * REVERSE_INTERNAL : reverse on read A internal on B
+ * BACKWARD_INTERNAL : reverse on read A internal on B
 **/
 
 } ;
@@ -54,9 +54,9 @@ public:
     char * bseq;
 
 
-	void show() {printf("%d %d %d [%d...%d] x [%d...%d] %d diffs\n",aid,bid,flags,abpos,aepos,bbpos,bepos,diffs); };
-    int aid; // id of read a
-    int bid; // id of read b
+	void show() {printf("%d %d %d [%d...%d] x [%d...%d] %d diffs\n", read_A_id_, read_B_id_,flags,abpos,aepos,bbpos,bepos,diffs); };
+    int read_A_id_; // id of read a
+    int read_B_id_; // id of read b
     int alen; // length of read a
     int blen; // length of read b
     int *trace; // trace
@@ -68,26 +68,29 @@ public:
     int aepos, bepos; // end position of read a and b
     int flags; // flag = 1 : 'c', flag = 0 : 'n'
     int tps;
-    aligntype aln_type;
+    MatchType aln_type;
 	bool active = true;
 };
 
 class LOverlap { // LOverlap is a simplified version of LAlignment, no trace
 public:
     LOverlap() { };
-	void show() {printf("%d %d %d [%d...%d]/%d x [%d...%d]/%d %d diffs, %d type\n",aid,bid,flags,abpos,aepos,alen,bbpos,bepos,blen,diffs,aln_type); };
-    int aid, bid;
+	void show() {printf("%d %d %d [%d...%d]/%d x [%d...%d]/%d %d diffs, %d type\n", read_A_id_, read_B_id_,
+						reverse_complement_match_,
+						read_A_match_start_, read_A_match_end_, alen, read_B_match_start_, read_B_match_end_, blen, diffs,
+						match_type_); };
+    int read_A_id_, read_B_id_;
     int alen; // length of read a
     int blen; // length of read b
     int tlen;
     int diffs; //differences
-    int abpos, bbpos; // starting position and ending position of alignment in read a
-    int aepos, bepos; // starting position and ending position of alignment in read b
-    int eff_abpos, eff_bbpos, eff_aepos, eff_bepos;
+    int read_A_match_start_, read_B_match_start_; // starting position and ending position of alignment in read a
+    int read_A_match_end_, read_B_match_end_; // starting position and ending position of alignment in read b
+    int eff_read_A_match_start_, eff_read_B_match_start_, eff_read_A_match_end_, eff_read_B_match_end_;
     int tps;
-    int flags; //flags, reverse complement = 1, same direction = 0
-    int eff_astart, eff_aend, eff_bstart, eff_bend;
-    aligntype aln_type = UNDIFINED;
+    int reverse_complement_match_; //reverse_complement_match_, reverse complement = 1, same direction = 0
+    int eff_read_A_start_, eff_read_A_end_, eff_read_B_start_, eff_read_B_end_;
+    MatchType match_type_ = UNDEFINED;
     void addtype(int); // depreciated
     void addtype2(int max_overhang); //classify overlaps
     void AddTypesAsymmetric(int max_overhang);
@@ -96,7 +99,8 @@ public:
     uint16 *trace_pts;
     int trace_pts_len;
     void trim_overlap();
-    int si,ei;
+	void TrimOverlapNaive();
+    int eff_start_trace_point_index_, eff_end_trace_point_index_;
     int weight;
 };
 

@@ -29,16 +29,16 @@ static int ORDER(const void *l, const void *r) {
 }
 
 
-std::ostream& operator<<(std::ostream& out, const aligntype value){
-    static std::map<aligntype, std::string> strings;
+std::ostream& operator<<(std::ostream& out, const MatchType value){
+    static std::map<MatchType, std::string> strings;
     if (strings.size() == 0){
 #define INSERT_ELEMENT(p) strings[p] = #p
         INSERT_ELEMENT(FORWARD);
         INSERT_ELEMENT(BACKWARD);
         INSERT_ELEMENT(ACOVERB);
-        INSERT_ELEMENT(BCOVEREA);
+        INSERT_ELEMENT(BCOVERA);
         INSERT_ELEMENT(INTERNAL);
-        INSERT_ELEMENT(UNDIFINED);
+        INSERT_ELEMENT(UNDEFINED);
         INSERT_ELEMENT(NOT_ACTIVE);
 #undef INSERT_ELEMENT
     }
@@ -48,13 +48,13 @@ std::ostream& operator<<(std::ostream& out, const aligntype value){
 
 
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
-    return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) >
-            (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
+    return ((ovl1->read_A_match_end_ - ovl1->read_A_match_start_ + ovl1->read_B_match_end_ - ovl1->read_B_match_start_) >
+            (ovl2->read_A_match_end_ - ovl2->read_A_match_start_ + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
 }
 
 bool compare_overlap_effective(LOverlap * ovl1, LOverlap * ovl2) {
-    return ((ovl1->eff_aepos - ovl1->eff_abpos + ovl1->eff_bepos - ovl1->eff_bbpos) >
-            (ovl2->eff_aepos - ovl2->eff_abpos + ovl2->eff_bepos - ovl2->eff_bbpos));
+    return ((ovl1->eff_read_A_match_end_ - ovl1->eff_read_A_match_start_ + ovl1->eff_read_B_match_end_ - ovl1->eff_read_B_match_start_) >
+            (ovl2->eff_read_A_match_end_ - ovl2->eff_read_A_match_start_ + ovl2->eff_read_B_match_end_ - ovl2->eff_read_B_match_start_));
 }
 
 bool compare_overlap_weight(LOverlap * ovl1, LOverlap * ovl2) {
@@ -65,22 +65,22 @@ bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vect
     int sum1 = 0;
     int sum2 = 0;
     for (int i = 0; i < ovl1->size(); i++)
-        sum1 += (*ovl1)[i]->aepos - (*ovl1)[i]->abpos + (*ovl1)[i]->bepos - (*ovl1)[i]->bbpos;
+        sum1 += (*ovl1)[i]->read_A_match_end_ - (*ovl1)[i]->read_A_match_start_ + (*ovl1)[i]->read_B_match_end_ - (*ovl1)[i]->read_B_match_start_;
     for (int i = 0; i < ovl2->size(); i++)
-        sum2 += (*ovl2)[i]->aepos - (*ovl2)[i]->abpos + (*ovl2)[i]->bepos - (*ovl2)[i]->bbpos;
+        sum2 += (*ovl2)[i]->read_A_match_end_ - (*ovl2)[i]->read_A_match_start_ + (*ovl2)[i]->read_B_match_end_ - (*ovl2)[i]->read_B_match_start_;
     return sum1 > sum2;
 }
 
 bool compare_pos(LOverlap * ovl1, LOverlap * ovl2) {
-    return (ovl1->abpos) > (ovl2->abpos);
+    return (ovl1->read_A_match_start_) > (ovl2->read_A_match_start_);
 }
 
 bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
-    return ovl1->abpos < ovl2->abpos;
+    return ovl1->read_A_match_start_ < ovl2->read_A_match_start_;
 }
 
 bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
-    return ovl1->abpos > ovl2->abpos;
+    return ovl1->read_A_match_start_ > ovl2->read_A_match_start_;
 }
 
 std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
@@ -91,26 +91,26 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int c
     if (n == 0) return ret;
 
     if(n == 1) {
-        ret.push_back(std::pair<int,int>(intervals[0]->abpos,intervals[0]->aepos));
+        ret.push_back(std::pair<int,int>(intervals[0]->read_A_match_start_, intervals[0]->read_A_match_end_));
         return ret;
     }
 
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
 
-    int left=intervals[0]->abpos + cutoff, right = intervals[0]->aepos - cutoff;
+    int left= intervals[0]->read_A_match_start_ + cutoff, right = intervals[0]->read_A_match_end_ - cutoff;
     //left, right means maximal possible interval now
 
     for(int i = 1; i < n; i++)
     {
-        if(intervals[i]->abpos + cutoff <= right)
+        if(intervals[i]->read_A_match_start_ + cutoff <= right)
         {
-            right=std::max(right,intervals[i]->aepos - cutoff);
+            right=std::max(right, intervals[i]->read_A_match_end_ - cutoff);
         }
         else
         {
             ret.push_back(std::pair<int, int>(left,right));
-            left = intervals[i]->abpos + cutoff;
-            right = intervals[i]->aepos - cutoff;
+            left = intervals[i]->read_A_match_start_ + cutoff;
+            right = intervals[i]->read_A_match_end_ - cutoff;
         }
     }
     ret.push_back(std::pair<int, int>(left,right));
@@ -122,12 +122,12 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
 
     if (intervals.size() > min_cov) {
-        ret.first = intervals[min_cov]->abpos;
+        ret.first = intervals[min_cov]->read_A_match_start_;
     } else
         ret.first = 0;
     sort(intervals.begin(),intervals.end(),compare_overlap_aepos); //sort according to left
     if (intervals.size() > min_cov) {
-        ret.second = intervals[min_cov]->aepos;
+        ret.second = intervals[min_cov]->read_A_match_end_;
     } else
         ret.second = 0;
     return ret;
@@ -307,11 +307,11 @@ int main(int argc, char *argv[]) {
 
 # pragma omp parallel for
     for (int i = 0; i < aln.size(); i++) {
-        idx[aln[i]->aid][aln[i]->bid] = std::vector<LOverlap *>();
+        idx[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
     }
 
     for (int i = 0; i < aln.size(); i++) {
-        idx[aln[i]->aid][aln[i]->bid].push_back(aln[i]);
+        idx[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
     }
     std::cout<<"index finished" <<std::endl;
 
@@ -333,15 +333,15 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         bool contained = false;
         for (int j = 0; j < idx2[i].size(); j++){
-            idx2[i][j]->eff_astart = reads[idx2[i][j]->aid]->effective_start;
-            idx2[i][j]->eff_aend = reads[idx2[i][j]->aid]->effective_end;
+            idx2[i][j]->eff_read_A_start_ = reads[idx2[i][j]->read_A_id_]->effective_start;
+            idx2[i][j]->eff_read_A_end_ = reads[idx2[i][j]->read_A_id_]->effective_end;
 
-            if (idx2[i][j]->flags == 0) {//Where are flags set?
-                idx2[i][j]->eff_bstart = reads[idx2[i][j]->bid]->effective_start;
-                idx2[i][j]->eff_bend = reads[idx2[i][j]->bid]->effective_end;
+            if (idx2[i][j]->reverse_complement_match_ == 0) {//Where are reverse_complement_match_ set?
+                idx2[i][j]->eff_read_B_start_ = reads[idx2[i][j]->read_B_id_]->effective_start;
+                idx2[i][j]->eff_read_B_end_ = reads[idx2[i][j]->read_B_id_]->effective_end;
             } else {//looks like an iverted match
-                idx2[i][j]->eff_bstart = idx2[i][j]->blen - reads[idx2[i][j]->bid]->effective_end;
-                idx2[i][j]->eff_bend = idx2[i][j]->blen - reads[idx2[i][j]->bid]->effective_start;
+                idx2[i][j]->eff_read_B_start_ = idx2[i][j]->blen - reads[idx2[i][j]->read_B_id_]->effective_end;
+                idx2[i][j]->eff_read_B_end_ = idx2[i][j]->blen - reads[idx2[i][j]->read_B_id_]->effective_start;
             }
 
 
@@ -350,20 +350,20 @@ int main(int argc, char *argv[]) {
             }
             std::cout<<std::endl;*/
             //printf("before %d %d %d %d ov %d %d %d %d\n", aln[i]->aes, aln[i]->aee,
-            // aln[i]->bes, aln[i]->bee, aln[i]->abpos, aln[i]->aepos, aln[i]->bbpos, aln[i]->bepos);
+            // aln[i]->bes, aln[i]->bee, aln[i]->read_A_match_start_, aln[i]->read_A_match_end_, aln[i]->read_B_match_start_, aln[i]->read_B_match_end_);
             idx2[i][j]->trim_overlap();//What does this do?
             //printf("after %d %d %d %d ov %d %d %d %d\n", aln[i]->aes, aln[i]->aee,
-            // aln[i]->bes, aln[i]->bee, aln[i]->eff_abpos, aln[i]->eff_aepos, aln[i]->eff_bbpos, aln[i]->eff_bepos);
+            // aln[i]->bes, aln[i]->bee, aln[i]->eff_read_A_match_start_, aln[i]->eff_read_A_match_end_, aln[i]->eff_read_B_match_start_, aln[i]->eff_read_B_match_end_);
             //num_finished ++;
             //if (num_finished%100000 == 0) printf("%lf percent finished\n", num_finished/double(aln.size())*100);
-            if (((idx2[i][j]->eff_bepos - idx2[i][j]->eff_bbpos) < ALN_THRESHOLD)
-                or ((idx2[i][j]->eff_aepos - idx2[i][j]->eff_abpos) < ALN_THRESHOLD))
+            if (((idx2[i][j]->eff_read_B_match_end_ - idx2[i][j]->eff_read_B_match_start_) < ALN_THRESHOLD)
+                or ((idx2[i][j]->eff_read_A_match_end_ - idx2[i][j]->eff_read_A_match_start_) < ALN_THRESHOLD))
             {
                 idx2[i][j]->active = false;
-                idx2[i][j]->aln_type = NOT_ACTIVE;
+                idx2[i][j]->match_type_ = NOT_ACTIVE;
             } else {
                 idx2[i][j]->addtype2(THETA);
-                if (idx2[i][j]->aln_type == BCOVEREA)
+                if (idx2[i][j]->match_type_ == BCOVERA)
                     contained = true;
             }
         }
@@ -389,9 +389,9 @@ int main(int argc, char *argv[]) {
                 for (int j = 0; j < idx2[i].size(); j++)
                     if (idx2[i][j]->active) {
                         //idx2[i][j]->show();
-                        //std::cout<<idx2[i][j]->aln_type << std::endl;
-                        if ((idx2[i][j]->aln_type == FORWARD) and (reads[idx2[i][j]->bid]->active)) forward++;
-                        else if ((idx2[i][j]->aln_type == BACKWARD) and (reads[idx2[i][j]->bid]->active)) backward++;
+                        //std::cout<<idx2[i][j]->match_type_ << std::endl;
+                        if ((idx2[i][j]->match_type_ == FORWARD) and (reads[idx2[i][j]->read_B_id_]->active)) forward++;
+                        else if ((idx2[i][j]->match_type_ == BACKWARD) and (reads[idx2[i][j]->read_B_id_]->active)) backward++;
                     }
                 if ((forward == 0) or (backward == 0)) {
                     reads[i]->active = false;
@@ -413,7 +413,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active)
         for (int j = 0; j < idx2[i].size(); j++)
-            if (reads[idx2[i][j]->bid]->active) num_overlaps++;
+            if (reads[idx2[i][j]->read_B_id_]->active) num_overlaps++;
     }
     std::cout<<num_overlaps << " overlaps" << std::endl;
 
@@ -421,8 +421,8 @@ int main(int argc, char *argv[]) {
         idx3.push_back(std::unordered_map<int, LOverlap*>() );
         if (reads[i]->active)
         for (int j = 0; j < idx2[i].size(); j++) {
-            if (reads[idx2[i][j]->bid]->active)
-                idx3[i][idx2[i][j]->bid] = idx2[i][j];
+            if (reads[idx2[i][j]->read_B_id_]->active)
+                idx3[i][idx2[i][j]->read_B_id_] = idx2[i][j];
         }
     }
 
@@ -430,17 +430,17 @@ int main(int argc, char *argv[]) {
         if (reads[i]->active)
             for (std::unordered_map<int, LOverlap*>::iterator it = idx3[i].begin(); it!=idx3[i].end(); it++) {
                 int aid = i;
-                int bid = it->second->bid;
+                int bid = it->second->read_B_id_;
                 idx3[aid][bid]->weight =
-                        idx3[aid][bid]->eff_aepos - idx3[aid][bid]->eff_abpos
-                        + idx3[bid][aid]->eff_aepos - idx3[bid][aid]->eff_abpos;
-                /*if (idx3[aid][bid]->aln_type == FORWARD) {
-                    if (idx3[aid][bid]->flags == 0) idx3[bid][aid]->aln_type = BACKWARD;
-                    else idx3[bid][aid]->aln_type = FORWARD;
+                        idx3[aid][bid]->eff_read_A_match_end_ - idx3[aid][bid]->eff_read_A_match_start_
+                        + idx3[bid][aid]->eff_read_A_match_end_ - idx3[bid][aid]->eff_read_A_match_start_;
+                /*if (idx3[aid][bid]->match_type_ == FORWARD) {
+                    if (idx3[aid][bid]->reverse_complement_match_ == 0) idx3[bid][aid]->match_type_ = BACKWARD;
+                    else idx3[bid][aid]->match_type_ = FORWARD;
                 }
-                if (idx3[aid][bid]->aln_type == BACKWARD) {
-                    if (idx3[aid][bid]->flags == 0) idx3[bid][aid]->aln_type = FORWARD;
-                    else idx3[bid][aid]->aln_type = BACKWARD;
+                if (idx3[aid][bid]->match_type_ == BACKWARD) {
+                    if (idx3[aid][bid]->reverse_complement_match_ == 0) idx3[bid][aid]->match_type_ = FORWARD;
+                    else idx3[bid][aid]->match_type_ = BACKWARD;
                 }*/
             }
     }
@@ -457,11 +457,11 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active)
             for (int j = 0; j < idx2[i].size(); j++) {
-                if (reads[idx2[i][j]->bid]->active)
-                    fprintf(out3,"%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
-                            idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->flags,
-                            idx2[i][j]->aln_type,  idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos,
-                            idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend, idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                if (reads[idx2[i][j]->read_B_id_]->active)
+                    fprintf(out3, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
+                            idx2[i][j]->read_A_id_, idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->reverse_complement_match_,
+                            idx2[i][j]->match_type_, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_,
+                            idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_, idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
             }
     }
 
@@ -523,52 +523,52 @@ int main(int argc, char *argv[]) {
             int backward = 0;
             for (int j = 0; j < idx2[i].size(); j++)
                 if (idx2[i][j]->active) {
-                    if ((idx2[i][j]->aln_type == FORWARD) and (reads[idx2[i][j]->bid]->active)) {
+                    if ((idx2[i][j]->match_type_ == FORWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
                         if (forward < 1) {
 
-                            /*if (idx2[i][j]->flags == 0)
+                            /*if (idx2[i][j]->reverse_complement_match_ == 0)
                              fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
-                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
+                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_,
+                             idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else
                              fprintf(out, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
-                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
+                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_,
+                             idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
 
-                            if (idx2[i][j]->flags == 0)
+                            if (idx2[i][j]->reverse_complement_match_ == 0)
                              fprintf(out2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
-                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
+                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_,
+                             idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else
                              fprintf(out2, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
-                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
+                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_,
+                             idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             */
                             //remove certain hinges
 
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((idx2[i][j]->eff_abpos < hinges_vec[i][k].pos - 400) and (hinges_vec[i][k].type == 1))
+                                if ((idx2[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos - 400) and (hinges_vec[i][k].type == 1))
                                     hinges_vec[i][k].active = false;
                             }
 
                             /*for (int k = 0; k < hinges_vec[idx2[i][j]->bid].size(); k++) {
                                 if ((hinges_vec[idx2[i][j]->bid][k].type == 1)
-                                and (idx2[i][j]->flags == 1) and
-                                (idx2[i][j]->eff_bepos > idx2[i][j]->blen - hinges_vec[idx2[i][j]->bid][k].pos + 300))
+                                and (idx2[i][j]->reverse_complement_match_ == 1) and
+                                (idx2[i][j]->eff_read_B_match_end_ > idx2[i][j]->blen - hinges_vec[idx2[i][j]->bid][k].pos + 300))
                                     hinges_vec[idx2[i][j]->bid][k].active2 = false;
 
                                 if ((hinges_vec[idx2[i][j]->bid][k].type == -1)
-                                and (idx2[i][j]->flags == 0)
-                                and (idx2[i][j]->eff_bepos > hinges_vec[idx2[i][j]->bid][k].pos + 300))
+                                and (idx2[i][j]->reverse_complement_match_ == 0)
+                                and (idx2[i][j]->eff_read_B_match_end_ > hinges_vec[idx2[i][j]->bid][k].pos + 300))
                                     hinges_vec[idx2[i][j]->bid][k].active2 = false;
                             }*/
 
                             //if ((repeat_status_back[i])
-                            // and (idx2[i][j]->eff_abpos < marked_repeats[i].front().first - 200)) {
+                            // and (idx2[i][j]->eff_read_A_match_start_ < marked_repeats[i].front().first - 200)) {
                             //    repeat_status_back[i] = false;
                                 //printf("remove %d\n",i);
                             //}
@@ -577,55 +577,55 @@ int main(int argc, char *argv[]) {
                         }
                         forward++;
                     }
-                    else if ((idx2[i][j]->aln_type == BACKWARD) and (reads[idx2[i][j]->bid]->active)) {
+                    else if ((idx2[i][j]->match_type_ == BACKWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
                         if (backward < 1) {
 
-                            /*if (idx2[i][j]->flags == 0)
+                            /*if (idx2[i][j]->reverse_complement_match_ == 0)
                              fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
-                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
+                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_,
+                             idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else
                              fprintf(out, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
-                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
+                             idx2[i][j]->aid, idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_,
+                             idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
 
-                            if (idx2[i][j]->flags == 0)
+                            if (idx2[i][j]->reverse_complement_match_ == 0)
                              fprintf(out2, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
-                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
+                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_,
+                             idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             else
                              fprintf(out2, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos,
-                             idx2[i][j]->eff_aepos, idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->aes,
+                             idx2[i][j]->bid, idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_,
+                             idx2[i][j]->eff_read_A_match_end_, idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->aes,
                              idx2[i][j]->aee, idx2[i][j]->bes, idx2[i][j]->bee);
                             */
                             // remove certain hinges
 
                             //if ((repeat_status_front[i])
-                            // and (idx2[i][j]->eff_aepos > marked_repeats[i].back().second + 200)
-                            // and (idx2[i][j]->eff_aepos > marked_repeats[i].front().second + 200)) {
+                            // and (idx2[i][j]->eff_read_A_match_end_ > marked_repeats[i].back().second + 200)
+                            // and (idx2[i][j]->eff_read_A_match_end_ > marked_repeats[i].front().second + 200)) {
                             //    repeat_status_front[i] = false;
                                 //printf("remove %d\n",i);
                             //}
 
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((idx2[i][j]->eff_aepos > hinges_vec[i][k].pos + 400) and (hinges_vec[i][k].type == -1))
+                                if ((idx2[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos + 400) and (hinges_vec[i][k].type == -1))
                                     hinges_vec[i][k].active = false;
                             }
 
 
                             /*for (int k = 0; k < hinges_vec[idx2[i][j]->bid].size(); k++) {
                                 if ((hinges_vec[idx2[i][j]->bid][k].type == 1)
-                                and (idx2[i][j]->flags == 0)
-                                and (idx2[i][j]->eff_bbpos < hinges_vec[idx2[i][j]->bid][k].pos - 300))
+                                and (idx2[i][j]->reverse_complement_match_ == 0)
+                                and (idx2[i][j]->eff_read_B_match_start_ < hinges_vec[idx2[i][j]->bid][k].pos - 300))
                                     hinges_vec[idx2[i][j]->bid][k].active2 = false;
 
                                 if ((hinges_vec[idx2[i][j]->bid][k].type == -1)
-                                and (idx2[i][j]->flags == 1)
-                                and (idx2[i][j]->eff_bbpos < idx2[i][j]->blen - hinges_vec[idx2[i][j]->bid][k].pos - 300))
+                                and (idx2[i][j]->reverse_complement_match_ == 1)
+                                and (idx2[i][j]->eff_read_B_match_start_ < idx2[i][j]->blen - hinges_vec[idx2[i][j]->bid][k].pos - 300))
                                     hinges_vec[idx2[i][j]->bid][k].active2 = false;
                             }*/
 
@@ -675,61 +675,61 @@ int main(int argc, char *argv[]) {
             int backward = 0;
             for (int j = 0; j < idx2[i].size(); j++)
                 if (idx2[i][j]->active) {
-                    if ((idx2[i][j]->aln_type == FORWARD) and (reads[idx2[i][j]->bid]->active)) {
+                    if ((idx2[i][j]->match_type_ == FORWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
                         /*if (not repeat_status_back[i])*/ {
                             if (forward < 1) {
 
-                                if (idx2[i][j]->flags == 0)
-                                    fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                                if (idx2[i][j]->reverse_complement_match_ == 0)
+                                    fprintf(out, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
+                                            idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                            idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                            idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
                                 else
-                                    fprintf(out, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                                    fprintf(out, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
+                                            idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                            idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                            idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
 
-                                if (idx2[i][j]->flags == 0)
-                                    fprintf(out2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                                if (idx2[i][j]->reverse_complement_match_ == 0)
+                                    fprintf(out2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
+                                            idx2[i][j]->read_A_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                            idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                            idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
                                 else
-                                    fprintf(out2, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                                    fprintf(out2, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
+                                            idx2[i][j]->read_A_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                            idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                            idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
 
                             }
                         }
                         forward++;
                     }
-                    else if ((idx2[i][j]->aln_type == BACKWARD) and (reads[idx2[i][j]->bid]->active)) {
+                    else if ((idx2[i][j]->match_type_ == BACKWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
                         if (backward < 1) {
 
                             /*if (not repeat_status_front[i])*/ {
-                                if (idx2[i][j]->flags == 0)
-                                    fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                                if (idx2[i][j]->reverse_complement_match_ == 0)
+                                    fprintf(out, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
+                                            idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                            idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                            idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
                                 else
-                                    fprintf(out, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                            idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                                    fprintf(out, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
+                                            idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                            idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                            idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
 
-                                if (idx2[i][j]->flags == 0)
-                                    fprintf(out2, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                                if (idx2[i][j]->reverse_complement_match_ == 0)
+                                    fprintf(out2, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
+                                            idx2[i][j]->read_A_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                            idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                            idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
                                 else
-                                    fprintf(out2, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                            idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                            idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                            idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                                    fprintf(out2, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
+                                            idx2[i][j]->read_A_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                            idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                            idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
                             }
                         }
                         backward++;
@@ -746,60 +746,60 @@ int main(int argc, char *argv[]) {
 
             for (int j = 0; j < idx2[i].size(); j++)
                 if (idx2[i][j]->active) {
-                    if ((idx2[i][j]->aln_type == FORWARD) and (reads[idx2[i][j]->bid]->active)) {
+                    if ((idx2[i][j]->match_type_ == FORWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
                         if (repeat_status_back[i]) // choose the correct repeat status (with hinges)
-                        if (((idx2[i][j]->flags == 0) and repeat_status_front[idx2[i][j]->bid])
-                            or ((idx2[i][j]->flags == 1) and repeat_status_back[idx2[i][j]->bid])) {
-                            if (idx2[i][j]->flags == 0)
-                                fprintf(out3, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                        idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                        if (((idx2[i][j]->reverse_complement_match_ == 0) and repeat_status_front[idx2[i][j]->read_B_id_])
+                            or ((idx2[i][j]->reverse_complement_match_ == 1) and repeat_status_back[idx2[i][j]->read_B_id_])) {
+                            if (idx2[i][j]->reverse_complement_match_ == 0)
+                                fprintf(out3, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
+                                        idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                        idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                        idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
                             else
-                                fprintf(out3, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                        idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
-                            if (idx2[i][j]->flags == 0)
-                                fprintf(out3, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                        idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                                fprintf(out3, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
+                                        idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                        idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                        idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
+                            if (idx2[i][j]->reverse_complement_match_ == 0)
+                                fprintf(out3, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
+                                        idx2[i][j]->read_A_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                        idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                        idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
                             else
-                                fprintf(out3, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                        idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                                fprintf(out3, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
+                                        idx2[i][j]->read_A_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                        idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                        idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
                         }
 
 
 
                     }
-                    else if  ((idx2[i][j]->aln_type == BACKWARD) and (reads[idx2[i][j]->bid]->active)) {
+                    else if  ((idx2[i][j]->match_type_ == BACKWARD) and (reads[idx2[i][j]->read_B_id_]->active)) {
                         if (repeat_status_front[i])
-                        if (((idx2[i][j]->flags == 0) and repeat_status_back[idx2[i][j]->bid])
-                            or ((idx2[i][j]->flags == 1) and repeat_status_front[idx2[i][j]->bid])) {
-                            if (idx2[i][j]->flags == 0)
-                                fprintf(out3, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                        idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                        if (((idx2[i][j]->reverse_complement_match_ == 0) and repeat_status_back[idx2[i][j]->read_B_id_])
+                            or ((idx2[i][j]->reverse_complement_match_ == 1) and repeat_status_front[idx2[i][j]->read_B_id_])) {
+                            if (idx2[i][j]->reverse_complement_match_ == 0)
+                                fprintf(out3, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
+                                        idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                        idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                        idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
                             else
-                                fprintf(out3, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->aid,
-                                        idx2[i][j]->bid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                                fprintf(out3, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_A_id_,
+                                        idx2[i][j]->read_B_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                        idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                        idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
 
-                            if (idx2[i][j]->flags == 0)
-                                fprintf(out3, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                        idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                            if (idx2[i][j]->reverse_complement_match_ == 0)
+                                fprintf(out3, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
+                                        idx2[i][j]->read_A_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                        idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                        idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
                             else
-                                fprintf(out3, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->bid,
-                                        idx2[i][j]->aid, idx2[i][j]->weight, idx2[i][j]->eff_abpos, idx2[i][j]->eff_aepos,
-                                        idx2[i][j]->eff_bbpos, idx2[i][j]->eff_bepos, idx2[i][j]->eff_astart, idx2[i][j]->eff_aend,
-                                        idx2[i][j]->eff_bstart, idx2[i][j]->eff_bend);
+                                fprintf(out3, "%d' %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", idx2[i][j]->read_B_id_,
+                                        idx2[i][j]->read_A_id_, idx2[i][j]->weight, idx2[i][j]->eff_read_A_match_start_, idx2[i][j]->eff_read_A_match_end_,
+                                        idx2[i][j]->eff_read_B_match_start_, idx2[i][j]->eff_read_B_match_end_, idx2[i][j]->eff_read_A_start_, idx2[i][j]->eff_read_A_end_,
+                                        idx2[i][j]->eff_read_B_start_, idx2[i][j]->eff_read_B_end_);
                         }
 
                     }
