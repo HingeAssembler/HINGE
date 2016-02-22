@@ -928,14 +928,17 @@ int main(int argc, char *argv[]) {
 
 
     n = 0;
+    FILE * out5;
+    out5 = fopen("hinge_list.txt","w");
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < hinges_vec[i].size(); j++) {
             if ((reads[i]->active) and ((hinges_vec[i][j].active) or hinges_vec[i][j].active2)) {
-                printf("%d %d %d\n", i, marked_hinges[i][j].first, marked_hinges[i][j].second);
+                fprintf(out5,"%d %d %d\n", i, marked_hinges[i][j].first, marked_hinges[i][j].second);
                 n++;
             }
         }
     }
+    fclose(out5);
     printf("after filter %d active hinges\n", n);
 
 
