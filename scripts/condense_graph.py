@@ -149,7 +149,7 @@ def run(filename, n_iter):
     except:
         pass        
     
-    nx.write_graphml(g, filename.split('.')[0]+'.graphml')
+    nx.write_graphml(g, filename.split('.')[0]+'_condensed.graphml')
     
     print nx.number_weakly_connected_components(g)
     print nx.number_strongly_connected_components(g)
