@@ -409,8 +409,22 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j < cgs[i].size()-1; j++) { // changed, remove the last one
             //std::cout<< i << " " << cgs[i][j].first << " " << cgs[i][j].second << std::endl;
             if ((cgs[i][j].first >= maskvec[i].first) and (cgs[i][j].first <= maskvec[i].second)) {
-                if (cgs[i][j].second > cov_est / 2) anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
-                else if (cgs[i][j].second < -cov_est / 2) anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
+                if (cgs[i][j].second > cov_est / 3) {
+                    anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
+                    if (i==3021) {
+                        printf("Added hinge on 3021: %d, %d\n",cgs[i][j].first,1);
+                    }
+                }
+                else if (cgs[i][j].second < -cov_est / 3) {
+                    anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
+                    if (i==3021) {
+                        printf("Added hinge on 3021: %d, %d\n",cgs[i][j].first,-1);
+                    }
+                }
+//                else if (i==3021) {
+//                    printf("Read 3021, pos %d, gradient = %d\n",j,cgs[i][j].second);
+//                }
+
             }
         }
         repeat_anno.push_back(anno);
@@ -488,7 +502,9 @@ int main(int argc, char *argv[]) {
         }
 
         for (int j = 0; j < to_delete.size(); j++) {
+            printf("removed hinge on read %d\n",i);
             repeat_anno[i].erase(repeat_anno[i].begin()+to_delete[j]);
+
         }
 
         if (not active) {
