@@ -490,6 +490,8 @@ int main(int argc, char *argv[]) {
         repeat_anno.push_back(anno);
     }
 
+
+
     int gap_thre = 300;
 
     // clean it a bit, merge consecutive 1, or consecutive -1, or adjacent 1 and -1 if their position is within gap_threshold (could be bursty error)
@@ -508,73 +510,95 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    temp_out1=fopen("repeat_anno.debug.txt","w");
+    for (int i = 0; i < n_read; i++) {
+        fprintf(temp_out1,"%d \t%d\t",i,repeat_anno[i].size());
+        for (std::vector<std::pair<int, int> >::iterator iter = repeat_anno[i].begin(); iter < repeat_anno[i].end();iter++) {
+            fprintf(temp_out1,"%d:%d\t",iter->first,iter->second);
+        }
+        fprintf(temp_out1,"\n");
+    }
+    fclose(temp_out1);
+
     /*for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < repeat_anno[i].size(); j++){
             std::cout<< i << " " << repeat_anno[i][j].first << " " << repeat_anno[i][j].second << std::endl;
         }
     }*/
 
+//    for (int i = 0; i < n_read; i++) {
+//        rep << i << " ";
+//        if (repeat_anno[i].size() > 0)
+//        if (repeat_anno[i].front().second == -1)
+//            rep << -1 << " "<<repeat_anno[i].front().first<<" ";
+//        bool active = true;
+//
+//        // We will delete the annotation corresponding to bridged repeats
+//        std::vector< int > to_delete;
+//
+//        for (int j = 0; j < repeat_anno[i].size(); j++) {
+//            if (j+1<repeat_anno[i].size())
+//            if ((repeat_anno[i][j].second == 1) and (repeat_anno[i][j+1].second == -1)) {
+//                rep << repeat_anno[i][j].first << " " << repeat_anno[i][j + 1].first << " ";
+//                //check if all internal repeats are bridged by pile-B reads.
+//                int s = repeat_anno[i][j].first;
+//                int e = repeat_anno[i][j+1].first;
+//
+//                bool bridged = false;
+//
+//
+//                //test bridging
+//
+//                for (int k = 0; k < idx2[i].size(); k++) {
+//                    if (bridge(idx2[i][k], s, e)) {
+//                        bridged = true;
+//
+//                        // Rather than deleting in here, we'll save the indices and
+//                        // delete later
+//                        to_delete.push_back(j);
+//                        to_delete.push_back(j+1);
+////                        repeat_anno[i].erase(repeat_anno[i].begin()+j);
+////                        repeat_anno[i].erase(repeat_anno[i].begin()+j+1);
+//
+//
+//                        break;
+//                    }
+//                }
+//
+//
+//                //if (not bridged) active = false;
+////                if (bridged) active = false;  // is this what we are supposed to do here??
+//            }
+//
+//
+//        }
+//
+//        for (int j = 0; j < to_delete.size(); j++) {
+//            repeat_anno[i].erase(repeat_anno[i].begin()+to_delete[j]);
+//        }
+//
+//        if (not active) {
+//            //printf("read %d comes from homologus recombination\n", i);
+//            homo << i << std::endl;
+//        }
+//
+//
+//
+//        if (repeat_anno[i].size() > 0)
+//        if (repeat_anno[i].back().second == 1)
+//            rep << repeat_anno[i].back().first<<" " << -1 << " ";
+//        rep << std::endl;
+//    }
+
+    temp_out1=fopen("repeat_anno.debug.txt","w");
     for (int i = 0; i < n_read; i++) {
-        rep << i << " ";
-        if (repeat_anno[i].size() > 0)
-        if (repeat_anno[i].front().second == -1)
-            rep << -1 << " "<<repeat_anno[i].front().first<<" ";
-        bool active = true;
-
-        // We will delete the annotation corresponding to bridged repeats
-        std::vector< int > to_delete;
-
-        for (int j = 0; j < repeat_anno[i].size(); j++) {
-            if (j+1<repeat_anno[i].size())
-            if ((repeat_anno[i][j].second == 1) and (repeat_anno[i][j+1].second == -1)) {
-                rep << repeat_anno[i][j].first << " " << repeat_anno[i][j + 1].first << " ";
-                //check if all internal repeats are bridged by pile-B reads.
-                int s = repeat_anno[i][j].first;
-                int e = repeat_anno[i][j+1].first;
-
-                bool bridged = false;
-
-
-                //test bridging
-
-                for (int k = 0; k < idx2[i].size(); k++) {
-                    if (bridge(idx2[i][k], s, e)) {
-                        bridged = true;
-
-                        // Rather than deleting in here, we'll save the indices and
-                        // delete later
-                        to_delete.push_back(j);
-                        to_delete.push_back(j+1);
-//                        repeat_anno[i].erase(repeat_anno[i].begin()+j);
-//                        repeat_anno[i].erase(repeat_anno[i].begin()+j+1);
-
-
-                        break;
-                    }
-                }
-
-
-                if (not bridged) active = false;
-//                if (bridged) active = false;  // is this what we are supposed to do here??
-            }
-
-
+        fprintf(temp_out1,"%d \t%d\t",i,repeat_anno[i].size());
+        for (std::vector<std::pair<int, int> >::iterator iter = repeat_anno[i].begin(); iter < repeat_anno[i].end();iter++) {
+            fprintf(temp_out1,"%d:%d\t",iter->first,iter->second);
         }
-
-        for (int j = 0; j < to_delete.size(); j++) {
-            repeat_anno[i].erase(repeat_anno[i].begin()+to_delete[j]);
-        }
-
-        if (not active) {
-            //printf("read %d comes from homologus recombination\n", i);
-            homo << i << std::endl;
-        }
-
-        if (repeat_anno[i].size() > 0)
-        if (repeat_anno[i].back().second == 1)
-            rep << repeat_anno[i].back().first<<" " << -1 << " ";
-        rep << std::endl;
+        fprintf(temp_out1,"\n");
     }
+    fclose(temp_out1);
     // need a better hinge detection
 
     // get hinges from repeat annotation information
@@ -583,9 +607,12 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < n_read; i++) {
         hinges[i] = std::vector<std::pair<int, int>>();
-
+        if (i==3381){
+            std::cout << repeat_anno[i][0].first << "\t" << repeat_anno[i][0].second << "\n"
+                    << repeat_anno[i][1].first << "\t" << repeat_anno[i][1].second << std::endl;
+        }
         for (int j = 0; j < repeat_anno[i].size(); j++) {
-            if (repeat_anno[i][j].second == -1) { // look for in hinges, negative gradient
+            if (repeat_anno[i][j].second == 1) { // look for in hinges, negative gradient
                 bool bridged = true;
                 int support = 0;
                 int num_reads_at_end=1;
@@ -599,11 +626,17 @@ int main(int argc, char *argv[]) {
                         support ++;
                     }
                 }
+
                 int start_point=read_other_ends.size()-1;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
+                if (i==3381){
+                    for (int l=0; l< read_other_ends.size(); l++)
+                        std::cout << repeat_anno[i][j].first << "\t" << repeat_anno[i][j].second << "\t"
+                        << read_other_ends[l] << std::endl;
+                }
                 for (int index=read_other_ends.size()-2; index>0; index--) {
-                    std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
-                            read_other_ends[start_point]- read_other_ends[index] << "\t" << CUT_OFF << std::endl;
+                    //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
+                     //       read_other_ends[start_point]- read_other_ends[index] << "\t" << CUT_OFF << std::endl;
 
                     if ( read_other_ends[start_point]- read_other_ends[index] < 100) {
                         num_reads_at_end++;
@@ -611,12 +644,15 @@ int main(int argc, char *argv[]) {
                     //else
                         //break;
                 }
-
-                std::cout <<"NUM READS at end " <<num_reads_at_end<<
-                        " Hinge " << repeat_anno[i][j].second <<"\n-----------------------------------------------\n";
+                if (i==3381){
+                    std::cout << num_reads_at_end << std::endl;
+                }
+                //std::cout <<"NUM READS at end " <<num_reads_at_end<<
+                  //      " Hinge " << repeat_anno[i][j].second <<"\n-----------------------------------------------\n";
 
                 //std::cout << i << "\t" << read_other_ends.size() << std::endl;
                 if ((support > 7) and (num_reads_at_end < 8)) {
+                    //std::cout << "setting in hinge bridged to false"<<std::endl;
                     bridged = false;
                 }
 
@@ -638,9 +674,16 @@ int main(int argc, char *argv[]) {
                 }
                 int start_point=0;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
+
+                if (i==3381){
+                    for (int l=0; l< read_other_ends.size(); l++)
+                        std::cout << repeat_anno[i][j].first << "\t" << repeat_anno[i][j].second << "\t"
+                        << read_other_ends[l] << std::endl;
+                }
+
                 for (int index=1; index<read_other_ends.size(); index++) {
-                    std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
-                    read_other_ends[index] - read_other_ends[start_point] << "\t" << CUT_OFF << std::endl;
+                    //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
+                    //read_other_ends[index] - read_other_ends[start_point] << "\t" << CUT_OFF << std::endl;
 
                     if (read_other_ends[index] - read_other_ends[start_point]  < 100) {
                         num_reads_at_end++;
@@ -648,10 +691,14 @@ int main(int argc, char *argv[]) {
                     //else
                     //break;
                 }
-                std::cout <<"NUM READS at end " <<num_reads_at_end<<
-                        " Hinge " << repeat_anno[i][j].second <<"\n-----------------------------------------------\n";
+                //std::cout <<"NUM READS at end " <<num_reads_at_end<<
+                //        " Hinge " << repeat_anno[i][j].second <<"\n-----------------------------------------------\n";
                 if ((support > 7) and (num_reads_at_end < 8)){ // heuristic here
                     bridged = false;
+                    //std::cout << "setting out hinge bridged to false"<<std::endl;
+                }
+                if (i==3381){
+                    std::cout << num_reads_at_end << std::endl;
                 }
                 if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_anno[i][j].first, 1));
 
