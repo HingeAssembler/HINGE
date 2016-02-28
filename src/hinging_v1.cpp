@@ -848,7 +848,10 @@ int main(int argc, char *argv[]) {
                         //if (forward < 1) {
                             //remove certain hinges
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((matches_forward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos + 40)
+                                if ( ( ((matches_forward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos + 40) and
+                                        (matches_forward[i][j]->match_type_ == FORWARD_INTERNAL))
+                                    or ((matches_forward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos - 40) and
+                                        (matches_forward[i][j]->match_type_ == FORWARD)) )
                                     and (hinges_vec[i][k].type == 1))
                                 {
                                     hinges_vec[i][k].active = false;
@@ -868,11 +871,18 @@ int main(int argc, char *argv[]) {
                                             hinges_vec[i][k].active = false;
 
                                     }*/
-                                    printf("%d %d bridged %d pos %d\n",i,j,matches_forward[i][j]->eff_read_A_match_start_, hinges_vec[i][k].pos);
-                                    // so there should be an hinge on matches_forward[i][j]->read_B
-                                    printf("%d\n", (hinges_vec[matches_forward[i][j]->read_B_id_]).size());
 
-                                    printf("A %d B %d\n", matches_forward[i][j]->read_A_id_ ,matches_forward[i][j]->read_B_id_);
+                                    if (i==3021){
+
+                                        printf("This happened!");
+                                        printf("%d %d bridged %d pos %d\n",i,j,matches_forward[i][j]->eff_read_A_match_start_, hinges_vec[i][k].pos);
+                                        // so there should be an hinge on matches_forward[i][j]->read_B
+                                        printf("%d\n", (hinges_vec[matches_forward[i][j]->read_B_id_]).size());
+
+                                        printf("A %d B %d\n", matches_forward[i][j]->read_A_id_ ,matches_forward[i][j]->read_B_id_);
+
+                                    }
+
 
                                 }
 
@@ -890,7 +900,10 @@ int main(int argc, char *argv[]) {
                        // if (backward < 1) {
                             //remove certain hinges
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((matches_backward[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos - 40)
+                                if ( ( ((matches_backward[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos - 40) and
+                                            (matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)) or
+                                       ((matches_backward[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos + 40) and
+                                            (matches_backward[i][j]->match_type_ == BACKWARD))  )
                                     and (hinges_vec[i][k].type == -1))
                                 {
                                     hinges_vec[i][k].active = false;
@@ -910,11 +923,13 @@ int main(int argc, char *argv[]) {
                                             hinges_vec[i][k].active = false;
 
                                     }*/
-                                    printf("%d %d bridged %d pos %d\n",i,j,matches_backward[i][j]->eff_read_A_match_end_, hinges_vec[i][k].pos);
 
-                                    printf("%d\n", (hinges_vec[matches_backward[i][j]->read_B_id_]).size());
+                                    if (0==1) {
+                                        printf("%d %d bridged %d pos %d\n",i,j,matches_backward[i][j]->eff_read_A_match_end_, hinges_vec[i][k].pos);
+                                        printf("%d\n", (hinges_vec[matches_backward[i][j]->read_B_id_]).size());
+                                        printf("A %d B %d\n", matches_backward[i][j]->read_A_id_ ,matches_backward[i][j]->read_B_id_);
+                                    }
 
-                                    printf("A %d B %d\n", matches_backward[i][j]->read_A_id_ ,matches_backward[i][j]->read_B_id_);
 
                                 }
                             }
@@ -928,14 +943,17 @@ int main(int argc, char *argv[]) {
 
 
     n = 0;
+    FILE * out5;
+    out5 = fopen("hinge_list.txt","w");
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < hinges_vec[i].size(); j++) {
             if ((reads[i]->active) and ((hinges_vec[i][j].active) or hinges_vec[i][j].active2)) {
-                printf("%d %d %d\n", i, marked_hinges[i][j].first, marked_hinges[i][j].second);
+                fprintf(out5,"%d %d %d\n", i, marked_hinges[i][j].first, marked_hinges[i][j].second);
                 n++;
             }
         }
     }
+    fclose(out5);
     printf("after filter %d active hinges\n", n);
 
 
