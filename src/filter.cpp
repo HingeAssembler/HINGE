@@ -357,7 +357,9 @@ int main(int argc, char *argv[]) {
         //TODO : Implement set based gradient
         std::vector<std::pair<int, int> > cg;
         //profileCoverage: get the coverage based on pile-o-gram
-        la.profileCoverage(idx3[i], coverage, reso, CUT_OFF);
+        //la.profileCoverage(idx3[i], coverage, reso, CUT_OFF);
+
+        la.profileCoverage(idx3[i], coverage, reso, 0);
         cov << "read " << i <<" ";
         for (int j = 0; j < coverage.size(); j++)
             cov << coverage[j].first << ","  << coverage[j].second << " ";
@@ -520,76 +522,6 @@ int main(int argc, char *argv[]) {
     }
     fclose(temp_out1);
 
-    /*for (int i = 0; i < n_read; i++) {
-        for (int j = 0; j < repeat_anno[i].size(); j++){
-            std::cout<< i << " " << repeat_anno[i][j].first << " " << repeat_anno[i][j].second << std::endl;
-        }
-    }*/
-
-//    for (int i = 0; i < n_read; i++) {
-//        rep << i << " ";
-//        if (repeat_anno[i].size() > 0)
-//        if (repeat_anno[i].front().second == -1)
-//            rep << -1 << " "<<repeat_anno[i].front().first<<" ";
-//        bool active = true;
-//
-//        // We will delete the annotation corresponding to bridged repeats
-//        std::vector< int > to_delete;
-//
-//        for (int j = 0; j < repeat_anno[i].size(); j++) {
-//            if (j+1<repeat_anno[i].size())
-//            if ((repeat_anno[i][j].second == 1) and (repeat_anno[i][j+1].second == -1)) {
-//                rep << repeat_anno[i][j].first << " " << repeat_anno[i][j + 1].first << " ";
-//                //check if all internal repeats are bridged by pile-B reads.
-//                int s = repeat_anno[i][j].first;
-//                int e = repeat_anno[i][j+1].first;
-//
-//                bool bridged = false;
-//
-//
-//                //test bridging
-//
-//                for (int k = 0; k < idx2[i].size(); k++) {
-//                    if (bridge(idx2[i][k], s, e)) {
-//                        bridged = true;
-//
-//                        // Rather than deleting in here, we'll save the indices and
-//                        // delete later
-//                        to_delete.push_back(j);
-//                        to_delete.push_back(j+1);
-////                        repeat_anno[i].erase(repeat_anno[i].begin()+j);
-////                        repeat_anno[i].erase(repeat_anno[i].begin()+j+1);
-//
-//
-//                        break;
-//                    }
-//                }
-//
-//
-//                //if (not bridged) active = false;
-////                if (bridged) active = false;  // is this what we are supposed to do here??
-//            }
-//
-//
-//        }
-//
-//        for (int j = 0; j < to_delete.size(); j++) {
-//            repeat_anno[i].erase(repeat_anno[i].begin()+to_delete[j]);
-//        }
-//
-//        if (not active) {
-//            //printf("read %d comes from homologus recombination\n", i);
-//            homo << i << std::endl;
-//        }
-//
-//
-//
-//        if (repeat_anno[i].size() > 0)
-//        if (repeat_anno[i].back().second == 1)
-//            rep << repeat_anno[i].back().first<<" " << -1 << " ";
-//        rep << std::endl;
-//    }
-
     temp_out1=fopen("repeat_anno.debug.txt","w");
     for (int i = 0; i < n_read; i++) {
         fprintf(temp_out1,"%d \t%d\t",i,repeat_anno[i].size());
@@ -612,7 +544,7 @@ int main(int argc, char *argv[]) {
                     << repeat_anno[i][1].first << "\t" << repeat_anno[i][1].second << std::endl;
         }
         for (int j = 0; j < repeat_anno[i].size(); j++) {
-            if (repeat_anno[i][j].second == 1) { // look for in hinges, negative gradient
+            if (repeat_anno[i][j].second == -1) { // look for in hinges, negative gradient
                 bool bridged = true;
                 int support = 0;
                 int num_reads_at_end=1;
