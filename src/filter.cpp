@@ -62,7 +62,8 @@ std::ostream& operator<<(std::ostream& out, const MatchType value){
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
     //Returns True if the sum of the match lengths of the two reads in ovl1 > the sum of the  overlap lengths of the two reads in ovl2
     //Returns False otherwise.
-    return ((ovl1->read_A_match_end_ - ovl1->read_A_match_start_ + ovl1->read_B_match_end_ - ovl1->read_B_match_start_) > (ovl2->read_A_match_end_ - ovl2->read_A_match_start_ + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
+    return ((ovl1->read_A_match_end_ - ovl1->read_A_match_start_ + ovl1->read_B_match_end_ - ovl1->read_B_match_start_)
+            > (ovl2->read_A_match_end_ - ovl2->read_A_match_start_ + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
 }
 
 bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2) {
@@ -70,8 +71,12 @@ bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vect
     //Returns False otherwise
     int sum1 = 0;
     int sum2 = 0;
-    for (int i = 0; i < ovl1->size(); i++) sum1 += (*ovl1)[i]->read_A_match_end_ - (*ovl1)[i]->read_A_match_start_ + (*ovl1)[i]->read_B_match_end_ - (*ovl1)[i]->read_B_match_start_;
-    for (int i = 0; i < ovl2->size(); i++) sum2 += (*ovl2)[i]->read_A_match_end_ - (*ovl2)[i]->read_A_match_start_ + (*ovl2)[i]->read_B_match_end_ - (*ovl2)[i]->read_B_match_start_;
+    for (int i = 0; i < ovl1->size(); i++)
+        sum1 += (*ovl1)[i]->read_A_match_end_ - (*ovl1)[i]->read_A_match_start_ +
+                (*ovl1)[i]->read_B_match_end_ - (*ovl1)[i]->read_B_match_start_;
+    for (int i = 0; i < ovl2->size(); i++)
+        sum2 += (*ovl2)[i]->read_A_match_end_ - (*ovl2)[i]->read_A_match_start_ +
+                (*ovl2)[i]->read_B_match_end_ - (*ovl2)[i]->read_B_match_start_;
     return sum1 > sum2;
 }
 
@@ -92,7 +97,8 @@ bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
 }
 
 std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
-//Returns sections of read a which are covered by overlaps. Each overlap is considered as <start_pos+cutoff,end_pos-cutoff>.
+//Returns sections of read a which are covered by overlaps. Each overlap is considered as
+// <start_pos+cutoff,end_pos-cutoff>.
 {
     //std::cout<<"Merge"<<std::endl;
     std::vector<std::pair<int, int > > ret;
@@ -105,11 +111,15 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int c
     }
 
     //Where is sort defined ? Is this std::sort?
-    sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left (start position of overlap beginning on a)
+    sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left (start position of
+    // overlap beginning on a)
 
-    int left= intervals[0]->read_A_match_start_ + cutoff, right = intervals[0]->read_A_match_end_ - cutoff; //left, right means maximal possible interval now
+    int left= intervals[0]->read_A_match_start_ + cutoff, right = intervals[0]->read_A_match_end_ - cutoff;
+    //left, right means maximal possible interval now
 
-    for(int i = 1; i < n; i++) //Ovl1 ~ Ovl2 if Ovl1 and Ovl2 have a nonzero intersection. (that is both the b read maps to the same position on the a read)
+    for(int i = 1; i < n; i++)
+        //Ovl1 ~ Ovl2 if Ovl1 and Ovl2 have a nonzero intersection. (that is both the b read maps
+        // to the same position on the a read)
         //This defines a chain of  connected overlaps. This for loop returns a a vector ret which
         // is a pair of <start of connected overlaps, end of connected overlaps>
     {
@@ -133,7 +143,8 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
 //Returns <start_pos, end_pos>
 //start_pos : the first position at which Read a of the overlaps have at least min_cov matches on it.
 //end_pos : the last position that the  (#overlaps- min_cov)th read (in order of start positions ends).
-//Should compare_overlap_aepos actually compare read_A_match_end_? If that is done, then the end_pos will be the last position
+//Should compare_overlap_aepos actually compare read_A_match_end_? If that is done, then the end_pos
+// will be the last position
 // on the a read so that all positions beyond have less than min_cov matches on them
     Interval ret;
     sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
@@ -156,6 +167,38 @@ bool bridge(LOverlap* ovl, int s, int e){
     return ((ovl->read_A_match_start_ < s - 500) and (ovl->read_A_match_end_ > e + 500));
 }
 
+float number_of_bridging_reads(std::vector<LOverlap *> ovl_reads, int hinge_location, int hinge_type,int threshold){
+    int num_bridging_reads=0;
+    //int threshold=100;
+    std::vector<int> read_ends;
+    if (hinge_type==1){
+        for (int i=0; i < ovl_reads.size(); i++){
+            if (hinge_location==4720)
+                std::cout << ovl_reads[i]->read_A_match_start_<< "\t" << hinge_location<<std::endl;
+            if ((ovl_reads[i]->read_A_match_start_ > hinge_location-threshold ) and
+                        (ovl_reads[i]->read_A_match_start_ < hinge_location+threshold ))
+                read_ends.push_back(ovl_reads[i]->read_A_match_end_);
+        }
+    }
+    else if (hinge_type==-1){
+        for (int i=0; i < ovl_reads.size(); i++){
+            if ((ovl_reads[i]->read_A_match_end_ > hinge_location-threshold ) and
+                (ovl_reads[i]->read_A_match_end_ < hinge_location+threshold ))
+                read_ends.push_back(ovl_reads[i]->read_A_match_start_);
+        }
+    }
+    std::sort(read_ends.begin(),read_ends.end(), std::greater<int>());
+    int start_point=0;
+    int num_bins=0;
+    for (int i=0; i<read_ends.size(); i++) {
+        std::cout << hinge_location <<"\t"<< read_ends[i]<< std::endl;
+        if (read_ends[start_point] - read_ends[i] > 2 * threshold) {
+            num_bins++;
+            start_point = i;
+        }
+    }
+    return num_bins/((float)1);
+}
 
 int main(int argc, char *argv[]) {
 
@@ -308,8 +351,8 @@ int main(int argc, char *argv[]) {
 
     std::vector< std::vector<std::pair<int, int> > > coverages;
     std::vector< std::vector<std::pair<int, int> > > cgs; //coverage gradient;
-
-    for (int i = 0; i < n_read; i ++) {
+    //std::vector< std::vector<std::pair<int, int> > > his;
+     for (int i = 0; i < n_read; i ++) {
         std::vector<std::pair<int, int> > coverage;
         //TODO : Implement set based gradient
         std::vector<std::pair<int, int> > cg;
@@ -331,6 +374,8 @@ int main(int argc, char *argv[]) {
         cgs.push_back(cg);
     }
 
+
+    
     int num_slot = 0;
     int total_cov = 0;
     //Finding the average coverage, probing a small proportion of reads
@@ -394,6 +439,29 @@ int main(int argc, char *argv[]) {
         //get the interestion of two masks
     }
 
+    FILE* temp_out1;
+    FILE* temp_out2;
+    temp_out1=fopen("coverage.debug.txt","w");
+    temp_out2=fopen("coverage_gradient.debug.txt","w");
+
+    for (int i=0; i< n_read ; i++) {
+        fprintf(temp_out1,"%d \t", i);
+        for (int j=0; j < coverages[i].size(); j++){
+            fprintf(temp_out1,"%d:%d \t", coverages[i][j].first,coverages[i][j].second);
+        }
+        fprintf(temp_out1,"\n");
+    }
+
+    for (int i=0; i< n_read ; i++) {
+        fprintf(temp_out2,"%d \t", i);
+        for (int j=0; j < cgs[i].size(); j++){
+            fprintf(temp_out2,"%d:%d \t", cgs[i][j].first,cgs[i][j].second);
+        }
+        fprintf(temp_out2,"\n");
+    }
+    fclose(temp_out1);
+    fclose(temp_out2);
+
     /*for (int i = 0; i < maskvec.size(); i++) {
         printf("read %d %d %d\n", i, maskvec[i].first, maskvec[i].second);
         printf("QV: read %d %d %d\n", i, QV_mask[i].first, QV_mask[i].second);
@@ -406,29 +474,23 @@ int main(int argc, char *argv[]) {
     //detect repeats based on coverage gradient, mark it has rising (1) or falling (-1)
     for (int i = 0; i < n_read; i++) {
         std::vector<std::pair<int, int> > anno;
+        //if (i==3381) {
+        //    for (int j = 0; j < cgs[i].size()-1; j++){
+        //        std::cout<< "Read "<< i << " position " <<cgs[i][j].first <<
+        //                                                             " " << cgs[i][j].second << std::endl;
+        //    }
+        //}
         for (int j = 0; j < cgs[i].size()-1; j++) { // changed, remove the last one
             //std::cout<< i << " " << cgs[i][j].first << " " << cgs[i][j].second << std::endl;
             if ((cgs[i][j].first >= maskvec[i].first) and (cgs[i][j].first <= maskvec[i].second)) {
-                if (cgs[i][j].second > cov_est / 3) {
-                    anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
-                    if (i==3021) {
-                        printf("Added hinge on 3021: %d, %d\n",cgs[i][j].first,1);
-                    }
-                }
-                else if (cgs[i][j].second < -cov_est / 3) {
-                    anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
-                    if (i==3021) {
-                        printf("Added hinge on 3021: %d, %d\n",cgs[i][j].first,-1);
-                    }
-                }
-//                else if (i==3021) {
-//                    printf("Read 3021, pos %d, gradient = %d\n",j,cgs[i][j].second);
-//                }
-
+                if (cgs[i][j].second > std::min(cov_est / 4, 10)) anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
+                else if (cgs[i][j].second < -std::min(cov_est / 4, 10)) anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
             }
         }
         repeat_anno.push_back(anno);
     }
+
+
 
     int gap_thre = 300;
 
@@ -448,75 +510,95 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    temp_out1=fopen("repeat_anno.debug.txt","w");
+    for (int i = 0; i < n_read; i++) {
+        fprintf(temp_out1,"%d \t%d\t",i,repeat_anno[i].size());
+        for (std::vector<std::pair<int, int> >::iterator iter = repeat_anno[i].begin(); iter < repeat_anno[i].end();iter++) {
+            fprintf(temp_out1,"%d:%d\t",iter->first,iter->second);
+        }
+        fprintf(temp_out1,"\n");
+    }
+    fclose(temp_out1);
+
     /*for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < repeat_anno[i].size(); j++){
             std::cout<< i << " " << repeat_anno[i][j].first << " " << repeat_anno[i][j].second << std::endl;
         }
     }*/
 
+//    for (int i = 0; i < n_read; i++) {
+//        rep << i << " ";
+//        if (repeat_anno[i].size() > 0)
+//        if (repeat_anno[i].front().second == -1)
+//            rep << -1 << " "<<repeat_anno[i].front().first<<" ";
+//        bool active = true;
+//
+//        // We will delete the annotation corresponding to bridged repeats
+//        std::vector< int > to_delete;
+//
+//        for (int j = 0; j < repeat_anno[i].size(); j++) {
+//            if (j+1<repeat_anno[i].size())
+//            if ((repeat_anno[i][j].second == 1) and (repeat_anno[i][j+1].second == -1)) {
+//                rep << repeat_anno[i][j].first << " " << repeat_anno[i][j + 1].first << " ";
+//                //check if all internal repeats are bridged by pile-B reads.
+//                int s = repeat_anno[i][j].first;
+//                int e = repeat_anno[i][j+1].first;
+//
+//                bool bridged = false;
+//
+//
+//                //test bridging
+//
+//                for (int k = 0; k < idx2[i].size(); k++) {
+//                    if (bridge(idx2[i][k], s, e)) {
+//                        bridged = true;
+//
+//                        // Rather than deleting in here, we'll save the indices and
+//                        // delete later
+//                        to_delete.push_back(j);
+//                        to_delete.push_back(j+1);
+////                        repeat_anno[i].erase(repeat_anno[i].begin()+j);
+////                        repeat_anno[i].erase(repeat_anno[i].begin()+j+1);
+//
+//
+//                        break;
+//                    }
+//                }
+//
+//
+//                //if (not bridged) active = false;
+////                if (bridged) active = false;  // is this what we are supposed to do here??
+//            }
+//
+//
+//        }
+//
+//        for (int j = 0; j < to_delete.size(); j++) {
+//            repeat_anno[i].erase(repeat_anno[i].begin()+to_delete[j]);
+//        }
+//
+//        if (not active) {
+//            //printf("read %d comes from homologus recombination\n", i);
+//            homo << i << std::endl;
+//        }
+//
+//
+//
+//        if (repeat_anno[i].size() > 0)
+//        if (repeat_anno[i].back().second == 1)
+//            rep << repeat_anno[i].back().first<<" " << -1 << " ";
+//        rep << std::endl;
+//    }
+
+    temp_out1=fopen("repeat_anno.debug.txt","w");
     for (int i = 0; i < n_read; i++) {
-        rep << i << " ";
-        if (repeat_anno[i].size() > 0)
-        if (repeat_anno[i].front().second == -1)
-            rep << -1 << " "<<repeat_anno[i].front().first<<" ";
-        bool active = true;
-
-        // We will delete the annotation corresponding to bridged repeats
-        std::vector< int > to_delete;
-
-        for (int j = 0; j < repeat_anno[i].size(); j++) {
-            if (j+1<repeat_anno[i].size())
-            if ((repeat_anno[i][j].second == 1) and (repeat_anno[i][j+1].second == -1)) {
-                rep << repeat_anno[i][j].first << " " << repeat_anno[i][j + 1].first << " ";
-                //check if all internal repeats are bridged by pile-B reads.
-                int s = repeat_anno[i][j].first;
-                int e = repeat_anno[i][j+1].first;
-
-                bool bridged = false;
-
-
-                //test bridging
-
-                for (int k = 0; k < idx2[i].size(); k++) {
-                    if (bridge(idx2[i][k], s, e)) {
-                        bridged = true;
-
-                        // Rather than deleting in here, we'll save the indices and
-                        // delete later
-                        to_delete.push_back(j);
-                        to_delete.push_back(j+1);
-//                        repeat_anno[i].erase(repeat_anno[i].begin()+j);
-//                        repeat_anno[i].erase(repeat_anno[i].begin()+j+1);
-
-
-                        break;
-                    }
-                }
-
-
-                if (not bridged) active = false;
-//                if (bridged) active = false;  // is this what we are supposed to do here??
-            }
-
-
+        fprintf(temp_out1,"%d \t%d\t",i,repeat_anno[i].size());
+        for (std::vector<std::pair<int, int> >::iterator iter = repeat_anno[i].begin(); iter < repeat_anno[i].end();iter++) {
+            fprintf(temp_out1,"%d:%d\t",iter->first,iter->second);
         }
-
-        for (int j = 0; j < to_delete.size(); j++) {
-            printf("removed hinge on read %d\n",i);
-            repeat_anno[i].erase(repeat_anno[i].begin()+to_delete[j]);
-
-        }
-
-        if (not active) {
-            //printf("read %d comes from homologus recombination\n", i);
-            homo << i << std::endl;
-        }
-
-        if (repeat_anno[i].size() > 0)
-        if (repeat_anno[i].back().second == 1)
-            rep << repeat_anno[i].back().first<<" " << -1 << " ";
-        rep << std::endl;
+        fprintf(temp_out1,"\n");
     }
+    fclose(temp_out1);
     // need a better hinge detection
 
     // get hinges from repeat annotation information
@@ -525,34 +607,98 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < n_read; i++) {
         hinges[i] = std::vector<std::pair<int, int>>();
-
+        if (i==3381){
+            std::cout << repeat_anno[i][0].first << "\t" << repeat_anno[i][0].second << "\n"
+                    << repeat_anno[i][1].first << "\t" << repeat_anno[i][1].second << std::endl;
+        }
         for (int j = 0; j < repeat_anno[i].size(); j++) {
-            if (repeat_anno[i][j].second == -1) { // look for in hinges, negative gradient
+            if (repeat_anno[i][j].second == 1) { // look for in hinges, negative gradient
                 bool bridged = true;
                 int support = 0;
+                int num_reads_at_end=1;
+
+                std::vector<int> read_other_ends;
+
                 for (int k = 0; k < idx2[i].size(); k++) {
-                    //printf("%d %d %d %d\n", idx3[i][k]->read_A_match_start_, idx3[i][k]->read_A_match_end_, maskvec[i].first, repeat_anno[i][j].first);
-                    if (/*(idx2[i][k]->read_A_match_start_ < maskvec[i].first + 300) and */(idx2[i][k]->read_A_match_end_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_end_ < repeat_anno[i][j].first + 300)) {
+                    if ((idx2[i][k]->read_A_match_end_ > repeat_anno[i][j].first - 300)
+                        and (idx2[i][k]->read_A_match_end_ < repeat_anno[i][j].first + 300)) {
+                        read_other_ends.push_back(idx2[i][k]->read_A_match_end_);
                         support ++;
-                        if (support > 7) {
-                            bridged = false;
-                            break;
-                        }
                     }
                 }
+
+                int start_point=read_other_ends.size()-1;
+                std::sort(read_other_ends.begin(),read_other_ends.end());
+                if (i==3381){
+                    for (int l=0; l< read_other_ends.size(); l++)
+                        std::cout << repeat_anno[i][j].first << "\t" << repeat_anno[i][j].second << "\t"
+                        << read_other_ends[l] << std::endl;
+                }
+                for (int index=read_other_ends.size()-2; index>0; index--) {
+                    //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
+                     //       read_other_ends[start_point]- read_other_ends[index] << "\t" << CUT_OFF << std::endl;
+
+                    if ( read_other_ends[start_point]- read_other_ends[index] < 100) {
+                        num_reads_at_end++;
+                    }
+                    //else
+                        //break;
+                }
+                if (i==3381){
+                    std::cout << num_reads_at_end << std::endl;
+                }
+                //std::cout <<"NUM READS at end " <<num_reads_at_end<<
+                  //      " Hinge " << repeat_anno[i][j].second <<"\n-----------------------------------------------\n";
+
+                //std::cout << i << "\t" << read_other_ends.size() << std::endl;
+                if ((support > 7) and (num_reads_at_end < 8)) {
+                    //std::cout << "setting in hinge bridged to false"<<std::endl;
+                    bridged = false;
+                }
+
                 if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_anno[i][j].first,-1));
 
             } else { // look for out_hinges, positive gradient
                 bool bridged = true;
                 int support = 0;
+                int num_reads_at_end=1;
+
+                std::vector<int> read_other_ends;
+
                 for (int k = 0; k < idx2[i].size(); k++) {
-                    if ((idx2[i][k]->read_A_match_start_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_start_ < repeat_anno[i][j].first + 300)/* and (idx2[i][k]->read_A_match_end_ > maskvec[i].second - 300)*/) {
+                    if ((idx2[i][k]->read_A_match_start_ > repeat_anno[i][j].first - 300)
+                        and (idx2[i][k]->read_A_match_start_ < repeat_anno[i][j].first + 300)) {
+                        read_other_ends.push_back(idx2[i][k]->read_A_match_start_);
                         support ++;
-                        if (support > 7) { // heuristic here
-                            bridged = false;
-                            break;
-                        }
                     }
+                }
+                int start_point=0;
+                std::sort(read_other_ends.begin(),read_other_ends.end());
+
+                if (i==3381){
+                    for (int l=0; l< read_other_ends.size(); l++)
+                        std::cout << repeat_anno[i][j].first << "\t" << repeat_anno[i][j].second << "\t"
+                        << read_other_ends[l] << std::endl;
+                }
+
+                for (int index=1; index<read_other_ends.size(); index++) {
+                    //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
+                    //read_other_ends[index] - read_other_ends[start_point] << "\t" << CUT_OFF << std::endl;
+
+                    if (read_other_ends[index] - read_other_ends[start_point]  < 100) {
+                        num_reads_at_end++;
+                    }
+                    //else
+                    //break;
+                }
+                //std::cout <<"NUM READS at end " <<num_reads_at_end<<
+                //        " Hinge " << repeat_anno[i][j].second <<"\n-----------------------------------------------\n";
+                if ((support > 7) and (num_reads_at_end < 8)){ // heuristic here
+                    bridged = false;
+                    //std::cout << "setting out hinge bridged to false"<<std::endl;
+                }
+                if (i==3381){
+                    std::cout << num_reads_at_end << std::endl;
                 }
                 if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_anno[i][j].first, 1));
 

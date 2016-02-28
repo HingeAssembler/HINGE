@@ -848,7 +848,10 @@ int main(int argc, char *argv[]) {
                         //if (forward < 1) {
                             //remove certain hinges
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((matches_forward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos + 40)
+                                if ( ( ((matches_forward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos + 40) and
+                                        (matches_forward[i][j]->match_type_ == FORWARD_INTERNAL))
+                                    or ((matches_forward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos - 40) and
+                                        (matches_forward[i][j]->match_type_ == FORWARD)) )
                                     and (hinges_vec[i][k].type == 1))
                                 {
                                     hinges_vec[i][k].active = false;
@@ -897,7 +900,10 @@ int main(int argc, char *argv[]) {
                        // if (backward < 1) {
                             //remove certain hinges
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((matches_backward[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos - 40)
+                                if ( ( ((matches_backward[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos - 40) and
+                                            (matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)) or
+                                       ((matches_backward[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos + 40) and
+                                            (matches_backward[i][j]->match_type_ == BACKWARD))  )
                                     and (hinges_vec[i][k].type == -1))
                                 {
                                     hinges_vec[i][k].active = false;
