@@ -402,61 +402,83 @@ int main(int argc, char *argv[]) {
 
     //binarize coverage gradient;
 
-    std::vector<std::vector<std::pair<int, int> > > repeat_anno;
+    const int no_hinge_region = 500;
+    std::vector<std::vector<std::pair<int, int> > > repeat_annotation;
     //detect repeats based on coverage gradient, mark it has rising (1) or falling (-1)
     for (int i = 0; i < n_read; i++) {
         std::vector<std::pair<int, int> > anno;
         for (int j = 0; j < cgs[i].size()-1; j++) { // changed, remove the last one
             //std::cout<< i << " " << cgs[i][j].first << " " << cgs[i][j].second << std::endl;
-            if ((cgs[i][j].first >= maskvec[i].first) and (cgs[i][j].first <= maskvec[i].second)) {
+            if ((cgs[i][j].first > maskvec[i].first + no_hinge_region) and (cgs[i][j].first < maskvec[i].second - no_hinge_region)) {
                 if (cgs[i][j].second > cov_est / 2) anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
                 else if (cgs[i][j].second < -cov_est / 2) anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
             }
         }
-        repeat_anno.push_back(anno);
+        repeat_annotation.push_back(anno);
     }
 
     int gap_thre = 300;
 
     // clean it a bit, merge consecutive 1, or consecutive -1, or adjacent 1 and -1 if their position is within gap_threshold (could be bursty error)
     for (int i = 0; i < n_read; i++) {
-        for (std::vector<std::pair<int, int> >::iterator iter = repeat_anno[i].begin(); iter < repeat_anno[i].end(); ) {
-            if (iter+1 < repeat_anno[i].end()){
-                if ((iter->second == 1) and ((iter+1)->second == -1) and ((iter+1)->first - iter->first < gap_thre)){
-                    iter = repeat_anno[i].erase(iter);
-                    iter = repeat_anno[i].erase(iter); // fill gaps
-                } else if (((iter->second == 1) and ((iter + 1)->second == 1)) and ((iter+1)->first - iter->first < gap_thre)) {
-                    repeat_anno[i].erase((iter + 1));
+        for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end(); ) {
+            if (iter+1 < repeat_annotation[i].end()){
+                if (((iter->second == 1) and ((iter + 1)->second == 1)) and ((iter+1)->first - iter->first < gap_thre)) {
+                    repeat_annotation[i].erase((iter + 1));
                 } else if (((iter->second == -1) and ((iter + 1)->second == -1)) and ((iter+1)->first - iter->first < gap_thre)) {
-                    iter = repeat_anno[i].erase(iter);
+                    iter = repeat_annotation[i].erase(iter);
                 } else iter++;
             } else iter ++;
         }
     }
 
+    //remove gaps
+    for (int i = 0; i < n_read; i++) {
+        for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end(); ) {
+            if (iter+1 < repeat_annotation[i].end()){
+                if ((iter->second == -1) and ((iter+1)->second == 1) and ((iter+1)->first - iter->first < gap_thre)){
+                    iter = repeat_annotation[i].erase(iter);
+                    iter = repeat_annotation[i].erase(iter); // fill gaps
+                } else if ((iter->second == 1) and ((iter+1)->second == -1) and ((iter+1)->first - iter->first < gap_thre)) {
+                    iter = repeat_annotation[i].erase(iter);
+                    iter = repeat_annotation[i].erase(iter);
+                } else iter++;
+            } else iter ++;
+        }
+    }
+
+
+
+
+    /*if ((iter->second == -1) and ((iter+1)->second == 1) and ((iter+1)->first - iter->first < gap_thre)){
+                    iter = repeat_annotation[i].erase(iter);
+                    iter = repeat_annotation[i].erase(iter); // fill gaps
+                } else
+    */
+
     /*for (int i = 0; i < n_read; i++) {
-        for (int j = 0; j < repeat_anno[i].size(); j++){
-            std::cout<< i << " " << repeat_anno[i][j].first << " " << repeat_anno[i][j].second << std::endl;
+        for (int j = 0; j < repeat_annotation[i].size(); j++){
+            std::cout<< i << " " << repeat_annotation[i][j].first << " " << repeat_annotation[i][j].second << std::endl;
         }
     }*/
 
     for (int i = 0; i < n_read; i++) {
         rep << i << " ";
-        if (repeat_anno[i].size() > 0)
-        if (repeat_anno[i].front().second == -1)
-            rep << -1 << " "<<repeat_anno[i].front().first<<" ";
+        if (repeat_annotation[i].size() > 0)
+        if (repeat_annotation[i].front().second == -1)
+            rep << -1 << " "<< repeat_annotation[i].front().first<<" ";
         bool active = true;
 
         // We will delete the annotation corresponding to bridged repeats
-        std::vector< int > to_delete;
+        //std::vector< int > to_delete;
 
-        for (int j = 0; j < repeat_anno[i].size(); j++) {
-            if (j+1<repeat_anno[i].size())
-            if ((repeat_anno[i][j].second == 1) and (repeat_anno[i][j+1].second == -1)) {
-                rep << repeat_anno[i][j].first << " " << repeat_anno[i][j + 1].first << " ";
+        for (int j = 0; j < repeat_annotation[i].size(); j++) {
+            if (j+1< repeat_annotation[i].size())
+            if ((repeat_annotation[i][j].second == 1) and (repeat_annotation[i][j+1].second == -1)) {
+                rep << repeat_annotation[i][j].first << " " << repeat_annotation[i][j + 1].first << " ";
                 //check if all internal repeats are bridged by pile-B reads.
-                int s = repeat_anno[i][j].first;
-                int e = repeat_anno[i][j+1].first;
+                int s = repeat_annotation[i][j].first;
+                int e = repeat_annotation[i][j+1].first;
 
                 bool bridged = false;
 
@@ -469,10 +491,10 @@ int main(int argc, char *argv[]) {
 
                         // Rather than deleting in here, we'll save the indices and
                         // delete later
-                        to_delete.push_back(j);
-                        to_delete.push_back(j+1);
-//                        repeat_anno[i].erase(repeat_anno[i].begin()+j);
-//                        repeat_anno[i].erase(repeat_anno[i].begin()+j+1);
+                        //to_delete.push_back(j);
+                        //to_delete.push_back(j+1);
+//                        repeat_annotation[i].erase(repeat_annotation[i].begin()+j);
+//                        repeat_annotation[i].erase(repeat_annotation[i].begin()+j+1);
 
 
                         break;
@@ -487,18 +509,18 @@ int main(int argc, char *argv[]) {
 
         }
 
-        for (int j = 0; j < to_delete.size(); j++) {
-            repeat_anno[i].erase(repeat_anno[i].begin()+to_delete[j]);
-        }
+        /*for (int j = 0; j < to_delete.size(); j++) {
+            repeat_annotation[i].erase(repeat_annotation[i].begin()+to_delete[j]);
+        }*/
 
         if (not active) {
             //printf("read %d comes from homologus recombination\n", i);
             homo << i << std::endl;
         }
 
-        if (repeat_anno[i].size() > 0)
-        if (repeat_anno[i].back().second == 1)
-            rep << repeat_anno[i].back().first<<" " << -1 << " ";
+        if (repeat_annotation[i].size() > 0)
+        if (repeat_annotation[i].back().second == 1)
+            rep << repeat_annotation[i].back().first<<" " << -1 << " ";
         rep << std::endl;
     }
     // need a better hinge detection
@@ -510,13 +532,13 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         hinges[i] = std::vector<std::pair<int, int>>();
 
-        for (int j = 0; j < repeat_anno[i].size(); j++) {
-            if (repeat_anno[i][j].second == -1) { // look for in hinges, negative gradient
+        for (int j = 0; j < repeat_annotation[i].size(); j++) {
+            if (repeat_annotation[i][j].second == -1) { // look for in hinges, negative gradient
                 bool bridged = true;
                 int support = 0;
                 for (int k = 0; k < idx2[i].size(); k++) {
-                    //printf("%d %d %d %d\n", idx3[i][k]->read_A_match_start_, idx3[i][k]->read_A_match_end_, maskvec[i].first, repeat_anno[i][j].first);
-                    if (/*(idx2[i][k]->read_A_match_start_ < maskvec[i].first + 300) and */(idx2[i][k]->read_A_match_end_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_end_ < repeat_anno[i][j].first + 300)) {
+                    //printf("%d %d %d %d\n", idx3[i][k]->read_A_match_start_, idx3[i][k]->read_A_match_end_, maskvec[i].first, repeat_annotation[i][j].first);
+                    if (/*(idx2[i][k]->read_A_match_start_ < maskvec[i].first + 300) and */(idx2[i][k]->read_A_match_end_ > repeat_annotation[i][j].first - 300) and (idx2[i][k]->read_A_match_end_ < repeat_annotation[i][j].first + 300)) {
                         support ++;
                         if (support > 7) {
                             bridged = false;
@@ -524,13 +546,13 @@ int main(int argc, char *argv[]) {
                         }
                     }
                 }
-                if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_anno[i][j].first,-1));
+                if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first,-1));
 
             } else { // look for out_hinges, positive gradient
                 bool bridged = true;
                 int support = 0;
                 for (int k = 0; k < idx2[i].size(); k++) {
-                    if ((idx2[i][k]->read_A_match_start_ > repeat_anno[i][j].first - 300) and (idx2[i][k]->read_A_match_start_ < repeat_anno[i][j].first + 300)/* and (idx2[i][k]->read_A_match_end_ > maskvec[i].second - 300)*/) {
+                    if ((idx2[i][k]->read_A_match_start_ > repeat_annotation[i][j].first - 300) and (idx2[i][k]->read_A_match_start_ < repeat_annotation[i][j].first + 300)/* and (idx2[i][k]->read_A_match_end_ > maskvec[i].second - 300)*/) {
                         support ++;
                         if (support > 7) { // heuristic here
                             bridged = false;
@@ -538,7 +560,7 @@ int main(int argc, char *argv[]) {
                         }
                     }
                 }
-                if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_anno[i][j].first, 1));
+                if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first, 1));
 
             }
         }
