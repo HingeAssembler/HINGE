@@ -441,6 +441,7 @@ int main(int argc, char *argv[]) {
         //get the interestion of two masks
     }
 
+    std::cout << "for done"<<std::endl;
     FILE* temp_out1;
     FILE* temp_out2;
     temp_out1=fopen("coverage.debug.txt","w");
@@ -512,15 +513,15 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    temp_out1=fopen("repeat_anno.debug.txt","w");
-    for (int i = 0; i < n_read; i++) {
-        fprintf(temp_out1,"%d \t%d\t",i,repeat_anno[i].size());
-        for (std::vector<std::pair<int, int> >::iterator iter = repeat_anno[i].begin(); iter < repeat_anno[i].end();iter++) {
-            fprintf(temp_out1,"%d:%d\t",iter->first,iter->second);
-        }
-        fprintf(temp_out1,"\n");
-    }
-    fclose(temp_out1);
+//    temp_out1=fopen("repeat_anno.debug.txt","w");
+//    for (int i = 0; i < n_read; i++) {
+//        fprintf(temp_out1,"%d \t%d\t",i,repeat_anno[i].size());
+//        for (std::vector<std::pair<int, int> >::iterator iter = repeat_anno[i].begin(); iter < repeat_anno[i].end();iter++) {
+//            fprintf(temp_out1,"%d:%d\t",iter->first,iter->second);
+//        }
+//        fprintf(temp_out1,"\n");
+//    }
+//    fclose(temp_out1);
 
     temp_out1=fopen("repeat_anno.debug.txt","w");
     for (int i = 0; i < n_read; i++) {
@@ -538,11 +539,12 @@ int main(int argc, char *argv[]) {
     // n_read pos -1 = in_hinge 1 = out_hinge
 
     for (int i = 0; i < n_read; i++) {
+        std::cout << i <<std::endl;
         hinges[i] = std::vector<std::pair<int, int>>();
-        if (i==3381){
-            std::cout << repeat_anno[i][0].first << "\t" << repeat_anno[i][0].second << "\n"
-                    << repeat_anno[i][1].first << "\t" << repeat_anno[i][1].second << std::endl;
-        }
+//        if (i==3381){
+//            std::cout << repeat_anno[i][0].first << "\t" << repeat_anno[i][0].second << "\n"
+//                    << repeat_anno[i][1].first << "\t" << repeat_anno[i][1].second << std::endl;
+//        }
         for (int j = 0; j < repeat_anno[i].size(); j++) {
             if (repeat_anno[i][j].second == -1) { // look for in hinges, negative gradient
                 bool bridged = true;
@@ -576,9 +578,9 @@ int main(int argc, char *argv[]) {
                     //else
                         //break;
                 }
-                if (i==3381){
-                    std::cout << num_reads_at_end << std::endl;
-                }
+//                if (i==3381){
+//                    std::cout << num_reads_at_end << std::endl;
+//                }
                 //std::cout <<"NUM READS at end " <<num_reads_at_end<<
                   //      " Hinge " << repeat_anno[i][j].second <<"\n-----------------------------------------------\n";
 
@@ -607,11 +609,11 @@ int main(int argc, char *argv[]) {
                 int start_point=0;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
 
-                if (i==3381){
-                    for (int l=0; l< read_other_ends.size(); l++)
-                        std::cout << repeat_anno[i][j].first << "\t" << repeat_anno[i][j].second << "\t"
-                        << read_other_ends[l] << std::endl;
-                }
+//                if (i==3381){
+//                    for (int l=0; l< read_other_ends.size(); l++)
+//                        std::cout << repeat_anno[i][j].first << "\t" << repeat_anno[i][j].second << "\t"
+//                        << read_other_ends[l] << std::endl;
+//                }
 
                 for (int index=1; index<read_other_ends.size(); index++) {
                     //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
@@ -629,9 +631,9 @@ int main(int argc, char *argv[]) {
                     bridged = false;
                     //std::cout << "setting out hinge bridged to false"<<std::endl;
                 }
-                if (i==3381){
-                    std::cout << num_reads_at_end << std::endl;
-                }
+//                if (i==3381){
+//                    std::cout << num_reads_at_end << std::endl;
+//                }
                 if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_anno[i][j].first, 1));
 
             }
