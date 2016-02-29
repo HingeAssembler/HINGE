@@ -145,30 +145,44 @@ def run(filename, gt_file, n_iter):
         degree_sequence=sorted(nx.degree(g).values(),reverse=True)
         print Counter(degree_sequence)
     
+    h=nx.DiGraph()
+    h.add_nodes_from(g)
+    h.add_edges_from(g)
+    for node in g.nodes():
+        h.node[node]['count']=g.node[node]['count']
+        h.node[node]['chr']=g.node[node]['chr']
+        try:
+            h.node[node]['read']=g.node[node]['read']
+        else:
+            pass
+
+
     try:
         import ujson
         mapping = ujson.load(open(filename.split('.')[0]+'.mapping.json'))
         
         print 'get mapping'
         
-        for node in g.nodes():
+        for node in h.nodes():
             #print node
             if mapping.has_key(node):
-                g.node[node]['aln_start'] = mapping[node][0]
-                g.node[node]['aln_end'] = mapping[node][1]
-                g.node[node]['aln_strand'] = mapping[node][2]
+                h.node[node]['aln_start'] = mapping[node][0]
+                h.node[node]['aln_end'] = mapping[node][1]
+                h.node[node]['aln_strand'] = mapping[node][2]
             else:
-                g.node[node]['aln_start'] = 0
-                g.node[node]['aln_end'] = 0
-                g.node[node]['aln_strand'] = 0
+                h.node[node]['aln_start'] = 0
+                h.node[node]['aln_end'] = 0
+                h.node[node]['aln_strand'] = 0
                 
     except:
         pass        
+
+
     
-    nx.write_graphml(g, filename.split('.')[0]+'_condensed.graphml')
+    nx.write_graphml(h, filename.split('.')[0]+'_condensed.graphml')
     
-    print nx.number_weakly_connected_components(g)
-    print nx.number_strongly_connected_components(g)
+    print nx.number_weakly_connected_components(h)
+    print nx.number_strongly_connected_components(h)
     
 #
 
