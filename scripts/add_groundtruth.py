@@ -45,12 +45,12 @@ for node in g.nodes():
             g.node[node]['chromosome'] = mapping_dict[nodeid][2]+1
         
         if rev == 0:
-            g.node[node]['aln_end'] =  mapping_dict[nodeid][2]*max_len+ mapping_dict[nodeid][1]
-            g.node[node]['aln_start'] = mapping_dict[nodeid][2]*max_len + mapping_dict[nodeid][0]
+            g.node[node]['aln_end'] =  mapping_dict[nodeid][2]*pow_mov+ mapping_dict[nodeid][1]
+            g.node[node]['aln_start'] = mapping_dict[nodeid][2]*pow_mov + mapping_dict[nodeid][0]
             # g.node[node]['aln_strand'] = mapping_dict[nodeid][2]
         else:
-            g.node[node]['aln_end'] = mapping_dict[nodeid][2]*max_len + mapping_dict[nodeid][1]
-            g.node[node]['aln_start'] = mapping_dict[nodeid][2]*max_len+ mapping_dict[nodeid][0]
+            g.node[node]['aln_end'] = mapping_dict[nodeid][2]*pow_mov + mapping_dict[nodeid][1]
+            g.node[node]['aln_start'] = mapping_dict[nodeid][2]*pow_mov+ mapping_dict[nodeid][0]
             # g.node[node]['aln_strand'] = 1-mapping_dict[nodeid][2]
             
     except:
