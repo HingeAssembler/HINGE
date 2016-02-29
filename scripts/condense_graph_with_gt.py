@@ -147,13 +147,13 @@ def run(filename, gt_file, n_iter):
     
     h=nx.DiGraph()
     h.add_nodes_from(g)
-    h.add_edges_from(g)
+    h.add_edges_from(g.edges())
     for node in g.nodes():
         h.node[node]['count']=g.node[node]['count']
         h.node[node]['chr']=g.node[node]['chr']
         try:
             h.node[node]['read']=g.node[node]['read']
-        else:
+        except:
             pass
 
 
