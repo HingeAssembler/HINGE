@@ -31,7 +31,7 @@ def merge_two_nodes(g):
                     g.add_node(str(node_id), 
                         chr=g.node[node]['chr'],
                         count = g.node[in_node]['count'] + g.node[node]['count'],
-                        #read = g.node[in_node]['read'] + '_' + g.node[node]['read'],
+                        read = g.node[in_node]['read'] + '_' + g.node[node]['read'],
                         #aln_chr = g.node[node]['aln_chr']
                         )
                     g.remove_node(in_node)
@@ -52,7 +52,7 @@ def merge_path(g,in_node,node,out_node):
     g.add_node(str(node_id), 
         chr=g.node[node]['chr'],
         count = g.node[in_node]['count'] + g.node[node]['count'] + g.node[out_node]['count'],
-        #read = g.node[in_node]['read'] + '_' +  g.node[node]['read'] + '_' +g.node[out_node]['read'],
+        read = g.node[in_node]['read'] + '_' +  g.node[node]['read'] + '_' +g.node[out_node]['read'],
         #aln_chr = g.node[node]['aln_chr']
     )
     #g.add_node(str(node_id)+'-', bases = reverse_comp_bases(bases), length = length, cov = cov)
@@ -119,7 +119,7 @@ def run(filename, gt_file, n_iter):
 
         g.node[node]['count'] = 1
         g.node[node]['chr']=mapping_dict[nodeid]
-        #g.node[node]['read'] = node
+        g.node[node]['read'] = node
         #print str(nodeid), node,g.node[node]['chr']
         
         
