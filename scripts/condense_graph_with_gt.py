@@ -71,7 +71,7 @@ def merge_path(g,in_node,node,out_node):
     
 def input1(flname):
     g = nx.DiGraph()
-    with open (filename) as f:
+    with open (flname) as f:
         for lines in f:
             lines1=lines.split()
             #print lines1
@@ -84,7 +84,7 @@ def input1(flname):
             
 def input2(flname):
     g = nx.DiGraph()
-    with open (filename) as f:
+    with open (flname) as f:
         for lines in f:
             lines1=lines.split()
             #print lines1
