@@ -22,6 +22,11 @@
 #define REVERSE_COMPLEMENT_MATCH 1
 #define SAME_DIRECTION_MATCH 0
 
+
+
+#define HINGE_SLACK 600
+
+
 typedef std::tuple<Node, Node, int> Edge_w;
 
 typedef std::pair<Node, Node> Edge_nw;
@@ -848,7 +853,10 @@ int main(int argc, char *argv[]) {
                         //if (forward < 1) {
                             //remove certain hinges
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((matches_forward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos + 40)
+                                if ( ( ((matches_forward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos + 40) and
+                                        (matches_forward[i][j]->match_type_ == FORWARD_INTERNAL))
+                                    or ((matches_forward[i][j]->eff_read_A_match_start_ < hinges_vec[i][k].pos - 40) and
+                                        (matches_forward[i][j]->match_type_ == FORWARD)) )
                                     and (hinges_vec[i][k].type == 1))
                                 {
                                     hinges_vec[i][k].active = false;
@@ -897,7 +905,10 @@ int main(int argc, char *argv[]) {
                        // if (backward < 1) {
                             //remove certain hinges
                             for (int k = 0; k < hinges_vec[i].size(); k++) {
-                                if ((matches_backward[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos - 40)
+                                if ( ( ((matches_backward[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos - 40) and
+                                            (matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)) or
+                                       ((matches_backward[i][j]->eff_read_A_match_end_ > hinges_vec[i][k].pos + 40) and
+                                            (matches_backward[i][j]->match_type_ == BACKWARD))  )
                                     and (hinges_vec[i][k].type == -1))
                                 {
                                     hinges_vec[i][k].active = false;
@@ -1149,75 +1160,110 @@ int main(int argc, char *argv[]) {
         if (reads[i]->active) {
 
             int forward = 0;
+            int forward_internal = 0;
             int backward = 0;
+            int backward_internal = 0;
+
+            LOverlap * chosen_match = NULL;
+
             for (int j = 0; j < matches_forward[i].size(); j++){
+
+
                 if (matches_forward[i][j]->active) {
 
 
-                    if ((reads[matches_forward[i][j]->read_B_id_]->active) and (forward == 0)) {
+                    if ((reads[matches_forward[i][j]->read_B_id_]->active)) { // and (forward == 0)) {
                         //printf("hinge size %d\n", hinges_vec[matches_forward[i][j]->read_B_id_].size());
 
-                        if ((matches_forward[i][j]->match_type_ == FORWARD)){
-                            //fprintf(out3,"Printed from forward\n");
-                            PrintOverlapToFile(out3,matches_forward[i][j]);
-                            edges_forward[i].push_back(matches_forward[i][j]);
+                        if ((matches_forward[i][j]->match_type_ == FORWARD) and (forward == 0)) {
+//                            fprintf(out3,"Printed from forward\n");
+//                            PrintOverlapToFile(out3,matches_forward[i][j]);
+//                            edges_forward[i].push_back(matches_forward[i][j]);
+
+                            chosen_match = matches_forward[i][j];
+
                             forward = 1;
                             //break;
 
                         }
                         else if ((matches_forward[i][j]->match_type_ == FORWARD_INTERNAL)
                                 //and isValidHinge(matches_forward[i][j], hinges_vec[matches_forward[i][j]->read_B_id_])
-                                  and (hinges_vec[matches_forward[i][j]->read_B_id_].size() > 0)){
+                                  and (hinges_vec[matches_forward[i][j]->read_B_id_].size() > 0)
+                                    and (forward_internal == 0)){
 
                             // In the case of a forward_internal match we check whether the hinge on read B is an in-hinge
                             // (or an out-hinge if it's a reverse complement match)
 
                             if ((hinges_vec[matches_forward[i][j]->read_B_id_][0].type == (1-2*matches_forward[i][j]->reverse_complement_match_) )
                                 and (hinges_vec[matches_forward[i][j]->read_B_id_][0].active)) {
-                                fprintf(out3, "Printed from forward internal\n");
-                                PrintOverlapToFile(out3, matches_forward[i][j]);
-                                PrintOverlapToFile(out4, matches_forward[i][j]);
-                                edges_forward[i].push_back(matches_forward[i][j]);
+//                                fprintf(out3, "Printed from forward internal\n");
+//                                PrintOverlapToFile(out3, matches_forward[i][j]);
+
+//                                edges_forward[i].push_back(matches_forward[i][j]);
                                 //break;
 
-                                forward = 1;
+                                if ((forward == 0) || (matches_forward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
+
+//                                    printf("Got in here with B=%d\n",matches_forward[i][j]->read_B_id_);
+//                                    PrintOverlapToFile(out4, matches_forward[i][j]);
+
+                                    chosen_match = matches_forward[i][j];
+                                    forward = 1;
+                                    forward_internal = 1;
+                                }
 
                             }
                         }
                     }
                 }
             }
+
+            if (chosen_match != NULL) {
+                PrintOverlapToFile(out3,chosen_match);
+                edges_forward[i].push_back(chosen_match);
+                chosen_match = NULL;
+            }
+
             for (int j = 0; j < matches_backward[i].size(); j++){
                 if (matches_backward[i][j]->active) {
-                    if ((reads[matches_backward[i][j]->read_B_id_]->active)and (backward == 0)) {
+                    if ((reads[matches_backward[i][j]->read_B_id_]->active)) { // and (backward == 0)) {
 
                         //printf("hinge size %d\n", hinges_vec[matches_backward[i][j]->read_B_id_].size());
 
 
-                        if ((matches_backward[i][j]->match_type_ == BACKWARD) ){
+                        if ((matches_backward[i][j]->match_type_ == BACKWARD) and (backward == 0)){
                             //fprintf(out3,"Printed from backward\n");
-                            PrintOverlapToFile(out3,matches_backward[i][j]);
-                            edges_backward[i].push_back(matches_backward[i][j]);
+//                            PrintOverlapToFile(out3,matches_backward[i][j]);
+//                            edges_backward[i].push_back(matches_backward[i][j]);
+                            chosen_match = matches_backward[i][j];
                             backward = 1;
                             //break;
 
                         }
                         else if ((matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)
                                   //and isValidHinge(matches_backward[i][j], hinges_vec[matches_backward[i][j]->read_B_id_])
-                                and (hinges_vec[matches_backward[i][j]->read_B_id_].size() > 0)) {
+                                and (hinges_vec[matches_backward[i][j]->read_B_id_].size() > 0)
+                                    and (backward_internal == 0)) {
 
                             // In the case of a backward_internal match we check whether the hinge on read B is an in-hinge
                             // (or an in-hinge if it's a reverse complement match)
 
                             if ((hinges_vec[matches_backward[i][j]->read_B_id_][0].type == (-1 + 2*matches_backward[i][j]->reverse_complement_match_) )
                                     and (hinges_vec[matches_backward[i][j]->read_B_id_][0].active)) {
-                                fprintf(out3, "Printed from backward internal\n");
-                                PrintOverlapToFile(out3, matches_backward[i][j]);
-                                PrintOverlapToFile(out4, matches_backward[i][j]);
-                                edges_backward[i].push_back(matches_backward[i][j]);
+//                                fprintf(out3, "Printed from backward internal\n");
+//                                PrintOverlapToFile(out3, matches_backward[i][j]);
+//                                PrintOverlapToFile(out4, matches_backward[i][j]);
+//                                edges_backward[i].push_back(matches_backward[i][j]);
                                 //break;
 
-                                backward = 1;
+                                if ((backward == 0) || (matches_backward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
+
+//                                    PrintOverlapToFile(out4, matches_backward[i][j]);
+
+                                    chosen_match = matches_backward[i][j];
+                                    backward = 1;
+                                    backward_internal = 1;
+                                }
 
                             }
 
@@ -1225,85 +1271,91 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }
-        }
-    }
 
-
-    // Find intersection forward edges
-    // For each edge in edges_forward, push it into intersection_edges_forward if:
-    // - It ends in a hinge, or
-    // - It doesn't end in a hinge, but it is picked as a reverse edges as well
-    for (int i=0; i < edges_forward.size(); i++) {
-        if (edges_forward[i].size() > 0) {  // size should be either zero or one
-            if (edges_forward[i][0]->match_type_ == FORWARD_INTERNAL) {
-                intersection_edges_forward[i].push_back(edges_forward[i][0]);
-                //PrintOverlapToFile(out4,edges_forward[i][0]);
+            if (chosen_match != NULL) {
+                PrintOverlapToFile(out3,chosen_match);
+                edges_backward[i].push_back(chosen_match);
             }
-                else { // match_type_ should be FORWARD
 
-                int read_B_id = edges_forward[i][0]->read_B_id_;
-
-                if (edges_forward[i][0]->reverse_complement_match_ != 1) {
-                    if (edges_backward[read_B_id].size() > 0) {
-                        if ((edges_backward[read_B_id][0]->match_type_ == BACKWARD) and
-                                (edges_backward[read_B_id][0]->read_B_id_ == i)) {
-                            PrintOverlapToFile(out4,edges_forward[i][0]);
-                            intersection_edges_forward[i].push_back(edges_forward[i][0]);
-                        }
-                    }
-                }
-                else { // reverse complement match
-                    if (edges_forward[read_B_id].size() > 0) {
-                        if ((edges_forward[read_B_id][0]->match_type_ == FORWARD) and
-                                (edges_forward[read_B_id][0]->read_B_id_ == i)) {
-                            PrintOverlapToFile(out4,edges_forward[i][0]);
-                            intersection_edges_forward[i].push_back(edges_forward[i][0]);
-                        }
-                    }
-                }
-            }
         }
     }
 
 
 
+// No need for intersection anymore.
 
-    // Find intersection backward edges
-    // For each edge in edges_forward, push it into intersection_edges_forward if:
-    // - It ends in a hinge, or
-    // - It doesn't end in a hinge, but it is picked as a reverse edges as well
-    for (int i=0; i < edges_backward.size(); i++) {
-        if (edges_backward[i].size() > 0) {  // size should be either zero or one
-            if (edges_backward[i][0]->match_type_ == BACKWARD_INTERNAL) {
-                intersection_edges_backward[i].push_back(edges_backward[i][0]);
-                //PrintOverlapToFile(out4,edges_backward[i][0]);
-            }
-            else { // match_type_ should be FORWARD
-
-                int read_B_id = edges_backward[i][0]->read_B_id_;
-
-                if (edges_backward[i][0]->reverse_complement_match_ != 1) {
-                    if (edges_forward[read_B_id].size() > 0) {
-                        if ((edges_forward[read_B_id][0]->match_type_ == FORWARD) and
-                                (edges_forward[read_B_id][0]->read_B_id_ == i)) {
-                            PrintOverlapToFile(out4,edges_backward[i][0]);
-                            intersection_edges_backward[i].push_back(edges_backward[i][0]);
-                        }
-                    }
-                }
-                else { // reverse complement match
-                    if (edges_backward[read_B_id].size() > 0) {
-                        if ((edges_backward[read_B_id][0]->match_type_ == BACKWARD) and
-                                (edges_backward[read_B_id][0]->read_B_id_ == i)) {
-                            PrintOverlapToFile(out4,edges_backward[i][0]);
-                            intersection_edges_backward[i].push_back(edges_backward[i][0]);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+//    // Find intersection forward edges
+//    // For each edge in edges_forward, push it into intersection_edges_forward if:
+//    // - It ends in a hinge, or
+//    // - It doesn't end in a hinge, but it is picked as a reverse edges as well
+//    for (int i=0; i < edges_forward.size(); i++) {
+//        if (edges_forward[i].size() > 0) {  // size should be either zero or one
+//            if (edges_forward[i][0]->match_type_ == FORWARD_INTERNAL) {
+//                intersection_edges_forward[i].push_back(edges_forward[i][0]);
+//                //PrintOverlapToFile(out4,edges_forward[i][0]);
+//            }
+//                else { // match_type_ should be FORWARD
+//
+//                int read_B_id = edges_forward[i][0]->read_B_id_;
+//
+//                if (edges_forward[i][0]->reverse_complement_match_ != 1) {
+//                    if (edges_backward[read_B_id].size() > 0) {
+//                        if ((edges_backward[read_B_id][0]->match_type_ == BACKWARD) and
+//                                (edges_backward[read_B_id][0]->read_B_id_ == i)) {
+//                            PrintOverlapToFile(out4,edges_forward[i][0]);
+//                            intersection_edges_forward[i].push_back(edges_forward[i][0]);
+//                        }
+//                    }
+//                }
+//                else { // reverse complement match
+//                    if (edges_forward[read_B_id].size() > 0) {
+//                        if ((edges_forward[read_B_id][0]->match_type_ == FORWARD) and
+//                                (edges_forward[read_B_id][0]->read_B_id_ == i)) {
+//                            PrintOverlapToFile(out4,edges_forward[i][0]);
+//                            intersection_edges_forward[i].push_back(edges_forward[i][0]);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//
+//
+//    // Find intersection backward edges
+//    // For each edge in edges_forward, push it into intersection_edges_forward if:
+//    // - It ends in a hinge, or
+//    // - It doesn't end in a hinge, but it is picked as a reverse edges as well
+//    for (int i=0; i < edges_backward.size(); i++) {
+//        if (edges_backward[i].size() > 0) {  // size should be either zero or one
+//            if (edges_backward[i][0]->match_type_ == BACKWARD_INTERNAL) {
+//                intersection_edges_backward[i].push_back(edges_backward[i][0]);
+//                //PrintOverlapToFile(out4,edges_backward[i][0]);
+//            }
+//            else { // match_type_ should be FORWARD
+//
+//                int read_B_id = edges_backward[i][0]->read_B_id_;
+//
+//                if (edges_backward[i][0]->reverse_complement_match_ != 1) {
+//                    if (edges_forward[read_B_id].size() > 0) {
+//                        if ((edges_forward[read_B_id][0]->match_type_ == FORWARD) and
+//                                (edges_forward[read_B_id][0]->read_B_id_ == i)) {
+//                            PrintOverlapToFile(out4,edges_backward[i][0]);
+//                            intersection_edges_backward[i].push_back(edges_backward[i][0]);
+//                        }
+//                    }
+//                }
+//                else { // reverse complement match
+//                    if (edges_backward[read_B_id].size() > 0) {
+//                        if ((edges_backward[read_B_id][0]->match_type_ == BACKWARD) and
+//                                (edges_backward[read_B_id][0]->read_B_id_ == i)) {
+//                            PrintOverlapToFile(out4,edges_backward[i][0]);
+//                            intersection_edges_backward[i].push_back(edges_backward[i][0]);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
 
 
     std::cout<<"sort and output finished" <<std::endl;

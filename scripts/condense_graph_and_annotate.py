@@ -4,6 +4,8 @@ import networkx as nx
 import sys
 from collections import Counter
 
+
+
 def merge_simple_path(g):
     for node in g.nodes():
         #print g.in_degree(node), g.out_degree(node)
@@ -13,7 +15,6 @@ def merge_simple_path(g):
             out_node = g.out_edges(node)[0][1]
             if g.out_degree(in_node) == 1 and g.in_degree(out_node) == 1:
                 if in_node != node and out_node != node and in_node != out_node:
-                    #print in_node, node, out_node
                     merge_path(g,in_node,node,out_node)
                     
                               
@@ -27,7 +28,7 @@ def merge_two_nodes(g):
                     g.graph['aval'] += 1
                     g.add_node(str(node_id), 
                         count = g.node[in_node]['count'] + g.node[node]['count'],
-                        read = g.node[in_node]['read'] + '_' + g.node[node]['read'],
+                        read = g.node[in_node]['read'] + ':' + g.node[node]['read'],
                         #aln_chr = g.node[node]['aln_chr']
                         )
                     g.remove_node(in_node)
@@ -47,11 +48,12 @@ def merge_path(g,in_node,node,out_node):
     
     g.add_node(str(node_id), 
         count = g.node[in_node]['count'] + g.node[node]['count'] + g.node[out_node]['count'],
-        read = g.node[in_node]['read'] + '_' +  g.node[node]['read'] + '_' +g.node[out_node]['read'],
+        read = g.node[in_node]['read'] + ':' +  g.node[node]['read'] + ':' +g.node[out_node]['read'],
         #aln_chr = g.node[node]['aln_chr']
     )
     #g.add_node(str(node_id)+'-', bases = reverse_comp_bases(bases), length = length, cov = cov)
-    
+    #print g.node[str(node_id)]['chr']
+
     for edge in g.in_edges(in_node):
         g.add_edge(edge[0],str(node_id))
     
@@ -85,7 +87,7 @@ def input2(flname):
             g.add_edge(lines1[0], lines1[1])   
     return g
 
-def run(filename, n_iter):
+def run(filename, gt_file, n_iter):
     
     
     f=open(filename)
@@ -93,18 +95,26 @@ def run(filename, n_iter):
     print line1
     f.close()
     if len(line1.split()) !=2:
-	g=input1(filename)
+	   g=input1(filename)
     else:
-	g=input2(filename)
+	   g=input2(filename)
     
+    read_to_chr_map={}
+
+    with open(gt_file,'r') as f:
+        for num, line in enumerate(f.readlines()):
+            m = map(int, line.strip().split())
+            read_to_chr_map[m[0]]=m[1]   
     
-    
-    print nx.info(g)
-    
+    #print nx.info(g)
+    print "Num reads read : "+str(len(read_to_chr_map))
     
     for node in g.nodes():
+        nodeid=int(node.split('_')[0])
+
         g.node[node]['count'] = 1
         g.node[node]['read'] = node
+        #print str(nodeid), node,g.node[node]['chr']
         
         
     degree_sequence=sorted(g.degree().values(),reverse=True)
@@ -129,31 +139,58 @@ def run(filename, n_iter):
         degree_sequence=sorted(nx.degree(g).values(),reverse=True)
         print Counter(degree_sequence)
     
+    h=nx.DiGraph()
+    h.add_nodes_from(g)
+    h.add_edges_from(g.edges())
+    for node in g.nodes():
+        reads_in_node=[int(x.split('_')[0]) for x in g.node[node]['read'].split(':')]
+        try:
+            chr_in_node=map(lambda x: read_to_chr_map[x], reads_in_node)
+        except:
+            print reads_in_node,g.node[node]['read']
+            return
+        chr_in_node_set=set(chr_in_node)
+        if len(chr_in_node_set) ==1:
+            h.node[node]['chr']=chr_in_node[0]
+        else:
+            h.node[node]['chr']=':'.join(chr_in_node)
+
+        h.node[node]['count']=g.node[node]['count']
+        try:
+            h.node[node]['read']=g.node[node]['read']
+        except:
+            pass
+
+
     try:
         import ujson
         mapping = ujson.load(open(filename.split('.')[0]+'.mapping.json'))
         
         print 'get mapping'
         
-        for node in g.nodes():
+        for node in h.nodes():
             #print node
             if mapping.has_key(node):
-                g.node[node]['aln_start'] = mapping[node][0]
-                g.node[node]['aln_end'] = mapping[node][1]
-                g.node[node]['aln_strand'] = mapping[node][2]
+                h.node[node]['aln_start'] = mapping[node][0]
+                h.node[node]['aln_end'] = mapping[node][1]
+                h.node[node]['aln_strand'] = mapping[node][2]
             else:
-                g.node[node]['aln_start'] = 0
-                g.node[node]['aln_end'] = 0
-                g.node[node]['aln_strand'] = 0
+                h.node[node]['aln_start'] = 0
+                h.node[node]['aln_end'] = 0
+                h.node[node]['aln_strand'] = 0
                 
     except:
         pass        
+
+
     
-    nx.write_graphml(g, filename.split('.')[0]+'_condensed.graphml')
+    nx.write_graphml(h, filename.split('.')[0]+'_condensed_annotated.graphml')
     
-    print nx.number_weakly_connected_components(g)
-    print nx.number_strongly_connected_components(g)
+    print nx.number_weakly_connected_components(h)
+    print nx.number_strongly_connected_components(h)
     
-    
+#
+
 filename = sys.argv[1]
-run(filename, 5)
+gt_file=sys.argv[2]
+run(filename, gt_file,5)
