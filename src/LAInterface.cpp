@@ -1495,10 +1495,18 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
         new_ovl->read_B_id_ = ovl->bread;
         new_ovl->read_A_match_start_ = ovl->path.abpos;
 		new_ovl->read_A_match_end_ = ovl->path.aepos;
-        new_ovl->read_B_match_start_ = ovl->path.bbpos;
-        new_ovl->read_B_match_end_ = ovl->path.bepos;
         new_ovl->alen = aln->alen;
         new_ovl->blen = aln->blen;
+
+        if (new_ovl->reverse_complement_match_ == 0) {
+            new_ovl->read_B_match_start_ = ovl->path.bbpos;
+            new_ovl->read_B_match_end_ = ovl->path.bepos;
+        }
+        else {
+            new_ovl->read_B_match_start_ = new_ovl->blen - ovl->path.bepos;
+            new_ovl->read_B_match_end_ = new_ovl->blen - ovl->path.bbpos;
+        }
+
         new_ovl->diffs = ovl->path.diffs;
         new_ovl->tlen = ovl->path.tlen;
         new_ovl->tps = tps;
@@ -4485,7 +4493,16 @@ void LOverlap::trim_overlap() {
 
 
     std::vector<std::pair<int,int> > trace_points;
-    trace_points.push_back(std::pair<int,int>(this->read_A_match_start_, this->read_B_match_start_));
+
+    if (this->reverse_complement_match_ == 0) {
+        trace_points.push_back(std::pair<int,int>(this->read_A_match_start_, this->read_B_match_start_));
+    }
+    else {
+        trace_points.push_back(std::pair<int,int>(this->read_A_match_start_, this->read_B_match_end_));
+    }
+
+    int rev_sign = 1 - 2*this->reverse_complement_match_;
+
     int current_position_read_A = this->read_A_match_start_;
     // this for loop change trace points stored trace_pts[] into coordinate pairs vector: tps
     for (int j = 0; j < this->trace_pts_len/2-1; j++) {
@@ -4494,10 +4511,14 @@ void LOverlap::trim_overlap() {
         else
             current_position_read_A += 100;
         trace_points.push_back(std::pair<int,int>(current_position_read_A,
-                                                  trace_points.back().second + this->trace_pts[2 * j + 1]));
+                                                  trace_points.back().second + rev_sign * this->trace_pts[2 * j + 1]));
     }
-    trace_points.push_back(std::pair<int,int>(this->read_A_match_end_, this->read_B_match_end_));
-
+    if (this->reverse_complement_match_ == 0) {
+        trace_points.push_back(std::pair<int, int>(this->read_A_match_end_, this->read_B_match_end_));
+    }
+    else {
+        trace_points.push_back(std::pair<int, int>(this->read_A_match_end_, this->read_B_match_start_));
+    }
 
 
     //printf("[%6d %6d] [%6d %6d]\n", this->eff_read_A_start_, this->eff_read_A_end_, this->eff_read_B_start_, this->eff_read_B_end_);
@@ -4515,25 +4536,56 @@ void LOverlap::trim_overlap() {
     this->eff_start_trace_point_index_ = trace_points.size();
     this->eff_end_trace_point_index_ = 0;
 
-    //for trace point pairs, get the first one that is in untrimmed regions for both reads
-    for (int i = 0; i< trace_points.size(); i++) {
-        if ((trace_points[i].first >= this->eff_read_A_start_) and
-                (trace_points[i].second >= this->eff_read_B_start_)) {
-            this->eff_read_A_match_start_ = trace_points[i].first;
-            this->eff_read_B_match_start_ = trace_points[i].second;
-            this->eff_start_trace_point_index_ = i;
-            break;
-        }
-    }
 
-    //for trace point pairs, get the last one that is in untrimmed regions for both reads
-    for (int i= (int) trace_points.size() - 1; i >= 0; i--) {
-        if ((trace_points[i].first <= this->eff_read_A_end_) and (trace_points[i].second <= this->eff_read_B_end_)) {
-            this->eff_read_A_match_end_ = trace_points[i].first;
-            this->eff_read_B_match_end_ = trace_points[i].second;
-            this->eff_end_trace_point_index_ = i;
-            break;
+
+    if (this->reverse_complement_match_ == 0) {
+
+        //for trace point pairs, get the first one that is in untrimmed regions for both reads
+
+        for (int i = 0; i < trace_points.size(); i++) {
+            if ( (trace_points[i].first >= this->eff_read_A_start_) and
+                (trace_points[i].second >= this->eff_read_B_start_) ) {
+                this->eff_read_A_match_start_ = trace_points[i].first;
+                this->eff_read_B_match_start_ = trace_points[i].second;
+                this->eff_start_trace_point_index_ = i;
+                break;
+            }
         }
+
+        //for trace point pairs, get the last one that is in untrimmed regions for both reads
+        for (int i = (int) trace_points.size() - 1; i >= 0; i--) {
+            if ((trace_points[i].first <= this->eff_read_A_end_) and
+                (trace_points[i].second <= this->eff_read_B_end_)) {
+                this->eff_read_A_match_end_ = trace_points[i].first;
+                this->eff_read_B_match_end_ = trace_points[i].second;
+                this->eff_end_trace_point_index_ = i;
+                break;
+            }
+        }
+
+    }
+    else {
+
+        for (int i = 0; i < trace_points.size(); i++) {
+            if ( (trace_points[i].first >= this->eff_read_A_start_) and
+                 (trace_points[i].second <= this->eff_read_B_end_) ) {
+                this->eff_read_A_match_start_ = trace_points[i].first;
+                this->eff_read_B_match_end_ = trace_points[i].second;
+                this->eff_start_trace_point_index_ = i; // "start" with respect to A
+                break;
+            }
+        }
+
+        for (int i = (int) trace_points.size() - 1; i >= 0; i--) {
+            if ((trace_points[i].first <= this->eff_read_A_end_) and
+                (trace_points[i].second >= this->eff_read_B_start_)) {
+                this->eff_read_A_match_end_ = trace_points[i].first;
+                this->eff_read_B_match_start_ = trace_points[i].second;
+                this->eff_end_trace_point_index_ = i;
+                break;
+            }
+        }
+
     }
 
     if (this->eff_start_trace_point_index_ >= this->eff_end_trace_point_index_)
@@ -4563,6 +4615,9 @@ void LOverlap::TrimOverlapNaive(){
     this->eff_read_A_match_start_ = std::max (this->read_A_match_start_,this->eff_read_A_start_);
     this->eff_read_A_match_end_ = std::min (this->read_A_match_end_,this->eff_read_A_end_);;
 }
+
+
+// This function is no longer used in hinging_v1.cpp
 
 void LOverlap::addtype2(int max_overhang) {
     /**
@@ -4603,11 +4658,12 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     //printf("     A_left %6d, A_right %6d, B_left %6d, B_right %6d\n",
     //       overhang_read_A_left, overhang_read_A_right,
     //       overhang_read_B_left, overhang_read_B_right);
-    /*if (this->reverse_complement_match_ == 1) {
-        //Exchange overhang left and right of read B if match is reverse complemented
+
+    if (this->reverse_complement_match_ == 1) {
+        //Exchange overhang left and right of read B if match is reverse complement
         overhang_read_B_left = this->eff_read_B_end_ - this->eff_read_B_match_end_;
         overhang_read_B_right = this->eff_read_B_match_start_ - this->eff_read_B_start_;
-    }*/
+    }
 
 
     if (std::max(overhang_read_A_left, overhang_read_A_right) < max_overhang)
@@ -4644,7 +4700,7 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
             this->match_type_ = FORWARD_INTERNAL;
         }
     else{
-            this->match_type_ =UNDEFINED;
+            this->match_type_ = UNDEFINED;
         }
     }
 

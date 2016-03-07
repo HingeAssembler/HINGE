@@ -305,6 +305,25 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
             idx3[aln[i]->read_A_id_].push_back(aln[i]);
+
+            // debugging
+            if ( ((aln[i]->read_A_id_==505) or (aln[i]->read_A_id_==2607)) and
+                 ((aln[i]->read_B_id_==505) or (aln[i]->read_B_id_==2607)) ) {
+
+                printf("Key alignment:\n");
+                printf("Reverse_complement = %d\n",aln[i]->reverse_complement_match_);
+                printf("A = %d\nread_A_match_start = %d\nread_A_match_end = %d\nA_len = %d\n",
+                       aln[i]->read_A_id_,
+                       aln[i]->read_A_match_start_,
+                       aln[i]->read_A_match_end_,
+                       aln[i]->alen);
+                printf("B = %d\nread_B_match_start = %d\nread_B_match_end = %d\nB_len = %d\n",
+                       aln[i]->read_B_id_,
+                       aln[i]->read_B_match_start_,
+                       aln[i]->read_B_match_end_,
+                       aln[i]->blen);
+            }
+
         }
     }
 
@@ -554,7 +573,7 @@ int main(int argc, char *argv[]) {
 //                    << repeat_annotation[i][1].first << "\t" << repeat_annotation[i][1].second << std::endl;
 //        }
         for (int j = 0; j < repeat_annotation[i].size(); j++) {
-            if (repeat_annotation[i][j].second == -1) { // look for in hinges, negative gradient
+            if (repeat_annotation[i][j].second == -1) { // look for out hinges, negative gradient
                 bool bridged = true;
                 int support = 0;
                 int num_reads_at_end=1;
@@ -600,7 +619,7 @@ int main(int argc, char *argv[]) {
 
                 if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first,-1));
 
-            } else { // look for out_hinges, positive gradient
+            } else { // look for in_hinges, positive gradient
                 bool bridged = true;
                 int support = 0;
                 int num_reads_at_end=1;
@@ -612,6 +631,16 @@ int main(int argc, char *argv[]) {
                         and (idx2[i][k]->read_A_match_start_ < repeat_annotation[i][j].first + 300)) {
                         read_other_ends.push_back(idx2[i][k]->read_A_match_start_);
                         support ++;
+
+                        if (i== 119296) {
+
+                            printf("read %d in support of 119296 (hinge: %d): %d\n",
+                                   support,
+                                   repeat_annotation[i][j].first,
+                                   idx2[i][k]->read_A_match_start_ );
+
+                        }
+
                     }
                 }
                 int start_point=0;
