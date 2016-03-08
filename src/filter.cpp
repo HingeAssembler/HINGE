@@ -505,7 +505,7 @@ int main(int argc, char *argv[]) {
         //}
         for (int j = 0; j < cgs[i].size()-1; j++) { // changed, remove the last one
             //std::cout<< i << " " << cgs[i][j].first << " " << cgs[i][j].second << std::endl;
-            if ((cgs[i][j].first >= maskvec[i].first) and (cgs[i][j].first <= maskvec[i].second)) {
+            if ((cgs[i][j].first >= maskvec[i].first + no_hinge_region) and (cgs[i][j].first <= maskvec[i].second - no_hinge_region)) {
                 if (cgs[i][j].second > std::min(cov_est / 4, 10)) anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
                 else if (cgs[i][j].second < -std::min(cov_est / 4, 10)) anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
             }
@@ -566,7 +566,7 @@ int main(int argc, char *argv[]) {
     // n_read pos -1 = in_hinge 1 = out_hinge
 
     for (int i = 0; i < n_read; i++) {
-        std::cout << i <<std::endl;
+        //std::cout << i <<std::endl;
         hinges[i] = std::vector<std::pair<int, int>>();
 //        if (i==3381){
 //            std::cout << repeat_annotation[i][0].first << "\t" << repeat_annotation[i][0].second << "\n"
@@ -590,11 +590,11 @@ int main(int argc, char *argv[]) {
 
                 int start_point=read_other_ends.size()-1;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
-                if (i==3381){
+                /*if (i==3381){
                     for (int l=0; l< read_other_ends.size(); l++)
                         std::cout << repeat_annotation[i][j].first << "\t" << repeat_annotation[i][j].second << "\t"
                         << read_other_ends[l] << std::endl;
-                }
+                }*/
                 for (int index=read_other_ends.size()-2; index>0; index--) {
                     //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
                      //       read_other_ends[start_point]- read_other_ends[index] << "\t" << CUT_OFF << std::endl;

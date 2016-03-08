@@ -777,7 +777,7 @@ int main(int argc, char *argv[]) {
     out3 = fopen((std::string(argv[3]) + ".hinges").c_str(), "w");
 
     // Output file for edges
-    out4 = fopen((std::string(argv[3]) + ".hinges.edges").c_str(),"w");
+    //out4 = fopen((std::string(argv[3]) + ".hinges.edges").c_str(),"w");
 
 
 
