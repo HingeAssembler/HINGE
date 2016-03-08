@@ -25,6 +25,7 @@
 
 
 #define HINGE_SLACK 600
+#define HINGE_TOLERANCE 50
 
 
 typedef std::tuple<Node, Node, int> Edge_w;
@@ -161,13 +162,18 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
     match->eff_read_A_start_ = read_A->effective_start;
     match->eff_read_A_end_ = read_A->effective_end;
 
-    if (match->reverse_complement_match_ == 0) {
-        match->eff_read_B_start_ = read_B->effective_start;
-        match->eff_read_B_end_ = read_B->effective_end;
-    } else {
-        match->eff_read_B_start_ = read_B->len - read_B->effective_end;
-        match->eff_read_B_end_ = read_B->len - read_B->effective_start;
-    }
+    // removed the following if, so that things agree with the convention for reverse complement matches
+
+    match->eff_read_B_start_ = read_B->effective_start;
+    match->eff_read_B_end_ = read_B->effective_end;
+
+//    if (match->reverse_complement_match_ == 0) {
+//        match->eff_read_B_start_ = read_B->effective_start;
+//        match->eff_read_B_end_ = read_B->effective_end;
+//    } else {
+//        match->eff_read_B_start_ = read_B->len - read_B->effective_end;
+//        match->eff_read_B_end_ = read_B->len - read_B->effective_start;
+//    }
 
     /*printf("bef %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_, match->reverse_complement_match_,
         match->read_A_match_start_, match->read_A_match_end_, match->read_B_match_start_, match->read_B_match_end_,
@@ -251,30 +257,35 @@ public:
     Hinge():pos(0),type(1), active(true) {};
 };
 
-bool isValidHinge(LOverlap *match, std::vector<Hinge> &read_hinges){
-    //Returns true if read_hinges (a vector of all hinges corresponding to a read )
-    // has a hinge of appropriate type within tolerance from positions of start of the
-    // overlap on read_B of the overlap given.
-    int tolerance=100;//TODO put as #define
-    int position=match->eff_read_B_match_start_;
-    int type; //TODO : Make enum
-    if (match->match_type_==FORWARD_INTERNAL)
-        type=1;
-    else if (match->match_type_==BACKWARD_INTERNAL)
-        type=-1;
+// if we uncomment this, we need to make sure it works with the new convention of B_match_start and
+// B_match_end for reverse complement matches
 
-    if (match->reverse_complement_match_==1){
-        type=-type;
-        position=match->eff_read_B_match_end_;
-    }
+//bool isValidHinge(LOverlap *match, std::vector<Hinge> &read_hinges){
+//    //Returns true if read_hinges (a vector of all hinges corresponding to a read )
+//    // has a hinge of appropriate type within tolerance from positions of start of the
+//    // overlap on read_B of the overlap given.
+//    int tolerance=100;//TODO put as #define
+//    int position=match->eff_read_B_match_start_;   // parei aqui
+//    int type; //TODO : Make enum
+//    if (match->match_type_==FORWARD_INTERNAL)
+//        type=1;
+//    else if (match->match_type_==BACKWARD_INTERNAL)
+//        type=-1;
+//
+//    if (match->reverse_complement_match_==1){
+//        type=-type;
+//        position=match->eff_read_B_match_end_;
+//    }
+//
+//    bool valid=false;
+//    for (int index=0; index < read_hinges.size(); index++) {
+//        if ((abs(position - read_hinges[index].pos) < tolerance) and (type == read_hinges[index].type))
+//            valid = true;
+//        return valid;
+//    }
+//}
 
-    bool valid=false;
-    for (int index=0; index < read_hinges.size(); index++) {
-        if ((abs(position - read_hinges[index].pos) < tolerance) and (type == read_hinges[index].type))
-            valid = true;
-        return valid;
-    }
-}
+
 
 void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
 
@@ -877,16 +888,16 @@ int main(int argc, char *argv[]) {
 
                                     }*/
 
-                                    if (i==3021){
-
-                                        printf("This happened!");
-                                        printf("%d %d bridged %d pos %d\n",i,j,matches_forward[i][j]->eff_read_A_match_start_, hinges_vec[i][k].pos);
-                                        // so there should be an hinge on matches_forward[i][j]->read_B
-                                        printf("%d\n", (hinges_vec[matches_forward[i][j]->read_B_id_]).size());
-
-                                        printf("A %d B %d\n", matches_forward[i][j]->read_A_id_ ,matches_forward[i][j]->read_B_id_);
-
-                                    }
+//                                    if (i==3021){
+//
+//                                        printf("This happened!");
+//                                        printf("%d %d bridged %d pos %d\n",i,j,matches_forward[i][j]->eff_read_A_match_start_, hinges_vec[i][k].pos);
+//                                        // so there should be an hinge on matches_forward[i][j]->read_B
+//                                        printf("%d\n", (hinges_vec[matches_forward[i][j]->read_B_id_]).size());
+//
+//                                        printf("A %d B %d\n", matches_forward[i][j]->read_A_id_ ,matches_forward[i][j]->read_B_id_);
+//
+//                                    }
 
 
                                 }
@@ -1166,6 +1177,10 @@ int main(int argc, char *argv[]) {
 
             LOverlap * chosen_match = NULL;
 
+            if (i==505) {
+                printf("In here 0.\n");
+            }
+
             for (int j = 0; j < matches_forward[i].size(); j++){
 
 
@@ -1194,25 +1209,52 @@ int main(int argc, char *argv[]) {
                             // In the case of a forward_internal match we check whether the hinge on read B is an in-hinge
                             // (or an out-hinge if it's a reverse complement match)
 
-                            if ((hinges_vec[matches_forward[i][j]->read_B_id_][0].type == (1-2*matches_forward[i][j]->reverse_complement_match_) )
-                                and (hinges_vec[matches_forward[i][j]->read_B_id_][0].active)) {
-//                                fprintf(out3, "Printed from forward internal\n");
-//                                PrintOverlapToFile(out3, matches_forward[i][j]);
+//                            int hinge_index = 0;
 
-//                                edges_forward[i].push_back(matches_forward[i][j]);
-                                //break;
 
-                                if ((forward == 0) || (matches_forward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
 
-//                                    printf("Got in here with B=%d\n",matches_forward[i][j]->read_B_id_);
-//                                    PrintOverlapToFile(out4, matches_forward[i][j]);
 
-                                    chosen_match = matches_forward[i][j];
-                                    forward = 1;
-                                    forward_internal = 1;
-                                }
-
+                            int read_B_match_start = matches_forward[i][j]->read_B_match_start_;
+                            if (matches_forward[i][j]->reverse_complement_match_ == 1) {
+                                read_B_match_start = matches_forward[i][j]->read_B_match_end_;
                             }
+
+                            for (int k = 0; k < hinges_vec[matches_forward[i][j]->read_B_id_].size(); k++) {
+                                if ( (read_B_match_start > hinges_vec[matches_forward[i][j]->read_B_id_][k].pos - HINGE_TOLERANCE)
+                                            and (read_B_match_start < hinges_vec[matches_forward[i][j]->read_B_id_][k].pos + HINGE_TOLERANCE)
+                                            and (hinges_vec[matches_forward[i][j]->read_B_id_][k].type == (1-2*matches_forward[i][j]->reverse_complement_match_))
+                                            and (hinges_vec[matches_forward[i][j]->read_B_id_][k].active) ) {
+
+                                    if ((forward == 0) || (matches_forward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
+
+                                        chosen_match = matches_forward[i][j];
+                                        forward = 1;
+                                        forward_internal = 1;
+                                    }
+
+                                    break;
+                                }
+                            }
+
+//                            if ((hinges_vec[matches_forward[i][j]->read_B_id_][hinge_index].type == (1-2*matches_forward[i][j]->reverse_complement_match_) )
+//                                and (hinges_vec[matches_forward[i][j]->read_B_id_][hinge_index].active)) {
+////                                fprintf(out3, "Printed from forward internal\n");
+////                                PrintOverlapToFile(out3, matches_forward[i][j]);
+//
+////                                edges_forward[i].push_back(matches_forward[i][j]);
+//                                //break;
+//
+//                                if ((forward == 0) || (matches_forward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
+//
+////                                    printf("Got in here with B=%d\n",matches_forward[i][j]->read_B_id_);
+////                                    PrintOverlapToFile(out4, matches_forward[i][j]);
+//
+//                                    chosen_match = matches_forward[i][j];
+//                                    forward = 1;
+//                                    forward_internal = 1;
+//                                }
+//
+//                            }
                         }
                     }
                 }
@@ -1248,24 +1290,50 @@ int main(int argc, char *argv[]) {
                             // In the case of a backward_internal match we check whether the hinge on read B is an in-hinge
                             // (or an in-hinge if it's a reverse complement match)
 
-                            if ((hinges_vec[matches_backward[i][j]->read_B_id_][0].type == (-1 + 2*matches_backward[i][j]->reverse_complement_match_) )
-                                    and (hinges_vec[matches_backward[i][j]->read_B_id_][0].active)) {
-//                                fprintf(out3, "Printed from backward internal\n");
-//                                PrintOverlapToFile(out3, matches_backward[i][j]);
-//                                PrintOverlapToFile(out4, matches_backward[i][j]);
-//                                edges_backward[i].push_back(matches_backward[i][j]);
-                                //break;
 
-                                if ((backward == 0) || (matches_backward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
 
-//                                    PrintOverlapToFile(out4, matches_backward[i][j]);
-
-                                    chosen_match = matches_backward[i][j];
-                                    backward = 1;
-                                    backward_internal = 1;
-                                }
-
+                            int read_B_match_end = matches_backward[i][j]->read_B_match_end_;
+                            if (matches_backward[i][j]->reverse_complement_match_ == 1) {
+                                read_B_match_end = matches_backward[i][j]->read_B_match_start_;
                             }
+
+                            for (int k = 0; k < hinges_vec[matches_backward[i][j]->read_B_id_].size(); k++) {
+
+
+                                if ( (read_B_match_end > hinges_vec[matches_backward[i][j]->read_B_id_][k].pos - HINGE_TOLERANCE)
+                                     and (read_B_match_end < hinges_vec[matches_backward[i][j]->read_B_id_][k].pos + HINGE_TOLERANCE)
+                                     and (hinges_vec[matches_backward[i][j]->read_B_id_][k].type == (-1+2*matches_backward[i][j]->reverse_complement_match_))
+                                     and (hinges_vec[matches_backward[i][j]->read_B_id_][k].active) ) {
+
+                                    if ((backward == 0) || (matches_backward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
+                                        chosen_match = matches_backward[i][j];
+                                        backward = 1;
+                                        backward_internal = 1;
+                                    }
+
+
+                                    break;
+                                }
+                            }
+
+//                            if ((hinges_vec[matches_backward[i][j]->read_B_id_][hinge_index].type == (-1 + 2*matches_backward[i][j]->reverse_complement_match_) )
+//                                    and (hinges_vec[matches_backward[i][j]->read_B_id_][hinge_index].active)) {
+////                                fprintf(out3, "Printed from backward internal\n");
+////                                PrintOverlapToFile(out3, matches_backward[i][j]);
+////                                PrintOverlapToFile(out4, matches_backward[i][j]);
+////                                edges_backward[i].push_back(matches_backward[i][j]);
+//                                //break;
+//
+//                                if ((backward == 0) || (matches_backward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
+//
+////                                    PrintOverlapToFile(out4, matches_backward[i][j]);
+//
+//                                    chosen_match = matches_backward[i][j];
+//                                    backward = 1;
+//                                    backward_internal = 1;
+//                                }
+//
+//                            }
 
                         }
                     }
