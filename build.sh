@@ -10,7 +10,7 @@ make -j 8
 cd $pwd/src
 mkdir build
 cd $pwd/src/build
-cmake ..
+cmake .. -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.9
 make -j 8
 
 exit $?
