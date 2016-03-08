@@ -102,3 +102,18 @@ target_link_libraries(Consensus_test LAInterface falcon)
 
 add_executable(Reads_filter filter.cpp)
 target_link_libraries(Reads_filter LAInterface ini)
+
+add_subdirectory(googletest)
+
+enable_testing()
+
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+
+add_executable(Interface_test LAInterface_test1.cpp)
+
+target_link_libraries(Interface_test gtest gtest_main)
+
+target_link_libraries(Interface_test LAInterface)
+
+
+add_test(Interface_test_1 Interface_test)

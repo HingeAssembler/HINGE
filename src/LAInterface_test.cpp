@@ -11,6 +11,8 @@
 #include "align.h"
 #include "LAInterface.h"
 
+#include "gtest/gtest.h"
+
 #include <iostream>
 
 
