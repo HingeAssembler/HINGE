@@ -3,6 +3,7 @@
 import networkx as nx
 import sys
 from collections import Counter
+import json
 
 
 
@@ -101,11 +102,23 @@ def run(filename, gt_file, n_iter):
     
     read_to_chr_map={}
 
-    with open(gt_file,'r') as f:
-        for num, line in enumerate(f.readlines()):
-            m = map(int, line.strip().split())
-            read_to_chr_map[m[0]]=m[1]   
+    if gt_file.split('.')[-1]=='json':
+        with open(gt_file,'r') as f:
+            tmp_map=json.load(f)
+        for read in tmp_map:
+            readid=int(read.strip("'"))
+            read_to_chr_map[readid] = int(tmp_map[read][0][2])
+    else:
+        with open(gt_file,'r') as f:
+            for num, line in enumerate(f.readlines()):
+                m = map(int, line.strip().split())
+                read_to_chr_map[m[0]]=m[1]   
     
+    nodes_seen=set([x.split("_")[0] for x in g.nodes()])
+
+    for node in nodes_seen:
+        read_to_chr_map.setdefault(int(node),-1)
+
     #print nx.info(g)
     print "Num reads read : "+str(len(read_to_chr_map))
     
@@ -153,35 +166,13 @@ def run(filename, gt_file, n_iter):
         if len(chr_in_node_set) ==1:
             h.node[node]['chr']=chr_in_node[0]
         else:
-            h.node[node]['chr']=':'.join(chr_in_node)
+            h.node[node]['chr']=':'.join(map(str,chr_in_node))
 
         h.node[node]['count']=g.node[node]['count']
         try:
             h.node[node]['read']=g.node[node]['read']
         except:
             pass
-
-
-    try:
-        import ujson
-        mapping = ujson.load(open(filename.split('.')[0]+'.mapping.json'))
-        
-        print 'get mapping'
-        
-        for node in h.nodes():
-            #print node
-            if mapping.has_key(node):
-                h.node[node]['aln_start'] = mapping[node][0]
-                h.node[node]['aln_end'] = mapping[node][1]
-                h.node[node]['aln_strand'] = mapping[node][2]
-            else:
-                h.node[node]['aln_start'] = 0
-                h.node[node]['aln_end'] = 0
-                h.node[node]['aln_strand'] = 0
-                
-    except:
-        pass        
-
 
     
     nx.write_graphml(h, filename.split('.')[0]+'_condensed_annotated.graphml')
