@@ -453,21 +453,24 @@ int main(int argc, char *argv[]) {
             }
         }
         //std::cout << i << " " << maxstart << " " << maxend << std::endl;
-        mask << i << " " << std::max(maxstart, QV_mask[i].first) << " " << std::min(maxend, QV_mask[i].second) << std::endl;
-        int s = std::max(maxstart, QV_mask[i].first);
-        int l = std::min(maxend, QV_mask[i].second) - std::max(maxstart, QV_mask[i].first);
-        if (l < 0) l = 0;
-        filtered << ">read_" << i << std::endl;
-        filtered << reads[i]->bases.substr(s,l) << std::endl;
+        //int s = std::max(maxstart, QV_mask[i].first);
+        //int l = std::min(maxend, QV_mask[i].second) - std::max(maxstart, QV_mask[i].first);
+        //if (l < 0) l = 0;
+        //filtered << ">read_" << i << std::endl;
+        //filtered << reads[i]->bases.substr(s,l) << std::endl;
 
-        if ((use_qv_mask) and (use_coverage_mask))
-            maskvec.push_back(std::pair<int, int>(std::max(maxstart, QV_mask[i].first), std::min(maxend, QV_mask[i].second)));
+        if ((use_qv_mask) and (use_coverage_mask)) {
+            maskvec.push_back(
+                    std::pair<int, int>(std::max(maxstart, QV_mask[i].first), std::min(maxend, QV_mask[i].second)));
             //get the interestion of two masks
-        else if ((use_coverage_mask) and (not use_qv_mask))
+            mask << i << " " << std::max(maxstart, QV_mask[i].first) << " " << std::min(maxend, QV_mask[i].second) << std::endl;
+        } else if ((use_coverage_mask) and (not use_qv_mask)) {
             maskvec.push_back(std::pair<int, int>(maxstart, maxend));
-        else
+            mask << i << " " << maxstart << " " << maxend << std::endl;
+        } else {
             maskvec.push_back(std::pair<int, int>(QV_mask[i].first, QV_mask[i].second));
-
+            mask << i << " " << QV_mask[i].first << " " << QV_mask[i].second << std::endl;
+        }
     }
 
     std::cout << "for done"<<std::endl;
