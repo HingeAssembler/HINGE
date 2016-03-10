@@ -24,7 +24,7 @@
 
 
 
-#define HINGE_SLACK 600
+#define HINGE_SLACK 100
 #define HINGE_TOLERANCE 50
 
 
@@ -352,7 +352,11 @@ int main(int argc, char *argv[]) {
     std::string name_rep = std::string(name_db) + ".repeat.txt";
     std::string name_hg = std::string(name_db) + ".hinges.txt";
     std::string name_cov = std::string(name_db) + ".coverage.txt";
+    std::string name_garbage = std::string(name_db) + ".garbage.txt";
     std::ofstream maximal_reads(name_max);
+    std::ofstream garbage_out(name_garbage);
+
+
 
     std::ifstream homo(name_homo);
     std::vector<int> homo_reads;
@@ -506,9 +510,14 @@ int main(int argc, char *argv[]) {
     }
     std::cout<<"active reads:" << num_active_read<< std::endl;
 
+
+
     num_active_read = 0;
     for (int i = 0; i < n_read; i++) {
-        if (reads[i]->effective_end - reads[i]->effective_start < LENGTH_THRESHOLD) reads[i]->active = false;
+        if (reads[i]->effective_end - reads[i]->effective_start < LENGTH_THRESHOLD) {
+            reads[i]->active = false;
+            garbage_out << i << std::endl;
+        }
         else num_active_read ++;
     }
     std::cout<<"active reads:" << num_active_read<< std::endl;
