@@ -4283,18 +4283,12 @@ void LAInterface::profileCoverage(std::vector<LOverlap *> &alignments, std::vect
     int i = 0;
     int count = 0;
     for (pos =0 ;pos < events.size();pos++) {
-//        while ((events[pos].first < i*reso) and (pos < events.size())) {
-//            count += events[pos].second;
-//            pos++;
-//        }
-//        coverage.push_back(std::pair<int, int>(i*reso, count));
-//        i++;
-
-        if (events[pos].first > i*reso) {
-            coverage.push_back(std::pair<int, int>(i * reso, count));
-            i++;
+        while ((events[pos].first < i*reso) and (pos < events.size())) {
+            count += events[pos].second;
+            pos++;
         }
-        count += events[pos].second;
+        coverage.push_back(std::pair<int, int>(i*reso, count));
+        i++;
     }
     coverage.push_back(std::pair<int,int>(i*reso, count));
     return;
