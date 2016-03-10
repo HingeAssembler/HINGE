@@ -286,6 +286,11 @@ int main(int argc, char *argv[]) {
     int EST_COV = reader.GetInteger("filter", "ec", 0); // load the estimated coverage (probably from other programs) from ini file, if it is zero, then estimate it
     int reso = 40; // resolution of masks, repeat annotation, coverage, etc  = 40 basepairs 
 
+    bool use_qv_mask = reader.GetBoolean("filter", "use_qv", false);
+    bool use_coverage_mask = reader.GetBoolean("filter", "coverage", true);
+
+
+
     omp_set_num_threads(N_PROC);
 
     std::vector<std::vector <LOverlap * > >idx3; // this is the pileup
@@ -455,9 +460,14 @@ int main(int argc, char *argv[]) {
         filtered << ">read_" << i << std::endl;
         filtered << reads[i]->bases.substr(s,l) << std::endl;
 
-        //maskvec.push_back(std::pair<int, int>(maxstart + 200, maxend - 200));
-        maskvec.push_back(std::pair<int, int>(std::max(maxstart, QV_mask[i].first), std::min(maxend, QV_mask[i].second)));
-        //get the interestion of two masks
+        if ((use_qv_mask) and (use_coverage_mask))
+            maskvec.push_back(std::pair<int, int>(std::max(maxstart, QV_mask[i].first), std::min(maxend, QV_mask[i].second)));
+            //get the interestion of two masks
+        else if ((use_coverage_mask) and (not use_qv_mask))
+            maskvec.push_back(std::pair<int, int>(maxstart, maxend));
+        else
+            maskvec.push_back(std::pair<int, int>(QV_mask[i].first, QV_mask[i].second));
+
     }
 
     std::cout << "for done"<<std::endl;
