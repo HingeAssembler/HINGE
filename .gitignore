@@ -5,3 +5,4 @@ src/build
 src/.idea/
 scripts/.ipynb_checkpoints/
 scripts/figures/
+build
