@@ -19,7 +19,7 @@ install: sudo apt-get install build-essential &&
          gcc-4.9 --version &&
          which gcc-4.9
 
-script: ./build.sh
+script: ./utils/build.sh
 
 notifications:
   email:

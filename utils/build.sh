@@ -1,13 +1,16 @@
 #!/bin/bash
 
 pwd=$PWD
-cd $pwd/DAZZ_DB
+cd $pwd/thirdparty/DAZZ_DB
 make -j 8
 
-cd $pwd/DALIGNER
+cd $pwd/thirdparty//DALIGNER
 make -j 8
 
-cd $pwd/DASCRUBBER
+cd $pwd/thirdparty/DASCRUBBER
+make -j 8
+
+cd $pwd/thirdparty/DEXTRACTOR
 make -j 8
 
 cd $pwd
