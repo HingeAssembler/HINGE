@@ -13,6 +13,7 @@
 #include "INIReader.h"
 #include <tuple>
 #include <iomanip>
+#include "spdlog/spdlog.h"
 
 
 #define LAST_READ_SYMBOL  '$'

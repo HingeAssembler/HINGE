@@ -29,6 +29,8 @@ include_directories(include)
 
 add_subdirectory(lib lib)
 
+add_subdirectory(spdlog)
+
 ## Executables
 
 add_subdirectory(filter filter)
@@ -39,6 +41,8 @@ add_subdirectory(layout layout)
 
 
 add_subdirectory(googletest)
+
+
 
 enable_testing()
 
@@ -51,3 +55,6 @@ target_link_libraries(Interface_test gtest gtest_main)
 target_link_libraries(Interface_test LAInterface)
 
 add_test(Interface_test_1 Interface_test)
+
+
+

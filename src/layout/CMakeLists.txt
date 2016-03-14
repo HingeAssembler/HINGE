@@ -7,4 +7,4 @@ add_executable(NSG NSG)
 target_link_libraries(NSG LAInterface ini)
 
 add_executable(hinging hinging)
-target_link_libraries(hinging LAInterface ini)
+target_link_libraries(hinging LAInterface ini spdlog)

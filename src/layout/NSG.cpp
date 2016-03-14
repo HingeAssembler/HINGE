@@ -14,6 +14,7 @@
 #include <tuple>
 
 
+
 #define LAST_READ_SYMBOL  '$'
 
 
@@ -362,7 +363,7 @@ int main(int argc, char *argv[]) {
                 idx2[i][j]->active = false;
                 idx2[i][j]->match_type_ = NOT_ACTIVE;
             } else {
-                idx2[i][j]->addtype2(THETA);
+                idx2[i][j]->addtype(THETA);
                 if (idx2[i][j]->match_type_ == BCOVERA)
                     contained = true;
             }

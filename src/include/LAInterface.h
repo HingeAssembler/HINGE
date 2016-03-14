@@ -91,8 +91,7 @@ public:
     int reverse_complement_match_; //reverse_complement_match_, reverse complement = 1, same direction = 0
     int eff_read_A_start_, eff_read_A_end_, eff_read_B_start_, eff_read_B_end_;
     MatchType match_type_ = UNDEFINED;
-    void addtype(int); // depreciated
-    void addtype2(int max_overhang); //classify overlaps
+    void addtype(int max_overhang); //classify overlaps
     void AddTypesAsymmetric(int max_overhang);
     static const int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
 	bool active = true;
@@ -176,7 +175,7 @@ public:
 
     int getReadNumber(); // get total number of reads
 
-    int getReadNumber2(); // get total number of reads
+    int getReadNumber2(); // get total number of reads from database 2
 
     int64 getAlignmentNumber(); // get total number of alignments
 

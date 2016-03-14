@@ -20,6 +20,7 @@
 #include <omp.h>
 #include "INIReader.h"
 #include <tuple>
+#include "spdlog/spdlog.h"
 
 
 #define LAST_READ_SYMBOL  '$'
@@ -173,8 +174,6 @@ float number_of_bridging_reads(std::vector<LOverlap *> ovl_reads, int hinge_loca
     std::vector<int> read_ends;
     if (hinge_type==1){
         for (int i=0; i < ovl_reads.size(); i++){
-            if (hinge_location==4720)
-                std::cout << ovl_reads[i]->read_A_match_start_<< "\t" << hinge_location<<std::endl;
             if ((ovl_reads[i]->read_A_match_start_ > hinge_location-threshold ) and
                         (ovl_reads[i]->read_A_match_start_ < hinge_location+threshold ))
                 read_ends.push_back(ovl_reads[i]->read_A_match_end_);
@@ -209,7 +208,7 @@ int main(int argc, char *argv[]) {
     char * name_config = argv[3];//name of the configuration file, in INI format
     printf("name of db: %s, name of .las file %s\n", name_db, name_las);
     la.openDB(name_db);
-    std::cout<<"# Reads:" << la.getReadNumber() << std::endl; // output some statistics 
+    std::cout<<"# Reads:" << la.getReadNumber() << std::endl; // output some statistics
     la.openAlignmentFile(name_las);
     std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
 
@@ -310,25 +309,6 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
             idx3[aln[i]->read_A_id_].push_back(aln[i]);
-
-            // debugging
-            if ( ((aln[i]->read_A_id_==505) or (aln[i]->read_A_id_==2607)) and
-                 ((aln[i]->read_B_id_==505) or (aln[i]->read_B_id_==2607)) ) {
-
-                printf("Key alignment:\n");
-                printf("Reverse_complement = %d\n",aln[i]->reverse_complement_match_);
-                printf("A = %d\nread_A_match_start = %d\nread_A_match_end = %d\nA_len = %d\n",
-                       aln[i]->read_A_id_,
-                       aln[i]->read_A_match_start_,
-                       aln[i]->read_A_match_end_,
-                       aln[i]->alen);
-                printf("B = %d\nread_B_match_start = %d\nread_B_match_end = %d\nB_len = %d\n",
-                       aln[i]->read_B_id_,
-                       aln[i]->read_B_match_start_,
-                       aln[i]->read_B_match_end_,
-                       aln[i]->blen);
-            }
-
         }
     }
 
@@ -644,15 +624,6 @@ int main(int argc, char *argv[]) {
                         and (idx2[i][k]->read_A_match_start_ < repeat_annotation[i][j].first + 300)) {
                         read_other_ends.push_back(idx2[i][k]->read_A_match_start_);
                         support ++;
-
-                        if (i== 119296) {
-
-                            printf("read %d in support of 119296 (hinge: %d): %d\n",
-                                   support,
-                                   repeat_annotation[i][j].first,
-                                   idx2[i][k]->read_A_match_start_ );
-
-                        }
 
                     }
                 }

@@ -2450,59 +2450,6 @@ int64 LAInterface::getAlignmentNumber() {
 
 }
 
-void LOverlap::addtype(int THETA) {
-
-
-    if ((read_A_match_start_ > eff_read_A_start_ + THETA) and (read_A_match_end_ > eff_read_A_end_ - THETA) and (read_B_match_start_ < eff_read_B_start_ + THETA) and (
-            read_B_match_end_ < eff_read_B_end_ - THETA)) {
-        match_type_ = FORWARD;
-    }
-	/**
-	 A:   ==========>
-	 B:        ==========>
-	**/
-
-    else if ((read_A_match_start_ < eff_read_A_start_ + THETA) and (read_A_match_end_ < eff_read_A_end_ - THETA) and (
-            read_B_match_end_ > eff_read_B_end_ - THETA ) and (
-            read_B_match_start_ > eff_read_B_start_ + THETA)) {
-         match_type_ = BACKWARD;
-    }
-	/**
-	 A:       ==========>
-	 B:  ==========>
-	**/
-    else if ((read_B_match_start_ < CHI_THRESHOLD) and (read_B_match_end_ > blen - CHI_THRESHOLD) and (alen > blen) ) {
-        match_type_ = COVERING;
-    }
-    else if ((read_A_match_start_ < CHI_THRESHOLD) and (read_A_match_end_ > alen - CHI_THRESHOLD) and (blen > alen) ) {
-        match_type_ = COVERED;
-    }
-        /**
-         A:    =========>
-         B: ===============>
-        **/
-
-
-	//else if ((read_A_match_start_ > 0) and (read_B_match_start_<CHI_THRESHOLD)) {
-	//	match_type_ = MISMATCH_RIGHT;
-	//}
-	///**
-	// A:   ======..xxxx>
-	// B:      ===..xxxx===>
-	//**/
-	//
-	//else if ((read_A_match_end_ < alen) and (read_B_match_end_ > blen - CHI_THRESHOLD)) {
-	//	match_type_ = MISMATCH_LEFT;
-	//}
-	///**
-	// A:   		xxxx..===>
-	// B:     ====xxxx..=>
-	//**/
-    //else if ((read_B_match_start_ > 0) and (read_B_match_end_ < blen)) {
-    //    match_type_ = MIDDLE;
-    //}
-}
-
 
 
 void LAInterface::showOverlap(int from, int to) {
@@ -4612,9 +4559,9 @@ void LOverlap::TrimOverlapNaive(){
 
 // This function is no longer used in hinging_v1.cpp
 
-void LOverlap::addtype2(int max_overhang) {
+void LOverlap::addtype(int max_overhang) {
     /**
-     * addtype2 is a function for classifying overlaps, edges are classified into forward, backward, internal match, bcovera and acoverb,
+     * addtype is a function for classifying overlaps, edges are classified into forward, backward, internal match, bcovera and acoverb,
         it is based on effective positions, rather than positions
      */
 

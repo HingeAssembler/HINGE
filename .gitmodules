@@ -16,3 +16,6 @@
 [submodule "src/googletest"]
 	path = src/googletest
 	url = https://github.com/google/googletest.git
+[submodule "src/spdlog"]
+	path = src/spdlog
+	url = https://github.com/gabime/spdlog.git
