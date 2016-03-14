@@ -2,7 +2,6 @@
 PPWD=$PWD
 #echo $PWD
 #echo $DIR
-#echo "$PPWD/DALIGNER:$PPWD/DAZZ_DB:$PPWD/DEXTRACTOR/:$PPWD/blasr/:$PPWD/DASCRUBBER:$PPWD/graphmap/bin/Linux-x64"
-export PATH="$PATH:$PPWD/DALIGNER:$PPWD/DAZZ_DB:$PPWD/DEXTRACTOR/:$PPWD/blasr/:$PPWD/DASCRUBBER:$PPWD/graphmap/bin/Linux-x64"
+export PATH="$PATH:$PPWD/thirdparty/DALIGNER:$PPWD/thirdparty/DAZZ_DB:$PPWD/thirdparty/DEXTRACTOR/:$PPWD/thirdparty/DASCRUBBER"
 export PATH="$PATH:$PPWD/scripts"
-export PATH="$PATH:$PPWD/src/build"
+export PATH="$PATH:$PPWD/build/bin/consensus:$PPWD/build/bin/filter:$PPWD/build/bin/layout"
