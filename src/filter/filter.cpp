@@ -205,16 +205,23 @@ int main(int argc, char *argv[]) {
     LAInterface la;
     char * name_db = argv[1]; //.db file of reads to load
     char * name_las = argv[2];//.las file of alignments
-    //char * name_mask = argv[3]; // depreciated
     char * name_config = argv[3];//name of the configuration file, in INI format
-    printf("name of db: %s, name of .las file %s\n", name_db, name_las);
+
+    namespace spd = spdlog;
+
+    auto console = spd::stdout_logger_mt("console");
+    console->info("name of db: {}, name of .las file {}", name_db, name_las);
+
     la.openDB(name_db);
-    std::cout<<"# Reads:" << la.getReadNumber() << std::endl; // output some statistics
     la.openAlignmentFile(name_las);
-    std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
 
     int n_aln = la.getAlignmentNumber();
     int n_read = la.getReadNumber();
+
+    console->info("# Reads: {}", n_read); // output some statistics
+    console->info("# Alignments: {}", n_aln);
+
+
     std::vector<LOverlap *> aln;//Vector of pointers to all alignments
     la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
@@ -222,7 +229,8 @@ int main(int argc, char *argv[]) {
     la.getRead(reads,0,n_read);
     std::vector<std::vector<int>>  QV;
     la.getQV(QV,0,n_read); // load QV track from .db file
-    std::cout << "input data finished.!." <<std::endl;
+
+    console->info("Input data finished");
 
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
@@ -271,7 +279,7 @@ int main(int argc, char *argv[]) {
 
     INIReader reader(name_config);
     if (reader.ParseError() < 0) {
-        std::cout << "Can't load "<<name_config<<std::endl;
+        console->warn("Can't load {}", name_config);
         return 1;
     }
 
@@ -284,8 +292,7 @@ int main(int argc, char *argv[]) {
     int THETA = reader.GetInteger("filter", "theta", -1);
     int N_PROC = reader.GetInteger("running", "n_proc", 4);
     int EST_COV = reader.GetInteger("filter", "ec", 0); // load the estimated coverage (probably from other programs) from ini file, if it is zero, then estimate it
-    int reso = 40; // resolution of masks, repeat annotation, coverage, etc  = 40 basepairs 
-
+    int reso = 40; // resolution of masks, repeat annotation, coverage, etc  = 40 basepairs
     bool use_qv_mask = reader.GetBoolean("filter", "use_qv", false);
     bool use_coverage_mask = reader.GetBoolean("filter", "coverage", true);
 
@@ -338,12 +345,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    std::cout<<"sorting" << std::endl;
 
+    console->info("profile coverage");
 
-    std::cout<<"sorted" << std::endl;
-
-    std::cout<<"profile coverage" << std::endl;
     std::ofstream cov(std::string(name_db) + ".coverage.txt");
     std::ofstream homo(std::string(name_db) + ".homologous.txt");
     std::ofstream rep(std::string(name_db) + ".repeat.txt");
@@ -394,13 +398,12 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    std::cout << "Estimated coverage:" << total_cov / float(num_slot) << std::endl;
     int cov_est = total_cov / num_slot;
     //get estimated coverage
 
 
     if (EST_COV != 0) cov_est = EST_COV;
-    std::cout << "Estimated coverage:" << cov_est << std::endl; //if the coverage is specified by ini file, cover the estimated one
+    console->info("Estimated coverage: {}", cov_est); //if the coverage is specified by ini file, cover the estimated one
 
     std::vector<std::pair<int, int>> maskvec;
     // mask vector, same format as mask_QV
@@ -454,7 +457,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    std::cout << "for done"<<std::endl;
     FILE* temp_out1;
     FILE* temp_out2;
     temp_out1=fopen("coverage.debug.txt","w");
@@ -491,12 +493,7 @@ int main(int argc, char *argv[]) {
     //detect repeats based on coverage gradient, mark it has rising (1) or falling (-1)
     for (int i = 0; i < n_read; i++) {
         std::vector<std::pair<int, int> > anno;
-        //if (i==3381) {
-        //    for (int j = 0; j < cgs[i].size()-1; j++){
-        //        std::cout<< "Read "<< i << " position " <<cgs[i][j].first <<
-        //                                                             " " << cgs[i][j].second << std::endl;
-        //    }
-        //}
+
         for (int j = 0; j < cgs[i].size()-1; j++) { // changed, remove the last one
             //std::cout<< i << " " << cgs[i][j].first << " " << cgs[i][j].second << std::endl;
             if ((cgs[i][j].first >= maskvec[i].first + no_hinge_region) and (cgs[i][j].first <= maskvec[i].second - no_hinge_region)) {
@@ -584,11 +581,6 @@ int main(int argc, char *argv[]) {
 
                 int start_point=read_other_ends.size()-1;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
-                /*if (i==3381){
-                    for (int l=0; l< read_other_ends.size(); l++)
-                        std::cout << repeat_annotation[i][j].first << "\t" << repeat_annotation[i][j].second << "\t"
-                        << read_other_ends[l] << std::endl;
-                }*/
                 for (int index=read_other_ends.size()-2; index>0; index--) {
                     //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
                      //       read_other_ends[start_point]- read_other_ends[index] << "\t" << CUT_OFF << std::endl;
@@ -599,9 +591,6 @@ int main(int argc, char *argv[]) {
                     //else
                         //break;
                 }
-//                if (i==3381){
-//                    std::cout << num_reads_at_end << std::endl;
-//                }
                 //std::cout <<"NUM READS at end " <<num_reads_at_end<<
                   //      " Hinge " << repeat_annotation[i][j].second <<"\n-----------------------------------------------\n";
 
@@ -631,11 +620,6 @@ int main(int argc, char *argv[]) {
                 int start_point=0;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
 
-//                if (i==3381){
-//                    for (int l=0; l< read_other_ends.size(); l++)
-//                        std::cout << repeat_annotation[i][j].first << "\t" << repeat_annotation[i][j].second << "\t"
-//                        << read_other_ends[l] << std::endl;
-//                }
 
                 for (int index=1; index<read_other_ends.size(); index++) {
                     //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
@@ -653,9 +637,7 @@ int main(int argc, char *argv[]) {
                     bridged = false;
                     //std::cout << "setting out hinge bridged to false"<<std::endl;
                 }
-//                if (i==3381){
-//                    std::cout << num_reads_at_end << std::endl;
-//                }
+
                 if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first, 1));
 
             }

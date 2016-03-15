@@ -344,7 +344,6 @@ int main(int argc, char *argv[]) {
     LAInterface la;
 	char * name_db = argv[1];
 	char * name_las = argv[2];
-
     char * name_config = argv[4];
 
     std::string name_mask = std::string(name_db) + ".mas";
@@ -360,14 +359,21 @@ int main(int argc, char *argv[]) {
     int read_id;
     while (homo >> read_id) homo_reads.push_back(read_id);
 
-    printf("name of db: %s, name of .las file %s\n", name_db, name_las);
+
+    namespace spd = spdlog;
+    auto console = spd::stdout_logger_mt("console");
+    console->info("name of db: {}, name of .las file {}", name_db, name_las);
+
+
     la.openDB(name_db);
-    std::cout<<"# Reads:" << la.getReadNumber() << std::endl;
     la.openAlignmentFile(name_las);
-    std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
 
 	int64 n_aln = la.getAlignmentNumber();
 	int n_read = la.getReadNumber();
+
+    console->info("# Reads: {}", n_read); // output some statistics
+    console->info("# Alignments: {}", n_aln);
+
     std::vector<LOverlap *> aln;
 	la.resetAlignment();
     la.getOverlap(aln,0,n_aln);
@@ -378,12 +384,12 @@ int main(int argc, char *argv[]) {
 	std::vector<std::vector<int>>  QV;
 	la.getQV(QV,0,n_read);
 
-    std::cout << "input data finished" <<std::endl;
+    console->info("Input data finished");
 
     INIReader reader(name_config);
 
     if (reader.ParseError() < 0) {
-        std::cout << "Can't load "<<name_config<<std::endl;
+        console->warn("Can't load {}", name_config);
         return 1;
     }
 
@@ -397,7 +403,6 @@ int main(int argc, char *argv[]) {
 	int N_PROC = (int)reader.GetInteger("running", "n_proc", 4);
 
     omp_set_num_threads(N_PROC);
-    //std::cout << "In 308"<< std::endl;
     //std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read);
     // unordered_map from (aid) to alignments in a vector
     std::vector<Edge_w> edgelist, edgelist_ms; // save output to edgelist
@@ -441,7 +446,7 @@ int main(int argc, char *argv[]) {
         reads[read]->effective_start = rs;
         reads[read]->effective_end = re;
     }
-    std::cout<<"read mask finished" << std::endl;
+    console->info("read mask finished");
 
     FILE * repeat_file;
     repeat_file = fopen(name_rep.c_str(), "r");
@@ -472,7 +477,8 @@ int main(int argc, char *argv[]) {
         ss.clear();
     }
     fclose(repeat_file);
-    std::cout<<"read marked repeats" << std::endl;
+    console->info("read marked repeats");
+
     std::unordered_map<int, std::vector<std::pair<int, int>>> marked_hinges;
     while (getline(&line, &len, hinge_file) != -1) {
         std::stringstream ss;
@@ -494,7 +500,7 @@ int main(int argc, char *argv[]) {
     }
     fclose(hinge_file);
 
-    std::cout<<"read marked hinges" << std::endl;
+    console->info("read marked hinges");
 
     if (line)
         free(line);
@@ -505,14 +511,14 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) num_active_read ++;
     }
-    std::cout<<"active reads:" << num_active_read<< std::endl;
+    console->info("active reads: {}", num_active_read);
 
     num_active_read = 0;
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->effective_end - reads[i]->effective_start < LENGTH_THRESHOLD) reads[i]->active = false;
         else num_active_read ++;
     }
-    std::cout<<"active reads:" << num_active_read<< std::endl;
+    console->info("active reads: {}", num_active_read);
 
     for (int i = 0; i < n_read; i++) {
         //An initialisation for loop
@@ -547,7 +553,7 @@ int main(int argc, char *argv[]) {
         n_rev_overlaps += aln[i]->reverse_complement_match_;
     }
 
-    printf("overlaps %d rev_overlaps %d\n",n_overlaps,n_rev_overlaps);
+    console->info("overlaps {} rev_overlaps {}",n_overlaps,n_rev_overlaps);
 
     /*n_overlaps = 0;
     n_rev_overlaps = 0;
@@ -563,7 +569,8 @@ int main(int argc, char *argv[]) {
 
     printf("overlaps %d rev_overlaps %d\n",n_overlaps,n_rev_overlaps);*/
 
-    std::cout<<"index finished. " << "Number reads "<< n_read <<std::endl;
+    console->info("index finished");
+    console->info("Number reads ", n_read);
 
 
 
@@ -605,9 +612,9 @@ int main(int argc, char *argv[]) {
         for (int j=0; j < matches_backward[i].size(); j++)
             rev_complemented_matches+= matches_backward[i][j]->reverse_complement_match_;
     }
-    std::cout<<num_overlaps << " overlaps" << std::endl;
+    console->info("{} overlaps", num_overlaps);
 
-    std::cout<<num_overlaps << " overlaps " << rev_complemented_matches << " reverse complement overlaps" << std::endl;
+    console->info("{} rev overlaps", rev_complemented_matches);
 
     num_active_read = 0;
     for (int i = 0; i < n_read; i++) {
@@ -616,13 +623,13 @@ int main(int argc, char *argv[]) {
             maximal_reads << i << std::endl;
         }
     }
-    std::cout<<"removed contained reads, active reads:" << num_active_read<< std::endl;
+    console->info("removed contained reads, active reads: {}" ,num_active_read);
 
     num_active_read = 0;
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) num_active_read ++;
     }
-    std::cout<<"active reads:" << num_active_read<< std::endl;
+    console->info("active reads: {}", num_active_read);
 
     num_overlaps = 0;
     num_forward_overlaps=0;
@@ -669,14 +676,14 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-    std::cout<<num_overlaps << " overlaps " << num_forward_overlaps << " fwd overlaps "
+    /*std::cout<<num_overlaps << " overlaps " << num_forward_overlaps << " fwd overlaps "
     << num_forward_internal_overlaps << " fwd internal overlaps "<< num_reverse_overlaps
     << " backward overlaps " << num_reverse_internal_overlaps
     << " backward internal overlaps "<< rev_complemented_matches << " reverse complement overlaps\n"
     << rev_complemented_fwd_matches <<" rev cmplment fwd matches "
     << rev_complemented_fwd_int_matches << " rev cmplement fwd int matches "
     << rev_complemented_bck_matches << " rev cmplment bck matches "
-    << rev_complemented_bck_int_matches << " rev cmplement bck int matches " << std::endl;
+    << rev_complemented_bck_int_matches << " rev cmplement bck int matches " << std::endl;*/
 
 
 
@@ -797,7 +804,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    printf("%d hinges\n", n);
+    console->info("{} hinges", n);
 
 
     n = 0;
@@ -806,7 +813,7 @@ int main(int argc, char *argv[]) {
             if ((reads[i]->active) and (hinges_vec[i][j].active)) n++;
         }
     }
-    printf("%d active hinges\n", n);
+    console->info("{} active hinges", n);
 
 
     /**
@@ -889,16 +896,6 @@ int main(int argc, char *argv[]) {
 
                                     }*/
 
-//                                    if (i==3021){
-//
-//                                        printf("This happened!");
-//                                        printf("%d %d bridged %d pos %d\n",i,j,matches_forward[i][j]->eff_read_A_match_start_, hinges_vec[i][k].pos);
-//                                        // so there should be an hinge on matches_forward[i][j]->read_B
-//                                        printf("%d\n", (hinges_vec[matches_forward[i][j]->read_B_id_]).size());
-//
-//                                        printf("A %d B %d\n", matches_forward[i][j]->read_A_id_ ,matches_forward[i][j]->read_B_id_);
-//
-//                                    }
 
 
                                 }
@@ -941,11 +938,6 @@ int main(int argc, char *argv[]) {
 
                                     }*/
 
-                                    if (0==1) {
-                                        printf("%d %d bridged %d pos %d\n",i,j,matches_backward[i][j]->eff_read_A_match_end_, hinges_vec[i][k].pos);
-                                        printf("%d\n", (hinges_vec[matches_backward[i][j]->read_B_id_]).size());
-                                        printf("A %d B %d\n", matches_backward[i][j]->read_A_id_ ,matches_backward[i][j]->read_B_id_);
-                                    }
 
 
                                 }
@@ -971,7 +963,7 @@ int main(int argc, char *argv[]) {
         }
     }
     fclose(out5);
-    printf("after filter %d active hinges\n", n);
+    console->info("after filter {} active hinges", n);
 
 
     // filter hinges
@@ -1162,11 +1154,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    std::cout<<num_overlaps << " overlaps " << num_forward_overlaps << " fwd overlaps "
+    /*std::cout<<num_overlaps << " overlaps " << num_forward_overlaps << " fwd overlaps "
     << num_forward_internal_overlaps << " fwd internal overlaps "<< num_reverse_overlaps
     << " backward overlaps " << num_reverse_internal_overlaps
     << " backward internal overlaps "<< rev_complemented_matches << " reverse complement overlaps" << std::endl;
-
+     */
 
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
@@ -1178,9 +1170,6 @@ int main(int argc, char *argv[]) {
 
             LOverlap * chosen_match = NULL;
 
-            if (i==505) {
-                printf("In here 0.\n");
-            }
 
             for (int j = 0; j < matches_forward[i].size(); j++){
 
@@ -1351,87 +1340,9 @@ int main(int argc, char *argv[]) {
 
 
 
-// No need for intersection anymore.
 
-//    // Find intersection forward edges
-//    // For each edge in edges_forward, push it into intersection_edges_forward if:
-//    // - It ends in a hinge, or
-//    // - It doesn't end in a hinge, but it is picked as a reverse edges as well
-//    for (int i=0; i < edges_forward.size(); i++) {
-//        if (edges_forward[i].size() > 0) {  // size should be either zero or one
-//            if (edges_forward[i][0]->match_type_ == FORWARD_INTERNAL) {
-//                intersection_edges_forward[i].push_back(edges_forward[i][0]);
-//                //PrintOverlapToFile(out4,edges_forward[i][0]);
-//            }
-//                else { // match_type_ should be FORWARD
-//
-//                int read_B_id = edges_forward[i][0]->read_B_id_;
-//
-//                if (edges_forward[i][0]->reverse_complement_match_ != 1) {
-//                    if (edges_backward[read_B_id].size() > 0) {
-//                        if ((edges_backward[read_B_id][0]->match_type_ == BACKWARD) and
-//                                (edges_backward[read_B_id][0]->read_B_id_ == i)) {
-//                            PrintOverlapToFile(out4,edges_forward[i][0]);
-//                            intersection_edges_forward[i].push_back(edges_forward[i][0]);
-//                        }
-//                    }
-//                }
-//                else { // reverse complement match
-//                    if (edges_forward[read_B_id].size() > 0) {
-//                        if ((edges_forward[read_B_id][0]->match_type_ == FORWARD) and
-//                                (edges_forward[read_B_id][0]->read_B_id_ == i)) {
-//                            PrintOverlapToFile(out4,edges_forward[i][0]);
-//                            intersection_edges_forward[i].push_back(edges_forward[i][0]);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//
-//    // Find intersection backward edges
-//    // For each edge in edges_forward, push it into intersection_edges_forward if:
-//    // - It ends in a hinge, or
-//    // - It doesn't end in a hinge, but it is picked as a reverse edges as well
-//    for (int i=0; i < edges_backward.size(); i++) {
-//        if (edges_backward[i].size() > 0) {  // size should be either zero or one
-//            if (edges_backward[i][0]->match_type_ == BACKWARD_INTERNAL) {
-//                intersection_edges_backward[i].push_back(edges_backward[i][0]);
-//                //PrintOverlapToFile(out4,edges_backward[i][0]);
-//            }
-//            else { // match_type_ should be FORWARD
-//
-//                int read_B_id = edges_backward[i][0]->read_B_id_;
-//
-//                if (edges_backward[i][0]->reverse_complement_match_ != 1) {
-//                    if (edges_forward[read_B_id].size() > 0) {
-//                        if ((edges_forward[read_B_id][0]->match_type_ == FORWARD) and
-//                                (edges_forward[read_B_id][0]->read_B_id_ == i)) {
-//                            PrintOverlapToFile(out4,edges_backward[i][0]);
-//                            intersection_edges_backward[i].push_back(edges_backward[i][0]);
-//                        }
-//                    }
-//                }
-//                else { // reverse complement match
-//                    if (edges_backward[read_B_id].size() > 0) {
-//                        if ((edges_backward[read_B_id][0]->match_type_ == BACKWARD) and
-//                                (edges_backward[read_B_id][0]->read_B_id_ == i)) {
-//                            PrintOverlapToFile(out4,edges_backward[i][0]);
-//                            intersection_edges_backward[i].push_back(edges_backward[i][0]);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
+    console->info("sort and output finished");
 
-
-    std::cout<<"sort and output finished" <<std::endl;
-
-    /*for (int i = 0; i < n_read; i++) {
-        std::cout<<i <<" "<<idx2[i].size() << std::endl;
-    }*/
 
     la.closeDB(); //close database
     return 0;

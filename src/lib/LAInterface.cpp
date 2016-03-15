@@ -158,7 +158,7 @@ int LAInterface::openDB(std::string filename) {
 
     if (fscanf(dstub, DB_NFILE, &nfiles) != 1) SYSTEM_ERROR
 
-    printf("%d files\n", nfiles);
+    //printf("%d files\n", nfiles);
 
     flist = (char **) Malloc(sizeof(char *) * nfiles, "Allocating file list");
     findx = (int *) Malloc(sizeof(int *) * (nfiles + 1), "Allocating file index");
@@ -614,10 +614,9 @@ int LAInterface::openAlignmentFile(std::string filename) {
         tbytes = sizeof(uint16);
     }
 
-    printf("\n%s: ", fn);
-    Print_Number(novl, 0, stdout);
-    printf(" records\n");
-
+    //printf("\n%s: ", fn);
+    //Print_Number(novl, 0, stdout);
+    //printf(" records\n");
 
     return 0;
 }
@@ -1434,9 +1433,9 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
     for (j = 0; j < novl; j++)
         //  Read it in
     {
-        if (j % (novl/100) == 0) {
-            printf("%d percent finished\n", j/(novl/100));
-        }
+        //if (j % (novl/100) == 0) {
+        //    printf("%d percent finished\n", j/(novl/100));
+        //}
         Read_Overlap(input, ovl);
         if (ovl->path.tlen > tmax) {
             tmax = ((int) 1.2 * ovl->path.tlen) + 100;
