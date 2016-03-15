@@ -6,16 +6,14 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <sstream>
 #include <iostream>
 #include <algorithm>
-
 #include <unordered_map>
 #include <tgmath.h>
 #include <iomanip>
 #include <fstream>
-#include <paf.h>
+
 
 #include "LAInterface.h"
 #include "align.h"

@@ -6,12 +6,9 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <unordered_map>
-
 #include <algorithm>
 #include <fstream>
-
 #include <iostream>
 #include <set>
 #include <tuple>
@@ -201,11 +198,19 @@ float number_of_bridging_reads(std::vector<LOverlap *> ovl_reads, int hinge_loca
 
 int main(int argc, char *argv[]) {
 
+    cmdline::parser cmdp;
+    cmdp.add<std::string>("db", 'b', "db file name", true, "");
+    cmdp.add<std::string>("las", 'l', "las file name", false, "");
+    cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
+    cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
+
+    cmdp.parse_check(argc, argv);
 
     LAInterface la;
-    char * name_db = argv[1]; //.db file of reads to load
-    char * name_las = argv[2];//.las file of alignments
-    char * name_config = argv[3];//name of the configuration file, in INI format
+    const char * name_db = cmdp.get<std::string>("db").c_str(); //.db file of reads to load
+    const char * name_las = cmdp.get<std::string>("las").c_str();//.las file of alignments
+    const char * name_paf = cmdp.get<std::string>("paf").c_str();
+    const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
 
     namespace spd = spdlog;
 
@@ -220,7 +225,6 @@ int main(int argc, char *argv[]) {
 
     console->info("# Reads: {}", n_read); // output some statistics
     console->info("# Alignments: {}", n_aln);
-
 
     std::vector<LOverlap *> aln;//Vector of pointers to all alignments
     la.resetAlignment();
@@ -320,8 +324,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-
-
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {// sort overlaps of a reads
         std::sort(idx3[i].begin(), idx3[i].end(), compare_overlap);
@@ -344,7 +346,6 @@ int main(int argc, char *argv[]) {
                 idx2[i].push_back(it->second[0]);
         }
     }
-
 
     console->info("profile coverage");
 

@@ -1,20 +1,21 @@
 #include <stdio.h>
 #include <unordered_map>
-#include "DB.h"
-#include "align.h"
-#include "LAInterface.h"
-#include "OverlapGraph.h"
 #include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <set>
 #include <omp.h>
-#include "INIReader.h"
 #include <tuple>
 #include <iomanip>
-#include "spdlog/spdlog.h"
 
+#include "spdlog/spdlog.h"
+#include "cmdline.h"
+#include "INIReader.h"
+#include "DB.h"
+#include "align.h"
+#include "LAInterface.h"
+#include "OverlapGraph.h"
 
 #define LAST_READ_SYMBOL  '$'
 
@@ -340,11 +341,23 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
 
 int main(int argc, char *argv[]) {
 
+    cmdline::parser cmdp;
+    cmdp.add<std::string>("db", 'b', "db file name", true, "");
+    cmdp.add<std::string>("las", 'l', "las file name", false, "");
+    cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
+    cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
+    cmdp.add<std::string>("out", 'o', "output file name", true, "");
+
+
+    cmdp.parse_check(argc, argv);
 
     LAInterface la;
-	char * name_db = argv[1];
-	char * name_las = argv[2];
-    char * name_config = argv[4];
+    const char * name_db = cmdp.get<std::string>("db").c_str(); //.db file of reads to load
+    const char * name_las = cmdp.get<std::string>("las").c_str();//.las file of alignments
+    const char * name_paf = cmdp.get<std::string>("paf").c_str();
+    const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
+    const char * out_name = cmdp.get<std::string>("out").c_str();
+
 
     std::string name_mask = std::string(name_db) + ".mas";
     std::string name_max = std::string(name_db) + ".max";
@@ -356,6 +369,7 @@ int main(int argc, char *argv[]) {
 
     std::ifstream homo(name_homo);
     std::vector<int> homo_reads;
+
     int read_id;
     while (homo >> read_id) homo_reads.push_back(read_id);
 
@@ -778,14 +792,13 @@ int main(int argc, char *argv[]) {
     FILE * out;
     FILE * out2;
     FILE * out4;
-    out = fopen((std::string(argv[3]) + ".1").c_str(), "w");
-    out2 = fopen((std::string(argv[3]) + ".2").c_str(), "w");
+    out = fopen((std::string(out_name) + ".1").c_str(), "w");
+    out2 = fopen((std::string(out_name) + ".2").c_str(), "w");
 
     // Output file for matches 
-    out3 = fopen((std::string(argv[3]) + ".hinges").c_str(), "w");
+    out3 = fopen((std::string(out_name) + ".hinges").c_str(), "w");
 
     // Output file for edges
-    //out4 = fopen((std::string(argv[3]) + ".hinges.edges").c_str(),"w");
 
 
 
