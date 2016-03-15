@@ -199,7 +199,9 @@ float number_of_bridging_reads(std::vector<LOverlap *> ovl_reads, int hinge_loca
     return num_bins/((float)1);
 }
 
+
 int main(int argc, char *argv[]) {
+
 
     LAInterface la;
     char * name_db = argv[1]; //.db file of reads to load

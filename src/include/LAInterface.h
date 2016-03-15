@@ -211,6 +211,8 @@ public:
 
     void repeatDetect(std::vector<std::pair<int, int> > & coverage, std::vector<std::pair<int, int> > & repeat);
 
+	int loadPAF(std::string filename, std::vector<LOverlap *> &);
+
 };
 
 #endif

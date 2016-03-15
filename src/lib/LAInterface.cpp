@@ -10,15 +10,17 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
-#include "LAInterface.h"
-#include "align.h"
-#include "DB.h"
 
 #include <unordered_map>
 #include <tgmath.h>
 #include <iomanip>
 #include <fstream>
+#include <paf.h>
 
+#include "LAInterface.h"
+#include "align.h"
+#include "DB.h"
+#include "paf.h"
 
 void Read::showRead() {
     std::cout << "read #" << id << std::endl;
@@ -4666,4 +4668,42 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     << "\nMatch type "<<this->match_type_
     << "\n" << std::endl;
     ofs.close();*/
+}
+
+int get_id_from_string(const char * name_str) {
+
+    char * sub1 = strchr(name_str, '/');
+    sub1 += 1 ;
+    char * sub2 = strchr(sub1, '/');
+
+    char substr[15];
+    strncpy(substr, sub1, strlen(sub1) - strlen(sub2));
+    substr[strlen(sub1) - strlen(sub2)] = 0;
+    return atoi(substr);
+}
+
+
+int LAInterface::loadPAF(std::string filename, std::vector<LOverlap *> & alns) {
+    paf_file_t *fp;
+    paf_rec_t r;
+    fp = paf_open(filename.c_str());
+    int num = 0;
+    while (paf_read(fp, &r) >= 0) {
+        num ++;
+        LOverlap *new_ovl = new LOverlap();
+
+        new_ovl->read_A_match_start_ = r.qs;
+        new_ovl->read_B_match_start_ = r.ts;
+        new_ovl->read_A_match_end_ = r.qe;
+        new_ovl->read_B_match_end_ = r.te;
+        new_ovl->alen = r.ql;
+        new_ovl->blen = r.tl;
+        new_ovl->reverse_complement_match_ = r.rev;
+
+        new_ovl->read_A_id_ = get_id_from_string(r.qn);
+        new_ovl->read_B_id_ = get_id_from_string(r.tn);
+
+        alns.push_back(new_ovl);
+    }
+    return num;
 }
