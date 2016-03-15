@@ -24,5 +24,3 @@ script: ./utils/build.sh
 notifications:
   email:
     - xf1280@gmail.com
-    - govinda.kamath@gmail.com
-    - ilanshom@gmail.com

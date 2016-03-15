@@ -4672,9 +4672,10 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
 
 int get_id_from_string(const char * name_str) {
 
-    char * sub1 = strchr(name_str, '/');
-    sub1 += 1 ;
-    char * sub2 = strchr(sub1, '/');
+
+    const char * sub0 = strchr(name_str, '/');
+    const char * sub1 = sub0 + 1;
+    const char * sub2 = strchr(sub1, '/');
 
     char substr[15];
     strncpy(substr, sub1, strlen(sub1) - strlen(sub2));

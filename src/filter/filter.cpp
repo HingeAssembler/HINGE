@@ -8,26 +8,26 @@
 #include <sys/stat.h>
 
 #include <unordered_map>
-#include "DB.h"
-#include "align.h"
-#include "LAInterface.h"
-#include "OverlapGraph.h"
+
 #include <algorithm>
 #include <fstream>
 
 #include <iostream>
 #include <set>
-#include <omp.h>
-#include "INIReader.h"
 #include <tuple>
-#include "spdlog/spdlog.h"
+#include <omp.h>
 
+#include "INIReader.h"
+#include "spdlog/spdlog.h"
+#include "DB.h"
+#include "align.h"
+#include "LAInterface.h"
+#include "OverlapGraph.h"
+#include "cmdline.h"
 
 #define LAST_READ_SYMBOL  '$'
 
-
 typedef std::tuple<Node, Node, int> Edge_w; //Edge with weight
-
 typedef std::pair<Node, Node> Edge_nw; //Edge without weights
 
 
@@ -37,7 +37,6 @@ static int ORDER(const void *l, const void *r) {
     int y = *((int32 *) r);
     return (x - y);
 }
-
 
 std::ostream& operator<<(std::ostream& out, const MatchType value){
     //What is this doing?
