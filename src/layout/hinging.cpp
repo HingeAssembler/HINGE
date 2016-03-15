@@ -375,30 +375,60 @@ int main(int argc, char *argv[]) {
 
 
     namespace spd = spdlog;
+
     auto console = spd::stdout_logger_mt("console");
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
 
+    if (strlen(name_db) > 0)
+        la.openDB(name_db);
 
-    la.openDB(name_db);
-    la.openAlignmentFile(name_las);
 
-	int64 n_aln = la.getAlignmentNumber();
-	int n_read = la.getReadNumber();
+    if (strlen(name_las) > 0)
+        la.openAlignmentFile(name_las);
+
+    int64 n_aln = 0;
+
+    if (strlen(name_las) > 0) {
+        n_aln = la.getAlignmentNumber();
+        console->info("Load alignments from {}", name_las);
+        console->info("# Alignments: {}", n_aln);
+    }
+
+    int n_read;
+    if (strlen(name_db) > 0)
+        n_read = la.getReadNumber();
 
     console->info("# Reads: {}", n_read); // output some statistics
-    console->info("# Alignments: {}", n_aln);
 
-    std::vector<LOverlap *> aln;
-	la.resetAlignment();
-    la.getOverlap(aln,0,n_aln);
+    std::vector<LOverlap *> aln;//Vector of pointers to all alignments
 
-    std::vector<Read *> reads;
-    la.getRead(reads,0,n_read);
+    if (strlen(name_las) > 0) {
+        la.resetAlignment();
+        la.getOverlap(aln, 0, n_aln);
+    }
 
-	std::vector<std::vector<int>>  QV;
-	la.getQV(QV,0,n_read);
+    if (strlen(name_paf) > 0) {
+        n_aln = la.loadPAF(std::string(name_paf), aln);
+        console->info("Load alignments from {}", name_paf);
+        console->info("# Alignments: {}", n_aln);
+    }
+
+    if (n_aln == 0) {
+        console->error("No alignments!");
+        return 1;
+    }
+
+
+    std::vector<Read *> reads; //Vector of pointers to all reads
+    std::vector<std::vector<int>>  QV;
+
+    if (strlen(name_db) > 0) {
+        la.getRead(reads,0,n_read);
+        la.getQV(QV,0,n_read); // load QV track from .db file
+    }
 
     console->info("Input data finished");
+
 
     INIReader reader(name_config);
 
