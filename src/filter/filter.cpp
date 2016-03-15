@@ -203,6 +203,8 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("las", 'l', "las file name", false, "");
     cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
     cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
+    cmdp.add<std::string>("fasta", 'f', "fasta file name", false, "");
+
 
     cmdp.parse_check(argc, argv);
 
@@ -210,29 +212,66 @@ int main(int argc, char *argv[]) {
     const char * name_db = cmdp.get<std::string>("db").c_str(); //.db file of reads to load
     const char * name_las = cmdp.get<std::string>("las").c_str();//.las file of alignments
     const char * name_paf = cmdp.get<std::string>("paf").c_str();
+    const char * name_fasta = cmdp.get<std::string>("fasta").c_str();
     const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
+    /**
+     * There are two sets of input, the first is db+las, which corresponds to daligner as an overlapper,
+     * the other is fasra + paf, which corresponds to minimap as an overlapper.
+     */
+
 
     namespace spd = spdlog;
 
     auto console = spd::stdout_logger_mt("console");
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
 
-    la.openDB(name_db);
-    la.openAlignmentFile(name_las);
+    if (strlen(name_db) > 0)
+        la.openDB(name_db);
 
-    int n_aln = la.getAlignmentNumber();
-    int n_read = la.getReadNumber();
+
+    if (strlen(name_las) > 0)
+        la.openAlignmentFile(name_las);
+
+    int64 n_aln = 0;
+
+    if (strlen(name_las) > 0) {
+        n_aln = la.getAlignmentNumber();
+        console->info("Load alignments from {}", name_las);
+        console->info("# Alignments: {}", n_aln);
+    }
+
+    int n_read;
+    if (strlen(name_db) > 0)
+        n_read = la.getReadNumber();
 
     console->info("# Reads: {}", n_read); // output some statistics
-    console->info("# Alignments: {}", n_aln);
 
     std::vector<LOverlap *> aln;//Vector of pointers to all alignments
-    la.resetAlignment();
-    la.getOverlap(aln,0,n_aln);
+
+    if (strlen(name_las) > 0) {
+        la.resetAlignment();
+        la.getOverlap(aln, 0, n_aln);
+    }
+
+    if (strlen(name_paf) > 0) {
+        n_aln = la.loadPAF(std::string(name_paf), aln);
+        console->info("Load alignments from {}", name_paf);
+        console->info("# Alignments: {}", n_aln);
+    }
+
+    if (n_aln == 0) {
+        console->error("No alignments!");
+        return 1;
+    }
+
+
     std::vector<Read *> reads; //Vector of pointers to all reads
-    la.getRead(reads,0,n_read);
     std::vector<std::vector<int>>  QV;
-    la.getQV(QV,0,n_read); // load QV track from .db file
+
+    if (strlen(name_db) > 0) {
+        la.getRead(reads,0,n_read);
+        la.getQV(QV,0,n_read); // load QV track from .db file
+    }
 
     console->info("Input data finished");
 
@@ -271,7 +310,6 @@ int main(int argc, char *argv[]) {
 
     /*for (int i = 0; i < 200; i++) {
         printf("read %d: ",i+1);
-
         printf("%d %d ", QV[i].size(), reads[i]->len);
 
         for (int j = 0; j < QV[i].size(); j++) printf("%d ", QV[i][j]);
@@ -300,8 +338,6 @@ int main(int argc, char *argv[]) {
     bool use_qv_mask = reader.GetBoolean("filter", "use_qv", false);
     bool use_coverage_mask = reader.GetBoolean("filter", "coverage", true);
 
-
-
     omp_set_num_threads(N_PROC);
 
     std::vector<std::vector <LOverlap * > >idx3; // this is the pileup
@@ -317,7 +353,6 @@ int main(int argc, char *argv[]) {
         idx.push_back(std::unordered_map<int, std::vector<LOverlap *>> ());
     }
 
-
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
             idx3[aln[i]->read_A_id_].push_back(aln[i]);
@@ -329,7 +364,6 @@ int main(int argc, char *argv[]) {
         std::sort(idx3[i].begin(), idx3[i].end(), compare_overlap);
     }
 
-
     for (int i = 0; i < aln.size(); i++) {
         idx[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
     }
@@ -337,6 +371,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < aln.size(); i++) {
         idx[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
     }
+
 
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {
@@ -355,7 +390,6 @@ int main(int argc, char *argv[]) {
     std::ofstream filtered(std::string(name_db) + ".filtered.fasta");
     std::ofstream hg(std::string(name_db) + ".hinges.txt");
     std::ofstream mask(std::string(name_db) + ".mas");
-
 
 
 
@@ -401,7 +435,6 @@ int main(int argc, char *argv[]) {
 
     int cov_est = total_cov / num_slot;
     //get estimated coverage
-
 
     if (EST_COV != 0) cov_est = EST_COV;
     console->info("Estimated coverage: {}", cov_est); //if the coverage is specified by ini file, cover the estimated one
@@ -536,11 +569,6 @@ int main(int argc, char *argv[]) {
             } else iter ++;
         }
     }
-
-
-
-
-
 
     temp_out1=fopen("repeat_annotation.debug.txt","w");
     for (int i = 0; i < n_read; i++) {

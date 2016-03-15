@@ -3,10 +3,10 @@ import sys, os
 from pbcore.io import FastaIO
 
 def run(reader, writer, lookupfile):
-    with open (lookupfile,'w') as f: 
+    with open (lookupfile,'w') as f:
         for i,record in enumerate(reader):
             seq_length = len(record.sequence)
-            zmw = i
+            zmw = i+1
             old_header=record.header
             #bounds = record.header.split('/')[-1]
             #start, end = [int(k) for k in bounds.split('_')]

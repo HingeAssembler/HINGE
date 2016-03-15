@@ -1402,7 +1402,7 @@ void LAInterface::resetAlignment() {
 }
 
 
-void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int to) {
+void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int64 to) {
 
     int j;
     uint16 *trace;
@@ -4697,9 +4697,9 @@ int LAInterface::loadPAF(std::string filename, std::vector<LOverlap *> & alns) {
         new_ovl->alen = r.ql;
         new_ovl->blen = r.tl;
         new_ovl->reverse_complement_match_ = r.rev;
-
-        new_ovl->read_A_id_ = get_id_from_string(r.qn);
-        new_ovl->read_B_id_ = get_id_from_string(r.tn);
+        new_ovl->diffs = 0;
+        new_ovl->read_A_id_ = get_id_from_string(r.qn) - 1;
+        new_ovl->read_B_id_ = get_id_from_string(r.tn) - 1; //change 1 based to 0 based
 
         alns.push_back(new_ovl);
     }
