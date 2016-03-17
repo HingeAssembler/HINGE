@@ -6,19 +6,19 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <sstream>
 #include <iostream>
 #include <algorithm>
-#include "LAInterface.h"
-#include "align.h"
-#include "DB.h"
-
 #include <unordered_map>
 #include <tgmath.h>
 #include <iomanip>
 #include <fstream>
 
+
+#include "LAInterface.h"
+#include "align.h"
+#include "DB.h"
+#include "paf.h"
 
 void Read::showRead() {
     std::cout << "read #" << id << std::endl;
@@ -156,7 +156,7 @@ int LAInterface::openDB(std::string filename) {
 
     if (fscanf(dstub, DB_NFILE, &nfiles) != 1) SYSTEM_ERROR
 
-    printf("%d files\n", nfiles);
+    //printf("%d files\n", nfiles);
 
     flist = (char **) Malloc(sizeof(char *) * nfiles, "Allocating file list");
     findx = (int *) Malloc(sizeof(int *) * (nfiles + 1), "Allocating file index");
@@ -612,10 +612,9 @@ int LAInterface::openAlignmentFile(std::string filename) {
         tbytes = sizeof(uint16);
     }
 
-    printf("\n%s: ", fn);
-    Print_Number(novl, 0, stdout);
-    printf(" records\n");
-
+    //printf("\n%s: ", fn);
+    //Print_Number(novl, 0, stdout);
+    //printf(" records\n");
 
     return 0;
 }
@@ -1403,7 +1402,7 @@ void LAInterface::resetAlignment() {
 }
 
 
-void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int to) {
+void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int64 to) {
 
     int j;
     uint16 *trace;
@@ -1432,9 +1431,9 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
     for (j = 0; j < novl; j++)
         //  Read it in
     {
-        if (j % (novl/100) == 0) {
-            printf("%d percent finished\n", j/(novl/100));
-        }
+        //if (j % (novl/100) == 0) {
+        //    printf("%d percent finished\n", j/(novl/100));
+        //}
         Read_Overlap(input, ovl);
         if (ovl->path.tlen > tmax) {
             tmax = ((int) 1.2 * ovl->path.tlen) + 100;
@@ -2448,59 +2447,6 @@ int64 LAInterface::getAlignmentNumber() {
     resetAlignment();
     return novl;
 
-}
-
-void LOverlap::addtype(int THETA) {
-
-
-    if ((read_A_match_start_ > eff_read_A_start_ + THETA) and (read_A_match_end_ > eff_read_A_end_ - THETA) and (read_B_match_start_ < eff_read_B_start_ + THETA) and (
-            read_B_match_end_ < eff_read_B_end_ - THETA)) {
-        match_type_ = FORWARD;
-    }
-	/**
-	 A:   ==========>
-	 B:        ==========>
-	**/
-
-    else if ((read_A_match_start_ < eff_read_A_start_ + THETA) and (read_A_match_end_ < eff_read_A_end_ - THETA) and (
-            read_B_match_end_ > eff_read_B_end_ - THETA ) and (
-            read_B_match_start_ > eff_read_B_start_ + THETA)) {
-         match_type_ = BACKWARD;
-    }
-	/**
-	 A:       ==========>
-	 B:  ==========>
-	**/
-    else if ((read_B_match_start_ < CHI_THRESHOLD) and (read_B_match_end_ > blen - CHI_THRESHOLD) and (alen > blen) ) {
-        match_type_ = COVERING;
-    }
-    else if ((read_A_match_start_ < CHI_THRESHOLD) and (read_A_match_end_ > alen - CHI_THRESHOLD) and (blen > alen) ) {
-        match_type_ = COVERED;
-    }
-        /**
-         A:    =========>
-         B: ===============>
-        **/
-
-
-	//else if ((read_A_match_start_ > 0) and (read_B_match_start_<CHI_THRESHOLD)) {
-	//	match_type_ = MISMATCH_RIGHT;
-	//}
-	///**
-	// A:   ======..xxxx>
-	// B:      ===..xxxx===>
-	//**/
-	//
-	//else if ((read_A_match_end_ < alen) and (read_B_match_end_ > blen - CHI_THRESHOLD)) {
-	//	match_type_ = MISMATCH_LEFT;
-	//}
-	///**
-	// A:   		xxxx..===>
-	// B:     ====xxxx..=>
-	//**/
-    //else if ((read_B_match_start_ > 0) and (read_B_match_end_ < blen)) {
-    //    match_type_ = MIDDLE;
-    //}
 }
 
 
@@ -4612,9 +4558,9 @@ void LOverlap::TrimOverlapNaive(){
 
 // This function is no longer used in hinging_v1.cpp
 
-void LOverlap::addtype2(int max_overhang) {
+void LOverlap::addtype(int max_overhang) {
     /**
-     * addtype2 is a function for classifying overlaps, edges are classified into forward, backward, internal match, bcovera and acoverb,
+     * addtype is a function for classifying overlaps, edges are classified into forward, backward, internal match, bcovera and acoverb,
         it is based on effective positions, rather than positions
      */
 
@@ -4719,4 +4665,43 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     << "\nMatch type "<<this->match_type_
     << "\n" << std::endl;
     ofs.close();*/
+}
+
+int get_id_from_string(const char * name_str) {
+
+
+    const char * sub0 = strchr(name_str, '/');
+    const char * sub1 = sub0 + 1;
+    const char * sub2 = strchr(sub1, '/');
+
+    char substr[15];
+    strncpy(substr, sub1, strlen(sub1) - strlen(sub2));
+    substr[strlen(sub1) - strlen(sub2)] = 0;
+    return atoi(substr);
+}
+
+
+int LAInterface::loadPAF(std::string filename, std::vector<LOverlap *> & alns) {
+    paf_file_t *fp;
+    paf_rec_t r;
+    fp = paf_open(filename.c_str());
+    int num = 0;
+    while (paf_read(fp, &r) >= 0) {
+        num ++;
+        LOverlap *new_ovl = new LOverlap();
+
+        new_ovl->read_A_match_start_ = r.qs;
+        new_ovl->read_B_match_start_ = r.ts;
+        new_ovl->read_A_match_end_ = r.qe;
+        new_ovl->read_B_match_end_ = r.te;
+        new_ovl->alen = r.ql;
+        new_ovl->blen = r.tl;
+        new_ovl->reverse_complement_match_ = r.rev;
+        new_ovl->diffs = 0;
+        new_ovl->read_A_id_ = get_id_from_string(r.qn) - 1;
+        new_ovl->read_B_id_ = get_id_from_string(r.tn) - 1; //change 1 based to 0 based
+
+        alns.push_back(new_ovl);
+    }
+    return num;
 }

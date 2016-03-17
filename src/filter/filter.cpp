@@ -6,27 +6,25 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <unordered_map>
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <set>
+#include <tuple>
+#include <omp.h>
+
+#include "INIReader.h"
+#include "spdlog/spdlog.h"
 #include "DB.h"
 #include "align.h"
 #include "LAInterface.h"
 #include "OverlapGraph.h"
-#include <algorithm>
-#include <fstream>
-
-#include <iostream>
-#include <set>
-#include <omp.h>
-#include "INIReader.h"
-#include <tuple>
-
+#include "cmdline.h"
 
 #define LAST_READ_SYMBOL  '$'
 
-
 typedef std::tuple<Node, Node, int> Edge_w; //Edge with weight
-
 typedef std::pair<Node, Node> Edge_nw; //Edge without weights
 
 
@@ -36,7 +34,6 @@ static int ORDER(const void *l, const void *r) {
     int y = *((int32 *) r);
     return (x - y);
 }
-
 
 std::ostream& operator<<(std::ostream& out, const MatchType value){
     //What is this doing?
@@ -173,8 +170,6 @@ float number_of_bridging_reads(std::vector<LOverlap *> ovl_reads, int hinge_loca
     std::vector<int> read_ends;
     if (hinge_type==1){
         for (int i=0; i < ovl_reads.size(); i++){
-            if (hinge_location==4720)
-                std::cout << ovl_reads[i]->read_A_match_start_<< "\t" << hinge_location<<std::endl;
             if ((ovl_reads[i]->read_A_match_start_ > hinge_location-threshold ) and
                         (ovl_reads[i]->read_A_match_start_ < hinge_location+threshold ))
                 read_ends.push_back(ovl_reads[i]->read_A_match_end_);
@@ -200,29 +195,85 @@ float number_of_bridging_reads(std::vector<LOverlap *> ovl_reads, int hinge_loca
     return num_bins/((float)1);
 }
 
+
 int main(int argc, char *argv[]) {
 
-    LAInterface la;
-    char * name_db = argv[1]; //.db file of reads to load
-    char * name_las = argv[2];//.las file of alignments
-    //char * name_mask = argv[3]; // depreciated
-    char * name_config = argv[3];//name of the configuration file, in INI format
-    printf("name of db: %s, name of .las file %s\n", name_db, name_las);
-    la.openDB(name_db);
-    std::cout<<"# Reads:" << la.getReadNumber() << std::endl; // output some statistics 
-    la.openAlignmentFile(name_las);
-    std::cout<<"# Alignments:" << la.getAlignmentNumber() << std::endl;
+    cmdline::parser cmdp;
+    cmdp.add<std::string>("db", 'b', "db file name", true, "");
+    cmdp.add<std::string>("las", 'l', "las file name", false, "");
+    cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
+    cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
+    cmdp.add<std::string>("fasta", 'f', "fasta file name", false, "");
 
-    int n_aln = la.getAlignmentNumber();
-    int n_read = la.getReadNumber();
+
+    cmdp.parse_check(argc, argv);
+
+    LAInterface la;
+    const char * name_db = cmdp.get<std::string>("db").c_str(); //.db file of reads to load
+    const char * name_las = cmdp.get<std::string>("las").c_str();//.las file of alignments
+    const char * name_paf = cmdp.get<std::string>("paf").c_str();
+    const char * name_fasta = cmdp.get<std::string>("fasta").c_str();
+    const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
+    /**
+     * There are two sets of input, the first is db+las, which corresponds to daligner as an overlapper,
+     * the other is fasra + paf, which corresponds to minimap as an overlapper.
+     */
+
+
+    namespace spd = spdlog;
+
+    auto console = spd::stdout_logger_mt("console");
+    console->info("name of db: {}, name of .las file {}", name_db, name_las);
+
+    if (strlen(name_db) > 0)
+        la.openDB(name_db);
+
+
+    if (strlen(name_las) > 0)
+        la.openAlignmentFile(name_las);
+
+    int64 n_aln = 0;
+
+    if (strlen(name_las) > 0) {
+        n_aln = la.getAlignmentNumber();
+        console->info("Load alignments from {}", name_las);
+        console->info("# Alignments: {}", n_aln);
+    }
+
+    int n_read;
+    if (strlen(name_db) > 0)
+        n_read = la.getReadNumber();
+
+    console->info("# Reads: {}", n_read); // output some statistics
+
     std::vector<LOverlap *> aln;//Vector of pointers to all alignments
-    la.resetAlignment();
-    la.getOverlap(aln,0,n_aln);
+
+    if (strlen(name_las) > 0) {
+        la.resetAlignment();
+        la.getOverlap(aln, 0, n_aln);
+    }
+
+    if (strlen(name_paf) > 0) {
+        n_aln = la.loadPAF(std::string(name_paf), aln);
+        console->info("Load alignments from {}", name_paf);
+        console->info("# Alignments: {}", n_aln);
+    }
+
+    if (n_aln == 0) {
+        console->error("No alignments!");
+        return 1;
+    }
+
+
     std::vector<Read *> reads; //Vector of pointers to all reads
-    la.getRead(reads,0,n_read);
     std::vector<std::vector<int>>  QV;
-    la.getQV(QV,0,n_read); // load QV track from .db file
-    std::cout << "input data finished.!." <<std::endl;
+
+    if (strlen(name_db) > 0) {
+        la.getRead(reads,0,n_read);
+        la.getQV(QV,0,n_read); // load QV track from .db file
+    }
+
+    console->info("Input data finished");
 
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
@@ -259,7 +310,6 @@ int main(int argc, char *argv[]) {
 
     /*for (int i = 0; i < 200; i++) {
         printf("read %d: ",i+1);
-
         printf("%d %d ", QV[i].size(), reads[i]->len);
 
         for (int j = 0; j < QV[i].size(); j++) printf("%d ", QV[i][j]);
@@ -271,7 +321,7 @@ int main(int argc, char *argv[]) {
 
     INIReader reader(name_config);
     if (reader.ParseError() < 0) {
-        std::cout << "Can't load "<<name_config<<std::endl;
+        console->warn("Can't load {}", name_config);
         return 1;
     }
 
@@ -284,12 +334,9 @@ int main(int argc, char *argv[]) {
     int THETA = reader.GetInteger("filter", "theta", -1);
     int N_PROC = reader.GetInteger("running", "n_proc", 4);
     int EST_COV = reader.GetInteger("filter", "ec", 0); // load the estimated coverage (probably from other programs) from ini file, if it is zero, then estimate it
-    int reso = 40; // resolution of masks, repeat annotation, coverage, etc  = 40 basepairs 
-
+    int reso = 40; // resolution of masks, repeat annotation, coverage, etc  = 40 basepairs
     bool use_qv_mask = reader.GetBoolean("filter", "use_qv", false);
     bool use_coverage_mask = reader.GetBoolean("filter", "coverage", true);
-
-
 
     omp_set_num_threads(N_PROC);
 
@@ -306,39 +353,16 @@ int main(int argc, char *argv[]) {
         idx.push_back(std::unordered_map<int, std::vector<LOverlap *>> ());
     }
 
-
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
             idx3[aln[i]->read_A_id_].push_back(aln[i]);
-
-            // debugging
-            if ( ((aln[i]->read_A_id_==505) or (aln[i]->read_A_id_==2607)) and
-                 ((aln[i]->read_B_id_==505) or (aln[i]->read_B_id_==2607)) ) {
-
-                printf("Key alignment:\n");
-                printf("Reverse_complement = %d\n",aln[i]->reverse_complement_match_);
-                printf("A = %d\nread_A_match_start = %d\nread_A_match_end = %d\nA_len = %d\n",
-                       aln[i]->read_A_id_,
-                       aln[i]->read_A_match_start_,
-                       aln[i]->read_A_match_end_,
-                       aln[i]->alen);
-                printf("B = %d\nread_B_match_start = %d\nread_B_match_end = %d\nB_len = %d\n",
-                       aln[i]->read_B_id_,
-                       aln[i]->read_B_match_start_,
-                       aln[i]->read_B_match_end_,
-                       aln[i]->blen);
-            }
-
         }
     }
-
-
 
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {// sort overlaps of a reads
         std::sort(idx3[i].begin(), idx3[i].end(), compare_overlap);
     }
-
 
     for (int i = 0; i < aln.size(); i++) {
         idx[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
@@ -347,6 +371,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < aln.size(); i++) {
         idx[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
     }
+
 
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {
@@ -357,19 +382,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    std::cout<<"sorting" << std::endl;
+    console->info("profile coverage");
 
-
-    std::cout<<"sorted" << std::endl;
-
-    std::cout<<"profile coverage" << std::endl;
     std::ofstream cov(std::string(name_db) + ".coverage.txt");
     std::ofstream homo(std::string(name_db) + ".homologous.txt");
     std::ofstream rep(std::string(name_db) + ".repeat.txt");
     std::ofstream filtered(std::string(name_db) + ".filtered.fasta");
     std::ofstream hg(std::string(name_db) + ".hinges.txt");
     std::ofstream mask(std::string(name_db) + ".mas");
-
 
 
 
@@ -413,13 +433,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    std::cout << "Estimated coverage:" << total_cov / float(num_slot) << std::endl;
     int cov_est = total_cov / num_slot;
     //get estimated coverage
 
-
     if (EST_COV != 0) cov_est = EST_COV;
-    std::cout << "Estimated coverage:" << cov_est << std::endl; //if the coverage is specified by ini file, cover the estimated one
+    console->info("Estimated coverage: {}", cov_est); //if the coverage is specified by ini file, cover the estimated one
 
     std::vector<std::pair<int, int>> maskvec;
     // mask vector, same format as mask_QV
@@ -473,7 +491,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    std::cout << "for done"<<std::endl;
     FILE* temp_out1;
     FILE* temp_out2;
     temp_out1=fopen("coverage.debug.txt","w");
@@ -510,12 +527,7 @@ int main(int argc, char *argv[]) {
     //detect repeats based on coverage gradient, mark it has rising (1) or falling (-1)
     for (int i = 0; i < n_read; i++) {
         std::vector<std::pair<int, int> > anno;
-        //if (i==3381) {
-        //    for (int j = 0; j < cgs[i].size()-1; j++){
-        //        std::cout<< "Read "<< i << " position " <<cgs[i][j].first <<
-        //                                                             " " << cgs[i][j].second << std::endl;
-        //    }
-        //}
+
         for (int j = 0; j < cgs[i].size()-1; j++) { // changed, remove the last one
             //std::cout<< i << " " << cgs[i][j].first << " " << cgs[i][j].second << std::endl;
             if ((cgs[i][j].first >= maskvec[i].first + no_hinge_region) and (cgs[i][j].first <= maskvec[i].second - no_hinge_region)) {
@@ -558,11 +570,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-
-
-
-
-
     temp_out1=fopen("repeat_annotation.debug.txt","w");
     for (int i = 0; i < n_read; i++) {
         fprintf(temp_out1,"%d \t%d\t",i,repeat_annotation[i].size());
@@ -603,11 +610,6 @@ int main(int argc, char *argv[]) {
 
                 int start_point=read_other_ends.size()-1;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
-                /*if (i==3381){
-                    for (int l=0; l< read_other_ends.size(); l++)
-                        std::cout << repeat_annotation[i][j].first << "\t" << repeat_annotation[i][j].second << "\t"
-                        << read_other_ends[l] << std::endl;
-                }*/
                 for (int index=read_other_ends.size()-2; index>0; index--) {
                     //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
                      //       read_other_ends[start_point]- read_other_ends[index] << "\t" << CUT_OFF << std::endl;
@@ -618,9 +620,6 @@ int main(int argc, char *argv[]) {
                     //else
                         //break;
                 }
-//                if (i==3381){
-//                    std::cout << num_reads_at_end << std::endl;
-//                }
                 //std::cout <<"NUM READS at end " <<num_reads_at_end<<
                   //      " Hinge " << repeat_annotation[i][j].second <<"\n-----------------------------------------------\n";
 
@@ -645,25 +644,11 @@ int main(int argc, char *argv[]) {
                         read_other_ends.push_back(idx2[i][k]->read_A_match_start_);
                         support ++;
 
-                        if (i== 119296) {
-
-                            printf("read %d in support of 119296 (hinge: %d): %d\n",
-                                   support,
-                                   repeat_annotation[i][j].first,
-                                   idx2[i][k]->read_A_match_start_ );
-
-                        }
-
                     }
                 }
                 int start_point=0;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
 
-//                if (i==3381){
-//                    for (int l=0; l< read_other_ends.size(); l++)
-//                        std::cout << repeat_annotation[i][j].first << "\t" << repeat_annotation[i][j].second << "\t"
-//                        << read_other_ends[l] << std::endl;
-//                }
 
                 for (int index=1; index<read_other_ends.size(); index++) {
                     //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
@@ -681,9 +666,7 @@ int main(int argc, char *argv[]) {
                     bridged = false;
                     //std::cout << "setting out hinge bridged to false"<<std::endl;
                 }
-//                if (i==3381){
-//                    std::cout << num_reads_at_end << std::endl;
-//                }
+
                 if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first, 1));
 
             }
