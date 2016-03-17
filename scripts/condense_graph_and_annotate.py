@@ -5,6 +5,7 @@ import sys
 from collections import Counter
 import json
 
+LENGTH_THRESHOLD=10 #Connected components with less than LENGTH_THRESHOLD reads are thrown away
 
 
 def merge_simple_path(g):
@@ -100,6 +101,15 @@ def run(filename, gt_file, n_iter):
     else:
 	   g=input2(filename)
     
+    print str(len(g.nodes())) + " vertices in graph to begin with."
+
+    connected_components=[x for x in nx.weakly_connected_components(g)]
+    for component in connected_components:
+        if len(component) < 10:
+            g.remove_nodes_from(component)
+
+    print str(len(g.nodes())) + " vertices in graph after removing components of at most "+str(LENGTH_THRESHOLD)+ " nodes."
+
     read_to_chr_map={}
 
     if gt_file.split('.')[-1]=='json':
