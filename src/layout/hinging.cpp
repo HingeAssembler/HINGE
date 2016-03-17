@@ -614,7 +614,7 @@ int main(int argc, char *argv[]) {
     printf("overlaps %d rev_overlaps %d\n",n_overlaps,n_rev_overlaps);*/
 
     console->info("index finished");
-    console->info("Number reads ", n_read);
+    console->info("Number reads {}", n_read);
 
 
 
@@ -638,10 +638,8 @@ int main(int argc, char *argv[]) {
                     matches_forward[i].push_back(it->second[0]);
                 else if ((ovl->match_type_== BACKWARD) or (ovl->match_type_== BACKWARD_INTERNAL))
                     matches_backward[i].push_back(it->second[0]);
-
-
+                
             }
-
 
 
         }
