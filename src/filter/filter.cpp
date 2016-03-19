@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
     cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
     cmdp.add<std::string>("fasta", 'f', "fasta file name", false, "");
-
+    cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
 
     cmdp.parse_check(argc, argv);
 
@@ -214,6 +214,7 @@ int main(int argc, char *argv[]) {
     const char * name_paf = cmdp.get<std::string>("paf").c_str();
     const char * name_fasta = cmdp.get<std::string>("fasta").c_str();
     const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
+    const char * name_restrict = cmdp.get<std::string>("restrictreads").c_str();
     /**
      * There are two sets of input, the first is db+las, which corresponds to daligner as an overlapper,
      * the other is fasra + paf, which corresponds to minimap as an overlapper.
@@ -264,7 +265,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-
     std::vector<Read *> reads; //Vector of pointers to all reads
     std::vector<std::vector<int>>  QV;
 
@@ -279,6 +279,28 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
     }
     //Binarize QV vector, 40 is the threshold
+    std::set<int> reads_to_keep, reads_to_keep_initial;
+    char * line = NULL;
+    size_t len = 0;
+    if (strlen(name_restrict) > 0){
+        FILE * restrict_reads;
+        restrict_reads = fopen(name_restrict, "r");
+        while (getline(&line, &len, restrict_reads) != -1){
+            std::stringstream ss;
+            ss.clear();
+            ss << line;
+            int num;
+            ss >> num;
+            reads_to_keep.insert(num);
+        }
+        fclose(restrict_reads);
+        console->info("Reads to debug loaded from: {}", name_restrict);
+        console->info("Number of reads to debug loaded: {}", reads_to_keep.size());
+    }
+    else
+        console->info("No debug restrictions.");
+
+
 
     std::vector<std::pair<int, int> > QV_mask;
     // QV_mask is the mask based on QV for reads, for each read, it has one pair [start, end]
@@ -303,7 +325,9 @@ int main(int argc, char *argv[]) {
         }
         // get the longest consecutive region that has good QV
         //printf("maxs %d maxe %d size%d\n",maxs, maxe,QV[i].size());
-        QV_mask.push_back(std::pair<int, int>(maxs*la.tspace, maxe*la.tspace)); // tspace the the interval of trace points
+
+        QV_mask.push_back(std::pair<int, int>(maxs*la.tspace, maxe*la.tspace));
+        // tspace the the interval of trace points
         // create mask by QV
     }
 
@@ -444,6 +468,22 @@ int main(int argc, char *argv[]) {
     if (MIN_COV < cov_est/3)
         MIN_COV = cov_est/3;
 
+    if (reads_to_keep.size()>0) {
+        reads_to_keep_initial = reads_to_keep;
+        for (std::set<int>::iterator iter = reads_to_keep_initial.begin();
+             iter != reads_to_keep_initial.end(); ++iter) {
+            int i = *iter;
+            for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin();
+                 it != idx[i].end(); it++) {
+                if (it->second.size() > 0) {
+                    LOverlap *ovl = it->second[0];
+                    reads_to_keep.insert(ovl->read_B_id_);
+                }
+            }
+        }
+        console->info("After accounting for neighbours of reads selected, have {} reads", reads_to_keep.size());
+    }
+
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < coverages[i].size(); j++) {
             coverages[i][j].second -= MIN_COV;
@@ -477,6 +517,11 @@ int main(int argc, char *argv[]) {
         //filtered << ">read_" << i << std::endl;
         //filtered << reads[i]->bases.substr(s,l) << std::endl;
 
+        if (reads_to_keep.size()>0) {
+            if (reads_to_keep.find(i) != reads_to_keep.end()){
+                maxend=maxstart;
+            }
+        }
         if ((use_qv_mask) and (use_coverage_mask)) {
             maskvec.push_back(
                     std::pair<int, int>(std::max(maxstart, QV_mask[i].first), std::min(maxend, QV_mask[i].second)));

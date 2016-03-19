@@ -347,7 +347,7 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
     cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
     cmdp.add<std::string>("out", 'o', "output file name", true, "");
-    cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
+//    cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
 
 
     cmdp.parse_check(argc, argv);
@@ -358,7 +358,7 @@ int main(int argc, char *argv[]) {
     const char * name_paf = cmdp.get<std::string>("paf").c_str();
     const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
     const char * out_name = cmdp.get<std::string>("out").c_str();
-    const char * name_restrict = cmdp.get<std::string>("restrictreads").c_str();
+//    const char * name_restrict = cmdp.get<std::string>("restrictreads").c_str();
 
 
     std::string name_mask = std::string(name_db) + ".mas";
@@ -425,26 +425,26 @@ int main(int argc, char *argv[]) {
     }
 
 
-    std::set<int> reads_to_keep, reads_to_keep_initial;
-    char * line = NULL;
-    size_t len = 0;
-    if (strlen(name_restrict) > 0){
-        FILE * restrict_reads;
-        restrict_reads = fopen(name_restrict, "r");
-        while (getline(&line, &len, restrict_reads) != -1){
-            std::stringstream ss;
-            ss.clear();
-            ss << line;
-            int num;
-            ss >> num;
-            reads_to_keep.insert(num);
-        }
-        fclose(restrict_reads);
-        console->info("Reads to debug loaded from: {}", name_restrict);
-        console->info("Number of reads to debug loaded: {}", reads_to_keep.size());
-    }
-    else
-        console->info("No debug restrictions.");
+//    std::set<int> reads_to_keep, reads_to_keep_initial;
+//    char * line = NULL;
+//    size_t len = 0;
+//    if (strlen(name_restrict) > 0){
+//        FILE * restrict_reads;
+//        restrict_reads = fopen(name_restrict, "r");
+//        while (getline(&line, &len, restrict_reads) != -1){
+//            std::stringstream ss;
+//            ss.clear();
+//            ss << line;
+//            int num;
+//            ss >> num;
+//            reads_to_keep.insert(num);
+//        }
+//        fclose(restrict_reads);
+//        console->info("Reads to debug loaded from: {}", name_restrict);
+//        console->info("Number of reads to debug loaded: {}", reads_to_keep.size());
+//    }
+//    else
+//        console->info("No debug restrictions.");
 
     std::vector<Read *> reads; //Vector of pointers to all reads
     std::vector<std::vector<int>>  QV;
@@ -523,8 +523,8 @@ int main(int argc, char *argv[]) {
     repeat_file = fopen(name_rep.c_str(), "r");
     FILE * hinge_file;
     hinge_file = fopen(name_hg.c_str(), "r");
-    //char * line = NULL;
-    //size_t len = 0;
+    char * line = NULL;
+    size_t len = 0;
     std::unordered_map<int, std::vector<std::pair<int, int>>> marked_repeats;
 
     while (getline(&line, &len, repeat_file) != -1) {
@@ -644,25 +644,25 @@ int main(int argc, char *argv[]) {
         }
 
     printf("overlaps %d rev_overlaps %d\n",n_overlaps,n_rev_overlaps);*/
-    if (reads_to_keep.size()>0) {
-        reads_to_keep_initial = reads_to_keep;
-        for (std::set<int>::iterator iter = reads_to_keep_initial.begin();
-             iter != reads_to_keep_initial.end(); ++iter) {
-            int i = *iter;
-            for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin();
-                 it != idx[i].end(); it++) {
-                if (it->second.size() > 0) {
-                    LOverlap *ovl = it->second[0];
-                    reads_to_keep.insert(ovl->read_B_id_);
-                }
-            }
-        }
-        for (int i = 0; i < n_read; i++) {
-            if (reads_to_keep.find(i) != reads_to_keep.end()){
-                reads[i]->active=false;
-            }
-        }
-    }
+//    if (reads_to_keep.size()>0) {
+//        reads_to_keep_initial = reads_to_keep;
+//        for (std::set<int>::iterator iter = reads_to_keep_initial.begin();
+//             iter != reads_to_keep_initial.end(); ++iter) {
+//            int i = *iter;
+//            for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin();
+//                 it != idx[i].end(); it++) {
+//                if (it->second.size() > 0) {
+//                    LOverlap *ovl = it->second[0];
+//                    reads_to_keep.insert(ovl->read_B_id_);
+//                }
+//            }
+//        }
+//        for (int i = 0; i < n_read; i++) {
+//            if (reads_to_keep.find(i) != reads_to_keep.end()){
+//                reads[i]->active=false;
+//            }
+//        }
+//    }
     console->info("index finished");
     console->info("Number reads {}", n_read);
 
