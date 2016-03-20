@@ -26,8 +26,8 @@
 
 
 
-#define HINGE_SLACK 100
-#define HINGE_TOLERANCE 50
+//#define HINGE_SLACK 200
+//#define HINGE_TOLERANCE 50
 
 
 typedef std::tuple<Node, Node, int> Edge_w;
@@ -472,6 +472,13 @@ int main(int argc, char *argv[]) {
     int CUT_OFF = (int)reader.GetInteger("filter", "cut_off", -1);
     int THETA = (int)reader.GetInteger("filter", "theta", -1);
 	int N_PROC = (int)reader.GetInteger("running", "n_proc", 4);
+    int HINGE_SLACK = (int)reader.GetInteger("layout", "hinge_slack", 100);
+    //This is the amount by which  a forward overlap
+    //must be longer than a forward internal overlap to be preferred while
+    //building a graph.
+    int HINGE_TOLERANCE = (int)reader.GetInteger("layout", "hinge_tolerance", 50);
+    //This is how far an overlap must start from a hinge to be considered an internal
+    //overlap.
 
     omp_set_num_threads(N_PROC);
     //std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read);
@@ -665,6 +672,7 @@ int main(int argc, char *argv[]) {
 //    }
     console->info("index finished");
     console->info("Number reads {}", n_read);
+
 
 
 
@@ -962,7 +970,8 @@ int main(int argc, char *argv[]) {
             int backward = 0;
             for (int j = 0; j < matches_forward[i].size(); j++) {
                 if (matches_forward[i][j]->active) {
-                    if (((matches_forward[i][j]->match_type_ == FORWARD) or (matches_forward[i][j]->match_type_ == FORWARD_INTERNAL)) and
+                    if (((matches_forward[i][j]->match_type_ == FORWARD) or
+                            (matches_forward[i][j]->match_type_ == FORWARD_INTERNAL)) and
                             (reads[matches_forward[i][j]->read_B_id_]->active)) {
                         //if (forward < 1) {
                             //remove certain hinges
@@ -1254,6 +1263,15 @@ int main(int argc, char *argv[]) {
     << " backward overlaps " << num_reverse_internal_overlaps
     << " backward internal overlaps "<< rev_complemented_matches << " reverse complement overlaps" << std::endl;
      */
+/*    int test_read_no(1291);
+    for (int j = 0; j < matches_forward[test_read_no].size(); j++){
+        if (matches_forward[test_read_no][j]->active){
+            std::cout << matches_forward[test_read_no][j]->read_A_id_ << "\t"
+                    << matches_forward[test_read_no][j]->read_B_id_ << "\t"
+                    << matches_forward[test_read_no][j]->match_type_ << "\t"
+                    << matches_forward[test_read_no][j]->weight << std::endl ;
+        }
+    }*/
 
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
