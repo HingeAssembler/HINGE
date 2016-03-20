@@ -114,12 +114,11 @@ std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int c
     int left= intervals[0]->read_A_match_start_ + cutoff, right = intervals[0]->read_A_match_end_ - cutoff;
     //left, right means maximal possible interval now
 
-    for(int i = 1; i < n; i++)
+    for(int i = 1; i < n; i++) {
         //Ovl1 ~ Ovl2 if Ovl1 and Ovl2 have a nonzero intersection. (that is both the b read maps
         // to the same position on the a read)
         //This defines a chain of  connected overlaps. This for loop returns a a vector ret which
         // is a pair of <start of connected overlaps, end of connected overlaps>
-    {
         if(intervals[i]->read_A_match_start_ + cutoff <= right)
         {
             right=std::max(right, intervals[i]->read_A_match_end_ - cutoff);
@@ -308,17 +307,6 @@ int main(int argc, char *argv[]) {
     }
 
 
-    /*for (int i = 0; i < 200; i++) {
-        printf("read %d: ",i+1);
-        printf("%d %d ", QV[i].size(), reads[i]->len);
-
-        for (int j = 0; j < QV[i].size(); j++) printf("%d ", QV[i][j]);
-        printf("[%d %d]", QV_mask[i].first, QV_mask[i].second);
-        printf("\n");
-    }*/
-    //display, for debug
-
-
     INIReader reader(name_config);
     if (reader.ParseError() < 0) {
         console->warn("Can't load {}", name_config);
@@ -340,45 +328,45 @@ int main(int argc, char *argv[]) {
 
     omp_set_num_threads(N_PROC);
 
-    std::vector<std::vector <LOverlap * > >idx3; // this is the pileup
-    std::vector<std::vector <LOverlap * > >idx2; // this is the deduplicated pileup
+    std::vector<std::vector <LOverlap * > > idx_pileup; // this is the pileup
+    std::vector<std::vector <LOverlap * > > idx_pileup_dedup; // this is the deduplicated pileup
 
-    std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx; //unordered_map from (aid, bid) to alignments in a vector
+    std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx_ab; //unordered_map from (aid, bid) to alignments in a vector
 
 
 
     for (int i = 0; i< n_read; i++) {
-        idx3.push_back(std::vector<LOverlap *>());
-        idx2.push_back(std::vector<LOverlap *>());
-        idx.push_back(std::unordered_map<int, std::vector<LOverlap *>> ());
+        idx_pileup.push_back(std::vector<LOverlap *>());
+        idx_pileup_dedup.push_back(std::vector<LOverlap *>());
+        idx_ab.push_back(std::unordered_map<int, std::vector<LOverlap *>> ());
     }
 
     for (int i = 0; i < aln.size(); i++) {
         if (aln[i]->active) {
-            idx3[aln[i]->read_A_id_].push_back(aln[i]);
+            idx_pileup[aln[i]->read_A_id_].push_back(aln[i]);
         }
     }
 
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {// sort overlaps of a reads
-        std::sort(idx3[i].begin(), idx3[i].end(), compare_overlap);
+        std::sort(idx_pileup[i].begin(), idx_pileup[i].end(), compare_overlap);
     }
 
     for (int i = 0; i < aln.size(); i++) {
-        idx[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
+        idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
     }
 
     for (int i = 0; i < aln.size(); i++) {
-        idx[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
+        idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
     }
 
 
 # pragma omp parallel for
     for (int i = 0; i < n_read; i++) {
-        for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin(); it!=idx[i].end(); it++) {
+        for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx_ab[i].begin(); it!= idx_ab[i].end(); it++) {
             std::sort(it->second.begin(), it->second.end(), compare_overlap);
             if (it->second.size() > 0)
-                idx2[i].push_back(it->second[0]);
+                idx_pileup_dedup[i].push_back(it->second[0]);
         }
     }
 
@@ -392,32 +380,30 @@ int main(int argc, char *argv[]) {
     std::ofstream mask(std::string(name_db) + ".mas");
 
 
-
     std::vector< std::vector<std::pair<int, int> > > coverages;
     std::vector< std::vector<std::pair<int, int> > > cgs; //coverage gradient;
     //std::vector< std::vector<std::pair<int, int> > > his;
      for (int i = 0; i < n_read; i ++) {
-        std::vector<std::pair<int, int> > coverage;
-        //TODO : Implement set based gradient
-        std::vector<std::pair<int, int> > cg;
-        //profileCoverage: get the coverage based on pile-o-gram
-        //la.profileCoverage(idx3[i], coverage, reso, CUT_OFF);
+         std::vector<std::pair<int, int> > coverage;
+         //TODO : Implement set based gradient
+         std::vector<std::pair<int, int> > cg;
+         //profileCoverage: get the coverage based on pile-o-gram
+         //la.profileCoverage(idx_pileup[i], coverage, reso, CUT_OFF);
+         la.profileCoverage(idx_pileup[i], coverage, reso, 0);
+         cov << "read " << i <<" ";
+         for (int j = 0; j < coverage.size(); j++)
+             cov << coverage[j].first << ","  << coverage[j].second << " ";
+         cov << std::endl;
 
-        la.profileCoverage(idx3[i], coverage, reso, 0);
-        cov << "read " << i <<" ";
-        for (int j = 0; j < coverage.size(); j++)
-            cov << coverage[j].first << ","  << coverage[j].second << " ";
-        cov << std::endl;
+         //Computes coverage gradients.
+         if (coverage.size() >= 2)
+             for (int j = 0; j < coverage.size() - 1; j++) {
+                 cg.push_back(std::pair<int,int>(coverage[j].first, coverage[j+1].second - coverage[j].second));
+             }
+         else cg.push_back(std::pair<int, int> (0,0));
 
-        //Computes coverage gradients.
-        if (coverage.size() >= 2)
-            for (int j = 0; j < coverage.size() - 1; j++) {
-                cg.push_back(std::pair<int,int>(coverage[j].first, coverage[j+1].second - coverage[j].second));
-            }
-        else cg.push_back(std::pair<int, int> (0,0));
-
-        coverages.push_back(coverage);
-        cgs.push_back(cg);
+         coverages.push_back(coverage);
+         cgs.push_back(cg);
     }
 
 
@@ -491,7 +477,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    FILE* temp_out1;
+    /*FILE* temp_out1;
     FILE* temp_out2;
     temp_out1=fopen("coverage.debug.txt","w");
     temp_out2=fopen("coverage_gradient.debug.txt","w");
@@ -512,7 +498,7 @@ int main(int argc, char *argv[]) {
         fprintf(temp_out2,"\n");
     }
     fclose(temp_out1);
-    fclose(temp_out2);
+    fclose(temp_out2);*/
 
     /*for (int i = 0; i < maskvec.size(); i++) {
         printf("read %d %d %d\n", i, maskvec[i].first, maskvec[i].second);
@@ -527,21 +513,17 @@ int main(int argc, char *argv[]) {
     //detect repeats based on coverage gradient, mark it has rising (1) or falling (-1)
     for (int i = 0; i < n_read; i++) {
         std::vector<std::pair<int, int> > anno;
-
         for (int j = 0; j < cgs[i].size()-1; j++) { // changed, remove the last one
             //std::cout<< i << " " << cgs[i][j].first << " " << cgs[i][j].second << std::endl;
             if ((cgs[i][j].first >= maskvec[i].first + no_hinge_region) and (cgs[i][j].first <= maskvec[i].second - no_hinge_region)) {
-                if (cgs[i][j].second > std::min(cov_est / 4, 10)) anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
-                else if (cgs[i][j].second < -std::min(cov_est / 4, 10)) anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
+                if (cgs[i][j].second > cov_est / 4) anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
+                else if (cgs[i][j].second < cov_est / 4) anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
             }
         }
         repeat_annotation.push_back(anno);
     }
 
-
-
     int gap_thre = 300;
-
     // clean it a bit, merge consecutive 1, or consecutive -1, or adjacent 1 and -1 if their position is within gap_threshold (could be bursty error)
     for (int i = 0; i < n_read; i++) {
         for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end(); ) {
@@ -570,7 +552,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    temp_out1=fopen("repeat_annotation.debug.txt","w");
+    /*temp_out1=fopen("repeat_annotation.debug.txt","w");
     for (int i = 0; i < n_read; i++) {
         fprintf(temp_out1,"%d \t%d\t",i,repeat_annotation[i].size());
         for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end();iter++) {
@@ -578,7 +560,7 @@ int main(int argc, char *argv[]) {
         }
         fprintf(temp_out1,"\n");
     }
-    fclose(temp_out1);
+    fclose(temp_out1);*/
     // need a better hinge detection
 
     // get hinges from repeat annotation information
@@ -588,10 +570,6 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         //std::cout << i <<std::endl;
         hinges[i] = std::vector<std::pair<int, int>>();
-//        if (i==3381){
-//            std::cout << repeat_annotation[i][0].first << "\t" << repeat_annotation[i][0].second << "\n"
-//                    << repeat_annotation[i][1].first << "\t" << repeat_annotation[i][1].second << std::endl;
-//        }
         for (int j = 0; j < repeat_annotation[i].size(); j++) {
             if (repeat_annotation[i][j].second == -1) { // look for out hinges, negative gradient
                 bool bridged = true;
@@ -600,10 +578,10 @@ int main(int argc, char *argv[]) {
 
                 std::vector<int> read_other_ends;
 
-                for (int k = 0; k < idx2[i].size(); k++) {
-                    if ((idx2[i][k]->read_A_match_end_ > repeat_annotation[i][j].first - 300)
-                        and (idx2[i][k]->read_A_match_end_ < repeat_annotation[i][j].first + 300)) {
-                        read_other_ends.push_back(idx2[i][k]->read_A_match_end_);
+                for (int k = 0; k < idx_pileup_dedup[i].size(); k++) {
+                    if ((idx_pileup_dedup[i][k]->read_A_match_end_ > repeat_annotation[i][j].first - 300)
+                        and (idx_pileup_dedup[i][k]->read_A_match_end_ < repeat_annotation[i][j].first + 300)) {
+                        read_other_ends.push_back(idx_pileup_dedup[i][k]->read_A_match_end_);
                         support ++;
                     }
                 }
@@ -628,27 +606,22 @@ int main(int argc, char *argv[]) {
                     //std::cout << "setting in hinge bridged to false"<<std::endl;
                     bridged = false;
                 }
-
                 if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first,-1));
-
             } else { // look for in_hinges, positive gradient
                 bool bridged = true;
                 int support = 0;
                 int num_reads_at_end=1;
 
                 std::vector<int> read_other_ends;
-
-                for (int k = 0; k < idx2[i].size(); k++) {
-                    if ((idx2[i][k]->read_A_match_start_ > repeat_annotation[i][j].first - 300)
-                        and (idx2[i][k]->read_A_match_start_ < repeat_annotation[i][j].first + 300)) {
-                        read_other_ends.push_back(idx2[i][k]->read_A_match_start_);
+                for (int k = 0; k < idx_pileup_dedup[i].size(); k++) {
+                    if ((idx_pileup_dedup[i][k]->read_A_match_start_ > repeat_annotation[i][j].first - 300)
+                        and (idx_pileup_dedup[i][k]->read_A_match_start_ < repeat_annotation[i][j].first + 300)) {
+                        read_other_ends.push_back(idx_pileup_dedup[i][k]->read_A_match_start_);
                         support ++;
-
                     }
                 }
                 int start_point=0;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
-
 
                 for (int index=1; index<read_other_ends.size(); index++) {
                     //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
@@ -666,9 +639,7 @@ int main(int argc, char *argv[]) {
                     bridged = false;
                     //std::cout << "setting out hinge bridged to false"<<std::endl;
                 }
-
                 if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first, 1));
-
             }
         }
     }
