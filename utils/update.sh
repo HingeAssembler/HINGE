@@ -13,7 +13,7 @@ then rsync -rizP --delete --exclude '.*' --exclude 'build' $1@shannon.stanford.e
 fi
 
 if [ "$2" == "update" ];
-then ssh -t $1@shannon.stanford.edu "cd /home/$1/AwesomeAssembler && ./build.sh && ./setup.sh"
+then ssh -t $1@shannon.stanford.edu "cd /home/$1/AwesomeAssembler && ./utils/build.sh"
 fi
 
 if [ "$2" == "all" ];

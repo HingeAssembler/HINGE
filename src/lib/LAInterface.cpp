@@ -13,12 +13,13 @@
 #include <tgmath.h>
 #include <iomanip>
 #include <fstream>
-
+#include <zlib.h>
 
 #include "LAInterface.h"
 #include "align.h"
 #include "DB.h"
 #include "paf.h"
+#include "kseq.h"
 
 void Read::showRead() {
     std::cout << "read #" << id << std::endl;
@@ -4703,5 +4704,30 @@ int LAInterface::loadPAF(std::string filename, std::vector<LOverlap *> & alns) {
 
         alns.push_back(new_ovl);
     }
+    return num;
+}
+
+KSEQ_INIT(gzFile, gzread)
+
+int LAInterface::loadFASTA(std::string filename, std::vector<Read *> & reads) {
+    gzFile fp;
+    kseq_t *seq;
+    int l;
+    int num = 0;
+    fp = gzopen(filename.c_str(), "r"); // STEP 2: open the file handler
+    seq = kseq_init(fp); // STEP 3: initialize seq
+    while ((l = kseq_read(seq)) >= 0) { // STEP 4: read sequence
+        //printf("name: %s\n", seq->name.s);
+        //if (seq->comment.l) printf("comment: %s\n", seq->comment.s);
+        //printf("seq: %s\n", seq->seq.s);
+        //if (seq->qual.l) printf("qual: %s\n", seq->qual.s);
+
+        Read *new_r = new Read(num, strlen(seq->seq.s), std::string(seq->name.s), std::string(seq->seq.s));
+        reads.push_back(new_r);
+        num++;
+    }
+    //printf("return value: %d\n", l);
+    kseq_destroy(seq); // STEP 5: destroy seq
+    gzclose(fp); // STEP 6: close the file handler
     return num;
 }

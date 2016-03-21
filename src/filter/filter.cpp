@@ -198,12 +198,11 @@ float number_of_bridging_reads(std::vector<LOverlap *> ovl_reads, int hinge_loca
 int main(int argc, char *argv[]) {
 
     cmdline::parser cmdp;
-    cmdp.add<std::string>("db", 'b', "db file name", true, "");
+    cmdp.add<std::string>("db", 'b', "db file name", false, "");
     cmdp.add<std::string>("las", 'l', "las file name", false, "");
     cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
     cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
     cmdp.add<std::string>("fasta", 'f', "fasta file name", false, "");
-
 
     cmdp.parse_check(argc, argv);
 
@@ -213,9 +212,10 @@ int main(int argc, char *argv[]) {
     const char * name_paf = cmdp.get<std::string>("paf").c_str();
     const char * name_fasta = cmdp.get<std::string>("fasta").c_str();
     const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
+    bool has_qv = true;
     /**
      * There are two sets of input, the first is db+las, which corresponds to daligner as an overlapper,
-     * the other is fasra + paf, which corresponds to minimap as an overlapper.
+     * the other is fasta + paf, which corresponds to minimap as an overlapper.
      */
 
 
@@ -223,9 +223,12 @@ int main(int argc, char *argv[]) {
 
     auto console = spd::stdout_logger_mt("console");
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
+    console->info("name of fasta: {}, name of .paf file {}", name_fasta, name_paf);
+
 
     if (strlen(name_db) > 0)
         la.openDB(name_db);
+
 
 
     if (strlen(name_las) > 0)
@@ -242,6 +245,14 @@ int main(int argc, char *argv[]) {
     int n_read;
     if (strlen(name_db) > 0)
         n_read = la.getReadNumber();
+
+    std::vector<Read *> reads; //Vector of pointers to all reads
+
+    if (strlen(name_fasta) > 0) {
+        n_read = la.loadFASTA(name_fasta,reads);
+        has_qv = false;
+    }
+
 
     console->info("# Reads: {}", n_read); // output some statistics
 
@@ -263,8 +274,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-
-    std::vector<Read *> reads; //Vector of pointers to all reads
     std::vector<std::vector<int>>  QV;
 
     if (strlen(name_db) > 0) {
@@ -274,6 +283,7 @@ int main(int argc, char *argv[]) {
 
     console->info("Input data finished");
 
+    if (has_qv)
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
     }
@@ -282,6 +292,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::pair<int, int> > QV_mask;
     // QV_mask is the mask based on QV for reads, for each read, it has one pair [start, end]
 
+    if (has_qv)
     for (int i = 0; i < n_read; i++) {
         int s = 0, e = 0;
         int max = 0, maxs = s, maxe = e;
@@ -325,6 +336,8 @@ int main(int argc, char *argv[]) {
     int reso = 40; // resolution of masks, repeat annotation, coverage, etc  = 40 basepairs
     bool use_qv_mask = reader.GetBoolean("filter", "use_qv", false);
     bool use_coverage_mask = reader.GetBoolean("filter", "coverage", true);
+
+    use_qv_mask = use_qv_mask and has_qv;
 
     omp_set_num_threads(N_PROC);
 
@@ -410,16 +423,26 @@ int main(int argc, char *argv[]) {
     
     int num_slot = 0;
     int total_cov = 0;
+
+    std::vector<int> cov_prob;
+
     //Finding the average coverage, probing a small proportion of reads
     for (int i = 0; i < n_read/500; i++) {
         for (int j = 0; j < coverages[i].size(); j++) {
             //printf("%d\n", coverages[i][j].second);
             total_cov += coverages[i][j].second;
             num_slot ++;
+            cov_prob.push_back(coverages[i][j].second);
         }
     }
 
-    int cov_est = total_cov / num_slot;
+    std::sort(cov_prob.begin(), cov_prob.end());
+
+    //for (int i = 0; i< cov_prob.size(); i++)
+    //    printf("%d\n",cov_prob[i]);
+
+    int cov_est = cov_prob[cov_prob.size()/2];
+    //int cov_est = total_cov / num_slot;
     //get estimated coverage
 
     if (EST_COV != 0) cov_est = EST_COV;
@@ -653,6 +676,7 @@ int main(int argc, char *argv[]) {
         hg << std::endl;
     }
 
-    la.closeDB(); //close database
+    if (strlen(name_db)>0)
+        la.closeDB(); //close database
     return 0;
 }
