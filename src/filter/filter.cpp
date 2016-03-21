@@ -203,6 +203,7 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
     cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
     cmdp.add<std::string>("fasta", 'f', "fasta file name", false, "");
+    cmdp.add<std::string>("prefix", 'o', "prefix of output", false, "out");
 
     cmdp.parse_check(argc, argv);
 
@@ -212,6 +213,7 @@ int main(int argc, char *argv[]) {
     const char * name_paf = cmdp.get<std::string>("paf").c_str();
     const char * name_fasta = cmdp.get<std::string>("fasta").c_str();
     const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
+    std::string out = cmdp.get<std::string>("prefix");
     bool has_qv = true;
     /**
      * There are two sets of input, the first is db+las, which corresponds to daligner as an overlapper,
@@ -385,13 +387,13 @@ int main(int argc, char *argv[]) {
 
     console->info("profile coverage");
 
-    std::ofstream cov(std::string(name_db) + ".coverage.txt");
-    std::ofstream homo(std::string(name_db) + ".homologous.txt");
-    std::ofstream rep(std::string(name_db) + ".repeat.txt");
-    std::ofstream filtered(std::string(name_db) + ".filtered.fasta");
-    std::ofstream hg(std::string(name_db) + ".hinges.txt");
-    std::ofstream mask(std::string(name_db) + ".mas");
 
+    std::ofstream cov(out + ".coverage.txt");
+    std::ofstream homo(out + ".homologous.txt");
+    std::ofstream rep(out + ".repeat.txt");
+    std::ofstream filtered(out + ".filtered.fasta");
+    std::ofstream hg(out + ".hinges.txt");
+    std::ofstream mask(out + ".mas");
 
     std::vector< std::vector<std::pair<int, int> > > coverages;
     std::vector< std::vector<std::pair<int, int> > > cgs; //coverage gradient;

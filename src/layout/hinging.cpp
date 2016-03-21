@@ -313,7 +313,7 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
     cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
     cmdp.add<std::string>("fasta", 'f', "fasta file name", false, "");
-    cmdp.add<std::string>("out", 'o', "output file name", true, "");
+    cmdp.add<std::string>("prefix", 'o', "output file prefix", true, "");
 
     cmdp.parse_check(argc, argv);
 
@@ -323,15 +323,16 @@ int main(int argc, char *argv[]) {
     const char * name_paf = cmdp.get<std::string>("paf").c_str();
     const char * name_fasta = cmdp.get<std::string>("fasta").c_str();
     const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
-    const char * out_name = cmdp.get<std::string>("out").c_str();
+    const char * out_name = cmdp.get<std::string>("prefix").c_str();
+    std::string out = cmdp.get<std::string>("prefix");
 
-    std::string name_mask = std::string(name_db) + ".mas";
-    std::string name_max = std::string(name_db) + ".max";
-    std::string name_homo = std::string(name_db) + ".homologous.txt";
-    std::string name_rep = std::string(name_db) + ".repeat.txt";
-    std::string name_hg = std::string(name_db) + ".hinges.txt";
-    std::string name_cov = std::string(name_db) + ".coverage.txt";
-    std::string name_garbage = std::string(name_db) + ".garbage.txt";
+    std::string name_mask = out + ".mas";
+    std::string name_max = out + ".max";
+    std::string name_homo = out + ".homologous.txt";
+    std::string name_rep = out + ".repeat.txt";
+    std::string name_hg = out + ".hinges.txt";
+    std::string name_cov = out + ".coverage.txt";
+    std::string name_garbage = out + ".garbage.txt";
     std::ofstream maximal_reads(name_max);
     std::ofstream garbage_out(name_garbage);
     std::ifstream homo(name_homo);
