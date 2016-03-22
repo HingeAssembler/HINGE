@@ -448,20 +448,35 @@ int main(int argc, char *argv[]) {
     
     int num_slot = 0;
     int total_cov = 0;
+    std::vector<int> read_coverage;
+    int read_cov=0;
+    int read_slot =0;
     //Finding the average coverage, probing a small proportion of reads
     for (int i = 0; i < n_read/500; i++) {
+        read_cov=0;
+        read_slot=0;
         for (int j = 0; j < coverages[i].size(); j++) {
             //printf("%d\n", coverages[i][j].second);
-            total_cov += coverages[i][j].second;
-            num_slot ++;
+            read_cov+=coverages[i][j].second;
+            read_slot++;
         }
+        total_cov += read_cov;
+        num_slot += read_slot;
+        read_coverage.push_back(read_cov / read_slot);
     }
 
-    int cov_est = total_cov / num_slot;
+    size_t median_id = read_coverage.size() / 2;
+    std::nth_element(read_coverage.begin(), read_coverage.begin()+median_id, read_coverage.end());
+    int cov_est= read_coverage[median_id];
+
+    int mean_cov_est = total_cov / num_slot;
+
+
     //get estimated coverage
 
     if (EST_COV != 0) cov_est = EST_COV;
-    console->info("Estimated coverage: {}", cov_est); //if the coverage is specified by ini file, cover the estimated one
+    console->info("Estimated mean coverage: {}", mean_cov_est); //if the coverage is specified by ini file, cover the estimated one
+    console->info("Estimated median coverage: {}", cov_est);
 
     std::vector<std::pair<int, int>> maskvec;
     // mask vector, same format as mask_QV
@@ -518,8 +533,10 @@ int main(int argc, char *argv[]) {
         //filtered << reads[i]->bases.substr(s,l) << std::endl;
 
         if (reads_to_keep.size()>0) {
-            if (reads_to_keep.find(i) != reads_to_keep.end()){
+            if (reads_to_keep.find(i) == reads_to_keep.end()){
+//                std::cout<<"setting masks equal";
                 maxend=maxstart;
+                QV_mask[i].second=QV_mask[i].first;
             }
         }
         if ((use_qv_mask) and (use_coverage_mask)) {
@@ -633,7 +650,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         //std::cout << i <<std::endl;
         hinges[i] = std::vector<std::pair<int, int>>();
-//        if (i==3381){
+//        if (i==64853){
 //            std::cout << repeat_annotation[i][0].first << "\t" << repeat_annotation[i][0].second << "\n"
 //                    << repeat_annotation[i][1].first << "\t" << repeat_annotation[i][1].second << std::endl;
 //        }
@@ -655,26 +672,66 @@ int main(int argc, char *argv[]) {
 
                 int start_point=read_other_ends.size()-1;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
-                for (int index=read_other_ends.size()-2; index>0; index--) {
-                    //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
-                     //       read_other_ends[start_point]- read_other_ends[index] << "\t" << CUT_OFF << std::endl;
+                std::vector< std::pair<int,int> >bins_of_interest;
 
-                    if ( read_other_ends[start_point]- read_other_ends[index] < 100) {
+                for (int index=read_other_ends.size()-2; index>0; index--) {
+//                    if (i==64853) {
+//                        std::cout << "Read other end " << i << "\t" << read_other_ends[index] << "\t" <<
+//                        read_other_ends[start_point] - read_other_ends[index] << "\t" << CUT_OFF << std::endl;
+//
+//                        std::cout << start_point << "\t" << index << std::endl;
+//                    }
+
+                    if (read_other_ends[start_point] - read_other_ends[index]  < 100) {
                         num_reads_at_end++;
+                    }
+                    else {
+                        bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
+                        start_point=index;
+                        num_reads_at_end=0;
                     }
                     //else
                         //break;
                 }
-                //std::cout <<"NUM READS at end " <<num_reads_at_end<<
-                  //      " Hinge " << repeat_annotation[i][j].second <<"\n-----------------------------------------------\n";
+                bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
 
-                //std::cout << i << "\t" << read_other_ends.size() << std::endl;
-                if ((support > 7) and (num_reads_at_end < 8)) {
-                    //std::cout << "setting in hinge bridged to false"<<std::endl;
-                    bridged = false;
+                int num_reads_considered=0;
+                int num_reads_covering=0;
+//                if (i == 64853){
+//                    for (int index=0; index < bins_of_interest.size(); index++) {
+//                        std::cout << index << "\t" << bins_of_interest[index].first << "\t"
+//                        << bins_of_interest[index].second << std::endl;
+//                    }
+//                }
+                for (int index=0; index < bins_of_interest.size(); index++) {
+                    if (reads[i]->effective_end-bins_of_interest[index].first < 100){
+                        num_reads_covering+=bins_of_interest[index].second;
+                        num_reads_considered+=bins_of_interest[index].second;
+                    }
+                    else if ((bins_of_interest[index].second >7) and (num_reads_considered < 10)){
+                        break;
+                    }
+                    else if (num_reads_considered > 9) {
+                        bridged=false;
+                        break;
+                    }
+                    else {
+                        num_reads_considered+=bins_of_interest[index].second;
+                    }
                 }
+//                if (i==64853) {
+//                    std::cout << "NUM READS at end " << bins_of_interest[0].second <<
+//                    " Hinge " << repeat_annotation[i][j].second <<
+//                    "Bridged "<< bridged <<
+//                    "\n-----------------------------------------------\n";
+//                }
+                //std::cout << i << "\t" << read_other_ends.size() << std::endl;
+//                if ((support > 7) and (num_reads_at_end < 8)) {
+//                    //std::cout << "setting in hinge bridged to false"<<std::endl;
+//                    bridged = false;
+//                }
 
-                if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first,-1));
+                if ((not bridged) and (support > 7)) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first,-1));
 
             } else { // look for in_hinges, positive gradient
                 bool bridged = true;
@@ -693,26 +750,66 @@ int main(int argc, char *argv[]) {
                 }
                 int start_point=0;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
-
+                std::vector< std::pair<int,int> >bins_of_interest;
 
                 for (int index=1; index<read_other_ends.size(); index++) {
-                    //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
-                    //read_other_ends[index] - read_other_ends[start_point] << "\t" << CUT_OFF << std::endl;
+//                    if (i==64853) {
+//                        std::cout << "Read other end " << i << "\t" << read_other_ends[index] << "\t" <<
+//                        read_other_ends[index] - read_other_ends[start_point] << "\t" << CUT_OFF << std::endl;
+//                    }
 
                     if (read_other_ends[index] - read_other_ends[start_point]  < 100) {
                         num_reads_at_end++;
                     }
+                    else {
+                        bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
+                        start_point=index;
+                        num_reads_at_end=0;
+                    }
                     //else
                     //break;
                 }
-                //std::cout <<"NUM READS at end " <<num_reads_at_end<<
-                //        " Hinge " << repeat_annotation[i][j].second <<"\n-----------------------------------------------\n";
-                if ((support > 7) and (num_reads_at_end < 8)){ // heuristic here
-                    bridged = false;
-                    //std::cout << "setting out hinge bridged to false"<<std::endl;
+                bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
+
+                int num_reads_considered=0;
+                int num_reads_covering=0;
+//                if (i == 64853){
+//                    for (int index=0; index < bins_of_interest.size(); index++) {
+//                        std::cout << index << "\t" << bins_of_interest[index].first << "\t"
+//                        << bins_of_interest[index].second << std::endl;
+//                    }
+//                }
+                for (int index=0; index < bins_of_interest.size(); index++) {
+                    if (bins_of_interest[index].first-reads[i]->effective_start < 100){
+                        num_reads_covering+=bins_of_interest[index].second;
+                        num_reads_considered+=bins_of_interest[index].second;
+                    }
+                    else if ((bins_of_interest[index].second >7) and (num_reads_considered < 10)){
+                        break;
+                    }
+                    else if (num_reads_considered > 9) {
+                        bridged=false;
+                        break;
+                    }
+                    else {
+                        num_reads_considered+=bins_of_interest[index].second;
+                    }
                 }
 
-                if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first, 1));
+//                if (i==64853) {
+//                    std::cout << "NUM READS at end " << bins_of_interest[0].second <<
+//                    " Hinge " << repeat_annotation[i][j].second <<
+//                    "Bridged "<< bridged <<
+//                    "\n-----------------------------------------------\n";
+//                }
+
+
+//                if ((support > 7) and (num_reads_at_end < 8)){ // heuristic here
+//                    bridged = false;
+//                    //std::cout << "setting out hinge bridged to false"<<std::endl;
+//                }
+
+                if ((not bridged) and (support > 7)) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first, 1));
 
             }
         }
