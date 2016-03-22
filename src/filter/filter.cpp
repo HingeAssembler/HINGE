@@ -650,14 +650,17 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         //std::cout << i <<std::endl;
         hinges[i] = std::vector<std::pair<int, int>>();
-//        if (i==64853){
+//        if (i==205){
 //            std::cout << repeat_annotation[i][0].first << "\t" << repeat_annotation[i][0].second << "\n"
 //                    << repeat_annotation[i][1].first << "\t" << repeat_annotation[i][1].second << std::endl;
 //        }
         for (int j = 0; j < repeat_annotation[i].size(); j++) {
-            std::cout << "read " << i << "repeat "<< j << "\t"
-            << repeat_annotation[i][j].first  << "\t" << repeat_annotation[i][j].second << std::endl;
+//            std::cout << "read " << i << "repeat "<< j << "\t"
+//            << repeat_annotation[i][j].first  << "\t" << repeat_annotation[i][j].second << std::endl;
             if (repeat_annotation[i][j].second == -1) { // look for out hinges, negative gradient
+//                if (i==205){
+//                    std::cout << i << " In if -1 " << std::endl;
+//                }
                 bool bridged = true;
                 int support = 0;
                 int num_reads_at_end=1;
@@ -665,19 +668,27 @@ int main(int argc, char *argv[]) {
                 std::vector<int> read_other_ends;
 
                 for (int k = 0; k < idx2[i].size(); k++) {
+//                    if (i==205){
+//                        std::cout << i <<"\t" << k << "\t" << idx2[i].size() << std::endl;
+//                    }
                     if ((idx2[i][k]->read_A_match_end_ > repeat_annotation[i][j].first - 300)
                         and (idx2[i][k]->read_A_match_end_ < repeat_annotation[i][j].first + 300)) {
                         read_other_ends.push_back(idx2[i][k]->read_A_match_end_);
                         support ++;
                     }
                 }
-
+//                if (i==205){
+//                    std::cout <<i  <<  "\t"  <<read_other_ends.size() << "\t" << support<< std::endl;
+//                }
+                if (support <7){
+                    continue;
+                }
                 int start_point=read_other_ends.size()-1;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
                 std::vector< std::pair<int,int> >bins_of_interest;
 
                 for (int index=read_other_ends.size()-2; index>0; index--) {
-//                    if (i==64853) {
+//                    if (i==205) {
 //                        std::cout << "Read other end " << i << "\t" << read_other_ends[index] << "\t" <<
 //                        read_other_ends[start_point] - read_other_ends[index] << "\t" << CUT_OFF << std::endl;
 //
@@ -696,10 +707,13 @@ int main(int argc, char *argv[]) {
                         //break;
                 }
                 bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
+//                if (i==205){
+//                    std::cout <<i  <<  "\t"  <<bins_of_interest.size() << std::endl;
+//                }
 
                 int num_reads_considered=0;
                 int num_reads_covering=0;
-//                if (i == 64853){
+//                if (i == 205){
 //                    for (int index=0; index < bins_of_interest.size(); index++) {
 //                        std::cout << index << "\t" << bins_of_interest[index].first << "\t"
 //                        << bins_of_interest[index].second << std::endl;
@@ -721,8 +735,8 @@ int main(int argc, char *argv[]) {
                         num_reads_considered+=bins_of_interest[index].second;
                     }
                 }
-//                if (i==64853) {
-//                    std::cout << "NUM READS at end " << bins_of_interest[0].second <<
+//                if (i==205) {
+//                    std::cout << "NUM READS at end " << bins_of_interest[0].second << "\t" << bins_of_interest.size()<<
 //                    " Hinge " << repeat_annotation[i][j].second <<
 //                    "Bridged "<< bridged <<
 //                    "\n-----------------------------------------------\n";
@@ -739,7 +753,9 @@ int main(int argc, char *argv[]) {
                 bool bridged = true;
                 int support = 0;
                 int num_reads_at_end=1;
-
+//                if (i==205){
+//                    std::cout << i << " In if 1 " << std::endl;
+//                }
                 std::vector<int> read_other_ends;
 
                 for (int k = 0; k < idx2[i].size(); k++) {
@@ -750,12 +766,15 @@ int main(int argc, char *argv[]) {
 
                     }
                 }
+                if (support <7){
+                    continue;
+                }
                 int start_point=0;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
                 std::vector< std::pair<int,int> >bins_of_interest;
 
                 for (int index=1; index<read_other_ends.size(); index++) {
-//                    if (i==64853) {
+//                    if (i==205) {
 //                        std::cout << "Read other end " << i << "\t" << read_other_ends[index] << "\t" <<
 //                        read_other_ends[index] - read_other_ends[start_point] << "\t" << CUT_OFF << std::endl;
 //                    }
@@ -773,9 +792,13 @@ int main(int argc, char *argv[]) {
                 }
                 bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
 
+//                if (i==205){
+//                    std::cout <<i  <<  "\t"  <<bins_of_interest.size() << std::endl;
+//                }
+
                 int num_reads_considered=0;
                 int num_reads_covering=0;
-//                if (i == 64853){
+//                if (i == 205){
 //                    for (int index=0; index < bins_of_interest.size(); index++) {
 //                        std::cout << index << "\t" << bins_of_interest[index].first << "\t"
 //                        << bins_of_interest[index].second << std::endl;
@@ -798,7 +821,7 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-//                if (i==64853) {
+//                if (i==205) {
 //                    std::cout << "NUM READS at end " << bins_of_interest[0].second <<
 //                    " Hinge " << repeat_annotation[i][j].second <<
 //                    "Bridged "<< bridged <<
