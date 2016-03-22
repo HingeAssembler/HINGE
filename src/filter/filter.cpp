@@ -655,6 +655,8 @@ int main(int argc, char *argv[]) {
 //                    << repeat_annotation[i][1].first << "\t" << repeat_annotation[i][1].second << std::endl;
 //        }
         for (int j = 0; j < repeat_annotation[i].size(); j++) {
+            std::cout << "read " << i << "repeat "<< j << "\t"
+            << repeat_annotation[i][j].first  << "\t" << repeat_annotation[i][j].second << std::endl;
             if (repeat_annotation[i][j].second == -1) { // look for out hinges, negative gradient
                 bool bridged = true;
                 int support = 0;
