@@ -26,7 +26,6 @@
 
 #define LAST_READ_SYMBOL  '$'
 
-#define  COVERAGE_FRACTION 3
 
 typedef std::tuple<Node, Node, int> Edge_w; //Edge with weight
 typedef std::pair<Node, Node> Edge_nw; //Edge without weights
@@ -365,6 +364,12 @@ int main(int argc, char *argv[]) {
     int reso = 40; // resolution of masks, repeat annotation, coverage, etc  = 40 basepairs
     bool use_qv_mask = reader.GetBoolean("filter", "use_qv", false);
     bool use_coverage_mask = reader.GetBoolean("filter", "coverage", true);
+    int COVERAGE_FRACTION = (int) reader.GetInteger("filter", "coverage_frac_repeat_annotation", 3);
+    const int MIN_REPEAT_ANNOTATION_THRESHOLD = (int) reader.GetInteger("filter", "min_repeat_annotation_threshold", 10);
+    const int MAX_REPEAT_ANNOTATION_THRESHOLD = (int) reader.GetInteger("filter", "max_repeat_annotation_threshold", 20);
+    const int REPEAT_ANNOTATION_GAP_THRESHOLD = (int) reader.GetInteger("filter", "repeat_annotation_gap_threshold",300);
+    const int NO_HINGE_REGION = (int) reader.GetInteger("filter", "no_hinge_region",500);
+    //How far two hinges of the same type can be
 
     omp_set_num_threads(N_PROC);
 
@@ -616,7 +621,7 @@ int main(int argc, char *argv[]) {
 
     //binarize coverage gradient;
 
-    const int no_hinge_region = 500;
+
     std::vector<std::vector<std::pair<int, int> > > repeat_annotation;
     //detect repeats based on coverage gradient, mark it has rising (1) or falling (-1)
     for (int i = 0; i < n_read; i++) {
@@ -624,9 +629,15 @@ int main(int argc, char *argv[]) {
 
         for (int j = 0; j < cgs[i].size()-1; j++) { // changed, remove the last one
             //std::cout<< i << " " << cgs[i][j].first << " " << cgs[i][j].second << std::endl;
-            if ((cgs[i][j].first >= maskvec[i].first + no_hinge_region) and (cgs[i][j].first <= maskvec[i].second - no_hinge_region)) {
-                if (cgs[i][j].second > std::min((coverages[i][j].second+MIN_COV), 10)) anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
-                else if (cgs[i][j].second < -std::min(coverages[i][j].second, 10)) anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
+            if ((cgs[i][j].first >= maskvec[i].first + NO_HINGE_REGION) and (cgs[i][j].first <= maskvec[i].second - NO_HINGE_REGION)) {
+                if (cgs[i][j].second > std::min(
+                        std::max((coverages[i][j].second+MIN_COV)/COVERAGE_FRACTION, MIN_REPEAT_ANNOTATION_THRESHOLD),
+                        MAX_REPEAT_ANNOTATION_THRESHOLD))
+                    anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
+                else if (cgs[i][j].second < - std::min(
+                        std::max((coverages[i][j].second+MIN_COV)/COVERAGE_FRACTION, MIN_REPEAT_ANNOTATION_THRESHOLD),
+                        MAX_REPEAT_ANNOTATION_THRESHOLD))
+                    anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
             }
         }
         repeat_annotation.push_back(anno);
@@ -634,15 +645,17 @@ int main(int argc, char *argv[]) {
 
 
 
-    int gap_thre = 300;
+
 
     // clean it a bit, merge consecutive 1, or consecutive -1, or adjacent 1 and -1 if their position is within gap_threshold (could be bursty error)
     for (int i = 0; i < n_read; i++) {
         for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end(); ) {
             if (iter+1 < repeat_annotation[i].end()){
-                if (((iter->second == 1) and ((iter + 1)->second == 1)) and ((iter+1)->first - iter->first < gap_thre)) {
+                if (((iter->second == 1) and ((iter + 1)->second == 1)) and
+                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)) {
                     repeat_annotation[i].erase((iter + 1));
-                } else if (((iter->second == -1) and ((iter + 1)->second == -1)) and ((iter+1)->first - iter->first < gap_thre)) {
+                } else if (((iter->second == -1) and ((iter + 1)->second == -1)) and
+                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)) {
                     iter = repeat_annotation[i].erase(iter);
                 } else iter++;
             } else iter ++;
@@ -653,10 +666,12 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end(); ) {
             if (iter+1 < repeat_annotation[i].end()){
-                if ((iter->second == -1) and ((iter+1)->second == 1) and ((iter+1)->first - iter->first < gap_thre)){
+                if ((iter->second == -1) and ((iter+1)->second == 1) and
+                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)){
                     iter = repeat_annotation[i].erase(iter);
                     iter = repeat_annotation[i].erase(iter); // fill gaps
-                } else if ((iter->second == 1) and ((iter+1)->second == -1) and ((iter+1)->first - iter->first < gap_thre)) {
+                } else if ((iter->second == 1) and ((iter+1)->second == -1) and
+                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)) {
                     iter = repeat_annotation[i].erase(iter);
                     iter = repeat_annotation[i].erase(iter);
                 } else iter++;
