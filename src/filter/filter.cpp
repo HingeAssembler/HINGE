@@ -370,6 +370,16 @@ int main(int argc, char *argv[]) {
     const int REPEAT_ANNOTATION_GAP_THRESHOLD = (int) reader.GetInteger("filter", "repeat_annotation_gap_threshold",300);
     const int NO_HINGE_REGION = (int) reader.GetInteger("filter", "no_hinge_region",500);
     //How far two hinges of the same type can be
+    const int HINGE_MIN_SUPPORT = (int) reader.GetInteger("filter", "hinge_min_support", 7);
+    //Minimum number of reads that have to start in a reso length interval to be considered in hinge calling
+    const int HINGE_BIN_PILEUP_THRESHOLD = (int) reader.GetInteger("filter", "hinge_min_pileup", 7);
+    //Minimum number of reads to have in a pileup to consider a hinge bridged
+    const int HINGE_READ_UNBRIDGED_THRESHOLD = (int) reader.GetInteger("filter", "hinge_unbridged", 9);
+    //Number of reads that one has to see before a pileup to declare a potential hinge unbridged
+    const int HINGE_BIN_LENGTH = (int) reader.GetInteger("filter", "hinge_bin", 100);
+    //Physical length of the bins considered
+    const int HINGE_TOLERANCE_LENGTH = (int) reader.GetInteger("filter", "hinge_tolerance_length", 300);
+    //Reads starting at +/- HINGE_TOLERANCE_LENGTH are considered reads starting at hinges
 
     omp_set_num_threads(N_PROC);
 
@@ -710,14 +720,14 @@ int main(int argc, char *argv[]) {
 
                 for (int k = 0; k < idx2[i].size(); k++) {
 
-                    if ((idx2[i][k]->read_A_match_end_ > repeat_annotation[i][j].first - 300)
-                        and (idx2[i][k]->read_A_match_end_ < repeat_annotation[i][j].first + 300)) {
+                    if ((idx2[i][k]->read_A_match_end_ > repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
+                        and (idx2[i][k]->read_A_match_end_ < repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
                         read_other_ends.push_back(idx2[i][k]->read_A_match_start_);
                         support ++;
                     }
                 }
 
-                if (support <7){
+                if (support < HINGE_MIN_SUPPORT){
                     continue;
                 }
                 int start_point=1;
@@ -730,7 +740,7 @@ int main(int argc, char *argv[]) {
 //                        << maskvec[i].first << maskvec[i].second << std::endl;
 //                    }
 
-                    if (read_other_ends[index] - read_other_ends[start_point]  < 100) {
+                    if (read_other_ends[index] - read_other_ends[start_point]  < HINGE_BIN_LENGTH) {
                         num_reads_at_end++;
                     }
                     else {
@@ -751,19 +761,20 @@ int main(int argc, char *argv[]) {
 //                    }
 //                }
                 for (int index=0; index < bins_of_interest.size(); index++) {
-                    if (bins_of_interest[index].first -maskvec[i].first < 100){
+                    if (bins_of_interest[index].first -maskvec[i].first < HINGE_BIN_LENGTH){
                         num_reads_extending_to_end+=bins_of_interest[index].second;
                         num_reads_considered+=bins_of_interest[index].second;
-                        if (num_reads_extending_to_end > 9){
+                        if (num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD){
                             bridged=false;
                             break;
                         }
 
                     }
-                    else if ((bins_of_interest[index].second >7) and (num_reads_considered < 10)){
+                    else if ((bins_of_interest[index].second > HINGE_BIN_PILEUP_THRESHOLD)
+                             and (num_reads_considered < HINGE_READ_UNBRIDGED_THRESHOLD)){
                         break;
                     }
-                    else if (num_reads_considered > 9) {
+                    else if (num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) {
                         bridged=false;
                         break;
                     }
@@ -772,7 +783,8 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                if ((not bridged) and (support > 7)) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first,-1));
+                if ((not bridged) and (support > HINGE_MIN_SUPPORT))
+                    hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first,-1));
 
             } else { // look for in_hinges, positive gradient
                 bool bridged = true;
@@ -782,14 +794,14 @@ int main(int argc, char *argv[]) {
                 std::vector<int> read_other_ends;
 
                 for (int k = 0; k < idx2[i].size(); k++) {
-                    if ((idx2[i][k]->read_A_match_start_ > repeat_annotation[i][j].first - 300)
-                        and (idx2[i][k]->read_A_match_start_ < repeat_annotation[i][j].first + 300)) {
+                    if ((idx2[i][k]->read_A_match_start_ > repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
+                        and (idx2[i][k]->read_A_match_start_ < repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
                         read_other_ends.push_back(idx2[i][k]->read_A_match_end_);
                         support ++;
 
                     }
                 }
-                if (support <7){
+                if (support < HINGE_MIN_SUPPORT){
                     continue;
                 }
                 int start_point=0;
@@ -797,7 +809,7 @@ int main(int argc, char *argv[]) {
                 std::vector< std::pair<int,int> >bins_of_interest;
 
                 for (int index=1; index<read_other_ends.size(); index++) {
-                    if ( read_other_ends[start_point]  - read_other_ends[index] < 100) {
+                    if ( read_other_ends[start_point]  - read_other_ends[index] < HINGE_BIN_LENGTH) {
                         num_reads_at_end++;
                     }
                     else {
@@ -815,19 +827,20 @@ int main(int argc, char *argv[]) {
                 int num_reads_extending_to_end=0;
 
                 for (int index=0; index < bins_of_interest.size(); index++) {
-                    if (maskvec[i].second-bins_of_interest[index].first < 100){
+                    if (maskvec[i].second-bins_of_interest[index].first < HINGE_BIN_LENGTH){
                         num_reads_extending_to_end+=bins_of_interest[index].second;
                         num_reads_considered+=bins_of_interest[index].second;
-                        if (num_reads_extending_to_end > 9){
+                        if (num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD){
                             bridged=false;
                             break;
                         }
 
                     }
-                    else if ((bins_of_interest[index].second >7) and (num_reads_considered < 10)){
+                    else if ((bins_of_interest[index].second > HINGE_BIN_PILEUP_THRESHOLD)
+                             and (num_reads_considered < HINGE_READ_UNBRIDGED_THRESHOLD)){
                         break;
                     }
-                    else if (num_reads_considered > 9) {
+                    else if (num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) {
                         bridged=false;
                         break;
                     }
@@ -836,7 +849,8 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                if ((not bridged) and (support > 7)) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first, 1));
+                if ((not bridged) and (support > HINGE_MIN_SUPPORT))
+                    hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first, 1));
 
             }
         }
