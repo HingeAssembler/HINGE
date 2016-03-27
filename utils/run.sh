@@ -7,7 +7,7 @@ cd $cur_fol
 
 
 echo "Running filter"
-Read_filter --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini
+Reads_filter --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini
 
 echo "Running hinging"
 
