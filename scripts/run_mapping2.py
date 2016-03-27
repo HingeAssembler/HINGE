@@ -29,14 +29,16 @@ mapping = {}
 for key,value in d.items():
     value.sort(key = lambda x:x[2]-x[1], reverse=True)
     alns = value[:k]
+    max_val=alns[0][2]-alns[0][1]
     for aln in alns:
-        if not mapping.has_key(str(key)):
-            mapping[str(key)] = [(aln[1], aln[2],aln[-1], 1-int(aln[0] == 'n'))]
-            mapping[str(key)+'\''] = [(aln[2], aln[1],aln[-1], int(aln[0] == 'n'))]
-        else:
-            mapping[str(key)].append((aln[1], aln[2],aln[-1], 1-int(aln[0] == 'n')))
-            mapping[str(key)+'\''].append((aln[2], aln[1],aln[-1], int(aln[0] == 'n')))
+        if aln[2]-aln[1] > max_val/2.:
+            if not mapping.has_key(str(key)):
+                mapping[str(key)] = [(aln[1], aln[2],aln[-1], 1-int(aln[0] == 'n'))]
+                # mapping[str(key)+'\''] = [(aln[2], aln[1],aln[-1], int(aln[0] == 'n'))]
+            else:
+                mapping[str(key)].append((aln[1], aln[2],aln[-1], 1-int(aln[0] == 'n')))
+                # mapping[str(key)+'\''].append((aln[2], aln[1],aln[-1], int(aln[0] == 'n')))
             
 #print mapping
 import ujson
-ujson.dump(mapping,open(filename2+'.mapping.json','w'))
+ujson.dump(mapping,open(filename2+'.mapping.'+str(k)+'.json','w'))

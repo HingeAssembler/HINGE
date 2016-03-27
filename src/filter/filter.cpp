@@ -12,7 +12,9 @@
 #include <iostream>
 #include <set>
 #include <tuple>
+#include <random>
 #include <omp.h>
+#include <time.h>
 
 #include "INIReader.h"
 #include "spdlog/spdlog.h"
@@ -23,6 +25,7 @@
 #include "cmdline.h"
 
 #define LAST_READ_SYMBOL  '$'
+
 
 typedef std::tuple<Node, Node, int> Edge_w; //Edge with weight
 typedef std::pair<Node, Node> Edge_nw; //Edge without weights
@@ -204,6 +207,7 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
     cmdp.add<std::string>("fasta", 'f', "fasta file name", false, "");
     cmdp.add<std::string>("prefix", 'o', "prefix of output", false, "out");
+    cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
 
     cmdp.parse_check(argc, argv);
 
@@ -215,6 +219,7 @@ int main(int argc, char *argv[]) {
     const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
     std::string out = cmdp.get<std::string>("prefix");
     bool has_qv = true;
+    const char * name_restrict = cmdp.get<std::string>("restrictreads").c_str();
     /**
      * There are two sets of input, the first is db+las, which corresponds to daligner as an overlapper,
      * the other is fasta + paf, which corresponds to minimap as an overlapper.
@@ -276,6 +281,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+
     std::vector<std::vector<int>>  QV;
 
     if (strlen(name_db) > 0) {
@@ -290,6 +296,28 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
     }
     //Binarize QV vector, 40 is the threshold
+    std::set<int> reads_to_keep, reads_to_keep_initial;
+    char * line = NULL;
+    size_t len = 0;
+    if (strlen(name_restrict) > 0){
+        FILE * restrict_reads;
+        restrict_reads = fopen(name_restrict, "r");
+        while (getline(&line, &len, restrict_reads) != -1){
+            std::stringstream ss;
+            ss.clear();
+            ss << line;
+            int num;
+            ss >> num;
+            reads_to_keep.insert(num);
+        }
+        fclose(restrict_reads);
+        console->info("Reads to debug loaded from: {}", name_restrict);
+        console->info("Number of reads to debug loaded: {}", reads_to_keep.size());
+    }
+    else
+        console->info("No debug restrictions.");
+
+
 
     std::vector<std::pair<int, int> > QV_mask;
     // QV_mask is the mask based on QV for reads, for each read, it has one pair [start, end]
@@ -315,7 +343,9 @@ int main(int argc, char *argv[]) {
         }
         // get the longest consecutive region that has good QV
         //printf("maxs %d maxe %d size%d\n",maxs, maxe,QV[i].size());
-        QV_mask.push_back(std::pair<int, int>(maxs*la.tspace, maxe*la.tspace)); // tspace the the interval of trace points
+
+        QV_mask.push_back(std::pair<int, int>(maxs*la.tspace, maxe*la.tspace));
+        // tspace the the interval of trace points
         // create mask by QV
     }
 
@@ -338,6 +368,22 @@ int main(int argc, char *argv[]) {
     int reso = 40; // resolution of masks, repeat annotation, coverage, etc  = 40 basepairs
     bool use_qv_mask = reader.GetBoolean("filter", "use_qv", false);
     bool use_coverage_mask = reader.GetBoolean("filter", "coverage", true);
+    int COVERAGE_FRACTION = (int) reader.GetInteger("filter", "coverage_frac_repeat_annotation", 3);
+    const int MIN_REPEAT_ANNOTATION_THRESHOLD = (int) reader.GetInteger("filter", "min_repeat_annotation_threshold", 10);
+    const int MAX_REPEAT_ANNOTATION_THRESHOLD = (int) reader.GetInteger("filter", "max_repeat_annotation_threshold", 20);
+    const int REPEAT_ANNOTATION_GAP_THRESHOLD = (int) reader.GetInteger("filter", "repeat_annotation_gap_threshold",300);
+    const int NO_HINGE_REGION = (int) reader.GetInteger("filter", "no_hinge_region",500);
+    //How far two hinges of the same type can be
+    const int HINGE_MIN_SUPPORT = (int) reader.GetInteger("filter", "hinge_min_support", 7);
+    //Minimum number of reads that have to start in a reso length interval to be considered in hinge calling
+    const int HINGE_BIN_PILEUP_THRESHOLD = (int) reader.GetInteger("filter", "hinge_min_pileup", 7);
+    //Minimum number of reads to have in a pileup to consider a hinge bridged
+    const int HINGE_READ_UNBRIDGED_THRESHOLD = (int) reader.GetInteger("filter", "hinge_unbridged", 9);
+    //Number of reads that one has to see before a pileup to declare a potential hinge unbridged
+    const int HINGE_BIN_LENGTH = (int) reader.GetInteger("filter", "hinge_bin", 100);
+    //Physical length of the bins considered
+    const int HINGE_TOLERANCE_LENGTH = (int) reader.GetInteger("filter", "hinge_tolerance_length", 300);
+    //Reads starting at +/- HINGE_TOLERANCE_LENGTH are considered reads starting at hinges
 
     use_qv_mask = use_qv_mask and has_qv;
 
@@ -421,39 +467,91 @@ int main(int argc, char *argv[]) {
          cgs.push_back(cg);
     }
 
+    console->info("profile coverage done");
 
-    
+    std::set<int> rand_reads;
+    srand(time(NULL));
+    rand_reads.insert(0);
+    while (rand_reads.size() < n_read/500){
+        int rd_id=rand()%n_read;
+        if (reads[rd_id]->len > 5000)
+            rand_reads.insert(rd_id);
+    }
+
     int num_slot = 0;
     int total_cov = 0;
 
-    std::vector<int> cov_prob;
-
+    std::vector<int> read_coverage;
+    int read_cov=0;
+    int read_slot =0;
     //Finding the average coverage, probing a small proportion of reads
-    for (int i = 0; i < n_read/500; i++) {
+    std::cout << "entering for" <<std::endl;
+    std::ofstream  debug_info;
+    std::ofstream debug_info1;
+    debug_info.open("cov.est.txt");
+    debug_info1.open("cov1.est.txt");
+//    for (std::set<int>::iterator it=rand_reads.begin();it!=rand_reads.end(); ++it) {
+    for (int i =0; i <n_read;  i++){
+        if (reads[i]->len < 5000)
+            continue;
+        read_cov=0;
+        read_slot=0;
         for (int j = 0; j < coverages[i].size(); j++) {
             //printf("%d\n", coverages[i][j].second);
-            total_cov += coverages[i][j].second;
-            num_slot ++;
-            cov_prob.push_back(coverages[i][j].second);
+
+            read_cov+=coverages[i][j].second;
+            read_slot++;
+            debug_info << i << "\t" << j << std::endl;
         }
+        total_cov += read_cov;
+        num_slot += read_slot;
+        debug_info << "re " << read_cov << "\t" << read_slot << std::endl;
+        int mean_read_cov=read_cov / std::max(1,read_slot);
+        debug_info1 << mean_read_cov << "\n";
+        read_coverage.push_back(mean_read_cov);
     }
 
-    std::sort(cov_prob.begin(), cov_prob.end());
 
-    //for (int i = 0; i< cov_prob.size(); i++)
-    //    printf("%d\n",cov_prob[i]);
+    debug_info.close();
+    debug_info1.close();
 
-    int cov_est = cov_prob[cov_prob.size()/2];
-    //int cov_est = total_cov / num_slot;
+    size_t median_id = read_coverage.size() / 2;
+    if (median_id > 0)
+        std::nth_element(read_coverage.begin(), read_coverage.begin()+median_id, read_coverage.end());
+
+
+    int cov_est= read_coverage[median_id];
+
+    int mean_cov_est = total_cov / num_slot;
+
+
+
     //get estimated coverage
 
     if (EST_COV != 0) cov_est = EST_COV;
-    console->info("Estimated coverage: {}", cov_est); //if the coverage is specified by ini file, cover the estimated one
+    console->info("Estimated mean coverage: {}", mean_cov_est); //if the coverage is specified by ini file, cover the estimated one
+    console->info("Estimated median coverage: {}", cov_est);
 
     std::vector<std::pair<int, int>> maskvec;
     // mask vector, same format as mask_QV
     if (MIN_COV < cov_est/3)
         MIN_COV = cov_est/3;
+
+    if (reads_to_keep.size()>0) {
+        reads_to_keep_initial = reads_to_keep;
+        for (std::set<int>::iterator iter = reads_to_keep_initial.begin();
+             iter != reads_to_keep_initial.end(); ++iter) {
+            int i = *iter;
+            for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin();
+                 it != idx[i].end(); it++) {
+                if (it->second.size() > 0) {
+                    LOverlap *ovl = it->second[0];
+                    reads_to_keep.insert(ovl->read_B_id_);
+                }
+            }
+        }
+        console->info("After accounting for neighbours of reads selected, have {} reads", reads_to_keep.size());
+    }
 
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < coverages[i].size(); j++) {
@@ -488,6 +586,13 @@ int main(int argc, char *argv[]) {
         //filtered << ">read_" << i << std::endl;
         //filtered << reads[i]->bases.substr(s,l) << std::endl;
 
+        if (reads_to_keep.size()>0) {
+            if (reads_to_keep.find(i) == reads_to_keep.end()){
+//                std::cout<<"setting masks equal";
+                maxend=maxstart;
+                QV_mask[i].second=QV_mask[i].first;
+            }
+        }
         if ((use_qv_mask) and (use_coverage_mask)) {
             maskvec.push_back(
                     std::pair<int, int>(std::max(maxstart, QV_mask[i].first), std::min(maxend, QV_mask[i].second)));
@@ -533,29 +638,38 @@ int main(int argc, char *argv[]) {
 
     //binarize coverage gradient;
 
-    const int no_hinge_region = 500;
+
     std::vector<std::vector<std::pair<int, int> > > repeat_annotation;
     //detect repeats based on coverage gradient, mark it has rising (1) or falling (-1)
     for (int i = 0; i < n_read; i++) {
         std::vector<std::pair<int, int> > anno;
         for (int j = 0; j < cgs[i].size()-1; j++) { // changed, remove the last one
             //std::cout<< i << " " << cgs[i][j].first << " " << cgs[i][j].second << std::endl;
-            if ((cgs[i][j].first >= maskvec[i].first + no_hinge_region) and (cgs[i][j].first <= maskvec[i].second - no_hinge_region)) {
-                if (cgs[i][j].second > cov_est / 4) anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
-                else if (cgs[i][j].second < cov_est / 4) anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
+
+            if ((cgs[i][j].first >= maskvec[i].first + NO_HINGE_REGION) and (cgs[i][j].first <= maskvec[i].second - NO_HINGE_REGION)) {
+                if (cgs[i][j].second > std::min(
+                        std::max((coverages[i][j].second+MIN_COV)/COVERAGE_FRACTION, MIN_REPEAT_ANNOTATION_THRESHOLD),
+                        MAX_REPEAT_ANNOTATION_THRESHOLD))
+                    anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
+                else if (cgs[i][j].second < - std::min(
+                        std::max((coverages[i][j].second+MIN_COV)/COVERAGE_FRACTION, MIN_REPEAT_ANNOTATION_THRESHOLD),
+                        MAX_REPEAT_ANNOTATION_THRESHOLD))
+                    anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
             }
         }
         repeat_annotation.push_back(anno);
     }
 
-    int gap_thre = 300;
+
     // clean it a bit, merge consecutive 1, or consecutive -1, or adjacent 1 and -1 if their position is within gap_threshold (could be bursty error)
     for (int i = 0; i < n_read; i++) {
         for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end(); ) {
             if (iter+1 < repeat_annotation[i].end()){
-                if (((iter->second == 1) and ((iter + 1)->second == 1)) and ((iter+1)->first - iter->first < gap_thre)) {
+                if (((iter->second == 1) and ((iter + 1)->second == 1)) and
+                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)) {
                     repeat_annotation[i].erase((iter + 1));
-                } else if (((iter->second == -1) and ((iter + 1)->second == -1)) and ((iter+1)->first - iter->first < gap_thre)) {
+                } else if (((iter->second == -1) and ((iter + 1)->second == -1)) and
+                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)) {
                     iter = repeat_annotation[i].erase(iter);
                 } else iter++;
             } else iter ++;
@@ -566,10 +680,12 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end(); ) {
             if (iter+1 < repeat_annotation[i].end()){
-                if ((iter->second == -1) and ((iter+1)->second == 1) and ((iter+1)->first - iter->first < gap_thre)){
+                if ((iter->second == -1) and ((iter+1)->second == 1) and
+                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)){
                     iter = repeat_annotation[i].erase(iter);
                     iter = repeat_annotation[i].erase(iter); // fill gaps
-                } else if ((iter->second == 1) and ((iter+1)->second == -1) and ((iter+1)->first - iter->first < gap_thre)) {
+                } else if ((iter->second == 1) and ((iter+1)->second == -1) and
+                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)) {
                     iter = repeat_annotation[i].erase(iter);
                     iter = repeat_annotation[i].erase(iter);
                 } else iter++;
@@ -595,76 +711,155 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         //std::cout << i <<std::endl;
         hinges[i] = std::vector<std::pair<int, int>>();
+
         for (int j = 0; j < repeat_annotation[i].size(); j++) {
+
             if (repeat_annotation[i][j].second == -1) { // look for out hinges, negative gradient
+
                 bool bridged = true;
                 int support = 0;
                 int num_reads_at_end=1;
 
                 std::vector<int> read_other_ends;
 
-                for (int k = 0; k < idx_pileup_dedup[i].size(); k++) {
-                    if ((idx_pileup_dedup[i][k]->read_A_match_end_ > repeat_annotation[i][j].first - 300)
-                        and (idx_pileup_dedup[i][k]->read_A_match_end_ < repeat_annotation[i][j].first + 300)) {
-                        read_other_ends.push_back(idx_pileup_dedup[i][k]->read_A_match_end_);
+
+                for (int k = 0; k < idx2[i].size(); k++) {
+
+                    if ((idx2[i][k]->read_A_match_end_ > repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
+                        and (idx2[i][k]->read_A_match_end_ < repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
+                        read_other_ends.push_back(idx2[i][k]->read_A_match_start_);
                         support ++;
                     }
                 }
 
-                int start_point=read_other_ends.size()-1;
+                if (support < HINGE_MIN_SUPPORT){
+                    continue;
+                }
+                int start_point=1;
                 std::sort(read_other_ends.begin(),read_other_ends.end());
-                for (int index=read_other_ends.size()-2; index>0; index--) {
-                    //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
-                     //       read_other_ends[start_point]- read_other_ends[index] << "\t" << CUT_OFF << std::endl;
+                std::vector< std::pair<int,int> >bins_of_interest;
 
-                    if ( read_other_ends[start_point]- read_other_ends[index] < 100) {
+                for (int index=1; index<read_other_ends.size(); index++) {
+//                    if (i==2588) {
+//                        std::cout << i << "\t" << read_other_ends[index] << "\t"
+//                        << maskvec[i].first << maskvec[i].second << std::endl;
+//                    }
+
+                    if (read_other_ends[index] - read_other_ends[start_point]  < HINGE_BIN_LENGTH) {
                         num_reads_at_end++;
                     }
-                    //else
-                        //break;
-                }
-                //std::cout <<"NUM READS at end " <<num_reads_at_end<<
-                  //      " Hinge " << repeat_annotation[i][j].second <<"\n-----------------------------------------------\n";
+                    else {
+                        bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
+                        start_point=index;
+                        num_reads_at_end=1;
+                    }
 
-                //std::cout << i << "\t" << read_other_ends.size() << std::endl;
-                if ((support > 7) and (num_reads_at_end < 8)) {
-                    //std::cout << "setting in hinge bridged to false"<<std::endl;
-                    bridged = false;
                 }
-                if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first,-1));
+                bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
+
+                int num_reads_considered=0;
+                int num_reads_extending_to_end=0;
+//                if (i==2588){
+//                    for (int index=0; index < bins_of_interest.size(); index++) {
+//                        std::cout << bins_of_interest[index].first << "\t" << bins_of_interest[index].second
+//                                << std::endl ;
+//                    }
+//                }
+                for (int index=0; index < bins_of_interest.size(); index++) {
+                    if (bins_of_interest[index].first -maskvec[i].first < HINGE_BIN_LENGTH){
+                        num_reads_extending_to_end+=bins_of_interest[index].second;
+                        num_reads_considered+=bins_of_interest[index].second;
+                        if (num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD){
+                            bridged=false;
+                            break;
+                        }
+
+                    }
+                    else if ((bins_of_interest[index].second > HINGE_BIN_PILEUP_THRESHOLD)
+                             and (num_reads_considered < HINGE_READ_UNBRIDGED_THRESHOLD)){
+                        break;
+                    }
+                    else if (num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) {
+                        bridged=false;
+                        break;
+                    }
+                    else {
+                        num_reads_considered+=bins_of_interest[index].second;
+                    }
+                }
+
+
+                if ((not bridged) and (support > HINGE_MIN_SUPPORT))
+                    hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first,-1));
+
             } else { // look for in_hinges, positive gradient
                 bool bridged = true;
                 int support = 0;
                 int num_reads_at_end=1;
 
                 std::vector<int> read_other_ends;
-                for (int k = 0; k < idx_pileup_dedup[i].size(); k++) {
-                    if ((idx_pileup_dedup[i][k]->read_A_match_start_ > repeat_annotation[i][j].first - 300)
-                        and (idx_pileup_dedup[i][k]->read_A_match_start_ < repeat_annotation[i][j].first + 300)) {
-                        read_other_ends.push_back(idx_pileup_dedup[i][k]->read_A_match_start_);
+
+
+                for (int k = 0; k < idx2[i].size(); k++) {
+                    if ((idx2[i][k]->read_A_match_start_ > repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
+                        and (idx2[i][k]->read_A_match_start_ < repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
+                        read_other_ends.push_back(idx2[i][k]->read_A_match_end_);
                         support ++;
                     }
                 }
+                if (support < HINGE_MIN_SUPPORT){
+                    continue;
+                }
                 int start_point=0;
-                std::sort(read_other_ends.begin(),read_other_ends.end());
+
+                std::sort(read_other_ends.begin(),read_other_ends.end(),std::greater<int>());//Sort in descending order
+                std::vector< std::pair<int,int> >bins_of_interest;
 
                 for (int index=1; index<read_other_ends.size(); index++) {
-                    //std::cout << "Read other end " << i <<"\t"<< read_other_ends[index] <<"\t"<<
-                    //read_other_ends[index] - read_other_ends[start_point] << "\t" << CUT_OFF << std::endl;
-
-                    if (read_other_ends[index] - read_other_ends[start_point]  < 100) {
+                    if ( read_other_ends[start_point]  - read_other_ends[index] < HINGE_BIN_LENGTH) {
                         num_reads_at_end++;
+                    }
+                    else {
+                        bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
+                        start_point=index;
+                        num_reads_at_end=1;
                     }
                     //else
                     //break;
                 }
-                //std::cout <<"NUM READS at end " <<num_reads_at_end<<
-                //        " Hinge " << repeat_annotation[i][j].second <<"\n-----------------------------------------------\n";
-                if ((support > 7) and (num_reads_at_end < 8)){ // heuristic here
-                    bridged = false;
-                    //std::cout << "setting out hinge bridged to false"<<std::endl;
+                bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
+
+
+                int num_reads_considered=0;
+                int num_reads_extending_to_end=0;
+
+                for (int index=0; index < bins_of_interest.size(); index++) {
+                    if (maskvec[i].second-bins_of_interest[index].first < HINGE_BIN_LENGTH){
+                        num_reads_extending_to_end+=bins_of_interest[index].second;
+                        num_reads_considered+=bins_of_interest[index].second;
+                        if (num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD){
+                            bridged=false;
+                            break;
+                        }
+
+                    }
+                    else if ((bins_of_interest[index].second > HINGE_BIN_PILEUP_THRESHOLD)
+                             and (num_reads_considered < HINGE_READ_UNBRIDGED_THRESHOLD)){
+                        break;
+                    }
+                    else if (num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) {
+                        bridged=false;
+                        break;
+                    }
+                    else {
+                        num_reads_considered+=bins_of_interest[index].second;
+                    }
                 }
-                if (not bridged) hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first, 1));
+
+
+                if ((not bridged) and (support > HINGE_MIN_SUPPORT))
+                    hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first, 1));
+
             }
         }
     }
