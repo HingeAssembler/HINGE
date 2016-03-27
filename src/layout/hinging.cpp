@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
     cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
     cmdp.add<std::string>("fasta", 'f', "fasta file name", false, "");
-    cmdp.add<std::string>("prefix", 'o', "output file prefix", true, "");
+    cmdp.add<std::string>("prefix", 'x', "output file prefix", true, "");
     cmdp.add<std::string>("out", 'o', "output file name", true, "");
 //    cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
 
