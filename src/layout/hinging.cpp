@@ -636,7 +636,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin(); it!=idx[i].end(); it++) {
+        for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx_ab[i].begin(); it!=idx_ab[i].end(); it++) {
             std::sort(it->second.begin(), it->second.end(), compare_overlap);//Sort overlaps by lengths
             //std::cout<<"Giving input to ProcessAlignment "<<it->second.size() <<std::endl;
 

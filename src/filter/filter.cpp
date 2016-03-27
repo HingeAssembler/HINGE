@@ -542,8 +542,8 @@ int main(int argc, char *argv[]) {
         for (std::set<int>::iterator iter = reads_to_keep_initial.begin();
              iter != reads_to_keep_initial.end(); ++iter) {
             int i = *iter;
-            for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin();
-                 it != idx[i].end(); it++) {
+            for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx_ab[i].begin();
+                 it != idx_ab[i].end(); it++) {
                 if (it->second.size() > 0) {
                     LOverlap *ovl = it->second[0];
                     reads_to_keep.insert(ovl->read_B_id_);
@@ -723,11 +723,11 @@ int main(int argc, char *argv[]) {
                 std::vector<int> read_other_ends;
 
 
-                for (int k = 0; k < idx2[i].size(); k++) {
+                for (int k = 0; k < idx_pileup[i].size(); k++) {
 
-                    if ((idx2[i][k]->read_A_match_end_ > repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
-                        and (idx2[i][k]->read_A_match_end_ < repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
-                        read_other_ends.push_back(idx2[i][k]->read_A_match_start_);
+                    if ((idx_pileup[i][k]->read_A_match_end_ > repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
+                        and (idx_pileup[i][k]->read_A_match_end_ < repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
+                        read_other_ends.push_back(idx_pileup[i][k]->read_A_match_start_);
                         support ++;
                     }
                 }
@@ -800,10 +800,10 @@ int main(int argc, char *argv[]) {
                 std::vector<int> read_other_ends;
 
 
-                for (int k = 0; k < idx2[i].size(); k++) {
-                    if ((idx2[i][k]->read_A_match_start_ > repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
-                        and (idx2[i][k]->read_A_match_start_ < repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
-                        read_other_ends.push_back(idx2[i][k]->read_A_match_end_);
+                for (int k = 0; k < idx_pileup[i].size(); k++) {
+                    if ((idx_pileup[i][k]->read_A_match_start_ > repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
+                        and (idx_pileup[i][k]->read_A_match_start_ < repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
+                        read_other_ends.push_back(idx_pileup[i][k]->read_A_match_end_);
                         support ++;
                     }
                 }
