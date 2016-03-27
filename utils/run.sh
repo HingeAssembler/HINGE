@@ -16,3 +16,7 @@ hinging --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini --out
 echo "Running Visualise"
 
 python ~/AwesomeAssembler/scripts/Visualise_graph.py $1.edges.hinges hinge_list.txt
+
+echo "Running Condense"
+
+python ~/AwesomeAssembler/scripts/condense_graph.py $1.edges.hinges
