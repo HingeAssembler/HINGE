@@ -213,6 +213,8 @@ public:
 
 	int loadPAF(std::string filename, std::vector<LOverlap *> &);
 
+    int loadFASTA(std::string filename, std::vector<Read *> & reads);
+
 };
 
 #endif
