@@ -4,6 +4,10 @@ if [ "$2" == "scripts" ];
 then rsync -rizP --delete --exclude '.*' --exclude '*.pyc' --exclude 'figures' scripts/ $1@shannon.stanford.edu:/home/$1/AwesomeAssembler/scripts
 fi
 
+if [ "$2" == "utils" ];
+then rsync -rizP --delete --exclude '.*' --exclude '*.pyc' --exclude 'figures' utils/ $1@shannon.stanford.edu:/home/$1/AwesomeAssembler/utils
+fi
+
 if [ "$2" == "push" ];
 then rsync -rizP --delete --exclude '.*' --exclude 'build' src/ $1@shannon.stanford.edu:/home/$1/AwesomeAssembler/src
 fi
