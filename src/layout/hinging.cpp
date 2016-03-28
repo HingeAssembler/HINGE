@@ -833,11 +833,11 @@ int main(int argc, char *argv[]) {
     FILE * out_g1;
     FILE * out_g2;
     FILE * out_hg;
-    out_g1 = fopen((std::string(out_name) + ".1").c_str(), "w");
-    out_g2 = fopen((std::string(out_name) + ".2").c_str(), "w");
+    out_g1 = fopen((std::string(out_name) + ".edges.1").c_str(), "w");
+    out_g2 = fopen((std::string(out_name) + ".edges.2").c_str(), "w");
 
     // Output file for matches 
-    out_hg = fopen((std::string(out_name) + ".hinges").c_str(), "w");
+    out_hg = fopen((std::string(out_name) + ".edges.hinges").c_str(), "w");
 
     // Output file for edges
 
@@ -1177,6 +1177,7 @@ int main(int argc, char *argv[]) {
         }
     }*/
 
+    std::ofstream debug_fle("hinge_debug.txt");
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
 
@@ -1187,8 +1188,16 @@ int main(int argc, char *argv[]) {
 
             LOverlap * chosen_match = NULL;
 
+            if(i==261122){
+                debug_fle << "In read "<< i << std::endl;
+            }
 
             for (int j = 0; j < matches_forward[i].size(); j++){
+                if(i==261122) {
+                    debug_fle << i << "\t" << forward << "\t" << matches_forward[i][j]->match_type_
+                            << "\t" << matches_forward[i][j]->weight << "\t"
+                    << matches_forward[i][j]->active << std::endl;
+                }
 
                 if (matches_forward[i][j]->active) {
 
@@ -1268,6 +1277,12 @@ int main(int argc, char *argv[]) {
             }
 
             for (int j = 0; j < matches_backward[i].size(); j++){
+
+                if(i==261122) {
+                    debug_fle << i << "\t" << forward << "\t" << matches_backward[i][j]->match_type_
+                    << "\t" << matches_backward[i][j]->weight << "\t"
+                    << matches_backward[i][j]->active << std::endl;
+                }
                 if (matches_backward[i][j]->active) {
 
                     if ((reads[matches_backward[i][j]->read_B_id_]->active)) {
