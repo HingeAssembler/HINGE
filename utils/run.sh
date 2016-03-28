@@ -21,6 +21,7 @@ echo "Running Condense"
 
 python ~/AwesomeAssembler/scripts/condense_graph.py $1.edges.hinges
 
-
-
 echo "putting ground truth and condensing"
+if [ -e "$1.mapping.1.json" ]
+	then
+	python ~/AwesomeAssembler/scripts/condense_graph_with_aln_json.py $1.edges.hinges $1.mapping.1.json
