@@ -7,11 +7,11 @@ cd $cur_fol
 
 
 echo "Running filter"
-Read_filter --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini
+Reads_filter --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini
 
 echo "Running hinging"
 
-hinging --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini --out $1.edges
+hinging --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini -o $1.edges
 
 echo "Running Visualise"
 
@@ -20,3 +20,9 @@ python ~/AwesomeAssembler/scripts/Visualise_graph.py $1.edges.hinges hinge_list.
 echo "Running Condense"
 
 python ~/AwesomeAssembler/scripts/condense_graph.py $1.edges.hinges
+
+echo "putting ground truth and condensing"
+if [ -e "$1.mapping.1.json" ]
+	then
+	python ~/AwesomeAssembler/scripts/condense_graph_with_aln_json.py $1.edges.hinges $1.mapping.1.json
+fi
