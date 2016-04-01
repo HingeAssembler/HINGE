@@ -11,7 +11,7 @@ Reads_filter --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini
 
 echo "Running hinging"
 
-hinging --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini -o $1.edges
+hinging --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini -o $1.edges -x $1
 
 echo "Running Visualise"
 
@@ -21,7 +21,7 @@ echo "Running Condense"
 
 python ~/AwesomeAssembler/scripts/condense_graph.py $1.edges.hinges
 
-echo "putting ground truth and condensing"
+echo "Putting ground truth and condensing"
 if [ -e "$1.mapping.1.json" ]
 	then
 	python ~/AwesomeAssembler/scripts/condense_graph_with_aln_json.py $1.edges.hinges $1.mapping.1.json
