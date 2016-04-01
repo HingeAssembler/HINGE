@@ -842,11 +842,11 @@ int main(int argc, char *argv[]) {
     FILE * out_g1;
     FILE * out_g2;
     FILE * out_hg;
-    out_g1 = fopen((std::string(out_name) + ".edges.1").c_str(), "w");
-    out_g2 = fopen((std::string(out_name) + ".edges.2").c_str(), "w");
+    out_g1 = fopen((std::string(out) + ".1").c_str(), "w");
+    out_g2 = fopen((std::string(out) + ".2").c_str(), "w");
 
     // Output file for matches 
-    out_hg = fopen((std::string(out_name) + ".edges.hinges").c_str(), "w");
+    out_hg = fopen((std::string(out) + ".hinges").c_str(), "w");
 
     // Output file for edges
 
