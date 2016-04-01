@@ -326,8 +326,8 @@ int main(int argc, char *argv[]) {
     const char * name_paf = cmdp.get<std::string>("paf").c_str();
     const char * name_fasta = cmdp.get<std::string>("fasta").c_str();
     const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
-    const char * out_name = cmdp.get<std::string>("prefix").c_str();
-    std::string out = cmdp.get<std::string>("out");
+    std::string  out = cmdp.get<std::string>("prefix");
+    std::string out_name = cmdp.get<std::string>("out");
 //    const char * name_restrict = cmdp.get<std::string>("restrictreads").c_str();
 	
 
@@ -842,11 +842,11 @@ int main(int argc, char *argv[]) {
     FILE * out_g1;
     FILE * out_g2;
     FILE * out_hg;
-    out_g1 = fopen((std::string(out) + ".1").c_str(), "w");
-    out_g2 = fopen((std::string(out) + ".2").c_str(), "w");
+    out_g1 = fopen((std::string(out_name) + ".1").c_str(), "w");
+    out_g2 = fopen((std::string(out_name) + ".2").c_str(), "w");
 
     // Output file for matches 
-    out_hg = fopen((std::string(out) + ".hinges").c_str(), "w");
+    out_hg = fopen((std::string(out_name) + ".hinges").c_str(), "w");
 
     // Output file for edges
 
@@ -976,7 +976,7 @@ int main(int argc, char *argv[]) {
 
     n = 0;
     FILE *out_hglist;
-    out_hglist = fopen("hinge_list.txt","w");
+    out_hglist = fopen((std::string(out_name) + ".hinge.list").c_str(),"w");
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < hinges_vec[i].size(); j++) {
             if ((reads[i]->active) and ((hinges_vec[i][j].active) or hinges_vec[i][j].active2)) {
