@@ -310,8 +310,8 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
     cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
     cmdp.add<std::string>("fasta", 'f', "fasta file name", false, "");
-    cmdp.add<std::string>("prefix", 'o', "output file prefix", true, "");
-//    cmdp.add<std::string>("out", 'o', "output file name", true, "");
+    cmdp.add<std::string>("prefix", 'x', "output file prefix", true, "");
+    cmdp.add<std::string>("out", 'o', "output file name", true, "");
 //    cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
 
 
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
     const char * name_fasta = cmdp.get<std::string>("fasta").c_str();
     const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
     const char * out_name = cmdp.get<std::string>("prefix").c_str();
-    std::string out = cmdp.get<std::string>("prefix");
+    std::string out = cmdp.get<std::string>("out");
 //    const char * name_restrict = cmdp.get<std::string>("restrictreads").c_str();
 	
 
@@ -430,6 +430,7 @@ int main(int argc, char *argv[]) {
     //overlap.
     int KILL_HINGE_OVERLAP_ALLOWANCE = (int)reader.GetInteger("layout", "kill_hinge_overlap", 300);
     int KILL_HINGE_INTERNAL_ALLOWANCE = (int)reader.GetInteger("layout", "kill_hinge_internal", 40);
+    console->info("Length threshold : {}",LENGTH_THRESHOLD);
 
     omp_set_num_threads(N_PROC);
     //std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read);
@@ -1188,16 +1189,16 @@ int main(int argc, char *argv[]) {
 
             LOverlap * chosen_match = NULL;
 
-            if(i==261122){
-                debug_fle << "In read "<< i << std::endl;
-            }
+//            if(i==261122){
+//                debug_fle << "In read "<< i << std::endl;
+//            }
 
             for (int j = 0; j < matches_forward[i].size(); j++){
-                if(i==261122) {
-                    debug_fle << i << "\t" << forward << "\t" << matches_forward[i][j]->match_type_
-                            << "\t" << matches_forward[i][j]->weight << "\t"
-                    << matches_forward[i][j]->active << std::endl;
-                }
+//                if(i==261122) {
+//                    debug_fle << i << "\t" << forward << "\t" << matches_forward[i][j]->match_type_
+//                            << "\t" << matches_forward[i][j]->weight << "\t"
+//                    << matches_forward[i][j]->active << std::endl;
+//                }
 
                 if (matches_forward[i][j]->active) {
 
@@ -1278,16 +1279,22 @@ int main(int argc, char *argv[]) {
 
             for (int j = 0; j < matches_backward[i].size(); j++){
 
-                if(i==261122) {
-                    debug_fle << i << "\t" << forward << "\t" << matches_backward[i][j]->match_type_
-                    << "\t" << matches_backward[i][j]->weight << "\t"
-                    << matches_backward[i][j]->active << std::endl;
-                }
+//                if(i==261122) {
+//                    debug_fle << i << "\t" << backward << "\t" << matches_backward[i][j]->match_type_
+//                    << "\t" << matches_backward[i][j]->weight << "\t"
+//                    << matches_backward[i][j]->active << "\t"
+//                    << reads[matches_backward[i][j]->read_B_id_]->active<< std::endl;
+//                }
                 if (matches_backward[i][j]->active) {
 
                     if ((reads[matches_backward[i][j]->read_B_id_]->active)) {
 
                         if ((matches_backward[i][j]->match_type_ == BACKWARD) and (backward == 0)){
+//                            if(i==261122) {
+//                                std::cout << i << "\t" << backward << "\t" << matches_backward[i][j]->match_type_
+//                                << "\t" << matches_backward[i][j]->weight << "\t"
+//                                << matches_backward[i][j]->active << "\t" << matches_backward[i][j]->read_B_id_ << std::endl;
+//                            }
                             //fprintf(out3,"Printed from backward\n");
 //                            PrintOverlapToFile(out3,matches_backward[i][j]);
 //                            edges_backward[i].push_back(matches_backward[i][j]);
