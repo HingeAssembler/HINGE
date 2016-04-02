@@ -53,6 +53,8 @@ def merge_path(g,in_node,node,out_node):
     
 
 def de_clip(filename, n_nodes):
+    
+    n_iter = 5
 
     g = nx.MultiDiGraph()
     
