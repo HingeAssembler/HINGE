@@ -4584,7 +4584,7 @@ void LOverlap::addtype(int max_overhang) {
     }
 }
 
-void LOverlap::AddTypesAsymmetric(int max_overhang) {
+void LOverlap::AddTypesAsymmetric(int max_overhang, int min_overhang) {
     //Getting a parameter max_overhang, which is the maximum overlap that one can attribute to bad DAligner ends
     //The function sets the class variable match_type_ according to the relative positions of the reads.
     //Possible things it can set to are:
@@ -4606,14 +4606,17 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     }
 
 
-    if (std::max(overhang_read_A_left, overhang_read_A_right) < max_overhang)
+    if ((std::max(overhang_read_A_left, overhang_read_A_right) < max_overhang)
+        and (std::min(overhang_read_B_left, overhang_read_B_right) > min_overhang ))
        // and ((overhang_read_A_left <= overhang_read_B_left)
        //      and (overhang_read_A_right <= overhang_read_B_right)))
         this->match_type_ = BCOVERA;
-    else if (std::max(overhang_read_B_left, overhang_read_B_right) < max_overhang)
+    else if ((std::max(overhang_read_B_left, overhang_read_B_right) < max_overhang)
+            and (std::min(overhang_read_A_left, overhang_read_A_right) > min_overhang ))
          //and (overhang_read_A_left >= overhang_read_B_left)
          //     and (overhang_read_A_right >= overhang_read_B_right))
-    this->match_type_ = ACOVERB;
+        //
+        this->match_type_ = ACOVERB;
     else if ((std::min(overhang_read_A_left, overhang_read_A_right) > max_overhang))
         this->match_type_ = INTERNAL;
     else if (overhang_read_A_left <= max_overhang) {
