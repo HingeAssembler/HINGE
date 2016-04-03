@@ -15,40 +15,10 @@ from collections import Counter
 
 
 
-def merge_simple_path(g):
-    for node in g.nodes():
-        if g.in_degree(node) == 1 and g.out_degree(node) == 1:
-            
-            in_node = g.in_edges(node)[0][0]
-            out_node = g.out_edges(node)[0][1]
-            if g.out_degree(in_node) == 1 and g.in_degree(out_node) == 1:
-                if in_node != node and out_node != node and in_node != out_node:
-                    #print in_node, node, out_node
-                    merge_path(g,in_node,node,out_node)
-
 def merge_path(g,in_node,node,out_node):
-    #ov1 = find_overlap(g.node[in_node]['bases'], g.node[node]['bases'])
-    #ov2 = find_overlap(g.node[node]['bases'], g.node[out_node]['bases'])
-    
-    node_id = g.graph['aval']
-    g.graph['aval'] += 1
-    #length = g.node[node]['length'] + g.node[in_node]['length'] + g.node[out_node]['length'] - ov1 - ov2
-    #cov = (g.node[in_node]['cov'] * g.node[in_node]['length'] + g.node[node]['cov'] * g.node[node]['length']  + \
-    #g.node[out_node]['cov'] * g.node[out_node]['length'])/float(length)
-    #bases = g.node[in_node]['bases'][:-ov1] + g.node[node]['bases'] + g.node[out_node]['bases'][ov2:]
-    g.add_node(str(node_id),aln_end = g.node[out_node]['aln_end'])
-    #g.add_node(str(node_id)+'-', bases = reverse_comp_bases(bases), length = length, cov = cov)
-    
-    for edge in g.in_edges(in_node):
-        g.add_edge(edge[0],str(node_id),hinge_edge = -1)
-    
-    for edge in g.out_edges(out_node):
-        g.add_edge(str(node_id),edge[1], hinge_edge = -1)
-    
         
-    g.remove_node(in_node)
+    g.add_edge(in_node,out_node,hinge_edge = -1)        
     g.remove_node(node)
-    g.remove_node(out_node)
     
 
 def input1(flname):
@@ -81,17 +51,10 @@ def input2(flname):
 
 
 
-def de_clip(filename, n_nodes):
+def de_clip(filename, n_nodes, hinge_list=None):
 
     n_iter = 5
 
-    # g = nx.MultiDiGraph()
-    
-    # with open(filename,'r') as f:
-    #     for line in f.xreadlines():
-    #         l = line.strip().split()
-    #         #print l2
-    #         g.add_edge(l[0],l[1])
     
     f=open(filename)
     line1=f.readline()
@@ -106,89 +69,167 @@ def de_clip(filename, n_nodes):
     print nx.info(g)
     degree_sequence=sorted(g.degree().values(),reverse=True)
     print Counter(degree_sequence)
-    # for i in range(n_iter):
-    #     for node in g.nodes():
-    #         if g.degree(node) < 2:
-    #             g.remove_node(node)
-    
-    #     print nx.info(g)
-    #     degree_sequence=sorted(nx.degree(g).values(),reverse=True)
-    #     print Counter(degree_sequence)
     
     degree_sequence=sorted(nx.degree(g).values(),reverse=True)
     print Counter(degree_sequence)
     
     try:
         import ujson
-        mapping = ujson.load(open(filename.split('.')[0]+'.mapping.json'))
+        mapping = ujson.load(open(filename.split('.')[0]+'.mapping.1.json'))
         
-        print 'get mapping'
-        
+        print 'getting mapping'
+        mapped_nodes=0
+        print str(len(mapping)) 
+        print str(len(g.nodes()))
         for node in g.nodes():
+            # print node
+            node_base=node.split("_")[0]
+            # print node_base
+
             #print node
-            if mapping.has_key(node):
-                g.node[node]['aln_start'] = mapping[node][0]
-                g.node[node]['aln_end'] = mapping[node][1]
-                g.node[node]['aln_strand'] = mapping[node][2]
+            if mapping.has_key(node_base):
+                g.node[node]['aln_start'] = mapping[node_base][0][0]
+                g.node[node]['aln_end'] = mapping[node_base][0][1]
+                g.node[node]['chr'] = mapping[node_base][0][2]
+                mapped_nodes+=1
             else:
-                g.node[node]['aln_start'] = 0
-                g.node[node]['aln_end'] = 0
-                g.node[node]['aln_strand'] = 0
+                pass
+                # g.node[node]['aln_start'] = 0
+                # g.node[node]['aln_end'] = 0
+                # g.node[node]['aln_strand'] = 0
                 
     except:
+        # raise
         print "json "+filename.split('.')[0]+'.mapping.json'+" not found. exiting."
-        return   
+           
+    print hinge_list
 
-
-    print "mapping done"
-    
-    g.graph['aval'] = 1000000000
+    print str(mapped_nodes)+" out of " +str(len(g.nodes()))+" nodes mapped."
     
     # for i in range(5):
     #     merge_simple_path(g)
     #     degree_sequence=sorted(nx.degree(g).values(),reverse=True)
     #     print Counter(degree_sequence)
 
+    in_hinges = set()
+    out_hinges = set()
+    num_iter=10000
+    iter_done=0
+    if hinge_list != None:
+        print "Found hinge list."
+        with open(hinge_list,'r') as f:
+            for lines in f:
+                lines1=lines.split()
 
+                if lines1[2] == '1':
+                  in_hinges.add(lines1[0]+'_0')
+                  out_hinges.add(lines1[0]+'_1')
+                elif lines1[2] == '-1':
+                  in_hinges.add(lines1[0]+'_1')
+                  out_hinges.add(lines1[0]+'_0')
 
+        print str(len(in_hinges))+' hinges found.'
 
+        for node in g.nodes():
+            if node in in_hinges and node in out_hinges:
+                g.node[node]['hinge']=100
+            elif node in in_hinges:
+                g.node[node]['hinge']=10
+            elif node in out_hinges:
+                g.node[node]['hinge']=-10
+            else:
+                g.node[node]['hinge']=0
 
-    while len(g.nodes()) > n_nodes:
+        while len(g.nodes()) > n_nodes and iter_done < num_iter :
+            node = g.nodes()[random.randrange(len(g.nodes()))]
+            iter_done+=1
+            # print iter_done
+            if g.in_degree(node) == 1 and g.out_degree(node) == 1:
 
-        node = g.nodes()[random.randrange(len(g.nodes()))]
+                base_node=node.split("_")[0]
+                orintation = node.split("_")[1]
+                if orintation=='1':
+                    node2=base_node+'_0'
+                else:
+                    node2=base_node+'_1'
 
-        if g.in_degree(node) == 1 and g.out_degree(node) == 1:
+                # print node,node2
 
-            # edge_1 = g.out_edges(node)[0]
-            # edge_2 = g.in_edges(node)[0]
-
-            edge1 = g.out_edges(node)[0]
-            edge2 = g.in_edges(node)[0]
-
-            # print g.edge[edge1[0]][edge1[1]]['hinge_edge']
-
-            if (g.edge[edge1[0]][edge1[1]]['hinge_edge'] == -1 and g.edge[edge2[0]][edge2[1]]['hinge_edge'] == -1):
-            
                 in_node = g.in_edges(node)[0][0]
                 out_node = g.out_edges(node)[0][1]
-                if g.out_degree(in_node) == 1 and g.in_degree(out_node) == 1:
-                    if in_node != node and out_node != node and in_node != out_node:
-                        #print in_node, node, out_node
-                        merge_path(g,in_node,node,out_node)
+                if g.node[node]['hinge']==0 and g.node[in_node]['hinge']==0  and g.node[out_node]['hinge']==0:
+                    if g.out_degree(in_node) == 1 and g.in_degree(out_node) == 1:
+                        if in_node != node and out_node != node and in_node != out_node:
+                            #print in_node, node, out_node
+                            merge_path(g,in_node,node,out_node)
+
+
+                # print g.edge[edge1[0]][edge1[1]]['hinge_edge']
+
+                
+                in_node = g.in_edges(node2)[0][0]
+                out_node = g.out_edges(node2)[0][1]
+                if g.node[node2]['hinge']==0 and g.node[in_node]['hinge']==0  and g.node[out_node]['hinge']==0:
+                    if g.out_degree(in_node) == 1 and g.in_degree(out_node) == 1:
+                        if in_node != node2 and out_node != node2 and in_node != out_node:
+                            #print in_node, node, out_node
+                            merge_path(g,in_node,node2,out_node)
+
+    else:
+        while len(g.nodes()) > n_nodes:
+
+            node = g.nodes()[random.randrange(len(g.nodes()))]
+
+
+
+            if g.in_degree(node) == 1 and g.out_degree(node) == 1:
+
+                # assert g.in_degree(node2) == 1 and g.out_degree(node2) == 1
+                # edge_1 = g.out_edges(node)[0]
+                # edge_2 = g.in_edges(node)[0]
+
+                edge1 = g.out_edges(node)[0]
+                edge2 = g.in_edges(node)[0]
+
+                # print g.edge[edge1[0]][edge1[1]]['hinge_edge']
+
+                if (g.edge[edge1[0]][edge1[1]]['hinge_edge'] == -1 and g.edge[edge2[0]][edge2[1]]['hinge_edge'] == -1):
+                
+                    in_node = g.in_edges(node)[0][0]
+                    out_node = g.out_edges(node)[0][1]
+                    if g.out_degree(in_node) == 1 and g.in_degree(out_node) == 1:
+                        if in_node != node and out_node != node and in_node != out_node:
+                            #print in_node, node, out_node
+                            merge_path(g,in_node,node,out_node)
+
+
+
+
 
 
 
     
-     
+    degree_sequence=sorted(nx.degree(g).values(),reverse=True)
+    print Counter(degree_sequence)
+
     
     nx.write_graphml(g, filename.split('.')[0]+'.sparse.graphml')
     
     print nx.number_weakly_connected_components(g)
     print nx.number_strongly_connected_components(g)
-    
-    
-filename = sys.argv[1]
-de_clip(filename, int(sys.argv[2]))
+  
+
+if __name__ == "__main__":   
+    filename = sys.argv[1]
+    try :
+        hinge_list=sys.argv[3]
+        print "Found hinge list."
+    except:
+        hinge_list=None
+        print "in except "+hinge_list
+
+    de_clip(filename, int(sys.argv[2]),hinge_list)
+
 
 
 
