@@ -1182,16 +1182,16 @@ int main(int argc, char *argv[]) {
 
             LOverlap * chosen_match = NULL;
 
-            if(i==227622){
-                debug_fle << "In read "<< i << std::endl;
-            }
+//            if(i==227622){
+//                debug_fle << "In read "<< i << std::endl;
+//            }
 
             for (int j = 0; j < matches_forward[i].size(); j++){
-                if(i==227622) {
-                    debug_fle << i << "\t" << forward << "\t" << matches_forward[i][j]->match_type_
-                            << "\t" << matches_forward[i][j]->weight << "\t"
-                    << matches_forward[i][j]->active << std::endl;
-                }
+//                if(i==227622) {
+//                    debug_fle << i << "\t" << forward << "\t" << matches_forward[i][j]->match_type_
+//                            << "\t" << matches_forward[i][j]->weight << "\t"
+//                    << matches_forward[i][j]->active << std::endl;
+//                }
 
                 if (matches_forward[i][j]->active) {
 
@@ -1257,16 +1257,16 @@ int main(int argc, char *argv[]) {
 
             for (int j = 0; j < matches_backward[i].size(); j++){
 
-                if(i==227622) {
-                    debug_fle << i << "\t" << backward << "\t" << matches_backward[i][j]->match_type_
-                    << "\t" << matches_backward[i][j]->weight << "\t"
-                    << matches_backward[i][j]->active << "\t" <<
-                    reads[matches_backward[i][j]->read_B_id_]->len
-                    << "\t" <<
-                    reads[matches_backward[i][j]->read_B_id_]->effective_end -
-                            reads[matches_backward[i][j]->read_B_id_]->effective_start << "\t" <<
-                    matches_backward[i][j]->read_B_id_ << std::endl;
-                }
+//                if(i==227622) {
+//                    debug_fle << i << "\t" << backward << "\t" << matches_backward[i][j]->match_type_
+//                    << "\t" << matches_backward[i][j]->weight << "\t"
+//                    << matches_backward[i][j]->active << "\t" <<
+//                    reads[matches_backward[i][j]->read_B_id_]->len
+//                    << "\t" <<
+//                    reads[matches_backward[i][j]->read_B_id_]->effective_end -
+//                            reads[matches_backward[i][j]->read_B_id_]->effective_start << "\t" <<
+//                    matches_backward[i][j]->read_B_id_ << std::endl;
+//                }
                 if (matches_backward[i][j]->active) {
 
                     if ((reads[matches_backward[i][j]->read_B_id_]->active)) {
