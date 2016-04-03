@@ -92,7 +92,7 @@ public:
     int eff_read_A_start_, eff_read_A_end_, eff_read_B_start_, eff_read_B_end_;
     MatchType match_type_ = UNDEFINED;
     void addtype(int max_overhang); //classify overlaps
-    void AddTypesAsymmetric(int max_overhang);
+    void AddTypesAsymmetric(int max_overhang, int min_overhang);
     static const int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
 	bool active = true;
     uint16 *trace_pts;
