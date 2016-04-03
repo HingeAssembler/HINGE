@@ -40,39 +40,80 @@ def merge_path(g,in_node,node,out_node):
     #g.add_node(str(node_id)+'-', bases = reverse_comp_bases(bases), length = length, cov = cov)
     
     for edge in g.in_edges(in_node):
-        g.add_edge(edge[0],str(node_id))
+        g.add_edge(edge[0],str(node_id),hinge_edge = -1)
     
     for edge in g.out_edges(out_node):
-        g.add_edge(str(node_id),edge[1])
+        g.add_edge(str(node_id),edge[1], hinge_edge = -1)
     
         
     g.remove_node(in_node)
     g.remove_node(node)
     g.remove_node(out_node)
     
-    
+
+def input1(flname):
+
+    print "input1"
+
+    g = nx.DiGraph()
+    with open (flname) as f:
+        for lines in f:
+            lines1=lines.split()
+            #print lines1
+            if len(lines1) < 5:
+                continue
+            #print lines1
+            g.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4], hinge_edge=int(lines1[5]))
+            g.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]))
+    return g
+            
+def input2(flname):
+
+    print "input2"
+
+    g = nx.DiGraph()
+    with open (flname) as f:
+        for lines in f:
+            lines1=lines.split()
+            #print lines1
+            g.add_edge(lines1[0], lines1[1])   
+    return g
+
+
 
 def de_clip(filename, n_nodes):
 
-    g = nx.MultiDiGraph()
+    n_iter = 5
+
+    # g = nx.MultiDiGraph()
     
-    with open(filename,'r') as f:
-        for line in f.xreadlines():
-            l = line.strip().split()
-            #print l2
-            g.add_edge(l[0],l[1])
+    # with open(filename,'r') as f:
+    #     for line in f.xreadlines():
+    #         l = line.strip().split()
+    #         #print l2
+    #         g.add_edge(l[0],l[1])
+    
+    f=open(filename)
+    line1=f.readline()
+    print line1
+    f.close()
+    if len(line1.split()) !=2:
+        g=input1(filename)
+    else:
+        g=input2(filename)
+
     
     print nx.info(g)
     degree_sequence=sorted(g.degree().values(),reverse=True)
     print Counter(degree_sequence)
-    for i in range(n_iter):
-        for node in g.nodes():
-            if g.degree(node) < 2:
-                g.remove_node(node)
+    # for i in range(n_iter):
+    #     for node in g.nodes():
+    #         if g.degree(node) < 2:
+    #             g.remove_node(node)
     
-        print nx.info(g)
-        degree_sequence=sorted(nx.degree(g).values(),reverse=True)
-        print Counter(degree_sequence)
+    #     print nx.info(g)
+    #     degree_sequence=sorted(nx.degree(g).values(),reverse=True)
+    #     print Counter(degree_sequence)
     
     degree_sequence=sorted(nx.degree(g).values(),reverse=True)
     print Counter(degree_sequence)
@@ -95,8 +136,11 @@ def de_clip(filename, n_nodes):
                 g.node[node]['aln_strand'] = 0
                 
     except:
-        pass   
+        print "json "+filename.split('.')[0]+'.mapping.json'+" not found. exiting."
+        return   
 
+
+    print "mapping done"
     
     g.graph['aval'] = 1000000000
     
@@ -107,17 +151,30 @@ def de_clip(filename, n_nodes):
 
 
 
+
+
     while len(g.nodes()) > n_nodes:
+
         node = g.nodes()[random.randrange(len(g.nodes()))]
 
         if g.in_degree(node) == 1 and g.out_degree(node) == 1:
+
+            # edge_1 = g.out_edges(node)[0]
+            # edge_2 = g.in_edges(node)[0]
+
+            edge1 = g.out_edges(node)[0]
+            edge2 = g.in_edges(node)[0]
+
+            # print g.edge[edge1[0]][edge1[1]]['hinge_edge']
+
+            if (g.edge[edge1[0]][edge1[1]]['hinge_edge'] == -1 and g.edge[edge2[0]][edge2[1]]['hinge_edge'] == -1):
             
-            in_node = g.in_edges(node)[0][0]
-            out_node = g.out_edges(node)[0][1]
-            if g.out_degree(in_node) == 1 and g.in_degree(out_node) == 1:
-                if in_node != node and out_node != node and in_node != out_node:
-                    #print in_node, node, out_node
-                    merge_path(g,in_node,node,out_node)
+                in_node = g.in_edges(node)[0][0]
+                out_node = g.out_edges(node)[0][1]
+                if g.out_degree(in_node) == 1 and g.in_degree(out_node) == 1:
+                    if in_node != node and out_node != node and in_node != out_node:
+                        #print in_node, node, out_node
+                        merge_path(g,in_node,node,out_node)
 
 
 
@@ -131,5 +188,8 @@ def de_clip(filename, n_nodes):
     
     
 filename = sys.argv[1]
-de_clip(filename, sys.argv[2])
+de_clip(filename, int(sys.argv[2]))
+
+
+
 
