@@ -51,6 +51,13 @@ def input2(flname):
 
 
 
+def input3(flname):
+
+    print "input3"
+    # g = nx.DiGraph()
+    g = nx.read_graphml(flname)
+
+
 def de_clip(filename, n_nodes, hinge_list=None):
 
     n_iter = 5
@@ -60,7 +67,12 @@ def de_clip(filename, n_nodes, hinge_list=None):
     line1=f.readline()
     print line1
     f.close()
-    if len(line1.split()) !=2:
+
+    extension = filename.split('.')[-1]
+
+    if extension == 'graphml':
+        g=input3(filename)
+    elif len(line1.split()) !=2:
         g=input1(filename)
     else:
         g=input2(filename)
@@ -213,7 +225,7 @@ def de_clip(filename, n_nodes, hinge_list=None):
     print Counter(degree_sequence)
 
     
-    nx.write_graphml(g, filename.split('.')[0]+'.sparse.graphml')
+    nx.write_graphml(g, filename.split('.')[0]+'.sparse3.graphml')
     
     print nx.number_weakly_connected_components(g)
     print nx.number_strongly_connected_components(g)

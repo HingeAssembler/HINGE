@@ -826,11 +826,11 @@ int main(int argc, char *argv[]) {
     FILE * out_g1;
     FILE * out_g2;
     FILE * out_hg;
-    out_g1 = fopen((std::string(out_name) + ".1").c_str(), "w");
-    out_g2 = fopen((std::string(out_name) + ".2").c_str(), "w");
+    out_g1 = fopen((std::string(out_name) + ".edges.1").c_str(), "w");
+    out_g2 = fopen((std::string(out_name) + ".edges.2").c_str(), "w");
 
     // Output file for matches 
-    out_hg = fopen((std::string(out_name) + ".hinges").c_str(), "w");
+    out_hg = fopen((std::string(out_name) + ".edges.hinges").c_str(), "w");
 
     // Output file for edges
 
@@ -960,7 +960,7 @@ int main(int argc, char *argv[]) {
 
     n = 0;
     FILE *out_hglist;
-    out_hglist = fopen((std::string(out) + ".hinge.list").c_str(),"w");
+    out_hglist = fopen((std::string(out_name) + ".hinge.list").c_str(),"w");
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < hinges_vec[i].size(); j++) {
             if ((reads[i]->active) and ((hinges_vec[i][j].active) or hinges_vec[i][j].active2)) {
