@@ -7,11 +7,11 @@ cd $cur_fol
 
 
 echo "Running filter"
-Reads_filter --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini
+Reads_filter --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini -x $1
 
 echo "Running hinging"
 
-hinging --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini -o $1.edges -x $1
+hinging --las $1.las --db $1 --config ~/AwesomeAssembler/utils/nominal.ini -o $1.$USER -x $1
 
 echo "Running Visualise"
 
