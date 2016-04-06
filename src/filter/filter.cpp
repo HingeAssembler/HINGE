@@ -206,9 +206,9 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
     cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
     cmdp.add<std::string>("fasta", 'f', "fasta file name", false, "");
-    cmdp.add<std::string>("prefix", 'o', "prefix of output", false, "out");
+    cmdp.add<std::string>("prefix", 'o', "prefix of (intermediate) output", false, "out");
     cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
-
+    cmdp.add<std::string>("log", 'g', "log folder name", false, "log");
     cmdp.parse_check(argc, argv);
 
     LAInterface la;
@@ -225,14 +225,33 @@ int main(int argc, char *argv[]) {
      * the other is fasta + paf, which corresponds to minimap as an overlapper.
      */
 
-
     namespace spd = spdlog;
 
-    auto console = spd::stdout_logger_mt("console");
+    //auto console = spd::stdout_logger_mt("console",true);
+
+    std::vector<spdlog::sink_ptr> sinks;
+    sinks.push_back(std::make_shared<spdlog::sinks::stdout_sink_st>());
+    sinks.push_back(std::make_shared<spdlog::sinks::daily_file_sink_st>(cmdp.get<std::string>("log") + "/log", "txt", 23, 59));
+    auto console = std::make_shared<spdlog::logger>("log", begin(sinks), end(sinks));
+    spdlog::register_logger(console);
+    //auto console = std::make_shared<spdlog::logger>("name", begin(sinks), end(sinks));
+
+
+    console->info("Reads filtering");
+    char * buff = (char*) malloc(sizeof(char) * 2000);
+    getwd(buff);
+    console->info("current user {}, current working directory {}", getlogin(), buff);
+    free(buff);
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
     console->info("name of fasta: {}, name of .paf file {}", name_fasta, name_paf);
 
 
+    std::ifstream ini_file(name_config);
+    std::string str((std::istreambuf_iterator<char>(ini_file)),
+                    std::istreambuf_iterator<char>());
+
+    console->info("Parameters\n{}", str);
+    
     if (strlen(name_db) > 0)
         la.openDB(name_db);
 
@@ -319,11 +338,11 @@ int main(int argc, char *argv[]) {
 
 
 
-    std::vector<std::pair<int, int> > QV_mask;
+    std::vector<std::pair<int, int> > QV_mask(n_read);
     // QV_mask is the mask based on QV for reads, for each read, it has one pair [start, end]
 
-    if (has_qv)
-    for (int i = 0; i < n_read; i++) {
+    if (has_qv) {
+        for (int i = 0; i < n_read; i++) {
         int s = 0, e = 0;
         int max = 0, maxs = s, maxe = e;
 
@@ -344,11 +363,11 @@ int main(int argc, char *argv[]) {
         // get the longest consecutive region that has good QV
         //printf("maxs %d maxe %d size%d\n",maxs, maxe,QV[i].size());
 
-        QV_mask.push_back(std::pair<int, int>(maxs*la.tspace, maxe*la.tspace));
+        QV_mask[i] = (std::pair<int, int>(maxs*la.tspace, maxe*la.tspace));
         // tspace the the interval of trace points
         // create mask by QV
     }
-
+    }
 
     INIReader reader(name_config);
     if (reader.ParseError() < 0) {
@@ -388,6 +407,8 @@ int main(int argc, char *argv[]) {
     use_qv_mask = use_qv_mask and has_qv;
 
     omp_set_num_threads(N_PROC);
+    console->info("number processes set to {}", N_PROC);
+
 
     std::vector<std::vector <LOverlap * > > idx_pileup; // this is the pileup
     std::vector<std::vector <LOverlap * > > idx_pileup_dedup; // this is the deduplicated pileup
@@ -413,10 +434,12 @@ int main(int argc, char *argv[]) {
         std::sort(idx_pileup[i].begin(), idx_pileup[i].end(), compare_overlap);
     }
 
+# pragma omp parallel for
     for (int i = 0; i < aln.size(); i++) {
         idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
     }
 
+# pragma omp parallel for
     for (int i = 0; i < aln.size(); i++) {
         idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
     }
@@ -441,8 +464,8 @@ int main(int argc, char *argv[]) {
     std::ofstream hg(out + ".hinges.txt");
     std::ofstream mask(out + ".mas");
 
-    std::vector< std::vector<std::pair<int, int> > > coverages;
-    std::vector< std::vector<std::pair<int, int> > > cgs; //coverage gradient;
+    std::vector< std::vector<std::pair<int, int> > > coverages(n_read);
+    std::vector< std::vector<std::pair<int, int> > > cgs(n_read); //coverage gradient;
     //std::vector< std::vector<std::pair<int, int> > > his;
      for (int i = 0; i < n_read; i ++) {
          std::vector<std::pair<int, int> > coverage;
@@ -451,10 +474,10 @@ int main(int argc, char *argv[]) {
          //profileCoverage: get the coverage based on pile-o-gram
          //la.profileCoverage(idx_pileup[i], coverage, reso, CUT_OFF);
          la.profileCoverage(idx_pileup[i], coverage, reso, 0);
-         cov << "read " << i <<" ";
-         for (int j = 0; j < coverage.size(); j++)
-             cov << coverage[j].first << ","  << coverage[j].second << " ";
-         cov << std::endl;
+         //cov << "read " << i <<" ";
+         //for (int j = 0; j < coverage.size(); j++)
+         //    cov << coverage[j].first << ","  << coverage[j].second << " ";
+         //cov << std::endl;
 
          //Computes coverage gradients.
          if (coverage.size() >= 2)
@@ -463,8 +486,8 @@ int main(int argc, char *argv[]) {
              }
          else cg.push_back(std::pair<int, int> (0,0));
 
-         coverages.push_back(coverage);
-         cgs.push_back(cg);
+         coverages[i] = (coverage);
+         cgs[i] = (cg);
     }
 
     console->info("profile coverage done");
@@ -485,11 +508,8 @@ int main(int argc, char *argv[]) {
     int read_cov=0;
     int read_slot =0;
     //Finding the average coverage, probing a small proportion of reads
-    std::cout << "entering for" <<std::endl;
     std::ofstream  debug_info;
     std::ofstream debug_info1;
-    debug_info.open("cov.est.txt");
-    debug_info1.open("cov1.est.txt");
 //    for (std::set<int>::iterator it=rand_reads.begin();it!=rand_reads.end(); ++it) {
     for (int i =0; i <n_read;  i++){
         if (reads[i]->len < 5000)
@@ -501,19 +521,14 @@ int main(int argc, char *argv[]) {
 
             read_cov+=coverages[i][j].second;
             read_slot++;
-            debug_info << i << "\t" << j << std::endl;
         }
         total_cov += read_cov;
         num_slot += read_slot;
-        debug_info << "re " << read_cov << "\t" << read_slot << std::endl;
         int mean_read_cov=read_cov / std::max(1,read_slot);
-        debug_info1 << mean_read_cov << "\n";
         read_coverage.push_back(mean_read_cov);
     }
 
 
-    debug_info.close();
-    debug_info1.close();
 
     size_t median_id = read_coverage.size() / 2;
     if (median_id > 0)
