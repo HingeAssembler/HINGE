@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <unordered_map>
 #include <algorithm>
 #include <fstream>
@@ -314,8 +315,10 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
     cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
     cmdp.add<std::string>("fasta", 'f', "fasta file name", false, "");
-    cmdp.add<std::string>("prefix", 'x', "output file prefix", true, "");
-    cmdp.add<std::string>("out", 'o', "output file name", true, "");
+    cmdp.add<std::string>("prefix", 'x', "(intermediate output) input file prefix", true, "");
+    cmdp.add<std::string>("out", 'o', "final output file name", true, "");
+    cmdp.add<std::string>("log", 'g', "log folder name", false, "log");
+
 //    cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
 
 
@@ -353,10 +356,27 @@ int main(int argc, char *argv[]) {
 
     namespace spd = spdlog;
 
-    auto console = spd::stdout_logger_mt("console");
+    //auto console = spd::stdout_logger_mt("console");
+    std::vector<spdlog::sink_ptr> sinks;
+    sinks.push_back(std::make_shared<spdlog::sinks::stdout_sink_st>());
+    sinks.push_back(std::make_shared<spdlog::sinks::daily_file_sink_st>(cmdp.get<std::string>("log") + "/log", "txt", 23, 59));
+    auto console = std::make_shared<spdlog::logger>("log", begin(sinks), end(sinks));
+    spdlog::register_logger(console);
+
+    console->info("Hinging layout");
+    char * buff = (char*) malloc(sizeof(char) * 2000);
+    getwd(buff);
+    console->info("current user {}, current working directory {}", getlogin(), buff);
+    free(buff);
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
     console->info("name of fasta: {}, name of .paf file {}", name_fasta, name_paf);
 
+
+    std::ifstream ini_file(name_config);
+    std::string str((std::istreambuf_iterator<char>(ini_file)),
+                    std::istreambuf_iterator<char>());
+
+    console->info("Parameters\n{}", str);
 
     if (strlen(name_db) > 0)
         la.openDB(name_db);
@@ -437,6 +457,11 @@ int main(int argc, char *argv[]) {
     //overlap.
     int KILL_HINGE_OVERLAP_ALLOWANCE = (int)reader.GetInteger("layout", "kill_hinge_overlap", 300);
     int KILL_HINGE_INTERNAL_ALLOWANCE = (int)reader.GetInteger("layout", "kill_hinge_internal", 40);
+
+
+
+
+
     console->info("Length threshold : {}",LENGTH_THRESHOLD);
 
     omp_set_num_threads(N_PROC);
