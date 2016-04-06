@@ -149,7 +149,8 @@ Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
     return ret;
 }
 
-bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_THRESHOLD, int THETA, bool trim){
+bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_THRESHOLD,
+                      int THETA, int THETA2, bool trim){
     //Function takes as input pointers to a match, and the read_A and read_B of that match, set constants
     //ALN_THRESHOLD and THETA
     //It inputs the effective read start and end into the match class object
@@ -174,7 +175,8 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
 //        match->eff_read_B_end_ = read_B->len - read_B->effective_start;
 //    }
 
-    /*printf("bef %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_, match->reverse_complement_match_,
+    /*printf("bef %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_,
+     * match->reverse_complement_match_,
         match->read_A_match_start_, match->read_A_match_end_, match->read_B_match_start_, match->read_B_match_end_,
            match->eff_read_A_start_, match->eff_read_A_end_, match->eff_read_B_start_, match->eff_read_B_end_
     );*/
@@ -187,8 +189,10 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
         match->eff_read_A_match_start_ = match->read_A_match_start_;
         match->eff_read_A_match_end_ = match->read_A_match_end_;
     }
-    /*printf("aft %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_, match->reverse_complement_match_,
-           match->eff_read_A_match_start_, match->eff_read_A_match_end_, match->eff_read_B_match_start_, match->eff_read_B_match_end_,
+    /*printf("aft %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_,
+     * match->reverse_complement_match_,
+           match->eff_read_A_match_start_, match->eff_read_A_match_end_, match->eff_read_B_match_start_,
+           match->eff_read_B_match_end_,
            match->eff_read_A_start_, match->eff_read_A_end_, match->eff_read_B_start_, match->eff_read_B_end_
     );*/
     //std::cout<< contained<<std::endl;
@@ -199,7 +203,7 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
         match->active = false;
         match->match_type_ = NOT_ACTIVE;
     } else {
-        match->AddTypesAsymmetric(THETA);
+        match->AddTypesAsymmetric(THETA,THETA2);
         if (match->match_type_ == BCOVERA) {
             contained = true;
         }
@@ -310,7 +314,7 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
     cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
     cmdp.add<std::string>("fasta", 'f', "fasta file name", false, "");
-    cmdp.add<std::string>("prefix", 'o', "output file prefix", true, "");
+    cmdp.add<std::string>("prefix", 'x', "output file prefix", true, "");
     cmdp.add<std::string>("out", 'o', "output file name", true, "");
 //    cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
 
@@ -323,8 +327,8 @@ int main(int argc, char *argv[]) {
     const char * name_paf = cmdp.get<std::string>("paf").c_str();
     const char * name_fasta = cmdp.get<std::string>("fasta").c_str();
     const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
-    const char * out_name = cmdp.get<std::string>("prefix").c_str();
-    std::string out = cmdp.get<std::string>("prefix");
+    std::string  out = cmdp.get<std::string>("prefix");
+    std::string out_name = cmdp.get<std::string>("out");
 //    const char * name_restrict = cmdp.get<std::string>("restrictreads").c_str();
 	
 
@@ -335,9 +339,11 @@ int main(int argc, char *argv[]) {
     std::string name_hg = out + ".hinges.txt";
     std::string name_cov = out + ".coverage.txt";
     std::string name_garbage = out + ".garbage.txt";
+    std::string name_contained=out + ".contained.txt";
 
     std::ofstream maximal_reads(name_max);
     std::ofstream garbage_out(name_garbage);
+    std::ofstream contained_out(name_contained);
     std::ifstream homo(name_homo);
     std::vector<int> homo_reads;
 
@@ -420,6 +426,7 @@ int main(int argc, char *argv[]) {
     int MIN_COV = (int)reader.GetInteger("filter", "min_cov", -1);
     int CUT_OFF = (int)reader.GetInteger("filter", "cut_off", -1);
     int THETA = (int)reader.GetInteger("filter", "theta", -1);
+    int THETA2 = (int)reader.GetInteger("filter", "theta2", 0);
 	int N_PROC = (int)reader.GetInteger("running", "n_proc", 4);
     int HINGE_SLACK = (int)reader.GetInteger("layout", "hinge_slack", 1000);
     //This is the amount by which  a forward overlap
@@ -430,6 +437,7 @@ int main(int argc, char *argv[]) {
     //overlap.
     int KILL_HINGE_OVERLAP_ALLOWANCE = (int)reader.GetInteger("layout", "kill_hinge_overlap", 300);
     int KILL_HINGE_INTERNAL_ALLOWANCE = (int)reader.GetInteger("layout", "kill_hinge_internal", 40);
+    console->info("Length threshold : {}",LENGTH_THRESHOLD);
 
     omp_set_num_threads(N_PROC);
     //std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read);
@@ -460,8 +468,10 @@ int main(int argc, char *argv[]) {
 
 
     std::vector<std::vector<LOverlap *>> edges_forward, edges_backward; 
-    // edges_forward is a "filtered" version of matches_forward, where every (active) read has at exactly one outgoing match
-    // edges_backward is a "filtered" version of matches_backward, where every (active) read has at exactly one incoming match
+    // edges_forward is a "filtered" version of matches_forward, where every (active) read has at exactly
+    // one outgoing match
+    // edges_backward is a "filtered" version of matches_backward, where every (active) read has at exactly
+    // one incoming match
 
 
     std::vector<std::vector<LOverlap *>> intersection_edges_forward, intersection_edges_backward; 
@@ -590,38 +600,6 @@ int main(int argc, char *argv[]) {
 
     console->info("overlaps {} rev_overlaps {}",n_overlaps,n_rev_overlaps);
 
-    /*n_overlaps = 0;
-    n_rev_overlaps = 0;
-
-    for (int i = 0; i < n_read; i++)
-        for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin(); it!=idx[i].end(); it++)
-        {
-            for (int j = 0; j < it->second.size(); j++) {
-                n_overlaps ++;
-                n_rev_overlaps += it->second[j]->reverse_complement_match_;
-            }
-        }
-
-    printf("overlaps %d rev_overlaps %d\n",n_overlaps,n_rev_overlaps);*/
-//    if (reads_to_keep.size()>0) {
-//        reads_to_keep_initial = reads_to_keep;
-//        for (std::set<int>::iterator iter = reads_to_keep_initial.begin();
-//             iter != reads_to_keep_initial.end(); ++iter) {
-//            int i = *iter;
-//            for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx[i].begin();
-//                 it != idx[i].end(); it++) {
-//                if (it->second.size() > 0) {
-//                    LOverlap *ovl = it->second[0];
-//                    reads_to_keep.insert(ovl->read_B_id_);
-//                }
-//            }
-//        }
-//        for (int i = 0; i < n_read; i++) {
-//            if (reads_to_keep.find(i) != reads_to_keep.end()){
-//                reads[i]->active=false;
-//            }
-//        }
-//    }
     console->info("index finished");
     console->info("Number reads {}", n_read);
 
@@ -636,7 +614,10 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx_ab[i].begin(); it!=idx_ab[i].end(); it++) {
+        int containing_read;
+
+        for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx_ab[i].begin();
+             it!=idx_ab[i].end(); it++) {
             std::sort(it->second.begin(), it->second.end(), compare_overlap);//Sort overlaps by lengths
             //std::cout<<"Giving input to ProcessAlignment "<<it->second.size() <<std::endl;
 
@@ -645,12 +626,18 @@ int main(int argc, char *argv[]) {
                 LOverlap * ovl = it->second[0];
                 bool contained_alignment;
 
-
                 if (strlen(name_db) > 0) contained_alignment = ProcessAlignment(ovl,reads[ovl->read_A_id_],
-                                                         reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, true);
+                                                         reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, true);
                 else contained_alignment = ProcessAlignment(ovl,reads[ovl->read_A_id_],
-                                                            reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, false);
-                contained=contained or contained_alignment;
+                                                            reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, false);
+                if (contained_alignment==true)
+                {
+                    containing_read=ovl->read_B_id_;
+                }
+
+                if (reads[ovl->read_B_id_]->active==true)
+                    contained=contained or contained_alignment;
+
                 //Filter matches that matter.
                 //TODO Figure out a way to do this more efficiently
                 if ((ovl->match_type_== FORWARD) or (ovl->match_type_== FORWARD_INTERNAL))
@@ -661,7 +648,11 @@ int main(int argc, char *argv[]) {
             }
 
         }
-        if (contained) reads[i]->active = false;
+        if (contained) {
+            reads[i]->active = false;
+            contained_out << i << "\t" << containing_read << std::endl;
+
+        }
     }
 
 
@@ -805,7 +796,8 @@ int main(int argc, char *argv[]) {
                             matches_forward[i][j]->weight, matches_forward[i][j]->reverse_complement_match_,
                             matches_forward[i][j]->match_type_, matches_forward[i][j]->eff_read_A_match_start_,
                             matches_forward[i][j]->eff_read_A_match_end_,
-                            matches_forward[i][j]->eff_read_B_match_start_, matches_forward[i][j]->eff_read_B_match_end_,
+                            matches_forward[i][j]->eff_read_B_match_start_,
+                            matches_forward[i][j]->eff_read_B_match_end_,
                             matches_forward[i][j]->eff_read_A_start_, matches_forward[i][j]->eff_read_A_end_,
                             matches_forward[i][j]->eff_read_B_start_, matches_forward[i][j]->eff_read_B_end_);
             }
@@ -821,7 +813,8 @@ int main(int argc, char *argv[]) {
                             matches_backward[i][j]->weight, matches_backward[i][j]->reverse_complement_match_,
                             matches_backward[i][j]->match_type_, matches_backward[i][j]->eff_read_A_match_start_,
                             matches_backward[i][j]->eff_read_A_match_end_,
-                            matches_backward[i][j]->eff_read_B_match_start_, matches_backward[i][j]->eff_read_B_match_end_,
+                            matches_backward[i][j]->eff_read_B_match_start_,
+                            matches_backward[i][j]->eff_read_B_match_end_,
                             matches_backward[i][j]->eff_read_A_start_, matches_backward[i][j]->eff_read_A_end_,
                             matches_backward[i][j]->eff_read_B_start_, matches_backward[i][j]->eff_read_B_end_);
             }
@@ -833,11 +826,11 @@ int main(int argc, char *argv[]) {
     FILE * out_g1;
     FILE * out_g2;
     FILE * out_hg;
-    out_g1 = fopen((std::string(out_name) + ".1").c_str(), "w");
-    out_g2 = fopen((std::string(out_name) + ".2").c_str(), "w");
+    out_g1 = fopen((std::string(out_name) + ".edges.1").c_str(), "w");
+    out_g2 = fopen((std::string(out_name) + ".edges.2").c_str(), "w");
 
     // Output file for matches 
-    out_hg = fopen((std::string(out_name) + ".hinges").c_str(), "w");
+    out_hg = fopen((std::string(out_name) + ".edges.hinges").c_str(), "w");
 
     // Output file for edges
 
@@ -939,7 +932,8 @@ int main(int argc, char *argv[]) {
 
             for (int j = 0; j < matches_backward[i].size(); j++) {
                 if (matches_backward[i][j]->active) {
-                    if (((matches_backward[i][j]->match_type_ == BACKWARD) or (matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)) and
+                    if (((matches_backward[i][j]->match_type_ == BACKWARD) or
+                            (matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)) and
                             (reads[matches_backward[i][j]->read_B_id_]->active)) {
                        // if (backward < 1) {
                             //remove certain hinges
@@ -966,7 +960,7 @@ int main(int argc, char *argv[]) {
 
     n = 0;
     FILE *out_hglist;
-    out_hglist = fopen("hinge_list.txt","w");
+    out_hglist = fopen((std::string(out_name) + ".hinge.list").c_str(),"w");
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < hinges_vec[i].size(); j++) {
             if ((reads[i]->active) and ((hinges_vec[i][j].active) or hinges_vec[i][j].active2)) {
@@ -1177,6 +1171,7 @@ int main(int argc, char *argv[]) {
         }
     }*/
 
+    std::ofstream debug_fle("hinge_debug.txt");
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
 
@@ -1187,8 +1182,16 @@ int main(int argc, char *argv[]) {
 
             LOverlap * chosen_match = NULL;
 
+//            if(i==227622){
+//                debug_fle << "In read "<< i << std::endl;
+//            }
 
             for (int j = 0; j < matches_forward[i].size(); j++){
+//                if(i==227622) {
+//                    debug_fle << i << "\t" << forward << "\t" << matches_forward[i][j]->match_type_
+//                            << "\t" << matches_forward[i][j]->weight << "\t"
+//                    << matches_forward[i][j]->active << std::endl;
+//                }
 
                 if (matches_forward[i][j]->active) {
 
@@ -1211,7 +1214,8 @@ int main(int argc, char *argv[]) {
                                   and (hinges_vec[matches_forward[i][j]->read_B_id_].size() > 0)
                                     and (forward_internal == 0)){
 
-                            // In the case of a forward_internal match we check whether the hinge on read B is an in-hinge
+                            // In the case of a forward_internal match we check whether
+                            // the hinge on read B is an in-hinge
                             // (or an out-hinge if it's a reverse complement match)
 
 //                            int hinge_index = 0;
@@ -1222,12 +1226,16 @@ int main(int argc, char *argv[]) {
                             }
 
                             for (int k = 0; k < hinges_vec[matches_forward[i][j]->read_B_id_].size(); k++) {
-                                if ( (read_B_match_start > hinges_vec[matches_forward[i][j]->read_B_id_][k].pos - HINGE_TOLERANCE)
-                                            and (read_B_match_start < hinges_vec[matches_forward[i][j]->read_B_id_][k].pos + HINGE_TOLERANCE)
-                                            and (hinges_vec[matches_forward[i][j]->read_B_id_][k].type == (1-2*matches_forward[i][j]->reverse_complement_match_))
+                                if ( (read_B_match_start >
+                                        hinges_vec[matches_forward[i][j]->read_B_id_][k].pos - HINGE_TOLERANCE)
+                                            and (read_B_match_start <
+                                        hinges_vec[matches_forward[i][j]->read_B_id_][k].pos + HINGE_TOLERANCE)
+                                            and (hinges_vec[matches_forward[i][j]->read_B_id_][k].type ==
+                                        (1-2*matches_forward[i][j]->reverse_complement_match_))
                                             and (hinges_vec[matches_forward[i][j]->read_B_id_][k].active) ) {
 
-                                    if ((forward == 0) || (matches_forward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
+                                    if ((forward == 0) or
+                                            (matches_forward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
 
                                         chosen_match = matches_forward[i][j];
                                         forward = 1;
@@ -1236,26 +1244,6 @@ int main(int argc, char *argv[]) {
                                     break;
                                 }
                             }
-
-//                            if ((hinges_vec[matches_forward[i][j]->read_B_id_][hinge_index].type == (1-2*matches_forward[i][j]->reverse_complement_match_) )
-//                                and (hinges_vec[matches_forward[i][j]->read_B_id_][hinge_index].active)) {
-////                                fprintf(out3, "Printed from forward internal\n");
-////                                PrintOverlapToFile(out3, matches_forward[i][j]);
-//
-////                                edges_forward[i].push_back(matches_forward[i][j]);
-//                                //break;
-//
-//                                if ((forward == 0) || (matches_forward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
-//
-////                                    printf("Got in here with B=%d\n",matches_forward[i][j]->read_B_id_);
-////                                    PrintOverlapToFile(out4, matches_forward[i][j]);
-//
-//                                    chosen_match = matches_forward[i][j];
-//                                    forward = 1;
-//                                    forward_internal = 1;
-//                                }
-//
-//                            }
                         }
                     }
                 }
@@ -1268,24 +1256,32 @@ int main(int argc, char *argv[]) {
             }
 
             for (int j = 0; j < matches_backward[i].size(); j++){
+
+//                if(i==227622) {
+//                    debug_fle << i << "\t" << backward << "\t" << matches_backward[i][j]->match_type_
+//                    << "\t" << matches_backward[i][j]->weight << "\t"
+//                    << matches_backward[i][j]->active << "\t" <<
+//                    reads[matches_backward[i][j]->read_B_id_]->len
+//                    << "\t" <<
+//                    reads[matches_backward[i][j]->read_B_id_]->effective_end -
+//                            reads[matches_backward[i][j]->read_B_id_]->effective_start << "\t" <<
+//                    matches_backward[i][j]->read_B_id_ << std::endl;
+//                }
                 if (matches_backward[i][j]->active) {
 
                     if ((reads[matches_backward[i][j]->read_B_id_]->active)) {
 
                         if ((matches_backward[i][j]->match_type_ == BACKWARD) and (backward == 0)){
-                            //fprintf(out3,"Printed from backward\n");
-//                            PrintOverlapToFile(out3,matches_backward[i][j]);
-//                            edges_backward[i].push_back(matches_backward[i][j]);
+
                             chosen_match = matches_backward[i][j];
                             backward = 1;
-                            //break;
                         }
                         else if ((matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)
-                                  //and isValidHinge(matches_backward[i][j], hinges_vec[matches_backward[i][j]->read_B_id_])
                                 and (hinges_vec[matches_backward[i][j]->read_B_id_].size() > 0)
                                     and (backward_internal == 0)) {
 
-                            // In the case of a backward_internal match we check whether the hinge on read B is an in-hinge
+                            // In the case of a backward_internal match
+                            // we check whether the hinge on read B is an in-hinge
                             // (or an in-hinge if it's a reverse complement match)
 
 
@@ -1297,13 +1293,16 @@ int main(int argc, char *argv[]) {
                             for (int k = 0; k < hinges_vec[matches_backward[i][j]->read_B_id_].size(); k++) {
 
 
-                                if ( (read_B_match_end > hinges_vec[matches_backward[i][j]->read_B_id_][k].pos - HINGE_TOLERANCE)
-                                     and (read_B_match_end < hinges_vec[matches_backward[i][j]->read_B_id_][k].pos + HINGE_TOLERANCE)
+                                if ( (read_B_match_end >
+                                        hinges_vec[matches_backward[i][j]->read_B_id_][k].pos - HINGE_TOLERANCE)
+                                     and (read_B_match_end <
+                                        hinges_vec[matches_backward[i][j]->read_B_id_][k].pos + HINGE_TOLERANCE)
                                      and (hinges_vec[matches_backward[i][j]->read_B_id_][k].type ==
                                         (-1+2*matches_backward[i][j]->reverse_complement_match_))
                                      and (hinges_vec[matches_backward[i][j]->read_B_id_][k].active) ) {
 
-                                    if ((backward == 0) || (matches_backward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
+                                    if ((backward == 0) or
+                                            (matches_backward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
                                         chosen_match = matches_backward[i][j];
                                         backward = 1;
                                         backward_internal = 1;
@@ -1312,26 +1311,6 @@ int main(int argc, char *argv[]) {
                                     break;
                                 }
                             }
-
-//                            if ((hinges_vec[matches_backward[i][j]->read_B_id_][hinge_index].type == (-1 + 2*matches_backward[i][j]->reverse_complement_match_) )
-//                                    and (hinges_vec[matches_backward[i][j]->read_B_id_][hinge_index].active)) {
-////                                fprintf(out3, "Printed from backward internal\n");
-////                                PrintOverlapToFile(out3, matches_backward[i][j]);
-////                                PrintOverlapToFile(out4, matches_backward[i][j]);
-////                                edges_backward[i].push_back(matches_backward[i][j]);
-//                                //break;
-//
-//                                if ((backward == 0) || (matches_backward[i][j]->weight > chosen_match->weight - 2*HINGE_SLACK)) {
-//
-////                                    PrintOverlapToFile(out4, matches_backward[i][j]);
-//
-//                                    chosen_match = matches_backward[i][j];
-//                                    backward = 1;
-//                                    backward_internal = 1;
-//                                }
-//
-//                            }
-
                         }
                     }
                 }
