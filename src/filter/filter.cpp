@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("paf", 'p', "paf file name", false, "");
     cmdp.add<std::string>("config", 'c', "configuration file name", false, "");
     cmdp.add<std::string>("fasta", 'f', "fasta file name", false, "");
-    cmdp.add<std::string>("prefix", 'o', "prefix of (intermediate) output", false, "out");
+    cmdp.add<std::string>("prefix", 'x', "prefix of (intermediate) output", false, "out");
     cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
     cmdp.add<std::string>("log", 'g', "log folder name", false, "log");
     cmdp.parse_check(argc, argv);
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
     int N_PROC = reader.GetInteger("running", "n_proc", 4);
     int EST_COV = reader.GetInteger("filter", "ec", 0); // load the estimated coverage (probably from other programs) from ini file, if it is zero, then estimate it
     int reso = 40; // resolution of masks, repeat annotation, coverage, etc  = 40 basepairs
-    bool use_qv_mask = reader.GetBoolean("filter", "use_qv", false);
+    bool use_qv_mask = reader.GetBoolean("filter", "use_qv", true);
     bool use_coverage_mask = reader.GetBoolean("filter", "coverage", true);
     int COVERAGE_FRACTION = (int) reader.GetInteger("filter", "coverage_frac_repeat_annotation", 3);
     const int MIN_REPEAT_ANNOTATION_THRESHOLD = (int) reader.GetInteger("filter", "min_repeat_annotation_threshold", 10);
@@ -404,7 +404,10 @@ int main(int argc, char *argv[]) {
     const int HINGE_TOLERANCE_LENGTH = (int) reader.GetInteger("filter", "hinge_tolerance_length", 300);
     //Reads starting at +/- HINGE_TOLERANCE_LENGTH are considered reads starting at hinges
 
+    console->info("use_qv_mask set to {}",use_qv_mask);
     use_qv_mask = use_qv_mask and has_qv;
+
+    console->info("use_qv_mask set to {}",use_qv_mask);
 
     omp_set_num_threads(N_PROC);
     console->info("number processes set to {}", N_PROC);
