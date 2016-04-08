@@ -57,6 +57,13 @@ std::ostream& operator<<(std::ostream& out, const MatchType value){
     return out << strings[value];
 }
 
+bool pairAscend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem) {
+    return firstElem.first < secondElem.first;
+}
+
+bool pairDescend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem) {
+    return firstElem.first > secondElem.first;
+}
 
 
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
@@ -397,12 +404,13 @@ int main(int argc, char *argv[]) {
     //Minimum number of reads that have to start in a reso length interval to be considered in hinge calling
     const int HINGE_BIN_PILEUP_THRESHOLD = (int) reader.GetInteger("filter", "hinge_min_pileup", 7);
     //Minimum number of reads to have in a pileup to consider a hinge bridged
-    const int HINGE_READ_UNBRIDGED_THRESHOLD = (int) reader.GetInteger("filter", "hinge_unbridged", 9);
+    const int HINGE_READ_UNBRIDGED_THRESHOLD = (int) reader.GetInteger("filter", "hinge_unbridged", 6);
     //Number of reads that one has to see before a pileup to declare a potential hinge unbridged
-    const int HINGE_BIN_LENGTH = (int) reader.GetInteger("filter", "hinge_bin", 100);
+    int HINGE_BIN_LENGTH = (int) reader.GetInteger("filter", "hinge_bin", 100);
     //Physical length of the bins considered
-    const int HINGE_TOLERANCE_LENGTH = (int) reader.GetInteger("filter", "hinge_tolerance_length", 300);
+    const int HINGE_TOLERANCE_LENGTH = (int) reader.GetInteger("filter", "hinge_tolerance_length", 100);
     //Reads starting at +/- HINGE_TOLERANCE_LENGTH are considered reads starting at hinges
+    HINGE_BIN_LENGTH=2*HINGE_TOLERANCE_LENGTH;
 
     console->info("use_qv_mask set to {}",use_qv_mask);
     use_qv_mask = use_qv_mask and has_qv;
@@ -411,6 +419,7 @@ int main(int argc, char *argv[]) {
 
     omp_set_num_threads(N_PROC);
     console->info("number processes set to {}", N_PROC);
+
 
 
     std::vector<std::vector <LOverlap * > > idx_pileup; // this is the pileup
@@ -511,8 +520,7 @@ int main(int argc, char *argv[]) {
     int read_cov=0;
     int read_slot =0;
     //Finding the average coverage, probing a small proportion of reads
-    std::ofstream  debug_info;
-    std::ofstream debug_info1;
+
 //    for (std::set<int>::iterator it=rand_reads.begin();it!=rand_reads.end(); ++it) {
     for (int i =0; i <n_read;  i++){
         if (reads[i]->len < 5000)
@@ -725,7 +733,7 @@ int main(int argc, char *argv[]) {
     // get hinges from repeat annotation information
     std::unordered_map<int, std::vector<std::pair<int, int>> > hinges;
     // n_read pos -1 = in_hinge 1 = out_hinge
-
+    std::ofstream  debug_file("debug.txt");
     for (int i = 0; i < n_read; i++) {
         //std::cout << i <<std::endl;
         hinges[i] = std::vector<std::pair<int, int>>();
@@ -738,146 +746,298 @@ int main(int argc, char *argv[]) {
                 int support = 0;
                 int num_reads_at_end=1;
 
-                std::vector<int> read_other_ends;
+                std::vector<std::pair<int,int> > read_other_ends;
 
 
                 for (int k = 0; k < idx_pileup[i].size(); k++) {
 
-                    if ((idx_pileup[i][k]->read_A_match_end_ > repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
-                        and (idx_pileup[i][k]->read_A_match_end_ < repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
-                        read_other_ends.push_back(idx_pileup[i][k]->read_A_match_start_);
-                        support ++;
+                    int left_overhang, right_overhang;
+                    int temp_id;
+                    temp_id=idx_pileup[i][k]->read_B_id_;
+
+                    if (idx_pileup[i][k]->reverse_complement_match_==0){
+                        right_overhang= std::max(maskvec[temp_id].second-idx_pileup[i][k]->read_B_match_end_,0);
+                        left_overhang= std::max(idx_pileup[i][k]->read_B_match_start_- maskvec[temp_id].first,0);
+                    }
+                    else if (idx_pileup[i][k]->reverse_complement_match_==1) {
+                        right_overhang= std::max(idx_pileup[i][k]->read_B_match_start_- maskvec[temp_id].first,0);
+                        left_overhang= std::max(maskvec[temp_id].second-idx_pileup[i][k]->read_B_match_end_,0);
+                    }
+
+//                    if (i==174201) {
+//                        debug_file << i << "\tRead B stats\t"
+//                        << maskvec[i].first << "\t" << maskvec[i].second <<  "\n"
+//                        << temp_id << "\t" << idx_pileup[i][k]->read_B_match_start_
+//                        << "\t" << idx_pileup[i][k]->read_B_match_end_ << "\t"
+//                        << idx_pileup[i][k]->reverse_complement_match_  << "\t"
+//                        << maskvec[temp_id].first << "\t"
+//                        << maskvec[temp_id].second << "\t" << left_overhang
+//                        <<  "\t" << right_overhang << std::endl;
+//                    }
+
+                    if (right_overhang > THETA) {
+                        if ((idx_pileup[i][k]->read_A_match_end_ >
+                             repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
+                            and (idx_pileup[i][k]->read_A_match_end_ <
+                                 repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
+//                            if (i==174201) {
+//                                temp_id=idx_pileup[i][k]->read_B_id_;
+//                                debug_file << i << "\tRead B stats******\t"
+//                                << maskvec[i].first << "\t" << maskvec[i].second <<  "\n"
+//                                << temp_id << "\t" << idx_pileup[i][k]->read_B_match_start_
+//                                << "\t" << idx_pileup[i][k]->read_B_match_end_ << "\t"
+//                                << idx_pileup[i][k]->reverse_complement_match_ <<"\t"
+//                                << maskvec[temp_id].first << "\t"
+//                                << maskvec[temp_id].second << "\n"
+//                                << idx_pileup[i][k]->read_A_match_start_ <<"\t"
+//                                << idx_pileup[i][k]->read_A_match_end_ << std::endl;
+//                            }
+
+                            std::pair <int,int> other_end;
+                            other_end.first=idx_pileup[i][k]->read_A_match_start_;
+                            other_end.second=left_overhang;
+                            read_other_ends.push_back(other_end);
+                            support++;
+                        }
                     }
                 }
 
                 if (support < HINGE_MIN_SUPPORT){
                     continue;
                 }
-                int start_point=1;
-                std::sort(read_other_ends.begin(),read_other_ends.end());
-                std::vector< std::pair<int,int> >bins_of_interest;
 
-                for (int index=1; index<read_other_ends.size(); index++) {
-//                    if (i==2588) {
-//                        std::cout << i << "\t" << read_other_ends[index] << "\t"
-//                        << maskvec[i].first << maskvec[i].second << std::endl;
+                std::sort(read_other_ends.begin(),read_other_ends.end(), pairAscend);
+//                if (i==174201){
+//                    debug_file << "==========================\n";
+//                    debug_file << repeat_annotation[i][j].second <<"\n";
+//                    for (int id = 0; id < read_other_ends.size() ; ++id){
+//                        debug_file << read_other_ends[id].first <<"\t"
+//                        << read_other_ends[id].second << std::endl;
 //                    }
-
-                    if (read_other_ends[index] - read_other_ends[start_point]  < HINGE_BIN_LENGTH) {
-                        num_reads_at_end++;
-                    }
-                    else {
-                        bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
-                        start_point=index;
-                        num_reads_at_end=1;
-                    }
-
-                }
-                bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
-
+//                    debug_file << "==========================\n";
+//                }
                 int num_reads_considered=0;
                 int num_reads_extending_to_end=0;
-//                if (i==2588){
-//                    for (int index=0; index < bins_of_interest.size(); index++) {
-//                        std::cout << bins_of_interest[index].first << "\t" << bins_of_interest[index].second
-//                                << std::endl ;
-//                    }
-//                }
-                for (int index=0; index < bins_of_interest.size(); index++) {
-                    if (bins_of_interest[index].first -maskvec[i].first < HINGE_BIN_LENGTH){
-                        num_reads_extending_to_end+=bins_of_interest[index].second;
-                        num_reads_considered+=bins_of_interest[index].second;
-                        if (num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD){
+                int num_reads_with_internal_overlaps=0;
+
+                for (int id = 0; id < read_other_ends.size() ; ++id) {
+                    if (read_other_ends[id].first -maskvec[i].first < HINGE_BIN_LENGTH){
+                        num_reads_considered++;
+                        num_reads_extending_to_end++;
+//                        if (i==174201){
+//                            debug_file << num_reads_extending_to_end
+//                            << "\t" <<  num_reads_considered
+//                            << "\t" << num_reads_with_internal_overlaps
+//                            <<"\t" << read_other_ends[id].first - read_other_ends[0].first << std::endl;
+//                        }
+                        if ((num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD) or
+                            ((num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) and
+                            (read_other_ends[id].first - read_other_ends[0].first > HINGE_BIN_LENGTH))) {
                             bridged=false;
                             break;
                         }
-
                     }
-                    else if ((bins_of_interest[index].second > HINGE_BIN_PILEUP_THRESHOLD)
-                             and (num_reads_considered < HINGE_READ_UNBRIDGED_THRESHOLD)){
-                        break;
+                    else if  (read_other_ends[id].second < THETA){
+                        num_reads_considered++;
+//                        if (i==174201){
+//                            debug_file << num_reads_extending_to_end
+//                            << "\t" <<  num_reads_considered
+//                            <<"\t" << read_other_ends[id].first - read_other_ends[0].first << std::endl;
+//                        }
+                        if ((num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD) or
+                            ((num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) and
+                             (read_other_ends[id].first - read_other_ends[0].first > HINGE_BIN_LENGTH))) {
+                            bridged=false;
+                            break;
+                        }
                     }
-                    else if (num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) {
-                        bridged=false;
-                        break;
-                    }
-                    else {
-                        num_reads_considered+=bins_of_interest[index].second;
+                    else if (read_other_ends[id].second > THETA) {
+                        num_reads_with_internal_overlaps++;
+                        num_reads_considered++;
+                        int id1=id+1;
+                        int pileup_length=1;
+//                        if (i==174201){
+//                            debug_file << num_reads_extending_to_end
+//                            << "\t" <<  num_reads_considered
+//                            << "\t" << num_reads_with_internal_overlaps << std::endl;
+//                        }
+                        while (id1 < read_other_ends.size()){
+                            if (read_other_ends[id1].first - read_other_ends[id].first  < HINGE_BIN_LENGTH){
+                                pileup_length++;
+                                id1++;
+                            }
+                            else{
+                                break;
+                            }
+                        }
+//                        if (i==174201){
+//                            debug_file << num_reads_extending_to_end
+//                            << "\t" <<  num_reads_considered
+//                            << "\t" << num_reads_with_internal_overlaps
+//                            <<"\tPileup" << pileup_length << std::endl;
+//                        }
+                        if (pileup_length > HINGE_BIN_PILEUP_THRESHOLD){
+                            bridged=true;
+                            break;
+                        }
                     }
                 }
-
-
                 if ((not bridged) and (support > HINGE_MIN_SUPPORT))
                     hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first,-1));
+
+//                if (i==174201){
+//                    debug_file << bridged << "\n"<<"---------------------------"<<std::endl;
+//                }
 
             } else { // look for in_hinges, positive gradient
                 bool bridged = true;
                 int support = 0;
                 int num_reads_at_end=1;
 
-                std::vector<int> read_other_ends;
+                std::vector<std::pair<int,int> > read_other_ends;
 
 
                 for (int k = 0; k < idx_pileup[i].size(); k++) {
-                    if ((idx_pileup[i][k]->read_A_match_start_ > repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
-                        and (idx_pileup[i][k]->read_A_match_start_ < repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
-                        read_other_ends.push_back(idx_pileup[i][k]->read_A_match_end_);
-                        support ++;
+                    int left_overhang, right_overhang;
+                    int temp_id;
+                    temp_id=idx_pileup[i][k]->read_B_id_;
+
+                    if (idx_pileup[i][k]->reverse_complement_match_==0){
+                        right_overhang= std::max(maskvec[temp_id].second-idx_pileup[i][k]->read_B_match_end_,0);
+                        left_overhang= std::max(idx_pileup[i][k]->read_B_match_start_- maskvec[temp_id].first,0);
+                    }
+                    else if (idx_pileup[i][k]->reverse_complement_match_==1) {
+                        right_overhang= std::max(idx_pileup[i][k]->read_B_match_start_- maskvec[temp_id].first,0);
+                        left_overhang= std::max(maskvec[temp_id].second-idx_pileup[i][k]->read_B_match_end_,0);
+                    }
+
+//                    if (i==174201) {
+//                        temp_id=idx_pileup[i][k]->read_B_id_;
+//                        debug_file << i << "\tRead B stats\t"
+//                        << maskvec[i].first << "\t" << maskvec[i].second <<  "\n"
+//                        << temp_id << "\t" << idx_pileup[i][k]->read_B_match_start_
+//                        << "\t" << idx_pileup[i][k]->read_B_match_end_ << "\t"
+//                        << idx_pileup[i][k]->reverse_complement_match_ <<"\t"
+//                        << maskvec[temp_id].first << "\t"
+//                        << maskvec[temp_id].second << std::endl;
+//                    }
+                    if (left_overhang > THETA) {
+                        if ((idx_pileup[i][k]->read_A_match_start_ >
+                             repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
+                            and (idx_pileup[i][k]->read_A_match_start_ <
+                                 repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
+//                            if (i==174201) {
+//                                temp_id=idx_pileup[i][k]->read_B_id_;
+//                                debug_file << i << "\tRead B stats******\t"
+//                                << maskvec[i].first << "\t" << maskvec[i].second <<  "\n"
+//                                << temp_id << "\t" << idx_pileup[i][k]->read_B_match_start_
+//                                << "\t" << idx_pileup[i][k]->read_B_match_end_ << "\t"
+//                                << idx_pileup[i][k]->reverse_complement_match_ <<"\t"
+//                                << maskvec[temp_id].first << "\t"
+//                                << maskvec[temp_id].second << "\n"
+//                                << idx_pileup[i][k]->read_A_match_start_ <<"\t"
+//                                << idx_pileup[i][k]->read_A_match_end_ << std::endl;
+//                            }
+                            std::pair <int,int> other_end;
+                            other_end.first=idx_pileup[i][k]->read_A_match_end_;
+                            other_end.second=right_overhang;
+                            read_other_ends.push_back(other_end);
+                            support++;
+                        }
                     }
                 }
                 if (support < HINGE_MIN_SUPPORT){
                     continue;
                 }
-                int start_point=0;
-
-                std::sort(read_other_ends.begin(),read_other_ends.end(),std::greater<int>());//Sort in descending order
-                std::vector< std::pair<int,int> >bins_of_interest;
-
-                for (int index=1; index<read_other_ends.size(); index++) {
-                    if ( read_other_ends[start_point]  - read_other_ends[index] < HINGE_BIN_LENGTH) {
-                        num_reads_at_end++;
-                    }
-                    else {
-                        bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
-                        start_point=index;
-                        num_reads_at_end=1;
-                    }
-                    //else
-                    //break;
-                }
-                bins_of_interest.push_back(std::pair<int, int>(read_other_ends[start_point],num_reads_at_end));
 
 
+                std::sort(read_other_ends.begin(),read_other_ends.end(),pairDescend);//Sort in descending order
+
+//                if (i==174201){
+//                    debug_file << "==========================\n";
+//                    debug_file << repeat_annotation[i][j].second <<"\n";
+//                    for (int id = 0; id < read_other_ends.size() ; ++id){
+//                        debug_file << read_other_ends[id].first <<"\t"
+//                        << read_other_ends[id].second << std::endl;
+//                    }
+//                    debug_file << "==========================\n";
+//                }
                 int num_reads_considered=0;
                 int num_reads_extending_to_end=0;
+                int num_reads_with_internal_overlaps=0;
 
-                for (int index=0; index < bins_of_interest.size(); index++) {
-                    if (maskvec[i].second-bins_of_interest[index].first < HINGE_BIN_LENGTH){
-                        num_reads_extending_to_end+=bins_of_interest[index].second;
-                        num_reads_considered+=bins_of_interest[index].second;
-                        if (num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD){
+
+
+                for (int id = 0; id < read_other_ends.size() ; ++id) {
+                    if (maskvec[i].second-read_other_ends[id].first < HINGE_BIN_LENGTH){
+                        num_reads_considered++;
+                        num_reads_extending_to_end++;
+//                        if (i==174201){
+//                            debug_file << num_reads_extending_to_end
+//                            << "\t" <<  num_reads_considered
+//                            << "\t" << num_reads_with_internal_overlaps
+//                            <<"\t" << read_other_ends[0].first - read_other_ends[id].first << std::endl;
+//                        }
+                        if ((num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD) or
+                            ((num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) and
+                             (read_other_ends[0].first - read_other_ends[id].first > HINGE_BIN_LENGTH))) {
                             bridged=false;
                             break;
                         }
-
                     }
-                    else if ((bins_of_interest[index].second > HINGE_BIN_PILEUP_THRESHOLD)
-                             and (num_reads_considered < HINGE_READ_UNBRIDGED_THRESHOLD)){
-                        break;
+                    else if  (read_other_ends[id].second < THETA){
+                        num_reads_considered++;
+//                        if (i==174201){
+//                            debug_file << num_reads_extending_to_end
+//                            << "\t" <<  num_reads_considered
+//                            << "\t" << num_reads_with_internal_overlaps
+//                            <<"\t" << read_other_ends[0].first - read_other_ends[id].first << std::endl;
+//                        }
+                        if ((num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD) or
+                            ((num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) and
+                             (read_other_ends[0].first - read_other_ends[id].first > HINGE_BIN_LENGTH))) {
+                            bridged=false;
+                            break;
+                        }
                     }
-                    else if (num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) {
-                        bridged=false;
-                        break;
-                    }
-                    else {
-                        num_reads_considered+=bins_of_interest[index].second;
+                    else if (read_other_ends[id].second > THETA) {
+                        num_reads_with_internal_overlaps++;
+                        num_reads_considered++;
+                        int id1=id+1;
+                        int pileup_length=1;
+//                        if (i==174201){
+//                            debug_file << num_reads_extending_to_end
+//                            << "\t" <<  num_reads_considered
+//                            << "\t" << num_reads_with_internal_overlaps << std::endl;
+//                        }
+                        while (id1 < read_other_ends.size()){
+                            if (read_other_ends[id].first - read_other_ends[id1].first  < HINGE_BIN_LENGTH){
+                                pileup_length++;
+                                id1++;
+                            }
+                            else{
+                                break;
+                            }
+                        }
+//                        if (i==174201){
+//                            debug_file << num_reads_extending_to_end
+//                            << "\t" <<  num_reads_considered
+//                            << "\t" << num_reads_with_internal_overlaps
+//                            <<"\tPileup" << pileup_length << std::endl;
+//                        }
+                        if (pileup_length > HINGE_BIN_PILEUP_THRESHOLD){
+                            bridged=true;
+                            break;
+                        }
                     }
                 }
-
 
                 if ((not bridged) and (support > HINGE_MIN_SUPPORT))
                     hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first, 1));
 
+//                if (i==174201){
+//                    debug_file << bridged << "\n"<<"---------------------------"<<std::endl;
+//                }
             }
         }
     }
