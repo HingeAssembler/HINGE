@@ -4415,6 +4415,61 @@ void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
 }
 
 
+
+int LOverlap::GetMatchingPosition(int pos_A) {
+
+    /**
+     * GetMatchingPosition: Given a position on read A inside the matched segment,
+     * return the corresponding position on B
+    */
+
+
+    if ((pos_A < this->read_A_match_start_) or (pos_A > this->read_A_match_end_)) {
+        return -1;
+    }
+
+    int rev_sign = 1 - 2*this->reverse_complement_match_;
+
+    int current_pos_read_A = this->read_A_match_start_;
+    int next_pos_read_A = current_pos_read_A;
+
+    int current_pos_read_B = this->read_B_match_start_;
+    if (this->reverse_complement_match_ == 1) {
+        current_pos_read_B = this->read_B_match_end_;
+    }
+
+
+    for (int j = 0; j < this->trace_pts_len/2-1; j++) {
+
+        if (current_pos_read_A % 100 != 0)
+            next_pos_read_A = int(ceil(current_pos_read_A / 100.0)) * 100;
+        else
+            next_pos_read_A = current_pos_read_A + 100;
+
+
+        if (next_pos_read_A >= pos_A) {
+            return current_pos_read_B + pos_A - current_pos_read_A;
+        }
+
+        current_pos_read_B = current_pos_read_B + rev_sign * this->trace_pts[2 * j + 1];
+        current_pos_read_A = next_pos_read_A;
+
+    }
+
+    // if we got here, it means the hinge is in the last trace_pt window of A
+
+    if (current_pos_read_A < pos_A) {  // technically, we shouldn' need to check this
+        return current_pos_read_B + pos_A - current_pos_read_A;
+    }
+
+    return -2; // this shouldn't happen
+
+}
+
+
+
+
+
 void LOverlap::trim_overlap() {
     /**
      * Trim overlap: the reads are trimmed according to qualities and coverage,

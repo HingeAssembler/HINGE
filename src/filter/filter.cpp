@@ -1043,13 +1043,19 @@ int main(int argc, char *argv[]) {
     }
 
     //output hinges
+
+    int hg_cnt = 0;
+
     for (int i = 0; i < n_read; i++) {
         hg << i << " ";
         for (int j = 0; j < hinges[i].size(); j++) {
             hg << hinges[i][j].first << " " << hinges[i][j].second << " ";
         }
+        hg_cnt += hinges[i].size();
         hg << std::endl;
     }
+
+    console->info("Number of hinges: {}", hg_cnt);
 
     if (strlen(name_db)>0)
         la.closeDB(); //close database
