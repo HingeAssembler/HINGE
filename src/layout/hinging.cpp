@@ -307,6 +307,14 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
 
 
 
+
+
+
+
+
+
+
+
 int main(int argc, char *argv[]) {
 
     cmdline::parser cmdp;
@@ -458,7 +466,7 @@ int main(int argc, char *argv[]) {
     int KILL_HINGE_OVERLAP_ALLOWANCE = (int)reader.GetInteger("layout", "kill_hinge_overlap", 300);
     int KILL_HINGE_INTERNAL_ALLOWANCE = (int)reader.GetInteger("layout", "kill_hinge_internal", 40);
 
-
+    int MATCHING_HINGE_SLACK = (int)reader.GetInteger("layout", "matching_hinge_slack", 100);
 
 
 
@@ -996,6 +1004,122 @@ int main(int argc, char *argv[]) {
     }
     fclose(out_hglist);
     console->info("after filter {} active hinges", n);
+
+
+
+
+    // Hinge graph construction:
+
+    FILE * out_hgraph;
+    out_hgraph = fopen((std::string(out_name) + ".hgraph").c_str(), "w");
+
+    int pos_B;
+
+    for (int i = 0; i < n_read; i++) {
+
+        if (reads[i]->active) {
+
+            for (int k = 0; k < hinges_vec[i].size(); k++) {
+
+                for (int j = 0; j < matches_forward[i].size(); j++) {
+                    if (matches_forward[i][j]->active) {
+                        if (((matches_forward[i][j]->match_type_ == FORWARD) or
+                             (matches_forward[i][j]->match_type_ == FORWARD_INTERNAL)) and
+                            (reads[matches_forward[i][j]->read_B_id_]->active)) {
+
+
+                            // Here we check whether read B has a hinge matching hinges_vec[i][k]
+
+                            // Should we also check whether hinges are active?
+
+                            pos_B = matches_forward[i][j]->GetMatchingPosition(hinges_vec[i][k].pos);
+
+                            console->info("Matching position is {}", pos_B); // for debugging
+
+
+                            int b_id = matches_forward[i][j]->read_B_id_;
+                            for (int l = 0; l < hinges_vec[b_id].size(); l++) {
+
+                                if ( (hinges_vec[b_id][l].pos < pos_B + MATCHING_HINGE_SLACK) and
+                                     (hinges_vec[b_id][l].pos > pos_B - MATCHING_HINGE_SLACK) ) {
+
+//      Should check hinge type as well, but needs to be careful with orientation
+//  ( hinges_vec[b_id][l].type == hinges_vec[i][k].type) ) {
+//
+                                    // found a matching hinge
+
+//                                    std::cout << "Found a matching hinge!" << std::endl;
+
+                                    fprintf(out_hgraph, "%d %d %d %d\n",
+                                            i,
+                                            b_id,
+                                            hinges_vec[i][k].pos,
+                                            hinges_vec[b_id][l].pos);
+
+                                }
+
+                            }
+
+
+                        }
+
+                    }
+                }
+
+
+                for (int j = 0; j < matches_backward[i].size(); j++) {
+                    if (matches_backward[i][j]->active) {
+                        if (((matches_backward[i][j]->match_type_ == BACKWARD) or
+                             (matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)) and
+                            (reads[matches_backward[i][j]->read_B_id_]->active)) {
+
+                            // Need to check whether read B has a hinge matching hinges_vec[i][k]
+
+
+                            pos_B = matches_backward[i][j]->GetMatchingPosition(hinges_vec[i][k].pos);
+
+                            console->info("Matching position is {}", pos_B); // for debugging
+
+
+                            int b_id = matches_backward[i][j]->read_B_id_;
+                            for (int l = 0; l < hinges_vec[b_id].size(); l++) {
+
+                                if ( (hinges_vec[b_id][l].pos < pos_B + MATCHING_HINGE_SLACK) and
+                                     (hinges_vec[b_id][l].pos > pos_B - MATCHING_HINGE_SLACK) ) {
+
+//      Should check hinge type as well, but needs to be careful with orientation
+//  ( hinges_vec[b_id][l].type == hinges_vec[i][k].type) ) {
+//
+                                    // found a matching hinge
+
+//                                    std::cout << "Found a matching hinge!" << std::endl;
+
+                                    fprintf(out_hgraph, "%d %d %d %d\n",
+                                            i,
+                                            b_id,
+                                            hinges_vec[i][k].pos,
+                                            hinges_vec[b_id][l].pos);
+
+                                }
+
+                            }
+
+
+
+
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+
+
+
+
+
 
     // filter hinges
     std::vector<bool> repeat_status_front;
