@@ -384,7 +384,7 @@ int main(int argc, char *argv[]) {
     std::string str((std::istreambuf_iterator<char>(ini_file)),
                     std::istreambuf_iterator<char>());
 
-    console->info("Parameters\n{}", str);
+    console->info("Parameters passed in \n{}", str);
 
     if (strlen(name_db) > 0)
         la.openDB(name_db);
@@ -470,7 +470,22 @@ int main(int argc, char *argv[]) {
 
 
 
-    console->info("Length threshold : {}",LENGTH_THRESHOLD);
+    console->info("LENGTH_THRESHOLD = {}",LENGTH_THRESHOLD);
+    console->info("QUALITY_THRESHOLD = {}",QUALITY_THRESHOLD);
+    console->info("ALN_THRESHOLD = {}",ALN_THRESHOLD);
+    console->info("MIN_COV = {}",MIN_COV);
+    console->info("CUT_OFF = {}",CUT_OFF);
+    console->info("THETA = {}",THETA);
+    console->info("N_ITER = {}",N_ITER);
+    console->info("THETA2 = {}",THETA2);
+    console->info("N_PROC = {}",N_PROC);
+    console->info("HINGE_SLACK = {}",HINGE_SLACK);
+    console->info("HINGE_TOLERANCE = {}",HINGE_TOLERANCE);
+    console->info("KILL_HINGE_OVERLAP_ALLOWANCE = {}",KILL_HINGE_OVERLAP_ALLOWANCE);
+    console->info("KILL_HINGE_INTERNAL_ALLOWANCE = {}",KILL_HINGE_INTERNAL_ALLOWANCE);
+    console->info("MATCHING_HINGE_SLACK = {}",MATCHING_HINGE_SLACK);
+
+
 
     omp_set_num_threads(N_PROC);
     //std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read);
