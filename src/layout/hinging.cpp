@@ -223,8 +223,7 @@ public:
     int pos;
     int type; // 1, -1
     bool active;
-    bool active2;
-    Hinge(int pos, int t, bool active):pos(pos),type(t), active(active), active2(false) {};
+    Hinge(int pos, int t, bool active):pos(pos),type(t), active(active) {};
     Hinge():pos(0),type(1), active(true) {};
 };
 
@@ -1022,7 +1021,7 @@ int main(int argc, char *argv[]) {
     out_hglist = fopen((std::string(out_name) + ".hinge.list").c_str(),"w");
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < hinges_vec[i].size(); j++) {
-            if ((reads[i]->active) and ((hinges_vec[i][j].active) or hinges_vec[i][j].active2)) {
+            if ((reads[i]->active) and ((hinges_vec[i][j].active) )) {
                 fprintf(out_hglist,"%d %d %d\n", i, marked_hinges[i][j].first, marked_hinges[i][j].second);
                 n++;
             }
@@ -1203,8 +1202,8 @@ int main(int argc, char *argv[]) {
         bool in = false;
         bool out = false;
         for (int j = 0; j < hinges_vec[i].size(); j++) {
-            if (((hinges_vec[i][j].active) or (hinges_vec[i][j].active2)) and (hinges_vec[i][j].type == 1)) in = true;
-            if (((hinges_vec[i][j].active) or (hinges_vec[i][j].active2)) and (hinges_vec[i][j].type == -1)) out = true;
+            if ((hinges_vec[i][j].active)  and (hinges_vec[i][j].type == 1)) in = true;
+            if ((hinges_vec[i][j].active)  and (hinges_vec[i][j].type == -1)) out = true;
         }
         repeat_status_front.push_back(out);
         repeat_status_back.push_back(in);
