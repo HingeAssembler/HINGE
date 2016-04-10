@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
     std::string str((std::istreambuf_iterator<char>(ini_file)),
                     std::istreambuf_iterator<char>());
 
-    console->info("Parameters\n{}", str);
+    console->info("Parameters passed in \n{}", str);
     
     if (strlen(name_db) > 0)
         la.openDB(name_db);
@@ -420,6 +420,25 @@ int main(int argc, char *argv[]) {
     omp_set_num_threads(N_PROC);
     console->info("number processes set to {}", N_PROC);
 
+    console->info("LENGTH_THRESHOLD = {}",LENGTH_THRESHOLD);
+    console->info("QUALITY_THRESHOLD = {}",QUALITY_THRESHOLD);
+    console->info("ALN_THRESHOLD = {}",ALN_THRESHOLD);
+    console->info("MIN_COV = {}",MIN_COV);
+    console->info("CUT_OFF = {}",CUT_OFF);
+    console->info("THETA = {}",THETA);
+    console->info("EST_COV = {}",EST_COV);
+    console->info("reso = {}",reso);
+    console->info("use_coverage_mask = {}",use_coverage_mask);
+    console->info("COVERAGE_FRACTION = {}",COVERAGE_FRACTION);
+    console->info("MIN_REPEAT_ANNOTATION_THRESHOLD = {}",MIN_REPEAT_ANNOTATION_THRESHOLD);
+    console->info("MAX_REPEAT_ANNOTATION_THRESHOLD = {}",MAX_REPEAT_ANNOTATION_THRESHOLD);
+    console->info("REPEAT_ANNOTATION_GAP_THRESHOLD = {}",REPEAT_ANNOTATION_GAP_THRESHOLD);
+    console->info("NO_HINGE_REGION = {}",NO_HINGE_REGION);
+    console->info("HINGE_MIN_SUPPORT = {}",HINGE_MIN_SUPPORT);
+    console->info("HINGE_BIN_PILEUP_THRESHOLD = {}",HINGE_BIN_PILEUP_THRESHOLD);
+    console->info("HINGE_READ_UNBRIDGED_THRESHOLD = {}",HINGE_READ_UNBRIDGED_THRESHOLD);
+    console->info("HINGE_BIN_LENGTH = {}",HINGE_BIN_LENGTH);
+    console->info("HINGE_TOLERANCE_LENGTH = {}",HINGE_TOLERANCE_LENGTH);
 
 
     std::vector<std::vector <LOverlap * > > idx_pileup; // this is the pileup
@@ -1044,6 +1063,19 @@ int main(int argc, char *argv[]) {
 
     //output hinges
 
+    int ra_cnt = 0;
+
+    for (int i = 0; i < n_read; i++) {
+        rep << i << " ";
+        for (int j = 0; j < repeat_annotation[i].size(); j++) {
+            rep << repeat_annotation[i][j].first << " " << repeat_annotation[i][j].second << " ";
+        }
+        ra_cnt += repeat_annotation[i].size();
+        rep << std::endl;
+    }
+    rep.close();
+    console->info("Number of hinges before filtering: {}", ra_cnt);
+
     int hg_cnt = 0;
 
     for (int i = 0; i < n_read; i++) {
@@ -1054,6 +1086,7 @@ int main(int argc, char *argv[]) {
         hg_cnt += hinges[i].size();
         hg << std::endl;
     }
+    hg.close();
 
     console->info("Number of hinges: {}", hg_cnt);
 
