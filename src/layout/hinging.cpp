@@ -1061,6 +1061,14 @@ int main(int argc, char *argv[]) {
                             pos_B = matches_forward[i][j]->GetMatchingPosition(hinges_vec[i][k].pos);
 
 //                            console->info("Matching position is {}", pos_B); // for debugging
+                            int req_hinge_type;
+                            if (matches_forward[i][j]->reverse_complement_match_ ==true){
+                                req_hinge_type=-1*hinges_vec[i][k].type;
+                            }
+                            else {
+                                req_hinge_type=hinges_vec[i][k].type;
+                            }
+//                            std::cout << req_hinge_type << std::endl;
 
 
                             int b_id = matches_forward[i][j]->read_B_id_;
@@ -1069,19 +1077,18 @@ int main(int argc, char *argv[]) {
                                 if ( (hinges_vec[b_id][l].pos < pos_B + MATCHING_HINGE_SLACK) and
                                      (hinges_vec[b_id][l].pos > pos_B - MATCHING_HINGE_SLACK) ) {
 
-//      Should check hinge type as well, but needs to be careful with orientation
-//  ( hinges_vec[b_id][l].type == hinges_vec[i][k].type) ) {
-//
+
                                     // found a matching hinge
 
-//                                    std::cout << "Found a matching hinge!" << std::endl;
 
-                                    fprintf(out_hgraph, "%d %d %d %d %d\n",
-                                            i,
-                                            b_id,
-                                            hinges_vec[i][k].pos,
-                                            hinges_vec[b_id][l].pos, 1);
+                                    if (req_hinge_type==hinges_vec[b_id][l].type) {
 
+                                        fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                                i,
+                                                b_id,
+                                                hinges_vec[i][k].pos,
+                                                hinges_vec[b_id][l].pos, 1);
+                                    }
                                 }
 
 
@@ -1093,19 +1100,14 @@ int main(int argc, char *argv[]) {
                                 if ( (killed_hinges_vec[b_id][l].pos < pos_B + MATCHING_HINGE_SLACK) and
                                      (killed_hinges_vec[b_id][l].pos > pos_B - MATCHING_HINGE_SLACK) ) {
 
-//      Should check hinge type as well, but needs to be careful with orientation
-//  ( hinges_vec[b_id][l].type == hinges_vec[i][k].type) ) {
-//
                                     // found a matching hinge
-
-//                                    std::cout << "Found a matching hinge!" << std::endl;
-
-                                    fprintf(out_hgraph, "%d %d %d %d %d\n",
-                                            i,
-                                            b_id,
-                                            hinges_vec[i][k].pos,
-                                            killed_hinges_vec[b_id][l].pos, 0);
-
+                                    if (req_hinge_type==killed_hinges_vec[b_id][l].type) {
+                                        fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                                i,
+                                                b_id,
+                                                hinges_vec[i][k].pos,
+                                                killed_hinges_vec[b_id][l].pos, 0);
+                                    }
                                 }
 
 
@@ -1131,6 +1133,14 @@ int main(int argc, char *argv[]) {
 
 //                            console->info("Matching position is {}", pos_B); // for debugging
 
+                            int req_hinge_type;
+                            if (matches_backward[i][j]->reverse_complement_match_ ==true){
+                                req_hinge_type=-1*hinges_vec[i][k].type;
+                            }
+                            else {
+                                req_hinge_type=hinges_vec[i][k].type;
+                            }
+//                            std::cout << req_hinge_type << std::endl;
 
                             int b_id = matches_backward[i][j]->read_B_id_;
                             for (int l = 0; l < hinges_vec[b_id].size(); l++) {
@@ -1138,19 +1148,16 @@ int main(int argc, char *argv[]) {
                                 if ( (hinges_vec[b_id][l].pos < pos_B + MATCHING_HINGE_SLACK) and
                                      (hinges_vec[b_id][l].pos > pos_B - MATCHING_HINGE_SLACK) ) {
 
-//      Should check hinge type as well, but needs to be careful with orientation
-//  ( hinges_vec[b_id][l].type == hinges_vec[i][k].type) ) {
-//
+
                                     // found a matching hinge
 
-//                                    std::cout << "Found a matching hinge!" << std::endl;
-
-                                    fprintf(out_hgraph, "%d %d %d %d %d\n",
-                                            i,
-                                            b_id,
-                                            hinges_vec[i][k].pos,
-                                            hinges_vec[b_id][l].pos, 1);
-
+                                    if (req_hinge_type==hinges_vec[b_id][l].type) {
+                                        fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                                i,
+                                                b_id,
+                                                hinges_vec[i][k].pos,
+                                                hinges_vec[b_id][l].pos, 1);
+                                    }
                                 }
 
                             }
@@ -1159,19 +1166,14 @@ int main(int argc, char *argv[]) {
                                 if ( (killed_hinges_vec[b_id][l].pos < pos_B + MATCHING_HINGE_SLACK) and
                                      (killed_hinges_vec[b_id][l].pos > pos_B - MATCHING_HINGE_SLACK) ) {
 
-//      Should check hinge type as well, but needs to be careful with orientation
-//  ( hinges_vec[b_id][l].type == hinges_vec[i][k].type) ) {
-//
                                     // found a matching hinge
-
-//                                    std::cout << "Found a matching hinge!" << std::endl;
-
-                                    fprintf(out_hgraph, "%d %d %d %d %d\n",
-                                            i,
-                                            b_id,
-                                            hinges_vec[i][k].pos,
-                                            killed_hinges_vec[b_id][l].pos, 0);
-
+                                    if (req_hinge_type==killed_hinges_vec[b_id][l].type) {
+                                        fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                                i,
+                                                b_id,
+                                                hinges_vec[i][k].pos,
+                                                killed_hinges_vec[b_id][l].pos, 0);
+                                    }
                                 }
 
                             }
