@@ -16,7 +16,10 @@ def read_graph(filename):
     with open (filename) as f:
         for lines in f:
             lines1=lines.split()
-
+            g.add_node(lines1[0] + "_" + lines1[2])
+            g.add_node(lines1[1] + "_" + lines1[3])
+            g.node[lines1[0] + "_" + lines1[2]]['active']=1
+            g.node[lines1[1] + "_" + lines1[3]]['active']=int(lines1[4])
             g.add_edge(lines1[0] + "_" + lines1[2], lines1[1] + "_" + lines1[3])
     
     

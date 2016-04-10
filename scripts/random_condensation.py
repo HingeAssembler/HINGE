@@ -178,7 +178,9 @@ def de_clip(filename, n_nodes, hinge_list=None):
 
                 # print g.edge[edge1[0]][edge1[1]]['hinge_edge']
 
-                
+                for nd in g.nodes():
+                    if len(nd.split("_"))==1:
+                        print nd + " in trouble"
                 in_node = g.in_edges(node2)[0][0]
                 out_node = g.out_edges(node2)[0][1]
                 if g.node[node2]['hinge']==0 and g.node[in_node]['hinge']==0  and g.node[out_node]['hinge']==0:
@@ -186,6 +188,9 @@ def de_clip(filename, n_nodes, hinge_list=None):
                         if in_node != node2 and out_node != node2 and in_node != out_node:
                             #print in_node, node, out_node
                             merge_path(g,in_node,node2,out_node)
+
+            # for nd in g.nodes():
+            #     print nd
 
     else:
         while len(g.nodes()) > n_nodes:
