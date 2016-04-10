@@ -422,6 +422,7 @@ int main(int argc, char *argv[]) {
 
     console->info("LENGTH_THRESHOLD = {}",LENGTH_THRESHOLD);
     console->info("QUALITY_THRESHOLD = {}",QUALITY_THRESHOLD);
+    console->info("N_ITER = {}",N_ITER);
     console->info("ALN_THRESHOLD = {}",ALN_THRESHOLD);
     console->info("MIN_COV = {}",MIN_COV);
     console->info("CUT_OFF = {}",CUT_OFF);
