@@ -223,8 +223,7 @@ public:
     int pos;
     int type; // 1, -1
     bool active;
-    bool active2;
-    Hinge(int pos, int t, bool active):pos(pos),type(t), active(active), active2(false) {};
+    Hinge(int pos, int t, bool active):pos(pos),type(t), active(active) {};
     Hinge():pos(0),type(1), active(true) {};
 };
 
@@ -307,6 +306,14 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
 
 
 
+
+
+
+
+
+
+
+
 int main(int argc, char *argv[]) {
 
     cmdline::parser cmdp;
@@ -376,7 +383,7 @@ int main(int argc, char *argv[]) {
     std::string str((std::istreambuf_iterator<char>(ini_file)),
                     std::istreambuf_iterator<char>());
 
-    console->info("Parameters\n{}", str);
+    console->info("Parameters passed in \n{}", str);
 
     if (strlen(name_db) > 0)
         la.openDB(name_db);
@@ -458,11 +465,26 @@ int main(int argc, char *argv[]) {
     int KILL_HINGE_OVERLAP_ALLOWANCE = (int)reader.GetInteger("layout", "kill_hinge_overlap", 300);
     int KILL_HINGE_INTERNAL_ALLOWANCE = (int)reader.GetInteger("layout", "kill_hinge_internal", 40);
 
+    int MATCHING_HINGE_SLACK = (int)reader.GetInteger("layout", "matching_hinge_slack", 100);
 
 
 
+    console->info("LENGTH_THRESHOLD = {}",LENGTH_THRESHOLD);
+    console->info("QUALITY_THRESHOLD = {}",QUALITY_THRESHOLD);
+    console->info("ALN_THRESHOLD = {}",ALN_THRESHOLD);
+    console->info("MIN_COV = {}",MIN_COV);
+    console->info("CUT_OFF = {}",CUT_OFF);
+    console->info("THETA = {}",THETA);
+    console->info("N_ITER = {}",N_ITER);
+    console->info("THETA2 = {}",THETA2);
+    console->info("N_PROC = {}",N_PROC);
+    console->info("HINGE_SLACK = {}",HINGE_SLACK);
+    console->info("HINGE_TOLERANCE = {}",HINGE_TOLERANCE);
+    console->info("KILL_HINGE_OVERLAP_ALLOWANCE = {}",KILL_HINGE_OVERLAP_ALLOWANCE);
+    console->info("KILL_HINGE_INTERNAL_ALLOWANCE = {}",KILL_HINGE_INTERNAL_ALLOWANCE);
+    console->info("MATCHING_HINGE_SLACK = {}",MATCHING_HINGE_SLACK);
 
-    console->info("Length threshold : {}",LENGTH_THRESHOLD);
+
 
     omp_set_num_threads(N_PROC);
     //std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read);
@@ -860,18 +882,29 @@ int main(int argc, char *argv[]) {
     // Output file for edges
 
     std::unordered_map<int, std::vector<Hinge> > hinges_vec;
+    std::unordered_map<int, std::vector<Hinge> > killed_hinges_vec;
 
     int n = 0;
+    int kh = 0 ;
     for (int i = 0; i < n_read; i++) {
         hinges_vec[i] = std::vector<Hinge>();
+        std::set <std::pair<int, int> > surviving_hinges(marked_hinges[i].begin(), marked_hinges[i].end());
         for (int j = 0; j < marked_hinges[i].size(); j++) {
             hinges_vec[i].push_back(Hinge(marked_hinges[i][j].first, marked_hinges[i][j].second , true));
             if (reads[i]->active) {
                 n ++;
             }
         }
+        for (int j = 0; j < marked_repeats[i].size(); j++) {
+            if (surviving_hinges.find(marked_repeats[i][j])==surviving_hinges.end()){
+                killed_hinges_vec[i].push_back(Hinge(marked_repeats[i][j].first, marked_repeats[i][j].second , false));
+                if (reads[i]->active) {
+                    kh ++;
+                }
+            }
+        }
     }
-
+    console->info("{} killed hinges", kh);
     console->info("{} hinges", n);
 
     n = 0;
@@ -988,7 +1021,7 @@ int main(int argc, char *argv[]) {
     out_hglist = fopen((std::string(out_name) + ".hinge.list").c_str(),"w");
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < hinges_vec[i].size(); j++) {
-            if ((reads[i]->active) and ((hinges_vec[i][j].active) or hinges_vec[i][j].active2)) {
+            if ((reads[i]->active) and ((hinges_vec[i][j].active) )) {
                 fprintf(out_hglist,"%d %d %d\n", i, marked_hinges[i][j].first, marked_hinges[i][j].second);
                 n++;
             }
@@ -996,6 +1029,170 @@ int main(int argc, char *argv[]) {
     }
     fclose(out_hglist);
     console->info("after filter {} active hinges", n);
+
+
+
+
+    // Hinge graph construction:
+
+    FILE * out_hgraph;
+    out_hgraph = fopen((std::string(out_name) + ".hgraph").c_str(), "w");
+
+    int pos_B;
+
+    for (int i = 0; i < n_read; i++) {
+
+        if (reads[i]->active) {
+
+            for (int k = 0; k < hinges_vec[i].size(); k++) {
+
+                for (int j = 0; j < matches_forward[i].size(); j++) {
+                    if (matches_forward[i][j]->active) {
+                        if (((matches_forward[i][j]->match_type_ == FORWARD) or
+                             (matches_forward[i][j]->match_type_ == FORWARD_INTERNAL)) and
+                            (reads[matches_forward[i][j]->read_B_id_]->active)) {
+
+
+                            // Here we check whether read B has a hinge matching hinges_vec[i][k]
+
+                            // Should we also check whether hinges are active?
+
+                            pos_B = matches_forward[i][j]->GetMatchingPosition(hinges_vec[i][k].pos);
+
+//                            console->info("Matching position is {}", pos_B); // for debugging
+                            int req_hinge_type;
+                            if (matches_forward[i][j]->reverse_complement_match_ ==true){
+                                req_hinge_type=-1*hinges_vec[i][k].type;
+                            }
+                            else {
+                                req_hinge_type=hinges_vec[i][k].type;
+                            }
+//                            std::cout << req_hinge_type << std::endl;
+
+
+                            int b_id = matches_forward[i][j]->read_B_id_;
+                            for (int l = 0; l < hinges_vec[b_id].size(); l++) {
+
+                                if ( (hinges_vec[b_id][l].pos < pos_B + MATCHING_HINGE_SLACK) and
+                                     (hinges_vec[b_id][l].pos > pos_B - MATCHING_HINGE_SLACK) ) {
+
+
+                                    // found a matching hinge
+
+
+                                    if (req_hinge_type==hinges_vec[b_id][l].type) {
+
+                                        fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                                i,
+                                                b_id,
+                                                hinges_vec[i][k].pos,
+                                                hinges_vec[b_id][l].pos, 1);
+                                    }
+                                }
+
+
+                            }
+
+                            for (int l = 0; l < killed_hinges_vec[b_id].size(); l++) {
+//                                std::cout << i <<"\t" << b_id <<"\t" << k << "\t" << l <<std::endl;
+
+                                if ( (killed_hinges_vec[b_id][l].pos < pos_B + MATCHING_HINGE_SLACK) and
+                                     (killed_hinges_vec[b_id][l].pos > pos_B - MATCHING_HINGE_SLACK) ) {
+
+                                    // found a matching hinge
+                                    if (req_hinge_type==killed_hinges_vec[b_id][l].type) {
+                                        fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                                i,
+                                                b_id,
+                                                hinges_vec[i][k].pos,
+                                                killed_hinges_vec[b_id][l].pos, 0);
+                                    }
+                                }
+
+
+                            }
+
+
+                        }
+
+                    }
+                }
+
+
+                for (int j = 0; j < matches_backward[i].size(); j++) {
+                    if (matches_backward[i][j]->active) {
+                        if (((matches_backward[i][j]->match_type_ == BACKWARD) or
+                             (matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)) and
+                            (reads[matches_backward[i][j]->read_B_id_]->active)) {
+
+                            // Need to check whether read B has a hinge matching hinges_vec[i][k]
+
+
+                            pos_B = matches_backward[i][j]->GetMatchingPosition(hinges_vec[i][k].pos);
+
+//                            console->info("Matching position is {}", pos_B); // for debugging
+
+                            int req_hinge_type;
+                            if (matches_backward[i][j]->reverse_complement_match_ ==true){
+                                req_hinge_type=-1*hinges_vec[i][k].type;
+                            }
+                            else {
+                                req_hinge_type=hinges_vec[i][k].type;
+                            }
+//                            std::cout << req_hinge_type << std::endl;
+
+                            int b_id = matches_backward[i][j]->read_B_id_;
+                            for (int l = 0; l < hinges_vec[b_id].size(); l++) {
+
+                                if ( (hinges_vec[b_id][l].pos < pos_B + MATCHING_HINGE_SLACK) and
+                                     (hinges_vec[b_id][l].pos > pos_B - MATCHING_HINGE_SLACK) ) {
+
+
+                                    // found a matching hinge
+
+                                    if (req_hinge_type==hinges_vec[b_id][l].type) {
+                                        fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                                i,
+                                                b_id,
+                                                hinges_vec[i][k].pos,
+                                                hinges_vec[b_id][l].pos, 1);
+                                    }
+                                }
+
+                            }
+                            for (int l = 0; l < killed_hinges_vec[b_id].size(); l++) {
+
+                                if ( (killed_hinges_vec[b_id][l].pos < pos_B + MATCHING_HINGE_SLACK) and
+                                     (killed_hinges_vec[b_id][l].pos > pos_B - MATCHING_HINGE_SLACK) ) {
+
+                                    // found a matching hinge
+                                    if (req_hinge_type==killed_hinges_vec[b_id][l].type) {
+                                        fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                                i,
+                                                b_id,
+                                                hinges_vec[i][k].pos,
+                                                killed_hinges_vec[b_id][l].pos, 0);
+                                    }
+                                }
+
+                            }
+
+
+
+
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+
+
+
+
+
 
     // filter hinges
     std::vector<bool> repeat_status_front;
@@ -1005,8 +1202,8 @@ int main(int argc, char *argv[]) {
         bool in = false;
         bool out = false;
         for (int j = 0; j < hinges_vec[i].size(); j++) {
-            if (((hinges_vec[i][j].active) or (hinges_vec[i][j].active2)) and (hinges_vec[i][j].type == 1)) in = true;
-            if (((hinges_vec[i][j].active) or (hinges_vec[i][j].active2)) and (hinges_vec[i][j].type == -1)) out = true;
+            if ((hinges_vec[i][j].active)  and (hinges_vec[i][j].type == 1)) in = true;
+            if ((hinges_vec[i][j].active)  and (hinges_vec[i][j].type == -1)) out = true;
         }
         repeat_status_front.push_back(out);
         repeat_status_back.push_back(in);

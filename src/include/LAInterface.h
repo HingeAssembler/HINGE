@@ -93,6 +93,7 @@ public:
     MatchType match_type_ = UNDEFINED;
     void addtype(int max_overhang); //classify overlaps
     void AddTypesAsymmetric(int max_overhang, int min_overhang);
+	int GetMatchingPosition(int pos_A);
     static const int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
 	bool active = true;
     uint16 *trace_pts;
