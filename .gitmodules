@@ -19,3 +19,6 @@
 [submodule "src/spdlog"]
 	path = src/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "src/ogdf"]
+	path = src/ogdf
+	url = https://github.com/AdventureCompBio/ogdf.git

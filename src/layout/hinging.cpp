@@ -18,13 +18,15 @@
 #include "LAInterface.h"
 #include "OverlapGraph.h"
 
+#include <ogdf/basic/Graph.h>
+#include <ogdf/basic/graph_generators.h>
+
 #define LAST_READ_SYMBOL  '$'
 
 #define HINGED_EDGE 1
 #define UNHINGED_EDGE -1
 #define REVERSE_COMPLEMENT_MATCH 1
 #define SAME_DIRECTION_MATCH 0
-
 
 
 
