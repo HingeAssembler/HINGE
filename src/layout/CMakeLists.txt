@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.2)
 
 set(Boost_USE_STATIC_LIBS   ON)
 
-FIND_PACKAGE( Boost 1.60 COMPONENTS graph REQUIRED )
+FIND_PACKAGE( Boost COMPONENTS graph REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
 add_executable(Greedy_best_ovl Greedy_best_ovl_bursty_resistant)
