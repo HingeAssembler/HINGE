@@ -18,12 +18,15 @@
 #include "LAInterface.h"
 #include "OverlapGraph.h"
 
-#include <ogdf/basic/Graph_d.h>
-#include <ogdf/basic/graph_generators.h>
-#include <ogdf/basic/Hashing.h>
-#include <ogdf/basic/simple_graph_alg.h>
-#include <ogdf/basic/HashArray.h>
+//#include <ogdf/basic/Graph.h>
+//#include <ogdf/basic/graph_generators.h>
+//#include <ogdf/basic/Hashing.h>
+//#include <ogdf/basic/simple_graph_alg.h>
+//#include <ogdf/basic/HashArray.h>
 
+#include <utility>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/connected_components.hpp>
 
 #define LAST_READ_SYMBOL  '$'
 
@@ -32,10 +35,10 @@
 #define REVERSE_COMPLEMENT_MATCH 1
 #define SAME_DIRECTION_MATCH 0
 
+using namespace boost;
 
-
+typedef adjacency_list <vecS, vecS, undirectedS> Graph;
 typedef std::tuple<Node, Node, int> Edge_w;
-
 typedef std::pair<Node, Node> Edge_nw;
 
 
@@ -374,7 +377,7 @@ int main(int argc, char *argv[]) {
     sinks.push_back(std::make_shared<spdlog::sinks::stdout_sink_st>());
     sinks.push_back(
             std::make_shared<spdlog::sinks::daily_file_sink_st>(cmdp.get<std::string>("log") + "/log", "txt", 23, 59));
-    auto console = std::make_shared<spdlog::logger>("log", begin(sinks), end(sinks));
+    auto console = std::make_shared<spdlog::logger>("log", std::begin(sinks), std::end(sinks));
     spdlog::register_logger(console);
 
     console->info("Hinging layout");
@@ -1029,9 +1032,10 @@ int main(int argc, char *argv[]) {
     console->info("after filter {} active hinges", n);
 
 
-    ogdf::Graph hinge_graph;
-    ogdf::HashArray<int, ogdf::node> hinge_graph_node_list;
+    //ogdf::Graph hinge_graph;
+    //ogdf::HashArray<int, ogdf::node> hinge_graph_node_list;
 
+    Graph hinge_graph;
     // Hinge graph construction:
 
     FILE *out_hgraph;
@@ -1081,12 +1085,7 @@ int main(int argc, char *argv[]) {
 
                                     if (req_hinge_type == hinges_vec[b_id][l].type) {
 
-                                        if (not hinge_graph_node_list.isDefined(i))
-                                            hinge_graph_node_list[i] = hinge_graph.newNode(i);
-                                        if (not hinge_graph_node_list.isDefined(b_id))
-                                            hinge_graph_node_list[b_id] = hinge_graph.newNode(b_id);
-                                        hinge_graph.newEdge(hinge_graph_node_list[i], hinge_graph_node_list[b_id]);
-
+                                        add_edge(i,b_id,hinge_graph);
                                         fprintf(out_hgraph, "%d %d %d %d %d\n",
                                                 i,
                                                 b_id,
@@ -1107,13 +1106,7 @@ int main(int argc, char *argv[]) {
                                     // found a matching hinge
                                     if (req_hinge_type == killed_hinges_vec[b_id][l].type) {
 
-                                        if (not hinge_graph_node_list.isDefined(i))
-                                            hinge_graph_node_list[i] = hinge_graph.newNode(i);
-                                        if (not hinge_graph_node_list.isDefined(b_id))
-                                            hinge_graph_node_list[b_id] = hinge_graph.newNode(b_id);
-                                        hinge_graph.newEdge(hinge_graph_node_list[i], hinge_graph_node_list[b_id]);
-
-
+                                        add_edge(i,b_id,hinge_graph);
                                         fprintf(out_hgraph, "%d %d %d %d %d\n",
                                                 i,
                                                 b_id,
@@ -1163,14 +1156,10 @@ int main(int argc, char *argv[]) {
 
                                     // found a matching hinge
 
-                                    if (not hinge_graph_node_list.isDefined(i))
-                                        hinge_graph_node_list[i] = hinge_graph.newNode(i);
-                                    if (not hinge_graph_node_list.isDefined(b_id))
-                                        hinge_graph_node_list[b_id] = hinge_graph.newNode(b_id);
-                                    hinge_graph.newEdge(hinge_graph_node_list[i], hinge_graph_node_list[b_id]);
 
 
                                     if (req_hinge_type == hinges_vec[b_id][l].type) {
+                                        add_edge(i,b_id,hinge_graph);
                                         fprintf(out_hgraph, "%d %d %d %d %d\n",
                                                 i,
                                                 b_id,
@@ -1187,14 +1176,10 @@ int main(int argc, char *argv[]) {
 
                                     // found a matching hinge
 
-                                    if (not hinge_graph_node_list.isDefined(i))
-                                        hinge_graph_node_list[i] = hinge_graph.newNode(i);
-                                    if (not hinge_graph_node_list.isDefined(b_id))
-                                        hinge_graph_node_list[b_id] = hinge_graph.newNode(b_id);
-                                    hinge_graph.newEdge(hinge_graph_node_list[i], hinge_graph_node_list[b_id]);
 
 
                                     if (req_hinge_type == killed_hinges_vec[b_id][l].type) {
+                                        add_edge(i,b_id,hinge_graph);
                                         fprintf(out_hgraph, "%d %d %d %d %d\n",
                                                 i,
                                                 b_id,
@@ -1215,17 +1200,14 @@ int main(int argc, char *argv[]) {
     }
 
 
-    console->info("{} nodes, {} edges", hinge_graph.numberOfNodes(), hinge_graph.numberOfEdges());
 
-    ogdf::NodeArray<int> connected_components;
+    std::vector<int> component(num_vertices(hinge_graph));
+    int num = connected_components(hinge_graph, &component[0]);
 
-
-    if (hinge_graph.numberOfNodes() > 0) {
-        int num_cc = ogdf::connectedComponents(hinge_graph, connected_components);
-        console->info("{} connected components", num_cc);
-    }
-
-
+    std::vector<int>::size_type i;
+    std::cout << "Total number of components: " << num << std::endl;
+    for (i = 0; i != component.size(); ++i)
+        std::cout << "Vertex " << i <<" is in component " << component[i] << std::endl;
 
     // filter hinges
     std::vector<bool> repeat_status_front;
