@@ -31,6 +31,9 @@ add_subdirectory(lib lib)
 
 add_subdirectory(spdlog)
 
+#add_subdirectory(ogdf)
+
+
 ## Executables
 
 add_subdirectory(filter filter)
