@@ -1036,6 +1036,9 @@ int main(int argc, char *argv[]) {
     //ogdf::HashArray<int, ogdf::node> hinge_graph_node_list;
 
     Graph hinge_graph;
+    std::map<int, int> hinge_graph_node_map;
+    std::map<int, int> hinge_graph_node_map_rev;
+
     // Hinge graph construction:
 
     FILE *out_hgraph;
@@ -1085,7 +1088,16 @@ int main(int argc, char *argv[]) {
 
                                     if (req_hinge_type == hinges_vec[b_id][l].type) {
 
-                                        add_edge(i,b_id,hinge_graph);
+                                        if (hinge_graph_node_map.find(i) == hinge_graph_node_map.end()) {
+                                            hinge_graph_node_map_rev[hinge_graph_node_map.size()] = i;
+                                            hinge_graph_node_map[i] = hinge_graph_node_map.size();
+                                        }
+                                        if (hinge_graph_node_map.find(b_id) == hinge_graph_node_map.end()) {
+                                            hinge_graph_node_map_rev[hinge_graph_node_map.size()] = b_id;
+                                            hinge_graph_node_map[b_id] = hinge_graph_node_map.size();
+                                        }
+
+                                        add_edge(hinge_graph_node_map[i],hinge_graph_node_map[b_id],hinge_graph);
                                         fprintf(out_hgraph, "%d %d %d %d %d\n",
                                                 i,
                                                 b_id,
@@ -1106,7 +1118,16 @@ int main(int argc, char *argv[]) {
                                     // found a matching hinge
                                     if (req_hinge_type == killed_hinges_vec[b_id][l].type) {
 
-                                        add_edge(i,b_id,hinge_graph);
+                                        if (hinge_graph_node_map.find(i) == hinge_graph_node_map.end()) {
+                                            hinge_graph_node_map_rev[hinge_graph_node_map.size()] = i;
+                                            hinge_graph_node_map[i] = hinge_graph_node_map.size();
+                                        }
+                                        if (hinge_graph_node_map.find(b_id) == hinge_graph_node_map.end()) {
+                                            hinge_graph_node_map_rev[hinge_graph_node_map.size()] = b_id;
+                                            hinge_graph_node_map[b_id] = hinge_graph_node_map.size();
+                                        }
+
+                                        add_edge(hinge_graph_node_map[i],hinge_graph_node_map[b_id],hinge_graph);
                                         fprintf(out_hgraph, "%d %d %d %d %d\n",
                                                 i,
                                                 b_id,
@@ -1159,7 +1180,17 @@ int main(int argc, char *argv[]) {
 
 
                                     if (req_hinge_type == hinges_vec[b_id][l].type) {
-                                        add_edge(i,b_id,hinge_graph);
+                                        if (hinge_graph_node_map.find(i) == hinge_graph_node_map.end()) {
+                                            hinge_graph_node_map_rev[hinge_graph_node_map.size()] = i;
+                                            hinge_graph_node_map[i] = hinge_graph_node_map.size();
+                                        }
+                                        if (hinge_graph_node_map.find(b_id) == hinge_graph_node_map.end()) {
+                                            hinge_graph_node_map_rev[hinge_graph_node_map.size()] = b_id;
+                                            hinge_graph_node_map[b_id] = hinge_graph_node_map.size();
+                                        }
+
+                                        add_edge(hinge_graph_node_map[i],hinge_graph_node_map[b_id],hinge_graph);
+
                                         fprintf(out_hgraph, "%d %d %d %d %d\n",
                                                 i,
                                                 b_id,
@@ -1179,7 +1210,18 @@ int main(int argc, char *argv[]) {
 
 
                                     if (req_hinge_type == killed_hinges_vec[b_id][l].type) {
-                                        add_edge(i,b_id,hinge_graph);
+                                        
+                                        if (hinge_graph_node_map.find(i) == hinge_graph_node_map.end()) {
+                                            hinge_graph_node_map_rev[hinge_graph_node_map.size()] = i;
+                                            hinge_graph_node_map[i] = hinge_graph_node_map.size();
+                                        }
+                                        if (hinge_graph_node_map.find(b_id) == hinge_graph_node_map.end()) {
+                                            hinge_graph_node_map_rev[hinge_graph_node_map.size()] = b_id;
+                                            hinge_graph_node_map[b_id] = hinge_graph_node_map.size();
+                                        }
+
+                                        add_edge(hinge_graph_node_map[i],hinge_graph_node_map[b_id],hinge_graph);
+
                                         fprintf(out_hgraph, "%d %d %d %d %d\n",
                                                 i,
                                                 b_id,
@@ -1198,7 +1240,6 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-
 
 
     std::vector<int> component(num_vertices(hinge_graph));
