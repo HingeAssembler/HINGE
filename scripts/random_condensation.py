@@ -17,7 +17,7 @@ from collections import Counter
 
 def merge_path(g,in_node,node,out_node):
         
-    g.add_edge(in_node,out_node,hinge_edge = -1)        
+    g.add_edge(in_node,out_node,hinge_edge = -1,false_positive = 0)        
     g.remove_node(node)
     
 
@@ -58,7 +58,7 @@ def input3(flname):
     g = nx.read_graphml(flname)
 
 
-def de_clip(filename, n_nodes, hinge_list=None):
+def de_clip(filename, n_nodes, hinge_list,gt_file):
 
     n_iter = 5
 
@@ -87,7 +87,7 @@ def de_clip(filename, n_nodes, hinge_list=None):
     
     try:
         import ujson
-        mapping = ujson.load(open(filename.split('.')[0]+'.mapping.1.json'))
+        mapping = ujson.load(open(gt_file))
         
         print 'getting mapping'
         mapped_nodes=0
@@ -100,19 +100,32 @@ def de_clip(filename, n_nodes, hinge_list=None):
 
             #print node
             if mapping.has_key(node_base):
-                g.node[node]['aln_start'] = mapping[node_base][0][0]
-                g.node[node]['aln_end'] = mapping[node_base][0][1]
+                g.node[node]['aln_start'] = min (mapping[node_base][0][0],mapping[node_base][0][1])
+                g.node[node]['aln_end'] = max(mapping[node_base][0][1],mapping[node_base][0][0])
                 g.node[node]['chr'] = mapping[node_base][0][2]
                 mapped_nodes+=1
             else:
-                pass
-                # g.node[node]['aln_start'] = 0
-                # g.node[node]['aln_end'] = 0
-                # g.node[node]['aln_strand'] = 0
-                
+                # pass
+                g.node[node]['aln_start'] = 0
+                g.node[node]['aln_end'] = 0
+                g.node[node]['aln_strand'] = 0
+
+
+        for edge in g.edges_iter():
+            in_node=edge[0]
+            out_node=edge[1]
+            # print  'akjdfakjhfakljh'
+            if ((g.node[in_node]['aln_start'] < g.node[out_node]['aln_start'] and  
+                g.node[out_node]['aln_start'] < g.node[in_node]['aln_end']) or 
+                (g.node[in_node]['aln_start'] < g.node[out_node]['aln_end'] and
+                g.node[out_node]['aln_end'] < g.node[in_node]['aln_end'])):
+                g.edge[in_node][out_node]['false_positive']=0
+            else:
+                g.edge[in_node][out_node]['false_positive']=1
+
     except:
-        # raise
-        print "json "+filename.split('.')[0]+'.mapping.json'+" not found. exiting."
+        raise
+        # print "json "+filename.split('.')[0]+'.mapping.json'+" not found. exiting."
            
     print hinge_list
 
@@ -160,20 +173,32 @@ def de_clip(filename, n_nodes, hinge_list=None):
 
                 base_node=node.split("_")[0]
                 orintation = node.split("_")[1]
-                if orintation=='1':
-                    node2=base_node+'_0'
-                else:
-                    node2=base_node+'_1'
+                # if orintation=='1':
+                #     node2=base_node+'_0'
+                # else:
+                #     node2=base_node+'_1'
 
                 # print node,node2
 
                 in_node = g.in_edges(node)[0][0]
                 out_node = g.out_edges(node)[0][1]
+
                 if g.node[node]['hinge']==0 and g.node[in_node]['hinge']==0  and g.node[out_node]['hinge']==0:
                     if g.out_degree(in_node) == 1 and g.in_degree(out_node) == 1:
                         if in_node != node and out_node != node and in_node != out_node:
-                            #print in_node, node, out_node
-                            merge_path(g,in_node,node,out_node)
+                            bad_node=False
+                            # print g.in_edges(node)
+                            # print g.edge[g.in_edges(node)[0][0]][g.in_edges(node)[0][1]]
+                            # print g.out_edges(node)
+                            for in_edge in g.in_edges(node):
+                                if g.edge[in_edge[0]][in_edge[1]]['false_positive']==1:
+                                    bad_node=True
+                            for out_edge in g.out_edges(node):
+                                if g.edge[out_edge[0]][out_edge[1]]['false_positive']==1:
+                                    bad_node=True 
+                            if not bad_node:
+                                #print in_node, node, out_node
+                                merge_path(g,in_node,node,out_node)
 
 
                 # print g.edge[edge1[0]][edge1[1]]['hinge_edge']
@@ -181,13 +206,22 @@ def de_clip(filename, n_nodes, hinge_list=None):
                 for nd in g.nodes():
                     if len(nd.split("_"))==1:
                         print nd + " in trouble"
-                in_node = g.in_edges(node2)[0][0]
-                out_node = g.out_edges(node2)[0][1]
-                if g.node[node2]['hinge']==0 and g.node[in_node]['hinge']==0  and g.node[out_node]['hinge']==0:
-                    if g.out_degree(in_node) == 1 and g.in_degree(out_node) == 1:
-                        if in_node != node2 and out_node != node2 and in_node != out_node:
-                            #print in_node, node, out_node
-                            merge_path(g,in_node,node2,out_node)
+                # in_node = g.in_edges(node2)[0][0]
+                # out_node = g.out_edges(node2)[0][1]
+                # if g.node[node2]['hinge']==0 and g.node[in_node]['hinge']==0  and g.node[out_node]['hinge']==0:
+                #     if g.out_degree(in_node) == 1 and g.in_degree(out_node) == 1:
+                #         if in_node != node2 and out_node != node2 and in_node != out_node:
+                #             bad_node=False
+                #             for in_edge in g.in_edges(node2):
+                #                 if g.edge[in_edge]==1:
+                #                     bad_node=True
+                #             for out_edge in g.out_edges(node2):
+                #                 if g.edge[out_edge]==1:
+                #                     bad_node=True 
+                #             if not bad_node:
+                #                 #print in_node, node, out_node
+                #                 merge_path(g,in_node,node2,out_node)
+
 
             # for nd in g.nodes():
             #     print nd
@@ -245,7 +279,7 @@ if __name__ == "__main__":
         hinge_list=None
         print "in except "+hinge_list
 
-    de_clip(filename, int(sys.argv[2]),hinge_list)
+    de_clip(filename, int(sys.argv[2]),hinge_list, sys.argv[4])
 
 
 
