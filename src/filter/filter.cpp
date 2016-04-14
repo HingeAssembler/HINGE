@@ -486,7 +486,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    console->info("profile coverage");
+    console->info("profile coverage (with and without CUT_OFF)");
 
 
     std::ofstream cov(out + ".coverage.txt");
@@ -497,14 +497,19 @@ int main(int argc, char *argv[]) {
     std::ofstream mask(out + ".mas");
 
     std::vector< std::vector<std::pair<int, int> > > coverages(n_read);
+    std::vector< std::vector<std::pair<int, int> > > cutoff_coverages(n_read);
     std::vector< std::vector<std::pair<int, int> > > cgs(n_read); //coverage gradient;
     //std::vector< std::vector<std::pair<int, int> > > his;
      for (int i = 0; i < n_read; i ++) {
          std::vector<std::pair<int, int> > coverage;
+
+         std::vector<std::pair<int, int> > cutoff_coverage;
+
+
          //TODO : Implement set based gradient
          std::vector<std::pair<int, int> > cg;
          //profileCoverage: get the coverage based on pile-o-gram
-         //la.profileCoverage(idx_pileup[i], coverage, reso, CUT_OFF);
+         la.profileCoverage(idx_pileup[i], cutoff_coverage, reso, CUT_OFF);
          la.profileCoverage(idx_pileup[i], coverage, reso, 0);
          //cov << "read " << i <<" ";
          //for (int j = 0; j < coverage.size(); j++)
@@ -519,6 +524,7 @@ int main(int argc, char *argv[]) {
          else cg.push_back(std::pair<int, int> (0,0));
 
          coverages[i] = (coverage);
+         cutoff_coverages[i] = (cutoff_coverage);
          cgs[i] = (cg);
     }
 
@@ -600,18 +606,18 @@ int main(int argc, char *argv[]) {
     }
 
     for (int i = 0; i < n_read; i++) {
-        for (int j = 0; j < coverages[i].size(); j++) {
-            coverages[i][j].second -= MIN_COV;
-            if (coverages[i][j].second < 0) coverages[i][j].second = 0;
+        for (int j = 0; j < cutoff_coverages[i].size(); j++) {
+            cutoff_coverages[i][j].second -= MIN_COV;
+            if (cutoff_coverages[i][j].second < 0) cutoff_coverages[i][j].second = 0;
         }
 
         //get the longest consecutive region that has decent coverage, decent coverage = estimated coverage / 3
         int start = 0;
         int end = start;
         int maxlen = 0, maxstart = 0, maxend = 0;
-        for (int j = 0; j < coverages[i].size(); j++) {
-            if (coverages[i][j].second > 0) {
-                end = coverages[i][j].first;
+        for (int j = 0; j < cutoff_coverages[i].size(); j++) {
+            if (cutoff_coverages[i][j].second > 0) {
+                end = cutoff_coverages[i][j].first;
             } else {
                 if (end > start) {
                     //std::cout<<"read" << i << " "<<start+reso << "->" << end << std::endl;
@@ -621,7 +627,7 @@ int main(int argc, char *argv[]) {
                         maxend = end;
                     }
                 }
-                start = coverages[i][j].first;
+                start = cutoff_coverages[i][j].first;
                 end = start;
             }
         }
@@ -723,21 +729,22 @@ int main(int argc, char *argv[]) {
     }
 
     //remove gaps
-    for (int i = 0; i < n_read; i++) {
-        for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end(); ) {
-            if (iter+1 < repeat_annotation[i].end()){
-                if ((iter->second == -1) and ((iter+1)->second == 1) and
-                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)){
-                    iter = repeat_annotation[i].erase(iter);
-                    iter = repeat_annotation[i].erase(iter); // fill gaps
-                } else if ((iter->second == 1) and ((iter+1)->second == -1) and
-                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)) {
-                    iter = repeat_annotation[i].erase(iter);
-                    iter = repeat_annotation[i].erase(iter);
-                } else iter++;
-            } else iter ++;
-        }
-    }
+//    for (int i = 0; i < n_read; i++) {
+//        for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end(); ) {
+//            if (iter+1 < repeat_annotation[i].end()){
+//                if ((iter->second == -1) and ((iter+1)->second == 1) and
+//                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)){
+//                    iter = repeat_annotation[i].erase(iter);
+//                    iter = repeat_annotation[i].erase(iter); // fill gaps
+//                } else if ((iter->second == 1) and ((iter+1)->second == -1) and
+//                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)) {
+//                    iter = repeat_annotation[i].erase(iter);
+//                    iter = repeat_annotation[i].erase(iter);
+//                } else iter++;
+//            } else iter ++;
+//        }
+//    }
+
 
     /*temp_out1=fopen("repeat_annotation.debug.txt","w");
     for (int i = 0; i < n_read; i++) {
