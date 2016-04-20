@@ -426,6 +426,8 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("out", 'o', "final output file name", true, "");
     cmdp.add<std::string>("log", 'g', "log folder name", false, "log");
 
+
+
 //    cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
 
 
@@ -456,6 +458,9 @@ int main(int argc, char *argv[]) {
     std::ofstream contained_out(name_contained);
     std::ifstream homo(name_homo);
     std::vector<int> homo_reads;
+
+
+    bool delete_telomere = true;
 
     int read_id;
     while (homo >> read_id) homo_reads.push_back(read_id);
@@ -566,6 +571,8 @@ int main(int argc, char *argv[]) {
 
     int MATCHING_HINGE_SLACK = (int) reader.GetInteger("layout", "matching_hinge_slack", 200);
 
+    int NUM_EVENTS_TELOMERE = (int) reader.GetInteger("layout", "num_events_telomere", 7);
+
 
     console->info("LENGTH_THRESHOLD = {}", LENGTH_THRESHOLD);
     console->info("QUALITY_THRESHOLD = {}", QUALITY_THRESHOLD);
@@ -640,6 +647,8 @@ int main(int argc, char *argv[]) {
     size_t len = 0;
     std::unordered_map<int, std::vector<std::pair<int, int>>> marked_repeats;
 
+    int telomere_cnt = 0;
+
     while (getline(&line, &len, repeat_file) != -1) {
         std::stringstream ss;
         ss.clear();
@@ -659,9 +668,16 @@ int main(int argc, char *argv[]) {
             }
         }
         ss.clear();
+
+        if ((delete_telomere) and (marked_repeats[num].size() > NUM_EVENTS_TELOMERE)) {
+            reads[num]->active = false;
+            telomere_cnt++;
+        }
+
     }
     fclose(repeat_file);
     console->info("read marked repeats");
+    console->info("killed {} reads with many repeats",telomere_cnt);
 
     std::unordered_map<int, std::vector<std::pair<int, int>>> marked_hinges;
     while (getline(&line, &len, hinge_file) != -1) {
