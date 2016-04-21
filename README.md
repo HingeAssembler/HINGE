@@ -41,13 +41,6 @@ One output is a graphml file which is the graph representation of the backbone.
 This removes dead ends and Z-structures from the graph enabling easy condensation.
 It can be analyzed and visualized, etc. 
 
-### Draft assembly
-
-Draft assembly extracts bases from the backbone. First, it reduces the backbone to a linear structure by traversing the backbone assembly, as implemented in `draft_assembly.py`. Then, I use a unitig consensus algorithm to get the draft assembly from the linear structure, as in `Unitig_consensus.cpp`
-
-### Consensus
-
-After the draft assembly is obtained. Reads are mapped to the draft assembly and get the final assembly by doing a majority vote. In `Draft_consensus.cpp`.
 
 ## Parameters
 
@@ -112,25 +105,11 @@ rm ecoli.*.ecoli.*
 LAmerge ecoli.las ecoli.*.las
 rm ecoli.*.las # we only need ecoli.las
 
-# Old pipeline
-Greedy_best_ovl ecoli ecoli.las ecoli_greedy.edges greedy.ini
-prune.py ecoli_greedy.edges
-draft_assembly.py ecoli.edges
-Unitig_consensus ecoli ecoli.las ecoli.linear.edges ecoli.draft.fasta greedy.ini
+# Run filter
+Reads_filter --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini
 
-# New pipeline
-Reads_filter ecoli ecoli.las ecoli.mas greedy.ini
-NSG ecoli ecoli.las ecoli.edges greedy.ini
-analyse2.py ecoli.edges.1
-# consensus has not finished yet
-
-correct_head.py ecoli.draft.fasta ecoli.draft.pb.fasta 
-fasta2DB draft ecoli.draft.pb.fasta
-HPCmapper -e.73 draft ecoli | zsh -v 
-LAmerge draft.ecoli.las draft.ecoli.*.las
-rm draft.ecoli.*.las
-Draft_consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta greedy.ini 
-# final consensus is in ecoli.consensus.fasta
+# Run layout
+hinging --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini -o ecoli
 ```
 
 ## Debugging
@@ -160,12 +139,5 @@ draw2_pileup_region.py  3600000 4500000
 ```
 
 # Preliminary results:
-![image](http://fxia.me/assets/img/awe.png)
-For ecoli 160X dataset, finished assembly can be achieved. 
-
-
-# Limitations
-
-- Only tested on high coverage and microbe datasets
-- Keeping one read and its reverse complement as two nodes lose a lot of information
-- More work needed to make NSG and Z-Pruning working. 
+![image](ecoli_schortened.png)
+For ecoli 160X dataset,  after . 
