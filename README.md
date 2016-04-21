@@ -14,7 +14,7 @@ AwesomeAssembler is an experimental long read assembler based on sparse string g
 
 AwesomeAssembler is an OLC(Overlap-Layout-Consensus) assembler. The idea of the pipeline is shown below. One significant difference from HGAP or Falcon pipeline is that it does not have a pre-assembly or read correction step. There are mainly two reasons that we don't want that step. The first is that this step will sometimes collapse repeats, thus introduce errors to homologous regions. Secondly, this will throw away information, for example, half bases are thrown away (as for the ecoli dataset) in the preassembly step in falcon pipeline. 
 
-![image](high_level_overview.png)
+![image](High_level_overview.png)
 
 ## Algorithm Details
 
