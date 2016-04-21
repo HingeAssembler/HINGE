@@ -91,9 +91,9 @@ public:
     int reverse_complement_match_; //reverse_complement_match_, reverse complement = 1, same direction = 0
     int eff_read_A_start_, eff_read_A_end_, eff_read_B_start_, eff_read_B_end_;
     MatchType match_type_ = UNDEFINED;
-    void addtype(int); // depreciated
-    void addtype2(int max_overhang); //classify overlaps
-    void AddTypesAsymmetric(int max_overhang);
+    void addtype(int max_overhang); //classify overlaps
+    void AddTypesAsymmetric(int max_overhang, int min_overhang);
+	int GetMatchingPosition(int pos_A);
     static const int CHI_THRESHOLD = 500; // threshold for chimeric/adaptor at the begining
 	bool active = true;
     uint16 *trace_pts;
@@ -160,7 +160,7 @@ public:
 
     void getAlignmentB(std::vector<int> &, int n); // get all b reads aligned with a read
 
-    void getOverlap(std::vector<LOverlap *> &, int from, int to); // get overlap(simplified version of alignment) with a read in a range
+    void getOverlap(std::vector<LOverlap *> &, int from, int64 to); // get overlap(simplified version of alignment) with a read in a range
 
     void getOverlapw(std::vector<LOverlap *> &, int from, int to); // get overlap(simplified version of alignment) with a read in a range
 
@@ -176,7 +176,7 @@ public:
 
     int getReadNumber(); // get total number of reads
 
-    int getReadNumber2(); // get total number of reads
+    int getReadNumber2(); // get total number of reads from database 2
 
     int64 getAlignmentNumber(); // get total number of alignments
 
@@ -211,6 +211,10 @@ public:
     void profileCoveragefine(std::vector<LOverlap *> &alignments, std::vector<std::pair<int, int> > & coverage,int reso, int cutoff, int est_coverage);
 
     void repeatDetect(std::vector<std::pair<int, int> > & coverage, std::vector<std::pair<int, int> > & repeat);
+
+	int loadPAF(std::string filename, std::vector<LOverlap *> &);
+
+    int loadFASTA(std::string filename, std::vector<Read *> & reads);
 
 };
 

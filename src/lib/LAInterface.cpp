@@ -6,19 +6,20 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <sstream>
 #include <iostream>
 #include <algorithm>
-#include "LAInterface.h"
-#include "align.h"
-#include "DB.h"
-
 #include <unordered_map>
 #include <tgmath.h>
 #include <iomanip>
 #include <fstream>
+#include <zlib.h>
 
+#include "LAInterface.h"
+#include "align.h"
+#include "DB.h"
+#include "paf.h"
+#include "kseq.h"
 
 void Read::showRead() {
     std::cout << "read #" << id << std::endl;
@@ -156,7 +157,7 @@ int LAInterface::openDB(std::string filename) {
 
     if (fscanf(dstub, DB_NFILE, &nfiles) != 1) SYSTEM_ERROR
 
-    printf("%d files\n", nfiles);
+    //printf("%d files\n", nfiles);
 
     flist = (char **) Malloc(sizeof(char *) * nfiles, "Allocating file list");
     findx = (int *) Malloc(sizeof(int *) * (nfiles + 1), "Allocating file index");
@@ -612,10 +613,9 @@ int LAInterface::openAlignmentFile(std::string filename) {
         tbytes = sizeof(uint16);
     }
 
-    printf("\n%s: ", fn);
-    Print_Number(novl, 0, stdout);
-    printf(" records\n");
-
+    //printf("\n%s: ", fn);
+    //Print_Number(novl, 0, stdout);
+    //printf(" records\n");
 
     return 0;
 }
@@ -1403,7 +1403,7 @@ void LAInterface::resetAlignment() {
 }
 
 
-void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int to) {
+void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int64 to) {
 
     int j;
     uint16 *trace;
@@ -1432,9 +1432,9 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
     for (j = 0; j < novl; j++)
         //  Read it in
     {
-        if (j % (novl/100) == 0) {
-            printf("%d percent finished\n", j/(novl/100));
-        }
+        //if (j % (novl/100) == 0) {
+        //    printf("%d percent finished\n", j/(novl/100));
+        //}
         Read_Overlap(input, ovl);
         if (ovl->path.tlen > tmax) {
             tmax = ((int) 1.2 * ovl->path.tlen) + 100;
@@ -1495,10 +1495,18 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int 
         new_ovl->read_B_id_ = ovl->bread;
         new_ovl->read_A_match_start_ = ovl->path.abpos;
 		new_ovl->read_A_match_end_ = ovl->path.aepos;
-        new_ovl->read_B_match_start_ = ovl->path.bbpos;
-        new_ovl->read_B_match_end_ = ovl->path.bepos;
         new_ovl->alen = aln->alen;
         new_ovl->blen = aln->blen;
+
+        if (new_ovl->reverse_complement_match_ == 0) {
+            new_ovl->read_B_match_start_ = ovl->path.bbpos;
+            new_ovl->read_B_match_end_ = ovl->path.bepos;
+        }
+        else {
+            new_ovl->read_B_match_start_ = new_ovl->blen - ovl->path.bepos;
+            new_ovl->read_B_match_end_ = new_ovl->blen - ovl->path.bbpos;
+        }
+
         new_ovl->diffs = ovl->path.diffs;
         new_ovl->tlen = ovl->path.tlen;
         new_ovl->tps = tps;
@@ -2440,59 +2448,6 @@ int64 LAInterface::getAlignmentNumber() {
     resetAlignment();
     return novl;
 
-}
-
-void LOverlap::addtype(int THETA) {
-
-
-    if ((read_A_match_start_ > eff_read_A_start_ + THETA) and (read_A_match_end_ > eff_read_A_end_ - THETA) and (read_B_match_start_ < eff_read_B_start_ + THETA) and (
-            read_B_match_end_ < eff_read_B_end_ - THETA)) {
-        match_type_ = FORWARD;
-    }
-	/**
-	 A:   ==========>
-	 B:        ==========>
-	**/
-
-    else if ((read_A_match_start_ < eff_read_A_start_ + THETA) and (read_A_match_end_ < eff_read_A_end_ - THETA) and (
-            read_B_match_end_ > eff_read_B_end_ - THETA ) and (
-            read_B_match_start_ > eff_read_B_start_ + THETA)) {
-         match_type_ = BACKWARD;
-    }
-	/**
-	 A:       ==========>
-	 B:  ==========>
-	**/
-    else if ((read_B_match_start_ < CHI_THRESHOLD) and (read_B_match_end_ > blen - CHI_THRESHOLD) and (alen > blen) ) {
-        match_type_ = COVERING;
-    }
-    else if ((read_A_match_start_ < CHI_THRESHOLD) and (read_A_match_end_ > alen - CHI_THRESHOLD) and (blen > alen) ) {
-        match_type_ = COVERED;
-    }
-        /**
-         A:    =========>
-         B: ===============>
-        **/
-
-
-	//else if ((read_A_match_start_ > 0) and (read_B_match_start_<CHI_THRESHOLD)) {
-	//	match_type_ = MISMATCH_RIGHT;
-	//}
-	///**
-	// A:   ======..xxxx>
-	// B:      ===..xxxx===>
-	//**/
-	//
-	//else if ((read_A_match_end_ < alen) and (read_B_match_end_ > blen - CHI_THRESHOLD)) {
-	//	match_type_ = MISMATCH_LEFT;
-	//}
-	///**
-	// A:   		xxxx..===>
-	// B:     ====xxxx..=>
-	//**/
-    //else if ((read_B_match_start_ > 0) and (read_B_match_end_ < blen)) {
-    //    match_type_ = MIDDLE;
-    //}
 }
 
 
@@ -4460,6 +4415,61 @@ void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
 }
 
 
+
+int LOverlap::GetMatchingPosition(int pos_A) {
+
+    /**
+     * GetMatchingPosition: Given a position on read A inside the matched segment,
+     * return the corresponding position on B
+    */
+
+
+    if ((pos_A < this->read_A_match_start_) or (pos_A > this->read_A_match_end_)) {
+        return -1;
+    }
+
+    int rev_sign = 1 - 2*this->reverse_complement_match_;
+
+    int current_pos_read_A = this->read_A_match_start_;
+    int next_pos_read_A = current_pos_read_A;
+
+    int current_pos_read_B = this->read_B_match_start_;
+    if (this->reverse_complement_match_ == 1) {
+        current_pos_read_B = this->read_B_match_end_;
+    }
+
+
+    for (int j = 0; j < this->trace_pts_len/2-1; j++) {
+
+        if (current_pos_read_A % 100 != 0)
+            next_pos_read_A = int(ceil(current_pos_read_A / 100.0)) * 100;
+        else
+            next_pos_read_A = current_pos_read_A + 100;
+
+
+        if (next_pos_read_A >= pos_A) {
+            return current_pos_read_B + pos_A - current_pos_read_A;
+        }
+
+        current_pos_read_B = current_pos_read_B + rev_sign * this->trace_pts[2 * j + 1];
+        current_pos_read_A = next_pos_read_A;
+
+    }
+
+    // if we got here, it means the hinge is in the last trace_pt window of A
+
+    if (current_pos_read_A < pos_A) {  // technically, we shouldn' need to check this
+        return current_pos_read_B + pos_A - current_pos_read_A;
+    }
+
+    return -2; // this shouldn't happen
+
+}
+
+
+
+
+
 void LOverlap::trim_overlap() {
     /**
      * Trim overlap: the reads are trimmed according to qualities and coverage,
@@ -4478,7 +4488,16 @@ void LOverlap::trim_overlap() {
 
 
     std::vector<std::pair<int,int> > trace_points;
-    trace_points.push_back(std::pair<int,int>(this->read_A_match_start_, this->read_B_match_start_));
+
+    if (this->reverse_complement_match_ == 0) {
+        trace_points.push_back(std::pair<int,int>(this->read_A_match_start_, this->read_B_match_start_));
+    }
+    else {
+        trace_points.push_back(std::pair<int,int>(this->read_A_match_start_, this->read_B_match_end_));
+    }
+
+    int rev_sign = 1 - 2*this->reverse_complement_match_;
+
     int current_position_read_A = this->read_A_match_start_;
     // this for loop change trace points stored trace_pts[] into coordinate pairs vector: tps
     for (int j = 0; j < this->trace_pts_len/2-1; j++) {
@@ -4487,10 +4506,14 @@ void LOverlap::trim_overlap() {
         else
             current_position_read_A += 100;
         trace_points.push_back(std::pair<int,int>(current_position_read_A,
-                                                  trace_points.back().second + this->trace_pts[2 * j + 1]));
+                                                  trace_points.back().second + rev_sign * this->trace_pts[2 * j + 1]));
     }
-    trace_points.push_back(std::pair<int,int>(this->read_A_match_end_, this->read_B_match_end_));
-
+    if (this->reverse_complement_match_ == 0) {
+        trace_points.push_back(std::pair<int, int>(this->read_A_match_end_, this->read_B_match_end_));
+    }
+    else {
+        trace_points.push_back(std::pair<int, int>(this->read_A_match_end_, this->read_B_match_start_));
+    }
 
 
     //printf("[%6d %6d] [%6d %6d]\n", this->eff_read_A_start_, this->eff_read_A_end_, this->eff_read_B_start_, this->eff_read_B_end_);
@@ -4508,25 +4531,56 @@ void LOverlap::trim_overlap() {
     this->eff_start_trace_point_index_ = trace_points.size();
     this->eff_end_trace_point_index_ = 0;
 
-    //for trace point pairs, get the first one that is in untrimmed regions for both reads
-    for (int i = 0; i< trace_points.size(); i++) {
-        if ((trace_points[i].first >= this->eff_read_A_start_) and
-                (trace_points[i].second >= this->eff_read_B_start_)) {
-            this->eff_read_A_match_start_ = trace_points[i].first;
-            this->eff_read_B_match_start_ = trace_points[i].second;
-            this->eff_start_trace_point_index_ = i;
-            break;
-        }
-    }
 
-    //for trace point pairs, get the last one that is in untrimmed regions for both reads
-    for (int i= (int) trace_points.size() - 1; i >= 0; i--) {
-        if ((trace_points[i].first <= this->eff_read_A_end_) and (trace_points[i].second <= this->eff_read_B_end_)) {
-            this->eff_read_A_match_end_ = trace_points[i].first;
-            this->eff_read_B_match_end_ = trace_points[i].second;
-            this->eff_end_trace_point_index_ = i;
-            break;
+
+    if (this->reverse_complement_match_ == 0) {
+
+        //for trace point pairs, get the first one that is in untrimmed regions for both reads
+
+        for (int i = 0; i < trace_points.size(); i++) {
+            if ( (trace_points[i].first >= this->eff_read_A_start_) and
+                (trace_points[i].second >= this->eff_read_B_start_) ) {
+                this->eff_read_A_match_start_ = trace_points[i].first;
+                this->eff_read_B_match_start_ = trace_points[i].second;
+                this->eff_start_trace_point_index_ = i;
+                break;
+            }
         }
+
+        //for trace point pairs, get the last one that is in untrimmed regions for both reads
+        for (int i = (int) trace_points.size() - 1; i >= 0; i--) {
+            if ((trace_points[i].first <= this->eff_read_A_end_) and
+                (trace_points[i].second <= this->eff_read_B_end_)) {
+                this->eff_read_A_match_end_ = trace_points[i].first;
+                this->eff_read_B_match_end_ = trace_points[i].second;
+                this->eff_end_trace_point_index_ = i;
+                break;
+            }
+        }
+
+    }
+    else {
+
+        for (int i = 0; i < trace_points.size(); i++) {
+            if ( (trace_points[i].first >= this->eff_read_A_start_) and
+                 (trace_points[i].second <= this->eff_read_B_end_) ) {
+                this->eff_read_A_match_start_ = trace_points[i].first;
+                this->eff_read_B_match_end_ = trace_points[i].second;
+                this->eff_start_trace_point_index_ = i; // "start" with respect to A
+                break;
+            }
+        }
+
+        for (int i = (int) trace_points.size() - 1; i >= 0; i--) {
+            if ((trace_points[i].first <= this->eff_read_A_end_) and
+                (trace_points[i].second >= this->eff_read_B_start_)) {
+                this->eff_read_A_match_end_ = trace_points[i].first;
+                this->eff_read_B_match_start_ = trace_points[i].second;
+                this->eff_end_trace_point_index_ = i;
+                break;
+            }
+        }
+
     }
 
     if (this->eff_start_trace_point_index_ >= this->eff_end_trace_point_index_)
@@ -4557,9 +4611,12 @@ void LOverlap::TrimOverlapNaive(){
     this->eff_read_A_match_end_ = std::min (this->read_A_match_end_,this->eff_read_A_end_);;
 }
 
-void LOverlap::addtype2(int max_overhang) {
+
+// This function is no longer used in hinging_v1.cpp
+
+void LOverlap::addtype(int max_overhang) {
     /**
-     * addtype2 is a function for classifying overlaps, edges are classified into forward, backward, internal match, bcovera and acoverb,
+     * addtype is a function for classifying overlaps, edges are classified into forward, backward, internal match, bcovera and acoverb,
         it is based on effective positions, rather than positions
      */
 
@@ -4582,7 +4639,7 @@ void LOverlap::addtype2(int max_overhang) {
     }
 }
 
-void LOverlap::AddTypesAsymmetric(int max_overhang) {
+void LOverlap::AddTypesAsymmetric(int max_overhang, int min_overhang) {
     //Getting a parameter max_overhang, which is the maximum overlap that one can attribute to bad DAligner ends
     //The function sets the class variable match_type_ according to the relative positions of the reads.
     //Possible things it can set to are:
@@ -4596,21 +4653,25 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     //printf("     A_left %6d, A_right %6d, B_left %6d, B_right %6d\n",
     //       overhang_read_A_left, overhang_read_A_right,
     //       overhang_read_B_left, overhang_read_B_right);
-    /*if (this->reverse_complement_match_ == 1) {
-        //Exchange overhang left and right of read B if match is reverse complemented
+
+    if (this->reverse_complement_match_ == 1) {
+        //Exchange overhang left and right of read B if match is reverse complement
         overhang_read_B_left = this->eff_read_B_end_ - this->eff_read_B_match_end_;
         overhang_read_B_right = this->eff_read_B_match_start_ - this->eff_read_B_start_;
-    }*/
+    }
 
 
-    if (std::max(overhang_read_A_left, overhang_read_A_right) < max_overhang)
+    if ((std::max(overhang_read_A_left, overhang_read_A_right) < max_overhang)
+        and (std::min(overhang_read_B_left, overhang_read_B_right) > min_overhang ))
        // and ((overhang_read_A_left <= overhang_read_B_left)
        //      and (overhang_read_A_right <= overhang_read_B_right)))
         this->match_type_ = BCOVERA;
-    else if (std::max(overhang_read_B_left, overhang_read_B_right) < max_overhang)
+    else if ((std::max(overhang_read_B_left, overhang_read_B_right) < max_overhang)
+            and (std::min(overhang_read_A_left, overhang_read_A_right) > min_overhang ))
          //and (overhang_read_A_left >= overhang_read_B_left)
          //     and (overhang_read_A_right >= overhang_read_B_right))
-    this->match_type_ = ACOVERB;
+        //
+        this->match_type_ = ACOVERB;
     else if ((std::min(overhang_read_A_left, overhang_read_A_right) > max_overhang))
         this->match_type_ = INTERNAL;
     else if (overhang_read_A_left <= max_overhang) {
@@ -4637,7 +4698,7 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
             this->match_type_ = FORWARD_INTERNAL;
         }
     else{
-            this->match_type_ =UNDEFINED;
+            this->match_type_ = UNDEFINED;
         }
     }
 
@@ -4663,4 +4724,68 @@ void LOverlap::AddTypesAsymmetric(int max_overhang) {
     << "\nMatch type "<<this->match_type_
     << "\n" << std::endl;
     ofs.close();*/
+}
+
+int get_id_from_string(const char * name_str) {
+
+
+    const char * sub0 = strchr(name_str, '/');
+    const char * sub1 = sub0 + 1;
+    const char * sub2 = strchr(sub1, '/');
+
+    char substr[15];
+    strncpy(substr, sub1, strlen(sub1) - strlen(sub2));
+    substr[strlen(sub1) - strlen(sub2)] = 0;
+    return atoi(substr);
+}
+
+
+int LAInterface::loadPAF(std::string filename, std::vector<LOverlap *> & alns) {
+    paf_file_t *fp;
+    paf_rec_t r;
+    fp = paf_open(filename.c_str());
+    int num = 0;
+    while (paf_read(fp, &r) >= 0) {
+        num ++;
+        LOverlap *new_ovl = new LOverlap();
+
+        new_ovl->read_A_match_start_ = r.qs;
+        new_ovl->read_B_match_start_ = r.ts;
+        new_ovl->read_A_match_end_ = r.qe;
+        new_ovl->read_B_match_end_ = r.te;
+        new_ovl->alen = r.ql;
+        new_ovl->blen = r.tl;
+        new_ovl->reverse_complement_match_ = r.rev;
+        new_ovl->diffs = 0;
+        new_ovl->read_A_id_ = get_id_from_string(r.qn) - 1;
+        new_ovl->read_B_id_ = get_id_from_string(r.tn) - 1; //change 1 based to 0 based
+
+        alns.push_back(new_ovl);
+    }
+    return num;
+}
+
+KSEQ_INIT(gzFile, gzread)
+
+int LAInterface::loadFASTA(std::string filename, std::vector<Read *> & reads) {
+    gzFile fp;
+    kseq_t *seq;
+    int l;
+    int num = 0;
+    fp = gzopen(filename.c_str(), "r"); // STEP 2: open the file handler
+    seq = kseq_init(fp); // STEP 3: initialize seq
+    while ((l = kseq_read(seq)) >= 0) { // STEP 4: read sequence
+        //printf("name: %s\n", seq->name.s);
+        //if (seq->comment.l) printf("comment: %s\n", seq->comment.s);
+        //printf("seq: %s\n", seq->seq.s);
+        //if (seq->qual.l) printf("qual: %s\n", seq->qual.s);
+
+        Read *new_r = new Read(num, strlen(seq->seq.s), std::string(seq->name.s), std::string(seq->seq.s));
+        reads.push_back(new_r);
+        num++;
+    }
+    //printf("return value: %d\n", l);
+    kseq_destroy(seq); // STEP 5: destroy seq
+    gzclose(fp); // STEP 6: close the file handler
+    return num;
 }
