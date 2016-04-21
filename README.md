@@ -138,6 +138,7 @@ Draw pileup on draft assembly, given a region(start,end):
 draw2_pileup_region.py  3600000 4500000 
 ```
 
-# Preliminary results:
-![image](ecoli_schortened.png)
-For ecoli 160X dataset,  after . 
+# Results:
+![image](ecoli_shortened.png)
+For ecoli 160X dataset,  after shortening reads to have a mean length of 3500 (with a variance of 1500), the graph is preserved.
+
