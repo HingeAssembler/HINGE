@@ -139,6 +139,11 @@ draw2_pileup_region.py  3600000 4500000
 ```
 
 # Results:
-![image](ecoli_shortened.png)
+
 For ecoli 160X dataset,  after shortening reads to have a mean length of 3500 (with a variance of 1500), the graph is preserved.
 
+![image](ecoli_shortened.png)
+
+The graph returned by Falcon here is
+
+![image](Falcon_ecoli_shortened.png)
