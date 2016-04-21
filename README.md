@@ -8,28 +8,38 @@ dev:![image](https://magnum.travis-ci.com/fxia22/AwesomeAssembler.svg?token=i41x
 
 ## Introduction 
 
-AwesomeAssembler is an experimental long read assembler based on sparse string graph (|E|/|V| bounded). Now AwesomeAssembler is at research prototype stage.
+AwesomeAssembler is an experimental long read assembler based on an idea called _hinging_. Now AwesomeAssembler is at research prototype stage.
 
 ## Pipeline Overview
 
-AwesomeAssembler is an OLC(Overlap-Layout-Consensus) assembler. The idea of the pipeline is shown below. One significant difference from HGAP or Falcon pipeline is that it does not have a pre-assembly or read correction step. There are mainly two reasons that we don't want that step. The first is that this step will sometimes collapse repeats, thus introduce errors to homologous regions. Secondly, this will throw away information, for example, half bases are thrown away (as for the ecoli dataset) in the preassembly step in falcon pipeline. 
+AwesomeAssembler is an OLC(Overlap-Layout-Consensus) assembler. The idea of the pipeline is shown below. 
 
 ![image](High_level_overview.png)
+
+At a high level, the algorithm can be thought of a variation of the classical greedy algorithm.
+The main difference with the greedy algorithm is that rather than each read having a single successor,
+and a single predecessor, we allow a small subset of reads to have a higher number of successors/predecessors.
+This subset is identified by a process called _hinging_. This helps us to recover the graph structure
+directly during assembly.
+
+Another significant difference from HGAP or Falcon pipeline is that it does not have a pre-assembly or read correction step. 
+
+
 
 ## Algorithm Details
 
 ### Reads filtering
-Reads filtering filters reads that have long chimer in the middle, and short reads. 
+Reads filtering filters reads that have long chimer in the middle, and short reads.
+Reads which can have higher number of predecessors/successors are also identified there. 
+This is implemented in `filter/filter.cpp`
 
 ### Layout 
-For the layout step, currently there are two algorithms implemented. For both algorithms, one read and its reverse complement are kept as separated nodes (which needs to be changed later)
+The layout is implemented in `layout/hinging.cpp`. It is done by a variant of the greedy algorithm.
 
-- `Greedy`. Implemented in `Greedy_best_ovl_bursty_resistant.cpp`. The Greedy works at all-approximate-repeats-bridged regime. For this algorithm, every best right extension for a read and its reverse complement are found. 
-- `Not-so-Greedy`. Implemented in `NSG_v1.cpp`. NSG *aims* at working at all-triple-repeats are bridged regime. It is an augmented version for Greedy by adding a step to reduce false negative edges. 
-
-### Pruning
-
-Currently pruning is only available for `Greedy`. For the initial layout graph, it keeps removing degree-1 nodes, for a certain number of iterations. Implemented in `prune.py`. One output is a graphml file which is the graph representation of the backbone. It can be analyzed and visualized, etc. 
+The graph output by the layout stage  is post-processed by running `scripts/prune_and_condence.py`.
+One output is a graphml file which is the graph representation of the backbone.
+This removes dead ends and Z-structures from the graph enabling easy condensation.
+It can be analyzed and visualized, etc. 
 
 ### Draft assembly
 
