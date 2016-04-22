@@ -511,10 +511,10 @@ int main(int argc, char *argv[]) {
          //profileCoverage: get the coverage based on pile-o-gram
          la.profileCoverage(idx_pileup[i], cutoff_coverage, reso, CUT_OFF);
          la.profileCoverage(idx_pileup[i], coverage, reso, 0);
-         //cov << "read " << i <<" ";
-         //for (int j = 0; j < coverage.size(); j++)
-         //    cov << coverage[j].first << ","  << coverage[j].second << " ";
-         //cov << std::endl;
+         cov << "read " << i <<" ";
+         for (int j = 0; j < coverage.size(); j++)
+             cov << coverage[j].first << ","  << coverage[j].second << " ";
+         cov << std::endl;
 
          //Computes coverage gradients.
          if (coverage.size() >= 2)
