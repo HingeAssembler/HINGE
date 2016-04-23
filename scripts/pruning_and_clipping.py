@@ -437,11 +437,12 @@ hingesname = sys.argv[2]
 # hingesname = '../pb_data/ecoli_shortened/ecoli4/ecolii2.hinge.list'
 
 
-json_file = open(sys.argv[3])
+suffix = sys.argv[3]
 
-
-suffix = sys.argv[4]
-
+if len(sys.argv)==5:
+    json_file = open(sys.argv[4])
+else:
+    json_file = None
 # path = '../pb_data/ecoli_shortened/ecoli4/'
 # suffix = 'i2'
 
@@ -494,7 +495,8 @@ with open (hingesname) as f:
 
 # json_file = open('../pb_data/ecoli_shortened/ecoli4/ecoli.mapping.1.json')
 
-add_groundtruth(G,json_file,in_hinges,out_hinges)
+if json_file!= None:
+    add_groundtruth(G,json_file,in_hinges,out_hinges)
 
 
 # In[ ]:
@@ -513,9 +515,9 @@ nx.write_graphml(G0, prefix+suffix+'.'+'G0'+'.graphml')
 nx.write_graphml(G1, prefix+suffix+'.'+'G1'+'.graphml')
 
 
-Gs = random_condensation(G1,2500)
+# Gs = random_condensation(G1,2500)
 
-nx.write_graphml(Gs, prefix+suffix+'.'+'Gs'+'.graphml')
+# nx.write_graphml(Gs, prefix+suffix+'.'+'Gs'+'.graphml')
 
 
 # H=prune_graph(G1,in_hinges,out_hinges)
