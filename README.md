@@ -93,7 +93,7 @@ In order to call the programs from anywhere, I suggest one export the directory 
 A demo run for assembling the ecoli genome is the following:
 
 ```
-source setup.sh %I've changed the setup.sh, as it gave errors while running. -GK
+source setup.sh
 mkdir data/ecoli
 cd data/ecoli
 # reads.fasta should be in data/ecoli
@@ -113,7 +113,7 @@ hinging --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini -o ecoli
 
 # Run postprocessing
 
-python pruning_and_clipping.py ecoli.edges.hinges ecoli.hinge.list identifier-of-run
+python pruning_and_clipping.py ecoli.edges.hinges ecoli.hinge.list <identifier-of-run>
 ```
 
 ## Debugging
