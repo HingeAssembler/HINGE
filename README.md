@@ -36,7 +36,7 @@ This is implemented in `filter/filter.cpp`
 ### Layout 
 The layout is implemented in `layout/hinging.cpp`. It is done by a variant of the greedy algorithm.
 
-The graph output by the layout stage  is post-processed by running `scripts/prune_and_condence.py`.
+The graph output by the layout stage  is post-processed by running `scripts/pruning_and_clipping.py`.
 One output is a graphml file which is the graph representation of the backbone.
 This removes dead ends and Z-structures from the graph enabling easy condensation.
 It can be analyzed and visualized, etc. 
@@ -110,6 +110,10 @@ Reads_filter --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini
 
 # Run layout
 hinging --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini -o ecoli
+
+# Run postprocessing
+
+python pruning_and_clipping.py ecoli.edges.hinges ecoli.hinge.list identifier-of-run
 ```
 
 ## Debugging
