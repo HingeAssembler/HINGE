@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import subprocess
 
 base_dir = '/data/pacbio_assembly/pb_data/NCTC/'
 bact_dict = json.load(open(base_dir+'NCTC.json'))
@@ -35,4 +36,10 @@ for bax_file in bax_files:
 	dextract_cmd +=  " " + dest_dir+bax_file
 
 print dextract_cmd
-os.system(dextract_cmd)
+dextract_cmd += 'lkasjdfla.bax.h5'
+subprocess.call(dextract_cmd.split())
+
+print 'done'
+
+
+
