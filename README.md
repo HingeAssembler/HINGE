@@ -99,11 +99,12 @@ cd data/ecoli
 # reads.fasta should be in data/ecoli
 fasta2DB ecoli reads.fasta
 DBsplit -x500 -s100 ecoli     
-HPCdaligner -dal4 -t16 -e.7 -l500 -s100 ecoli | zsh
+HPCdaligner -t5 ecoli | csh -v
 # alternatively, you can put output of HPCdaligner to a bash file and edit it to support 
 rm ecoli.*.ecoli.*
 LAmerge ecoli.las ecoli.*.las
 rm ecoli.*.las # we only need ecoli.las
+DASqv -c100 ecoli ecoli.las
 
 # Run filter
 Reads_filter --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini
