@@ -31,6 +31,7 @@ print bact_name
 
 
 if st_point <= 1:
+	subprocess.call("rm -f *.db",shell=True,cwd=base_path)
 	fasta2DB_cmd = "fasta2DB "+bact_name+' '+base_path+fasta_name
 	print fasta2DB_cmd
 	subprocess.check_output(fasta2DB_cmd.split(),cwd=base_path)
@@ -41,6 +42,7 @@ if st_point <= 2:
 	subprocess.check_output(DBsplit_cmd.split(),cwd=base_path)
 
 if st_point <= 3:
+	subprocess.call("rm -f *.las",shell=True,cwd=base_path)
 	daligner_cmd = "HPCdaligner -t5 "+bact_name
         daligner_shell_cmd = "csh -v daligner_cmd.sh"
 	print daligner_cmd
@@ -49,7 +51,7 @@ if st_point <= 3:
 if st_point <= 4:
 	remove_cmd = "rm "+base_path+bact_name+".*."+bact_name+".*"
 	print remove_cmd
-	os.system(remove_cmd.split())
+	os.system(remove_cmd)
 
 if st_point <= 5:
 	LAmerge_cmd = "LAmerge "+bact_name+".las "+bact_name+".*.las"
