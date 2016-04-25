@@ -32,7 +32,7 @@ dextract_cmd = 'dextract -o'+dest_fasta_name
 bax_files = [x for x in os.listdir(dest_dir) if x.endswith('.bax.h5')]
 
 for bax_file in bax_files:
-	dextract_cmd += dextract_cmd + " " + dest_dir+bax_file
+	dextract_cmd +=  " " + dest_dir+bax_file
 
 print dextract_cmd
 os.system(dextract_cmd)
