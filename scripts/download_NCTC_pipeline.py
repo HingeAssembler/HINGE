@@ -36,10 +36,15 @@ for bax_file in bax_files:
 	dextract_cmd +=  " " + dest_dir+bax_file
 
 print dextract_cmd
-dextract_cmd += 'lkasjdfla.bax.h5'
-subprocess.call(dextract_cmd.split())
 
-print 'done'
+try:
+    subprocess.check_output(dextract_cmd.split())
+    print 'dextract done. deleting .bax.h5 files'
+    os.system('rm '+dest_dir+'*.bax.h5')
+    print 'removing .quiva files'
+    os.system('rm '+dest_dir+'*.quiva')
+except:
+    print 'error'
 
 
 
