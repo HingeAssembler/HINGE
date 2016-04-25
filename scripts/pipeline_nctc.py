@@ -42,28 +42,26 @@ if st_point <= 2:
 
 if st_point <= 3:
 	daligner_cmd = "HPCdaligner -t5 "+bact_name
-    daligner_shell_cmd = "csh -v daligner_cmd.sh"
-    print daligner_cmd
-    p = subprocess.call(daligner_cmd.split(),stdout=open(base_path+'daligner_cmd.sh','w') , cwd=base_path)
-    print daligner_shell_cmd
-    p2 = subprocess.check_output(daligner_shell_cmd.split(), cwd=base_path)
-
+        daligner_shell_cmd = "csh -v daligner_cmd.sh"
+	print daligner_cmd
+	p = subprocess.call(daligner_cmd.split(),stdout=open(base_path+'daligner_cmd.sh','w') , cwd=base_path)
+        p2 = subprocess.check_output(daligner_shell_cmd.split(), cwd=base_path)
 if st_point <= 4:
-	remove_cmd = "rm "+bact_name+".*."+bact_name+".*"
+	remove_cmd = "rm "+base_path+bact_name+".*."+bact_name+".*"
 	print remove_cmd
-	subprocess.check_output(remove_cmd.split(),cwd=base_path)
+	os.system(remove_cmd.split())
 
 if st_point <= 5:
 	LAmerge_cmd = "LAmerge "+bact_name+".las "+bact_name+".*.las"
 	print LAmerge_cmd
-	subprocess.check_output(LAmerge_cmd.split(),cwd=base_path)
+	subprocess.check_output(LAmerge_cmd,cwd=base_path,shell=True)
 
 if st_point <= 6:
-	remove_cmd2 = "rm "+bact_name+".*.las"
-	subprocess.check_output(remove_cmd2.split(),cwd=base_path)
+	remove_cmd2 = "rm "+base_path+bact_name+".*.las"
+	os.system(remove_cmd2)
 
 if st_point <= 7:
-	subprocess.check_output("mkdir log".split(),cwd=base_path)
+	os.system("mkdir -p "+base_path+"log")
 
 if st_point <= 8:
 	DASqv_cmd = "DASqv -c100 "+bact_name+" "+bact_name+".las"
@@ -72,16 +70,16 @@ if st_point <= 8:
 if st_point <= 9:
 	Reads_filter_cmd = "Reads_filter --db "+bact_name+" --las "+bact_name+".las -x "+bact_name+" --config ~/AwesomeAssembler/utils/nominal.ini"
 	print Reads_filter_cmd
-	subprocess.check_output(Reads_filter_cmd.split(),cwd=base_path)
+	subprocess.check_output(Reads_filter_cmd,cwd=base_path, shell=True)
 
 if st_point <= 10:
 	hinging_cmd = "hinging --db "+bact_name+" --las "+bact_name+".las -x "+bact_name+" --config ~/AwesomeAssembler/utils/nominal.ini -o "+bact_name
 	print hinging_cmd
-	subprocess.check_output(hinging_cmd.split(), cwd=base_path)
+	subprocess.check_output(hinging_cmd, cwd=base_path, shell=True)
 
 if st_point <= 11:
 	pruning_cmd = "python ~/AwesomeAssembler/scripts/pruning_and_clipping.py "+bact_name+".edges.hinges "+bact_name+".hinge.list A"
 	print pruning_cmd
-	subprocess.check_output(pruning_cmd.split(), cwd=base_path)
+	subprocess.check_output(pruning_cmd, cwd=base_path, shell=True)
 
 
