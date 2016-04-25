@@ -540,10 +540,10 @@ int main(int argc, char *argv[]) {
     }
 
     int num_slot = 0;
-    int total_cov = 0;
+    long int total_cov = 0;
 
     std::vector<int> read_coverage;
-    int read_cov=0;
+    long int read_cov=0;
     int read_slot =0;
     //Finding the average coverage, probing a small proportion of reads
 
