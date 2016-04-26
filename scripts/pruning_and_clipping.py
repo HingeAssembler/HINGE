@@ -184,6 +184,42 @@ def dead_end_clipping(G,threshold):
 
 
 
+def rev_node(node):
+    node_sp = node.split('_')
+
+    return node_sp + '_' + str(1-int(node.split('_')[1]))
+
+
+def dead_end_clipping_sym(G,threshold):
+#     H=nx.DiGraph()
+    H = G.copy()
+    start_nodes = set([x for x in H.nodes() if H.in_degree(x) ==0])
+    
+    for st_node in start_nodes:
+        cur_path = [st_node]
+        
+        if len(H.successors(st_node)) == 1:
+            cur_node = H.successors(st_node)[0]
+
+            while H.in_degree(cur_node) == 1 and H.out_degree(cur_node) == 1 and len(cur_path) < threshold + 2:
+                cur_path.append(cur_node)
+
+                cur_node = H.successors(cur_node)[0]
+                
+            
+        if len(cur_path) <= threshold:
+            for vertex in cur_path:
+                try:
+                    H.remove_node(vertex)
+                    H.remove_node(rev_node(vertex))
+                except:
+                    pass
+
+
+    return H
+
+
+
 # In[9]:
 
 def z_clipping(G,threshold,in_hinges,out_hinges,print_z = False):
@@ -247,6 +283,54 @@ def z_clipping(G,threshold,in_hinges,out_hinges,print_z = False):
 
 
 
+def z_clipping_sym(G,threshold,in_hinges,out_hinges,print_z = False):
+    H = G.copy()
+    
+    start_nodes = set([x for x in H.nodes() if H.out_degree(x) > 1 and x not in out_hinges])
+    
+    for st_node in start_nodes:
+        for sec_node in H.successors(st_node):
+            
+            if H.out_degree(st_node) == 1:
+                break
+            
+            cur_node = sec_node
+            cur_path = [[st_node,cur_node]]
+
+            while H.in_degree(cur_node) == 1 and H.out_degree(cur_node) == 1:
+
+                cur_path.append([cur_node,H.successors(cur_node)[0]])
+                cur_node = H.successors(cur_node)[0]
+                
+                if len(cur_path) > threshold + 1:
+                    break
+            
+            if len(cur_path) <= threshold and H.in_degree(cur_node) > 1 and H.out_degree(st_node) > 1 and cur_node not in in_hinges:
+                if print_z:
+                    print cur_path
+                
+                for edge in cur_path:
+                    try:
+                        H.remove_edge(edge[0],edge[1])
+                        H.remove_edge(rev_node(edge[1]),rev_node(edge[0]))
+                    except:
+                        pass
+
+                for j in range(len(cur_path)-1):
+                    try:
+                        H.remove_node(cur_path[j][1])
+                        H.remove_node(rev_node(cur_path[j][1]))
+                    except:
+                        pass
+    
+
+    return H
+
+
+
+
+
+
 # In[48]:
 
 def merge_path(g,in_node,node,out_node):
@@ -267,7 +351,7 @@ def merge_path(g,in_node,node,out_node):
 
 # In[121]:
 
-def random_condensation(G,n_nodes):
+def random_condensation(G,n_nodes,check_gt = False):
 
     g = G.copy()
     
@@ -290,15 +374,62 @@ def random_condensation(G,n_nodes):
 #                     merge_path(g,in_node,node,out_node)
                     
                     bad_node=False
-                    for in_edge in g.in_edges(node):
-                        if g.edge[in_edge[0]][in_edge[1]]['false_positive']==1:
-                            bad_node=True
-                    for out_edge in g.out_edges(node):
-                        if g.edge[out_edge[0]][out_edge[1]]['false_positive']==1:
-                            bad_node=True 
+                    if check_gt:
+                        for in_edge in g.in_edges(node):
+                            if g.edge[in_edge[0]][in_edge[1]]['false_positive']==1:
+                                bad_node=True
+                        for out_edge in g.out_edges(node):
+                            if g.edge[out_edge[0]][out_edge[1]]['false_positive']==1:
+                                bad_node=True 
                     if not bad_node:
                         #print in_node, node, out_node
                         merge_path(g,in_node,node,out_node)
+    
+    if iter_cnt >= max_iter:
+        print "couldn't finish sparsification"+str(len(g.nodes()))
+                        
+    return g
+
+
+
+def random_condensation_sym(G,n_nodes,check_gt = False):
+
+    g = G.copy()
+    
+    max_iter = 20000
+    iter_cnt = 0
+    
+    while len(g.nodes()) > n_nodes and iter_cnt < max_iter:
+        
+        iter_cnt += 1
+
+        node = g.nodes()[random.randrange(len(g.nodes()))]
+
+        if g.in_degree(node) == 1 and g.out_degree(node) == 1:
+
+            in_node = g.in_edges(node)[0][0]
+            out_node = g.out_edges(node)[0][1]
+            if g.out_degree(in_node) == 1 and g.in_degree(out_node) == 1:
+                if in_node != node and out_node != node and in_node != out_node:
+                    #print in_node, node, out_node
+#                     merge_path(g,in_node,node,out_node)
+                    
+                    bad_node=False
+                    if check_gt:
+                        for in_edge in g.in_edges(node):
+                            if g.edge[in_edge[0]][in_edge[1]]['false_positive']==1:
+                                bad_node=True
+                        for out_edge in g.out_edges(node):
+                            if g.edge[out_edge[0]][out_edge[1]]['false_positive']==1:
+                                bad_node=True 
+                    if not bad_node:
+                        #print in_node, node, out_node
+
+                        try:
+                            merge_path(g,in_node,node,out_node)
+                            merge_path(g,rev_node(out_node),rev_node(node),rev_node(in_node))
+                        except:
+                            pass
     
     if iter_cnt >= max_iter:
         print "couldn't finish sparsification"+str(len(g.nodes()))
@@ -365,7 +496,11 @@ def random_condensation2(g,n_nodes):
 
 
 
+
+
+
 # In[72]:
+
 
 def add_groundtruth(g,json_file,in_hinges,out_hinges):
     
@@ -425,6 +560,23 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
             g.edge[in_node][out_node]['false_positive']=1
             
     return g
+
+
+
+
+
+def add_annotation(g,in_hinges,out_hinges):
+            
+    for node in g.nodes():
+            
+        if node in in_hinges:
+            g.node[node]['hinge'] = 1
+        elif node in out_hinges:
+            g.node[node]['hinge'] = -1
+        else:
+            g.node[node]['hinge'] = 0
+            
+    return g
    
 
 
@@ -437,11 +589,12 @@ hingesname = sys.argv[2]
 # hingesname = '../pb_data/ecoli_shortened/ecoli4/ecolii2.hinge.list'
 
 
-json_file = open(sys.argv[3])
+suffix = sys.argv[3]
 
-
-suffix = sys.argv[4]
-
+if len(sys.argv)==5:
+    json_file = open(sys.argv[4])
+else:
+    json_file = None
 # path = '../pb_data/ecoli_shortened/ecoli4/'
 # suffix = 'i2'
 
@@ -492,9 +645,13 @@ with open (hingesname) as f:
 
 
 
+add_annotation(G,in_hinges,out_hinges)
+
 # json_file = open('../pb_data/ecoli_shortened/ecoli4/ecoli.mapping.1.json')
 
-add_groundtruth(G,json_file,in_hinges,out_hinges)
+
+if json_file!= None:
+    add_groundtruth(G,json_file,in_hinges,out_hinges)
 
 
 # In[ ]:
@@ -504,16 +661,20 @@ G0 = G.copy()
 # Actual pruning, clipping and z deletion occurs below
 
 
-G1=dead_end_clipping(G0,10)
+G1=dead_end_clipping_sym(G0,10)
 
-G1=z_clipping(G1,5,in_hinges,out_hinges)
+G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
+G1=z_clipping_sym(G1,5,set(),set())
+# G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
+# G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
+# G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
+
+
+Gs = random_condensation_sym(G1,2000)
 
 nx.write_graphml(G0, prefix+suffix+'.'+'G0'+'.graphml')
 
 nx.write_graphml(G1, prefix+suffix+'.'+'G1'+'.graphml')
-
-
-Gs = random_condensation(G1,2500)
 
 nx.write_graphml(Gs, prefix+suffix+'.'+'Gs'+'.graphml')
 

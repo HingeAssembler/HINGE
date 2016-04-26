@@ -316,7 +316,98 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
 
 
 
+void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
 
+    int direction = match->reverse_complement_match_;
+    int hinged;
+
+//    if ((match->match_type_ == FORWARD) or (match->match_type_ == BACKWARD))
+//        hinged = UNHINGED_EDGE;
+//
+//    else if ((match->match_type_ == FORWARD_INTERNAL) or (match->match_type_ == BACKWARD_INTERNAL))
+//        hinged = HINGED_EDGE;
+
+//    if ((match->match_type_ == FORWARD) or (match->match_type_ == BACKWARD))
+//        hinged = 0;
+//    else if (match->match_type_ == FORWARD_INTERNAL)
+//        hinged = 1;
+//    else if (match->match_type_ == BACKWARD_INTERNAL)
+//        hinged = -1;
+
+    if (match->match_type_ == FORWARD) {
+        fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
+                match->read_A_id_,
+                match->read_B_id_,
+                match->weight,
+                0,
+                direction,
+                0,
+                -1, // hinge pos
+                match->eff_read_A_match_start_,
+                match->eff_read_A_match_end_,
+                match->eff_read_B_match_start_,
+                match->eff_read_B_match_end_,
+                match->eff_read_A_start_,
+                match->eff_read_A_end_,
+                match->eff_read_B_start_,
+                match->eff_read_B_end_);
+    }
+    else if (match->match_type_ == BACKWARD) {
+        fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
+                match->read_B_id_,
+                match->read_A_id_,
+                match->weight,
+                direction,
+                0,
+                0,
+                -1, // hinge pos
+                match->eff_read_B_match_start_,
+                match->eff_read_B_match_end_,
+                match->eff_read_A_match_start_,
+                match->eff_read_A_match_end_,
+                match->eff_read_B_start_,
+                match->eff_read_B_end_,
+                match->eff_read_A_start_,
+                match->eff_read_A_end_);
+    }
+    else if (match->match_type_ == FORWARD_INTERNAL) {
+
+        fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
+                match->read_A_id_,
+                match->read_B_id_,
+                match->weight,
+                0,
+                direction,
+                1, // hinged forward
+                hinge_pos,
+                match->eff_read_A_match_start_,
+                match->eff_read_A_match_end_,
+                match->eff_read_B_match_start_,
+                match->eff_read_B_match_end_,
+                match->eff_read_A_start_,
+                match->eff_read_A_end_,
+                match->eff_read_B_start_,
+                match->eff_read_B_end_);
+    }
+    else if (match->match_type_ == BACKWARD_INTERNAL) {
+        fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
+                match->read_B_id_,
+                match->read_A_id_,
+                match->weight,
+                direction,
+                0,
+                -1, // hinged backward
+                hinge_pos,
+                match->eff_read_B_match_start_,
+                match->eff_read_B_match_end_,
+                match->eff_read_A_match_start_,
+                match->eff_read_A_match_end_,
+                match->eff_read_B_start_,
+                match->eff_read_B_end_,
+                match->eff_read_A_start_,
+                match->eff_read_A_end_);
+    }
+}
 
 
 
@@ -334,6 +425,8 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("prefix", 'x', "(intermediate output) input file prefix", true, "");
     cmdp.add<std::string>("out", 'o', "final output file name", true, "");
     cmdp.add<std::string>("log", 'g', "log folder name", false, "log");
+
+
 
 //    cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
 
@@ -359,12 +452,18 @@ int main(int argc, char *argv[]) {
     std::string name_cov = out + ".coverage.txt";
     std::string name_garbage = out + ".garbage.txt";
     std::string name_contained = out + ".contained.txt";
+    std::string name_deadend = out_name + ".deadends.txt";
 
+
+    std::ofstream deadend_out(name_deadend);
     std::ofstream maximal_reads(name_max);
     std::ofstream garbage_out(name_garbage);
     std::ofstream contained_out(name_contained);
     std::ifstream homo(name_homo);
     std::vector<int> homo_reads;
+
+
+    bool delete_telomere = true;
 
     int read_id;
     while (homo >> read_id) homo_reads.push_back(read_id);
@@ -475,6 +574,8 @@ int main(int argc, char *argv[]) {
 
     int MATCHING_HINGE_SLACK = (int) reader.GetInteger("layout", "matching_hinge_slack", 200);
 
+    int NUM_EVENTS_TELOMERE = (int) reader.GetInteger("layout", "num_events_telomere", 7);
+
 
     console->info("LENGTH_THRESHOLD = {}", LENGTH_THRESHOLD);
     console->info("QUALITY_THRESHOLD = {}", QUALITY_THRESHOLD);
@@ -549,6 +650,8 @@ int main(int argc, char *argv[]) {
     size_t len = 0;
     std::unordered_map<int, std::vector<std::pair<int, int>>> marked_repeats;
 
+    int telomere_cnt = 0;
+
     while (getline(&line, &len, repeat_file) != -1) {
         std::stringstream ss;
         ss.clear();
@@ -568,9 +671,16 @@ int main(int argc, char *argv[]) {
             }
         }
         ss.clear();
+
+        if ((delete_telomere) and (marked_repeats[num].size() > NUM_EVENTS_TELOMERE)) {
+            reads[num]->active = false;
+            telomere_cnt++;
+        }
+
     }
     fclose(repeat_file);
     console->info("read marked repeats");
+    console->info("killed {} reads with many repeats",telomere_cnt);
 
     std::unordered_map<int, std::vector<std::pair<int, int>>> marked_hinges;
     while (getline(&line, &len, hinge_file) != -1) {
@@ -876,11 +986,13 @@ int main(int argc, char *argv[]) {
     FILE *out_g1;
     FILE *out_g2;
     FILE *out_hg;
+    FILE *out_hg2;
     out_g1 = fopen((std::string(out_name) + ".edges.1").c_str(), "w");
     out_g2 = fopen((std::string(out_name) + ".edges.2").c_str(), "w");
 
     // Output file for matches 
     out_hg = fopen((std::string(out_name) + ".edges.hinges").c_str(), "w");
+    out_hg2 = fopen((std::string(out_name) + ".edges.hinges2").c_str(), "w");
 
     // Output file for edges
 
@@ -1036,6 +1148,7 @@ int main(int argc, char *argv[]) {
     int hg(0);
     std::map< std::pair <int, int>, int> hinge_graph_node_map;
     std::map<int, std:: pair<int,int> > hinge_graph_node_map_rev;
+
     for (int i=0; i< hinges_vec.size(); i++){
         for(int j=0; j < hinges_vec[i].size(); j++){
             hinge_graph_node_map[std::make_pair(i,j)]=hg;
@@ -1048,6 +1161,9 @@ int main(int argc, char *argv[]) {
 
     FILE *out_hgraph;
     out_hgraph = fopen((std::string(out_name) + ".hgraph").c_str(), "w");
+
+    FILE * OverlapDebugFile;
+    OverlapDebugFile = fopen("overlap_debug.txt", "w");
 
     int pos_B;
 
@@ -1072,8 +1188,12 @@ int main(int argc, char *argv[]) {
 
 //                            console->info("Matching position is {}", pos_B); // for debugging
                             int req_hinge_type;
+
+                            int rev_int = 0;
+
                             if (matches_forward[i][j]->reverse_complement_match_ == true) {
                                 req_hinge_type = -1 * hinges_vec[i][k].type;
+                                rev_int = 1;
                             }
                             else {
                                 req_hinge_type = hinges_vec[i][k].type;
@@ -1082,16 +1202,20 @@ int main(int argc, char *argv[]) {
 
 
                             int b_id = matches_forward[i][j]->read_B_id_;
+
+
                             for (int l = 0; l < hinges_vec[b_id].size(); l++) {
 
                                 if ((hinges_vec[b_id][l].pos < pos_B + MATCHING_HINGE_SLACK) and
                                     (hinges_vec[b_id][l].pos > pos_B - MATCHING_HINGE_SLACK)) {
 
 
+
                                     // found a matching hinge
 
 
                                     if (req_hinge_type == hinges_vec[b_id][l].type) {
+
 
                                         std::pair <int,int> first_coord, second_coord;
 
@@ -1103,24 +1227,27 @@ int main(int argc, char *argv[]) {
                                         if (hinges_vec[i][k].type == 1) {
 
                                             add_edge(hinge_graph_node_map[first_coord], hinge_graph_node_map[second_coord], hinge_graph);
-                                            fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                            fprintf(out_hgraph, "%d %d %d %d %d %d\n",
                                                     i,
                                                     b_id,
                                                     hinges_vec[i][k].pos,
-                                                    hinges_vec[b_id][l].pos, 1);
+                                                    hinges_vec[b_id][l].pos, 1,
+                                                    rev_int);
 
                                         }
                                         else {
 
                                             add_edge(hinge_graph_node_map[second_coord], hinge_graph_node_map[first_coord], hinge_graph);
-                                            fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                            fprintf(out_hgraph, "%d %d %d %d %d %d\n",
                                                     b_id,
                                                     i,
                                                     hinges_vec[b_id][l].pos,
-                                                    hinges_vec[i][k].pos, 1);
+                                                    hinges_vec[i][k].pos, 1,
+                                                    rev_int);
                                         }
                                     }
                                 }
+
 
 
                             }
@@ -1137,24 +1264,28 @@ int main(int argc, char *argv[]) {
 
                                         if (hinges_vec[i][k].type == 1) {
 
-                                            fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                            fprintf(out_hgraph, "%d %d %d %d %d %d\n",
                                                     i,
                                                     b_id,
                                                     hinges_vec[i][k].pos,
-                                                    killed_hinges_vec[b_id][l].pos, 0);
+                                                    killed_hinges_vec[b_id][l].pos, 0,
+                                                    rev_int);
 
                                         }
                                         else {
 
-                                            fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                            fprintf(out_hgraph, "%d %d %d %d %d %d\n",
                                                     b_id,
                                                     i,
                                                     killed_hinges_vec[b_id][l].pos,
-                                                    hinges_vec[i][k].pos, 0);
+                                                    hinges_vec[i][k].pos, 0,
+                                                    rev_int);
                                         }
 
 
                                     }
+
+
                                 }
 
 
@@ -1181,8 +1312,12 @@ int main(int argc, char *argv[]) {
 //                            console->info("Matching position is {}", pos_B); // for debugging
 
                             int req_hinge_type;
+
+                            int rev_int = 0;
+
                             if (matches_backward[i][j]->reverse_complement_match_ == true) {
                                 req_hinge_type = -1 * hinges_vec[i][k].type;
+                                rev_int = 1;
                             }
                             else {
                                 req_hinge_type = hinges_vec[i][k].type;
@@ -1208,21 +1343,23 @@ int main(int argc, char *argv[]) {
                                         if (hinges_vec[i][k].type == -1) {
 
                                             add_edge(hinge_graph_node_map[first_coord], hinge_graph_node_map[second_coord], hinge_graph);
-                                            fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                            fprintf(out_hgraph, "%d %d %d %d %d %d\n",
                                                     i,
                                                     b_id,
                                                     hinges_vec[i][k].pos,
-                                                    hinges_vec[b_id][l].pos, 1);
+                                                    hinges_vec[b_id][l].pos, 1,
+                                                    rev_int);
 
                                         }
                                         else {
 
                                             add_edge(hinge_graph_node_map[second_coord], hinge_graph_node_map[first_coord], hinge_graph);
-                                            fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                            fprintf(out_hgraph, "%d %d %d %d %d %d\n",
                                                     b_id,
                                                     i,
                                                     hinges_vec[b_id][l].pos,
-                                                    hinges_vec[i][k].pos, 1);
+                                                    hinges_vec[i][k].pos, 1,
+                                                    rev_int);
                                         }
 
 
@@ -1244,20 +1381,22 @@ int main(int argc, char *argv[]) {
 
                                         if (hinges_vec[i][k].type == -1) {
 
-                                            fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                            fprintf(out_hgraph, "%d %d %d %d %d %d\n",
                                                     i,
                                                     b_id,
                                                     hinges_vec[i][k].pos,
-                                                    killed_hinges_vec[b_id][l].pos, 0);
+                                                    killed_hinges_vec[b_id][l].pos, 0,
+                                                    rev_int);
 
                                         }
                                         else {
 
-                                            fprintf(out_hgraph, "%d %d %d %d %d\n",
+                                            fprintf(out_hgraph, "%d %d %d %d %d %d\n",
                                                     b_id,
                                                     i,
                                                     killed_hinges_vec[b_id][l].pos,
-                                                    hinges_vec[i][k].pos, 0);
+                                                    hinges_vec[i][k].pos, 0,
+                                                    rev_int);
                                         }
 
                                     }
@@ -1283,7 +1422,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Total number of components: " << num << std::endl;
 
     std::map<int,int> component_size;
-    for (i = 0; i != component.size(); ++i){
+    for (i = 0; i != component.size(); ++i){   // are we skipping i=0?
         if ( component_size.find(component[i]) == component_size.end() ){
             component_size[component[i]]=1;
         }
@@ -1294,6 +1433,10 @@ int main(int argc, char *argv[]) {
 //    for (int i = 0; i < n_read; i++) {
 //        filtered_hinges_vec[i] = std::vector<Hinge>();
 //    }
+
+
+
+
     for (int i = 0; i != component.size(); ++i) {
         if (component_size[component[i]] < 10) {
             int ind1, ind2;
@@ -1302,8 +1445,24 @@ int main(int argc, char *argv[]) {
             hinges_vec[ind1][ind2].active=false;
 //            filtered_hinges_vec[ind1].push_back(hinges_vec[ind1][ind2]);
         }
+
     }
 
+
+//    std::map< std::pair <int, int>, int> hinge_graph_node_map;
+
+
+    std::map<int, std::pair <int, int>> component_sink;
+    for (i = 0; i != component.size(); ++i){
+        int ind1, ind2;
+        ind1 = hinge_graph_node_map_rev[i].first;
+        ind2 = hinge_graph_node_map_rev[i].second;
+
+        // for now let us just pick an arbitrary active hinge as the component main sink
+        if ( hinges_vec[ind1][ind2].active == true )
+            component_sink[component[i]]= std::make_pair(ind1,ind2);
+
+    }
 
     n = 0;
     FILE *out_hglist;
@@ -1520,6 +1679,11 @@ int main(int argc, char *argv[]) {
     }*/
 
     std::ofstream debug_fle("hinge_debug.txt");
+
+
+//    int eff_b_id;
+    int hinge_pos = -1;
+
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
 
@@ -1528,11 +1692,11 @@ int main(int argc, char *argv[]) {
             int backward = 0;
             int backward_internal = 0;
 
+
             LOverlap * chosen_match = NULL;
 
-//            if(i==227622){
-//                debug_fle << "In read "<< i << std::endl;
-//            }
+
+
 
             for (int j = 0; j < matches_forward[i].size(); j++){
 //                if(i==227622) {
@@ -1543,8 +1707,11 @@ int main(int argc, char *argv[]) {
 
                 if (matches_forward[i][j]->active) {
 
+
+
                     if ((reads[matches_forward[i][j]->read_B_id_]->active)) { // and (forward == 0)) {
                         //printf("hinge size %d\n", hinges_vec[matches_forward[i][j]->read_B_id_].size());
+
 
                         if ((matches_forward[i][j]->match_type_ == FORWARD) and (forward == 0)) {
 //                            fprintf(out3,"Printed from forward\n");
@@ -1552,6 +1719,8 @@ int main(int argc, char *argv[]) {
 //                            edges_forward[i].push_back(matches_forward[i][j]);
 
                             chosen_match = matches_forward[i][j];
+
+                            hinge_pos = -1;
 
                             forward = 1;
                             //break;
@@ -1588,6 +1757,12 @@ int main(int argc, char *argv[]) {
                                         chosen_match = matches_forward[i][j];
                                         forward = 1;
                                         forward_internal = 1;
+
+                                        hinge_pos = hinges_vec[matches_forward[i][j]->read_B_id_][k].pos;
+
+
+
+
                                     }
                                     break;
                                 }
@@ -1600,29 +1775,37 @@ int main(int argc, char *argv[]) {
             if (chosen_match != NULL) {
                 PrintOverlapToFile(out_hg,chosen_match);
                 edges_forward[i].push_back(chosen_match);
+
+                PrintOverlapToFile2(out_hg2,chosen_match,hinge_pos);
+
                 chosen_match = NULL;
+            }
+            else {
+
+                // Deadend debugging
+
+                // Forward dead-end
+                deadend_out << i;
+//                deadend_out << "\t Active: " << reads[i]->active << std::endl;
+                deadend_out << "\t matches_forward size: " << matches_forward[i].size() << std::endl;
+
             }
 
             for (int j = 0; j < matches_backward[i].size(); j++){
 
-//                if(i==227622) {
-//                    debug_fle << i << "\t" << backward << "\t" << matches_backward[i][j]->match_type_
-//                    << "\t" << matches_backward[i][j]->weight << "\t"
-//                    << matches_backward[i][j]->active << "\t" <<
-//                    reads[matches_backward[i][j]->read_B_id_]->len
-//                    << "\t" <<
-//                    reads[matches_backward[i][j]->read_B_id_]->effective_end -
-//                            reads[matches_backward[i][j]->read_B_id_]->effective_start << "\t" <<
-//                    matches_backward[i][j]->read_B_id_ << std::endl;
-//                }
+
                 if (matches_backward[i][j]->active) {
 
                     if ((reads[matches_backward[i][j]->read_B_id_]->active)) {
+
 
                         if ((matches_backward[i][j]->match_type_ == BACKWARD) and (backward == 0)){
 
                             chosen_match = matches_backward[i][j];
                             backward = 1;
+
+                            hinge_pos = -1;
+
                         }
                         else if ((matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)
                                 and (hinges_vec[matches_backward[i][j]->read_B_id_].size() > 0)
@@ -1654,6 +1837,14 @@ int main(int argc, char *argv[]) {
                                         chosen_match = matches_backward[i][j];
                                         backward = 1;
                                         backward_internal = 1;
+
+
+                                        hinge_pos = hinges_vec[matches_backward[i][j]->read_B_id_][k].pos;
+
+//                                        int hinge_graph_id = hinge_graph_node_map[std::make_pair(matches_backward[i][j]->read_B_id_,k)];
+
+//                                        eff_b_id = component_sink[component[hinge_graph_id]].first;
+
                                     }
 
                                     break;
@@ -1667,11 +1858,24 @@ int main(int argc, char *argv[]) {
             if (chosen_match != NULL) {
                 PrintOverlapToFile(out_hg,chosen_match);
                 edges_backward[i].push_back(chosen_match);
+
+                PrintOverlapToFile2(out_hg2,chosen_match,hinge_pos);
+
+            }
+            else {
+                // Deadend debugging
+
+                // Backward dead-end
+                deadend_out << i;
+//                deadend_out << "\t Active: " << reads[i]->active << std::endl;
+                deadend_out << "\t matches_backward size: " << matches_backward[i].size() << std::endl;
+
             }
         }
     }
 
     console->info("sort and output finished");
+    console->info("version 0.0.2");
 
     if (strlen(name_db) > 0)
     la.closeDB(); //close database
