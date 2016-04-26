@@ -664,10 +664,10 @@ G0 = G.copy()
 G1=dead_end_clipping_sym(G0,10)
 
 G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
-G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
-G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
-G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
-G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
+G1=z_clipping_sym(G1,5,set(),set())
+# G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
+# G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
+# G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 
 
 Gs = random_condensation_sym(G1,2000)
