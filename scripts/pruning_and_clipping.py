@@ -391,6 +391,52 @@ def random_condensation(G,n_nodes,check_gt = False):
     return g
 
 
+
+def random_condensation_sym(G,n_nodes,check_gt = False):
+
+    g = G.copy()
+    
+    max_iter = 20000
+    iter_cnt = 0
+    
+    while len(g.nodes()) > n_nodes and iter_cnt < max_iter:
+        
+        iter_cnt += 1
+
+        node = g.nodes()[random.randrange(len(g.nodes()))]
+
+        if g.in_degree(node) == 1 and g.out_degree(node) == 1:
+
+            in_node = g.in_edges(node)[0][0]
+            out_node = g.out_edges(node)[0][1]
+            if g.out_degree(in_node) == 1 and g.in_degree(out_node) == 1:
+                if in_node != node and out_node != node and in_node != out_node:
+                    #print in_node, node, out_node
+#                     merge_path(g,in_node,node,out_node)
+                    
+                    bad_node=False
+                    if check_gt:
+                        for in_edge in g.in_edges(node):
+                            if g.edge[in_edge[0]][in_edge[1]]['false_positive']==1:
+                                bad_node=True
+                        for out_edge in g.out_edges(node):
+                            if g.edge[out_edge[0]][out_edge[1]]['false_positive']==1:
+                                bad_node=True 
+                    if not bad_node:
+                        #print in_node, node, out_node
+
+                        try:
+                            merge_path(g,in_node,node,out_node)
+                            merge_path(g,rev_node(out_node),rev_node(node),rev_node(in_node))
+                        except:
+                            pass
+    
+    if iter_cnt >= max_iter:
+        print "couldn't finish sparsification"+str(len(g.nodes()))
+                        
+    return g
+
+
 # In[118]:
 
 def random_condensation2(g,n_nodes):
@@ -447,6 +493,9 @@ def random_condensation2(g,n_nodes):
         
                         
     return g
+
+
+
 
 
 
@@ -615,9 +664,13 @@ G0 = G.copy()
 G1=dead_end_clipping_sym(G0,10)
 
 G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
-# G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
+G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
+G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
+G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
+G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 
-Gs = random_condensation(G1,2000)
+
+Gs = random_condensation_sym(G1,2000)
 
 nx.write_graphml(G0, prefix+suffix+'.'+'G0'+'.graphml')
 
