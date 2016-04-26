@@ -452,7 +452,10 @@ int main(int argc, char *argv[]) {
     std::string name_cov = out + ".coverage.txt";
     std::string name_garbage = out + ".garbage.txt";
     std::string name_contained = out + ".contained.txt";
+    std::string name_deadend = out_name + ".deadends.txt";
 
+
+    std::ofstream deadend_out(name_deadend);
     std::ofstream maximal_reads(name_max);
     std::ofstream garbage_out(name_garbage);
     std::ofstream contained_out(name_contained);
@@ -1689,6 +1692,7 @@ int main(int argc, char *argv[]) {
             int backward = 0;
             int backward_internal = 0;
 
+
             LOverlap * chosen_match = NULL;
 
 
@@ -1774,8 +1778,17 @@ int main(int argc, char *argv[]) {
 
                 PrintOverlapToFile2(out_hg2,chosen_match,hinge_pos);
 
-
                 chosen_match = NULL;
+            }
+            else {
+
+                // Deadend debugging
+
+                // Forward dead-end
+                deadend_out << i;
+//                deadend_out << "\t Active: " << reads[i]->active << std::endl;
+                deadend_out << "\t matches_forward size: " << matches_forward[i].size() << std::endl;
+
             }
 
             for (int j = 0; j < matches_backward[i].size(); j++){
@@ -1848,13 +1861,21 @@ int main(int argc, char *argv[]) {
 
                 PrintOverlapToFile2(out_hg2,chosen_match,hinge_pos);
 
+            }
+            else {
+                // Deadend debugging
+
+                // Backward dead-end
+                deadend_out << i;
+//                deadend_out << "\t Active: " << reads[i]->active << std::endl;
+                deadend_out << "\t matches_backward size: " << matches_backward[i].size() << std::endl;
 
             }
         }
     }
 
     console->info("sort and output finished");
-    console->info("version 0.0.1");
+    console->info("version 0.0.2");
 
     if (strlen(name_db) > 0)
     la.closeDB(); //close database
