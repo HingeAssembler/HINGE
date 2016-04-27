@@ -185,9 +185,9 @@ def dead_end_clipping(G,threshold):
 
 
 def rev_node(node):
-    node_sp = node.split('_')
+    node_id = node.split('_')[0]
 
-    return node_sp + '_' + str(1-int(node.split('_')[1]))
+    return node_id + '_' + str(1-int(node.split('_')[1]))
 
 
 def dead_end_clipping_sym(G,threshold):
@@ -289,6 +289,12 @@ def z_clipping_sym(G,threshold,in_hinges,out_hinges,print_z = False):
     start_nodes = set([x for x in H.nodes() if H.out_degree(x) > 1 and x not in out_hinges])
     
     for st_node in start_nodes:
+
+        try:  # need this because we are deleting nodes inside loop
+            H.successors(st_node)
+        except:
+            continue
+
         for sec_node in H.successors(st_node):
             
             if H.out_degree(st_node) == 1:
@@ -332,20 +338,17 @@ def z_clipping_sym(G,threshold,in_hinges,out_hinges,print_z = False):
 
 
 # In[48]:
-
-def merge_path(g,in_node,node,out_node):
         
-    g.add_edge(in_node,out_node,hinge_edge = -1,false_positive = 0)        
-    g.remove_node(node)
+def merge_path(g,in_node,node,out_node):
 
-#     for edge in g.in_edges(in_node):
-#         g.add_edge(edge[0],node,hinge_edge = -1)
-    
-#     for edge in g.out_edges(out_node):
-#         g.add_edge(node,edge[1], hinge_edge = -1)
-    
-#     g.remove_node(in_node)
-#     g.remove_node(out_node)
+    # g.add_edge(in_node,out_node,hinge_edge = -1,false_positive = 0)        
+
+    if g.edge[in_node][node]['intersection'] == 1 and g.edge[node][out_node]['intersection'] == 1:
+        g.add_edge(in_node,out_node,hinge_edge = -1,intersection = 1)
+    else:
+        g.add_edge(in_node,out_node,hinge_edge = -1,intersection = 0)
+
+    g.remove_node(node)
     
 
 
@@ -562,6 +565,22 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
     return g
 
 
+def mark_skipped_edges(G,skipped_name):
+
+    with open (skipped_name) as f:
+        for lines in f:
+            lines1=lines.split()
+
+            if len(lines1) < 5:
+                continue
+            
+            e1 = (lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4])
+
+            if e1 in G.edges():
+                G.edge[lines1[0] + "_" + lines1[3]][lines1[1] + "_" + lines1[4]]['skipped'] = 1
+                G.edge[lines1[1] + "_" + str(1-int(lines1[4]))][lines1[0] + "_" + str(1-int(lines1[3]))]['skipped'] = 1
+ 
+
 
 
 
@@ -578,6 +597,18 @@ def add_annotation(g,in_hinges,out_hinges):
             
     return g
    
+
+
+def connect_strands(g):
+
+    for node in g.nodes():
+        revnode = rev_node(node)
+        g.add_edge(node,revnode)
+        g.add_edge(revnode,node)
+
+    return g
+
+
 
 
 flname = sys.argv[1]
@@ -613,8 +644,19 @@ with open (flname) as f:
         if len(lines1) < 5:
             continue
 
-        G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]))
-        G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]))
+        
+        e1 = (lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4])
+
+        if e1 in G.edges():
+            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=1)
+            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=1)            
+        else:
+            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=0)
+            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=0)
+
+
+
+
         
         towrite = lines1[0] + "_" + lines1[3] +' '+ lines1[1] + "_" + lines1[4] +' '+ lines1[2]+' '+str(int(lines1[11][:-1])-int(lines1[10][1:]))+' '+str(int(lines1[13][:-1])-int(lines1[12][1:]))
         Ginfo[(lines1[0] + "_" + lines1[3],lines1[1] + "_" + lines1[4])] = towrite
@@ -647,6 +689,14 @@ with open (hingesname) as f:
 
 add_annotation(G,in_hinges,out_hinges)
 
+# try:
+mark_skipped_edges(G,flname.split('.')[0] + '.edges.skipped')
+# except:
+#     print "some error here"
+#     pass
+
+
+
 # json_file = open('../pb_data/ecoli_shortened/ecoli4/ecoli.mapping.1.json')
 
 
@@ -670,13 +720,18 @@ G1=z_clipping_sym(G1,5,set(),set())
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 
 
-Gs = random_condensation_sym(G1,2000)
+Gs = random_condensation_sym(G1,1000)
+
 
 nx.write_graphml(G0, prefix+suffix+'.'+'G0'+'.graphml')
 
 nx.write_graphml(G1, prefix+suffix+'.'+'G1'+'.graphml')
 
 nx.write_graphml(Gs, prefix+suffix+'.'+'Gs'+'.graphml')
+
+Gc = connect_strands(Gs)
+
+nx.write_graphml(Gc, prefix+suffix+'.'+'Gc'+'.graphml')
 
 
 # H=prune_graph(G1,in_hinges,out_hinges)

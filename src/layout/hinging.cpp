@@ -463,7 +463,7 @@ int main(int argc, char *argv[]) {
     std::vector<int> homo_reads;
 
 
-    bool delete_telomere = true;
+    bool delete_telomere = false;  // TODO: command line option to set this true
 
     int read_id;
     while (homo >> read_id) homo_reads.push_back(read_id);
@@ -987,17 +987,26 @@ int main(int argc, char *argv[]) {
     FILE *out_g2;
     FILE *out_hg;
     FILE *out_hg2;
+    FILE *out_greedy;
+    FILE *out_skipped;
+
     out_g1 = fopen((std::string(out_name) + ".edges.1").c_str(), "w");
     out_g2 = fopen((std::string(out_name) + ".edges.2").c_str(), "w");
 
-    // Output file for matches 
+    // Output files for edges
     out_hg = fopen((std::string(out_name) + ".edges.hinges").c_str(), "w");
     out_hg2 = fopen((std::string(out_name) + ".edges.hinges2").c_str(), "w");
+    out_greedy = fopen((std::string(out_name) + ".edges.greedy").c_str(), "w");
+    out_skipped = fopen((std::string(out_name) + ".edges.skipped").c_str(), "w");
 
-    // Output file for edges
-
+    // All hinges ikmported from the hinges.txt file
     std::unordered_map<int, std::vector<Hinge> > hinges_vec;
+
+    // Hinges that we were previously killed in filter.cpp due to bridging
     std::unordered_map<int, std::vector<Hinge> > killed_hinges_vec;
+
+    // Hinges that will be killed for being matched with a hinge in killed_hinges_vec
+    std::unordered_map<int, std::vector<Hinge> > new_killed_hinges_vec;
 
     int n = 0;
     int kh = 0;
@@ -1065,6 +1074,12 @@ int main(int argc, char *argv[]) {
             //if (num_near_hinge_reads != HINGE_READS) hinges_vec[i][j].active = false;
         }
     }*/
+
+
+
+
+    // TODO: Technically we dont need this filtering, as we can use the hinge graph
+    // construction to do the filtering as well
 
 
 
@@ -1157,10 +1172,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Hinge graph construction:
+    // Hinge graph construction
+    // En passant, we identify the new_killed_hinges
 
     FILE *out_hgraph;
     out_hgraph = fopen((std::string(out_name) + ".hgraph").c_str(), "w");
+
+    FILE *out_debug;
+    out_debug = fopen((std::string(out_name) + ".debug").c_str(), "w");
 
     FILE * OverlapDebugFile;
     OverlapDebugFile = fopen("overlap_debug.txt", "w");
@@ -1209,10 +1228,7 @@ int main(int argc, char *argv[]) {
                                 if ((hinges_vec[b_id][l].pos < pos_B + MATCHING_HINGE_SLACK) and
                                     (hinges_vec[b_id][l].pos > pos_B - MATCHING_HINGE_SLACK)) {
 
-
-
                                     // found a matching hinge
-
 
                                     if (req_hinge_type == hinges_vec[b_id][l].type) {
 
@@ -1221,7 +1237,6 @@ int main(int argc, char *argv[]) {
 
                                         first_coord=std::make_pair(i,k);
                                         second_coord=std::make_pair(b_id,l);
-
 
 
                                         if (hinges_vec[i][k].type == 1) {
@@ -1248,8 +1263,6 @@ int main(int argc, char *argv[]) {
                                     }
                                 }
 
-
-
                             }
 
                             for (int l = 0; l < killed_hinges_vec[b_id].size(); l++) {
@@ -1261,7 +1274,6 @@ int main(int argc, char *argv[]) {
                                     // found a matching hinge
                                     if (req_hinge_type == killed_hinges_vec[b_id][l].type) {
 
-
                                         if (hinges_vec[i][k].type == 1) {
 
                                             fprintf(out_hgraph, "%d %d %d %d %d %d\n",
@@ -1270,7 +1282,6 @@ int main(int argc, char *argv[]) {
                                                     hinges_vec[i][k].pos,
                                                     killed_hinges_vec[b_id][l].pos, 0,
                                                     rev_int);
-
                                         }
                                         else {
 
@@ -1280,6 +1291,34 @@ int main(int argc, char *argv[]) {
                                                     killed_hinges_vec[b_id][l].pos,
                                                     hinges_vec[i][k].pos, 0,
                                                     rev_int);
+                                        }
+
+                                        if (matches_forward[i][j]->match_type_ == FORWARD) {
+
+                                            new_killed_hinges_vec[i].push_back(Hinge(hinges_vec[i][k].pos,hinges_vec[i][k].type,false));
+
+                                            if (hinges_vec[i][k].type == -1) {
+                                                console->info("This should not have happened.");
+                                                // If this is a -1 hinge, read i should also bridge the repeat,
+                                                // and hinges_vec[i][k] would have been killed in filter
+
+                                                fprintf(out_debug,"%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
+                                                        matches_forward[i][j]->read_A_id_, matches_forward[i][j]->read_B_id_,
+                                                        matches_forward[i][j]->weight, matches_forward[i][j]->reverse_complement_match_,
+                                                        matches_forward[i][j]->match_type_, matches_forward[i][j]->eff_read_A_match_start_,
+                                                        matches_forward[i][j]->eff_read_A_match_end_,
+                                                        matches_forward[i][j]->eff_read_B_match_start_,
+                                                        matches_forward[i][j]->eff_read_B_match_end_,
+                                                        matches_forward[i][j]->eff_read_A_start_, matches_forward[i][j]->eff_read_A_end_,
+                                                        matches_forward[i][j]->eff_read_B_start_, matches_forward[i][j]->eff_read_B_end_);
+
+                                                fprintf(out_debug, "%d %d %d %d\n", hinges_vec[i][k].pos,
+                                                        hinges_vec[i][k].type,
+                                                        killed_hinges_vec[b_id][l].pos,
+                                                        killed_hinges_vec[b_id][l].type);
+
+                                            }
+
                                         }
 
 
@@ -1374,10 +1413,7 @@ int main(int argc, char *argv[]) {
 
                                     // found a matching hinge
 
-
-
                                     if (req_hinge_type == killed_hinges_vec[b_id][l].type) {
-
 
                                         if (hinges_vec[i][k].type == -1) {
 
@@ -1400,6 +1436,20 @@ int main(int argc, char *argv[]) {
                                         }
 
                                     }
+
+                                    if (matches_backward[i][j]->match_type_ == BACKWARD) {
+
+                                        new_killed_hinges_vec[i].push_back(Hinge(hinges_vec[i][k].pos,hinges_vec[i][k].type,false));
+
+                                        if (hinges_vec[i][k].type != -1) {
+                                            console->info("This should not have happened 2.");
+                                            // If this is a +1 hinge, read i should also bridge the repeat,
+                                            // and hinges_vec[i][k] would have been killed in filter
+                                        }
+
+                                    }
+
+
                                 }
 
                             }
@@ -1507,6 +1557,8 @@ int main(int argc, char *argv[]) {
                         {
                             if (forward < 1) {
 
+                                PrintOverlapToFile(out_greedy, matches_forward[i][j]);
+
                                 if (matches_forward[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out_g1, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_forward[i][j]->read_A_id_,
@@ -1570,6 +1622,8 @@ int main(int argc, char *argv[]) {
                         /*if (not repeat_status_back[i])*/
                         {
                             if (backward < 1) {
+
+                                PrintOverlapToFile(out_greedy, matches_backward[i][j]);
 
                                 if (matches_backward[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out_g1, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
@@ -1696,8 +1750,6 @@ int main(int argc, char *argv[]) {
             LOverlap * chosen_match = NULL;
 
 
-
-
             for (int j = 0; j < matches_forward[i].size(); j++){
 //                if(i==227622) {
 //                    debug_fle << i << "\t" << forward << "\t" << matches_forward[i][j]->match_type_
@@ -1708,22 +1760,46 @@ int main(int argc, char *argv[]) {
                 if (matches_forward[i][j]->active) {
 
 
-
                     if ((reads[matches_forward[i][j]->read_B_id_]->active)) { // and (forward == 0)) {
                         //printf("hinge size %d\n", hinges_vec[matches_forward[i][j]->read_B_id_].size());
 
 
                         if ((matches_forward[i][j]->match_type_ == FORWARD) and (forward == 0)) {
-//                            fprintf(out3,"Printed from forward\n");
-//                            PrintOverlapToFile(out3,matches_forward[i][j]);
-//                            edges_forward[i].push_back(matches_forward[i][j]);
 
-                            chosen_match = matches_forward[i][j];
+                            // check if read j has new_killed_hinge
+                            //TODO: should this be checked for FORWARD_INTERNAL as well?
 
-                            hinge_pos = -1;
+                            bool poisoned = false;
 
-                            forward = 1;
-                            //break;
+                            for (int k = 0; k < new_killed_hinges_vec[i].size(); k++) {
+
+                                if ( (matches_forward[i][j]->reverse_complement_match_ != 1) and
+                                        (new_killed_hinges_vec[i][k].type == -1) and
+                                        (new_killed_hinges_vec[i][k].pos > matches_forward[i][j]->eff_read_B_match_end_) ) {
+
+                                    //TODO: do we need a tolerance in the comparison above?
+
+                                    PrintOverlapToFile(out_skipped, matches_forward[i][j]);
+                                    poisoned = true;
+
+                                }
+                                else if ( (matches_forward[i][j]->reverse_complement_match_ == 1) and
+                                          (new_killed_hinges_vec[i][k].type == 1) and
+                                          (new_killed_hinges_vec[i][k].pos < matches_forward[i][j]->eff_read_B_match_start_) ) {
+
+                                    PrintOverlapToFile(out_skipped, matches_forward[i][j]);
+                                    poisoned = true;
+
+                                }
+
+                            }
+
+                            if (not poisoned) {
+                                chosen_match = matches_forward[i][j];
+                                hinge_pos = -1;
+                                forward = 1;
+                                //break;
+                            }
 
                         }
                         else if ((matches_forward[i][j]->match_type_ == FORWARD_INTERNAL)
@@ -1774,6 +1850,7 @@ int main(int argc, char *argv[]) {
 
             if (chosen_match != NULL) {
                 PrintOverlapToFile(out_hg,chosen_match);
+
                 edges_forward[i].push_back(chosen_match);
 
                 PrintOverlapToFile2(out_hg2,chosen_match,hinge_pos);
@@ -1801,10 +1878,38 @@ int main(int argc, char *argv[]) {
 
                         if ((matches_backward[i][j]->match_type_ == BACKWARD) and (backward == 0)){
 
-                            chosen_match = matches_backward[i][j];
-                            backward = 1;
+                            // check if read j has new_killed_hinge
 
-                            hinge_pos = -1;
+                            bool poisoned = false;
+
+                            for (int k = 0; k < new_killed_hinges_vec[i].size(); k++) {
+
+                                if ( (matches_forward[i][j]->reverse_complement_match_ != 1) and
+                                     (new_killed_hinges_vec[i][k].type == 1) and
+                                     (new_killed_hinges_vec[i][k].pos < matches_backward[i][j]->eff_read_B_match_start_) ) {
+
+                                    //TODO: do we need a tolerance in the comparison above?
+
+                                    PrintOverlapToFile(out_skipped, matches_backward[i][j]);
+                                    poisoned = true;
+
+                                }
+                                else if ( (matches_forward[i][j]->reverse_complement_match_ == 1) and
+                                          (new_killed_hinges_vec[i][k].type == -1) and
+                                          (new_killed_hinges_vec[i][k].pos > matches_backward[i][j]->eff_read_B_match_end_) ) {
+
+                                    PrintOverlapToFile(out_skipped, matches_backward[i][j]);
+                                    poisoned = true;
+
+                                }
+
+                            }
+
+                            if (not poisoned) {
+                                chosen_match = matches_backward[i][j];
+                                backward = 1;
+                                hinge_pos = -1;
+                            }
 
                         }
                         else if ((matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)
@@ -1857,6 +1962,7 @@ int main(int argc, char *argv[]) {
 
             if (chosen_match != NULL) {
                 PrintOverlapToFile(out_hg,chosen_match);
+
                 edges_backward[i].push_back(chosen_match);
 
                 PrintOverlapToFile2(out_hg2,chosen_match,hinge_pos);
@@ -1875,7 +1981,7 @@ int main(int argc, char *argv[]) {
     }
 
     console->info("sort and output finished");
-    console->info("version 0.0.2");
+    console->info("version 0.0.3");
 
     if (strlen(name_db) > 0)
     la.closeDB(); //close database
