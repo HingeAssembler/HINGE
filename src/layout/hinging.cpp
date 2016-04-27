@@ -1031,6 +1031,15 @@ int main(int argc, char *argv[]) {
     console->info("{} killed hinges", kh);
     console->info("{} hinges", n);
 
+    std::ofstream killed_out(out + ".killed.hinges");
+    for (int i = 0; i < n_read; i++) {
+        killed_out << i << " ";
+        for (int j = 0; j < killed_hinges_vec[i].size(); j++) {
+            killed_out << killed_hinges_vec[i][j].type << " " << killed_hinges_vec[i][j].pos << " ";
+        }
+        killed_out << std::endl;
+    }
+
     n = 0;
     for (int i = 0; i < n_read; i++) {
         for (int j = 0; j < hinges_vec[i].size(); j++) {
