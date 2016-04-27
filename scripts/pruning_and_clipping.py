@@ -222,6 +222,8 @@ def dead_end_clipping_sym(G,threshold):
 
 # In[9]:
 
+
+# This function is no longer used. See z_clipping_sym
 def z_clipping(G,threshold,in_hinges,out_hinges,print_z = False):
     H = G.copy()
     
@@ -284,7 +286,9 @@ def z_clipping(G,threshold,in_hinges,out_hinges,print_z = False):
 
 
 def z_clipping_sym(G,threshold,in_hinges,out_hinges,print_z = False):
+
     H = G.copy()
+    G0 = G.copy()
     
     start_nodes = set([x for x in H.nodes() if H.out_degree(x) > 1 and x not in out_hinges])
     
@@ -316,21 +320,31 @@ def z_clipping_sym(G,threshold,in_hinges,out_hinges,print_z = False):
                     print cur_path
                 
                 for edge in cur_path:
+
+                    G0.edge[edge[0]][edge[1]]['z'] = 1
+                    G0.edge[rev_node(edge[1])][rev_node(edge[0])]['z'] = 1
+
                     try:
                         H.remove_edge(edge[0],edge[1])
                         H.remove_edge(rev_node(edge[1]),rev_node(edge[0]))
+
                     except:
                         pass
 
                 for j in range(len(cur_path)-1):
+
+                    G0.node[cur_path[j][1]]['z'] = 1
+                    G0.node[rev_node(cur_path[j][1])]['z'] = 1
+
                     try:
                         H.remove_node(cur_path[j][1])
                         H.remove_node(rev_node(cur_path[j][1]))
+
                     except:
                         pass
     
 
-    return H
+    return H, G0
 
 
 
@@ -551,7 +565,6 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
 #             g.edge[in_node][out_node]['false_positive']=0
 #         else:
 #             g.edge[in_node][out_node]['false_positive']=1
-
         
         
         if ((g.node[in_node]['aln_start'] < g.node[out_node]['aln_start'] and  
@@ -711,10 +724,10 @@ G0 = G.copy()
 # Actual pruning, clipping and z deletion occurs below
 
 
-G1=dead_end_clipping_sym(G0,10)
+G0 = dead_end_clipping_sym(G0,10)
 
-G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
-G1=z_clipping_sym(G1,5,set(),set())
+# G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
+G1,G0 = z_clipping_sym(G0,5,set(),set())
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
