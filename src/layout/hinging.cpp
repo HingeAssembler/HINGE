@@ -486,6 +486,8 @@ int main(int argc, char *argv[]) {
     free(buff);
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
     console->info("name of fasta: {}, name of .paf file {}", name_fasta, name_paf);
+    console->info("filter files prefix: {}", out);
+    console->info("output prefix: {}", out_name);
 
 
     std::ifstream ini_file(name_config);
@@ -1743,6 +1745,8 @@ int main(int argc, char *argv[]) {
 
     std::ofstream debug_fle("hinge_debug.txt");
 
+    console->info("Starting to build assembly graph.");
+
 
 //    int eff_b_id;
     int hinge_pos = -1;
@@ -1795,6 +1799,7 @@ int main(int argc, char *argv[]) {
                                 else if ( (matches_forward[i][j]->reverse_complement_match_ == 1) and
                                           (new_killed_hinges_vec[i][k].type == 1) and
                                           (new_killed_hinges_vec[i][k].pos < matches_forward[i][j]->eff_read_B_match_start_) ) {
+
 
                                     PrintOverlapToFile(out_skipped, matches_forward[i][j]);
                                     poisoned = true;
@@ -1893,7 +1898,7 @@ int main(int argc, char *argv[]) {
 
                             for (int k = 0; k < new_killed_hinges_vec[i].size(); k++) {
 
-                                if ( (matches_forward[i][j]->reverse_complement_match_ != 1) and
+                                if ( (matches_backward[i][j]->reverse_complement_match_ != 1) and
                                      (new_killed_hinges_vec[i][k].type == 1) and
                                      (new_killed_hinges_vec[i][k].pos < matches_backward[i][j]->eff_read_B_match_start_) ) {
 
@@ -1903,7 +1908,7 @@ int main(int argc, char *argv[]) {
                                     poisoned = true;
 
                                 }
-                                else if ( (matches_forward[i][j]->reverse_complement_match_ == 1) and
+                                else if ( (matches_backward[i][j]->reverse_complement_match_ == 1) and
                                           (new_killed_hinges_vec[i][k].type == -1) and
                                           (new_killed_hinges_vec[i][k].pos > matches_backward[i][j]->eff_read_B_match_end_) ) {
 
