@@ -621,6 +621,10 @@ def connect_strands(g):
 
     return g
 
+def write_graphml(g,prefix,suffix,suffix1):
+    h = g.copy()
+    connect_strands(h)
+    nx.write_graphml(h, prefix+suffix+'.'+'suffix1'+'.graphml')
 
 
 
@@ -659,13 +663,16 @@ with open (flname) as f:
 
         
         e1 = (lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4])
-
+        # print lines1
+        # e1_match1 = abs(int(lines1[6].lstrip('['))-int(lines1[7].rstrip(']')))
+        # e1_match2 = abs(int(lines1[8].lstrip('['))-int(lines1[9].rstrip(']')))
+        e1_match_len = int(lines1[2])
         if e1 in G.edges():
-            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=1)
-            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=1)            
+            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len)
+            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len)            
         else:
-            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=0)
-            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=0)
+            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len)
+            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len)
 
 
 
