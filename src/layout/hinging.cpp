@@ -578,6 +578,8 @@ int main(int argc, char *argv[]) {
 
     int NUM_EVENTS_TELOMERE = (int) reader.GetInteger("layout", "num_events_telomere", 7);
 
+    int MIN_CONNECTED_COMPONENT_SIZE = (int) reader.GetInteger("layout", "min_connected_component_size", 8);
+
 
     console->info("LENGTH_THRESHOLD = {}", LENGTH_THRESHOLD);
     console->info("QUALITY_THRESHOLD = {}", QUALITY_THRESHOLD);
@@ -593,6 +595,11 @@ int main(int argc, char *argv[]) {
     console->info("KILL_HINGE_OVERLAP_ALLOWANCE = {}", KILL_HINGE_OVERLAP_ALLOWANCE);
     console->info("KILL_HINGE_INTERNAL_ALLOWANCE = {}", KILL_HINGE_INTERNAL_ALLOWANCE);
     console->info("MATCHING_HINGE_SLACK = {}", MATCHING_HINGE_SLACK);
+    console->info("MIN_CONNECTED_COMPONENT_SIZE = {}", MIN_CONNECTED_COMPONENT_SIZE);
+
+
+
+
 
 
     omp_set_num_threads(N_PROC);
@@ -1499,7 +1506,7 @@ int main(int argc, char *argv[]) {
 
 
     for (int i = 0; i != component.size(); ++i) {
-        if (component_size[component[i]] < 10) {
+        if (component_size[component[i]] < MIN_CONNECTED_COMPONENT_SIZE) {
             int ind1, ind2;
             ind1 = hinge_graph_node_map_rev[i].first;
             ind2 = hinge_graph_node_map_rev[i].second;
