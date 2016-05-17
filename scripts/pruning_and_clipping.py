@@ -190,30 +190,53 @@ def rev_node(node):
     return node_id + '_' + str(1-int(node.split('_')[1]))
 
 
-def dead_end_clipping_sym(G,threshold):
+def dead_end_clipping_sym(G,threshold,print_debug = False):
 #     H=nx.DiGraph()
     H = G.copy()
     start_nodes = set([x for x in H.nodes() if H.in_degree(x) ==0])
     
     for st_node in start_nodes:
+
+        if st_node not in H.nodes():
+            continue
+
         cur_path = [st_node]
         
+        if print_debug:
+            print '----0'
+            print st_node
+
         if len(H.successors(st_node)) == 1:
+
             cur_node = H.successors(st_node)[0]
+
+            if print_debug:
+                print '----1'
 
             while H.in_degree(cur_node) == 1 and H.out_degree(cur_node) == 1 and len(cur_path) < threshold + 2:
                 cur_path.append(cur_node)
 
+                if print_debug:
+                    print cur_node
+
                 cur_node = H.successors(cur_node)[0]
                 
+        if print_debug:
+            print '----2'
+            print cur_path
+
             
         if len(cur_path) <= threshold:
             for vertex in cur_path:
-                try:
-                    H.remove_node(vertex)
-                    H.remove_node(rev_node(vertex))
-                except:
-                    pass
+                # try:
+                if print_debug:
+                    print 'about to delete ',vertex,rev_node(vertex)
+                H.remove_node(vertex)
+                H.remove_node(rev_node(vertex))
+                # except:
+                    # pass
+                if print_debug:
+                    print 'deleted ',vertex,rev_node(vertex)
 
 
     return H
@@ -558,21 +581,21 @@ def bubble_bursting_sym(H,threshold,print_bubble = False):
             
             for edge in cur_path:
 
-                try:
-                    H.remove_edge(edge[0],edge[1])
-                    H.remove_edge(rev_node(edge[1]),rev_node(edge[0]))
+                # try:
+                H.remove_edge(edge[0],edge[1])
+                H.remove_edge(rev_node(edge[1]),rev_node(edge[0]))
 
-                except:
-                    pass
+                # except:
+                #     pass
 
             for j in range(len(cur_path)-1):
 
-                try:
-                    H.remove_node(cur_path[j][1])
-                    H.remove_node(rev_node(cur_path[j][1]))
+                # try:
+                H.remove_node(cur_path[j][1])
+                H.remove_node(rev_node(cur_path[j][1]))
 
-                except:
-                    pass
+                # except:
+                #     pass
     
 
     return H
@@ -939,6 +962,7 @@ G1,G0 = z_clipping_sym(G0,6,set(),set())
 
 
 G1 = bubble_bursting_sym(G1,10)
+
 G1 = dead_end_clipping_sym(G1,5)
 
 nx.write_graphml(G0, prefix+suffix+'.'+'G0'+'.graphml')
