@@ -667,12 +667,28 @@ with open (flname) as f:
         # e1_match1 = abs(int(lines1[6].lstrip('['))-int(lines1[7].rstrip(']')))
         # e1_match2 = abs(int(lines1[8].lstrip('['))-int(lines1[9].rstrip(']')))
         e1_match_len = int(lines1[2])
+        ra_start = int(lines1[6].lstrip('['))
+        ra_end = int(lines1[7].rstrip(']'))
+        rb_start = int(lines1[8].lstrip('['))
+        rb_end = int(lines1[9].rstrip(']'))
         if e1 in G.edges():
-            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0)
-            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0)     
+            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],
+                hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0,
+                read_a_start=ra_start,read_a_end=ra_end,
+                read_b_start=rb_start,read_b_end=rb_end)
+            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),
+                hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0,
+                read_a_start=rb_start,read_a_end=rb_end,
+                read_b_start=ra_start,read_b_end=ra_end)     
         else:
-            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0)
-            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0)
+            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],
+                hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0,
+                read_a_start=ra_start,read_a_end=ra_end,
+                read_b_start=rb_start,read_b_end=rb_end)
+            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),
+                hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0,
+                read_a_start=rb_start,read_a_end=rb_end,
+                read_b_start=ra_start,read_b_end=ra_end)
 
 
 
