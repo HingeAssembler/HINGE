@@ -604,21 +604,50 @@ def bubble_bursting_sym(H,threshold,print_bubble = False):
 def resolve_rep(g,rep_path,in_node,out_node):
     
     prefix = 'B'
-        
+       
+    g.add_edge(in_node,prefix + rep_path[0],
+        read_a_start=g.edge[in_node][rep_path[0]]['read_a_start'],
+        read_a_end=g.edge[in_node][rep_path[0]]['read_a_end'],
+        read_b_start=g.edge[in_node][rep_path[0]]['read_b_start'],
+        read_b_end=g.edge[in_node][rep_path[0]]['read_b_end']) 
     g.remove_edge(in_node,rep_path[0])
-    g.add_edge(in_node,prefix + rep_path[0])
+
+    g.add_edge(prefix+rep_path[-1],out_node,
+        read_a_start=g.edge[rep_path[-1]][out_node]['read_a_start'],
+        read_a_end=g.edge[rep_path[-1]][out_node]['read_a_end'],
+        read_b_start=g.edge[rep_path[-1]][out_node]['read_b_start'],
+        read_b_end=g.edge[rep_path[-1]][out_node]['read_b_end']) 
     g.remove_edge(rep_path[-1],out_node)
-    g.add_edge(prefix+rep_path[-1],out_node)
     
+
+    g.add_edge(rev_node(prefix + rep_path[0]),rev_node(in_node),
+        read_a_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_start'],
+        read_a_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_end'],
+        read_b_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_start'],
+        read_b_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_end']) 
     g.remove_edge(rev_node(rep_path[0]),rev_node(in_node))
-    g.add_edge(rev_node(prefix + rep_path[0]),rev_node(in_node))
+    g.add_edge(rev_node(out_node),rev_node(prefix+rep_path[-1]),
+        read_a_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_start'],
+        read_a_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_end'],
+        read_b_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_start'],
+        read_b_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_end']) 
     g.remove_edge(rev_node(out_node),rev_node(rep_path[-1]))
-    g.add_edge(rev_node(out_node),rev_node(prefix+rep_path[-1]))
-    
+
+
+   
     
     for i in range(0,len(rep_path)-1):
-        g.add_edge(prefix+rep_path[i],prefix+rep_path[i+1])
-        g.add_edge(rev_node(prefix+rep_path[i+1]),rev_node(prefix+rep_path[i]))
+        g.add_edge(prefix+rep_path[i],prefix+rep_path[i+1],
+            read_a_start=g.edge[rep_path[i]][rep_path[i+1]]['read_a_start'],
+            read_a_end=g.edge[rep_path[i]][rep_path[i+1]]['read_a_end'],
+            read_b_start=g.edge[rep_path[i]][rep_path[i+1]]['read_b_start'],
+            read_b_end=g.edge[rep_path[i]][rep_path[i+1]]['read_b_end'])
+        g.add_edge(rev_node(prefix+rep_path[i+1]),rev_node(prefix+rep_path[i]),
+            read_a_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_start'],
+            read_a_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_end'],
+            read_b_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_start'],
+            read_b_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_end'])
+            
         
 
 
