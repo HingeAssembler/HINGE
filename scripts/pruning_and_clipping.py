@@ -358,9 +358,9 @@ def merge_path(g,in_node,node,out_node):
     # g.add_edge(in_node,out_node,hinge_edge = -1,false_positive = 0)        
 
     if g.edge[in_node][node]['intersection'] == 1 and g.edge[node][out_node]['intersection'] == 1:
-        g.add_edge(in_node,out_node,hinge_edge = -1,intersection = 1)
+        g.add_edge(in_node,out_node,hinge_edge = -1,intersection = 1,z=0)
     else:
-        g.add_edge(in_node,out_node,hinge_edge = -1,intersection = 0)
+        g.add_edge(in_node,out_node,hinge_edge = -1,intersection = 0,z=0)
 
     g.remove_node(node)
     
@@ -668,11 +668,11 @@ with open (flname) as f:
         # e1_match2 = abs(int(lines1[8].lstrip('['))-int(lines1[9].rstrip(']')))
         e1_match_len = int(lines1[2])
         if e1 in G.edges():
-            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len)
-            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len)            
+            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0)
+            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0)     
         else:
-            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len)
-            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len)
+            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0)
+            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0)
 
 
 
