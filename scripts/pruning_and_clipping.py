@@ -190,30 +190,53 @@ def rev_node(node):
     return node_id + '_' + str(1-int(node.split('_')[1]))
 
 
-def dead_end_clipping_sym(G,threshold):
+def dead_end_clipping_sym(G,threshold,print_debug = False):
 #     H=nx.DiGraph()
     H = G.copy()
     start_nodes = set([x for x in H.nodes() if H.in_degree(x) ==0])
     
     for st_node in start_nodes:
+
+        if st_node not in H.nodes():
+            continue
+
         cur_path = [st_node]
         
+        if print_debug:
+            print '----0'
+            print st_node
+
         if len(H.successors(st_node)) == 1:
+
             cur_node = H.successors(st_node)[0]
+
+            if print_debug:
+                print '----1'
 
             while H.in_degree(cur_node) == 1 and H.out_degree(cur_node) == 1 and len(cur_path) < threshold + 2:
                 cur_path.append(cur_node)
 
+                if print_debug:
+                    print cur_node
+
                 cur_node = H.successors(cur_node)[0]
                 
+        if print_debug:
+            print '----2'
+            print cur_path
+
             
         if len(cur_path) <= threshold:
             for vertex in cur_path:
-                try:
-                    H.remove_node(vertex)
-                    H.remove_node(rev_node(vertex))
-                except:
-                    pass
+                # try:
+                if print_debug:
+                    print 'about to delete ',vertex,rev_node(vertex)
+                H.remove_node(vertex)
+                H.remove_node(rev_node(vertex))
+                # except:
+                    # pass
+                if print_debug:
+                    print 'deleted ',vertex,rev_node(vertex)
 
 
     return H
@@ -358,9 +381,9 @@ def merge_path(g,in_node,node,out_node):
     # g.add_edge(in_node,out_node,hinge_edge = -1,false_positive = 0)        
 
     if g.edge[in_node][node]['intersection'] == 1 and g.edge[node][out_node]['intersection'] == 1:
-        g.add_edge(in_node,out_node,hinge_edge = -1,intersection = 1)
+        g.add_edge(in_node,out_node,hinge_edge = -1,intersection = 1,z=0)
     else:
-        g.add_edge(in_node,out_node,hinge_edge = -1,intersection = 0)
+        g.add_edge(in_node,out_node,hinge_edge = -1,intersection = 0,z=0)
 
     g.remove_node(node)
     
@@ -514,6 +537,217 @@ def random_condensation2(g,n_nodes):
 
 
 
+def bubble_bursting_sym(H,threshold,print_bubble = False):
+    
+    start_nodes = set([x for x in H.nodes() if H.out_degree(x) == 2])
+    
+    for st_node in start_nodes:
+
+        try:  # need this because we are deleting nodes inside loop
+            H.successors(st_node)[1]
+        except:
+            continue
+            
+        sec_node = H.successors(st_node)[0]
+        
+        cur_node = sec_node
+        cur_path = [[st_node,cur_node]]
+        
+        while H.in_degree(cur_node) == 1 and H.out_degree(cur_node) == 1:
+
+            cur_path.append([cur_node,H.successors(cur_node)[0]])
+            cur_node = H.successors(cur_node)[0]
+
+            if len(cur_path) > threshold + 1:
+                break
+                
+        end_node0 = cur_node                
+        cur_node = H.successors(st_node)[1]
+        alt_path = [[st_node,cur_node]]
+        
+        while H.in_degree(cur_node) == 1 and H.out_degree(cur_node) == 1:
+
+            alt_path.append([cur_node,H.successors(cur_node)[0]])
+            cur_node = H.successors(cur_node)[0]
+
+            if len(alt_path) > threshold + 1:
+                break       
+                
+
+        if len(cur_path) <= threshold and len(alt_path) <= threshold and end_node0 == cur_node:
+
+            if print_bubble:
+                print 'found bubble'
+            
+            for edge in cur_path:
+
+                # try:
+                H.remove_edge(edge[0],edge[1])
+                H.remove_edge(rev_node(edge[1]),rev_node(edge[0]))
+
+                # except:
+                #     pass
+
+            for j in range(len(cur_path)-1):
+
+                # try:
+                H.remove_node(cur_path[j][1])
+                H.remove_node(rev_node(cur_path[j][1]))
+
+                # except:
+                #     pass
+    
+
+    return H
+
+
+def resolve_rep(g,rep_path,in_node,out_node):
+    
+    prefix = 'B'
+       
+    g.add_edge(in_node,prefix + rep_path[0],
+        read_a_start=g.edge[in_node][rep_path[0]]['read_a_start'],
+        read_a_end=g.edge[in_node][rep_path[0]]['read_a_end'],
+        read_b_start=g.edge[in_node][rep_path[0]]['read_b_start'],
+        read_b_end=g.edge[in_node][rep_path[0]]['read_b_end']) 
+    g.remove_edge(in_node,rep_path[0])
+
+    g.add_edge(prefix+rep_path[-1],out_node,
+        read_a_start=g.edge[rep_path[-1]][out_node]['read_a_start'],
+        read_a_end=g.edge[rep_path[-1]][out_node]['read_a_end'],
+        read_b_start=g.edge[rep_path[-1]][out_node]['read_b_start'],
+        read_b_end=g.edge[rep_path[-1]][out_node]['read_b_end']) 
+    g.remove_edge(rep_path[-1],out_node)
+    
+
+    g.add_edge(rev_node(prefix + rep_path[0]),rev_node(in_node),
+        read_a_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_start'],
+        read_a_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_end'],
+        read_b_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_start'],
+        read_b_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_end']) 
+    g.remove_edge(rev_node(rep_path[0]),rev_node(in_node))
+    g.add_edge(rev_node(out_node),rev_node(prefix+rep_path[-1]),
+        read_a_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_start'],
+        read_a_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_end'],
+        read_b_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_start'],
+        read_b_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_end']) 
+    g.remove_edge(rev_node(out_node),rev_node(rep_path[-1]))
+
+
+   
+    
+    for i in range(0,len(rep_path)-1):
+        g.add_edge(prefix+rep_path[i],prefix+rep_path[i+1],
+            read_a_start=g.edge[rep_path[i]][rep_path[i+1]]['read_a_start'],
+            read_a_end=g.edge[rep_path[i]][rep_path[i+1]]['read_a_end'],
+            read_b_start=g.edge[rep_path[i]][rep_path[i+1]]['read_b_start'],
+            read_b_end=g.edge[rep_path[i]][rep_path[i+1]]['read_b_end'])
+        g.add_edge(rev_node(prefix+rep_path[i+1]),rev_node(prefix+rep_path[i]),
+            read_a_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_start'],
+            read_a_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_end'],
+            read_b_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_start'],
+            read_b_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_end'])
+            
+        
+
+
+def loop_resolution(g,max_nodes,flank,print_debug = False):
+    
+    starting_nodes =  [x for x in g.nodes() if g.out_degree(x) == 2]
+
+    if print_debug:
+        print '----'
+        print starting_nodes
+
+    for st_node in starting_nodes:
+
+
+        if g.out_degree(st_node) != 2:
+            continue
+
+        if print_debug:
+            print '----'
+            print st_node
+
+
+        for first_node in g.successors(st_node):
+
+
+            if g.out_degree(st_node) != 2:
+                continue
+
+            if print_debug:
+                print '----'
+                print first_node   
+
+
+            other_successor = [x for x in g.successors(st_node) if x != first_node][0]
+            next_node = other_successor
+            node_cnt = 0
+            while g.in_degree(next_node) == 1 and g.out_degree(next_node) == 1:
+                node_cnt += 1
+                next_node = g.successors(next_node)[0]
+                if node_cnt >= flank:
+                    break
+
+            if node_cnt < flank:
+                continue
+
+            next_node = first_node
+            if print_debug:
+                print 'going on loop'
+
+            node_cnt = 0
+
+            while g.in_degree(next_node) == 1 and g.out_degree(next_node) == 1 and node_cnt < max_nodes:
+                node_cnt += 1
+                in_node = next_node
+                next_node = g.successors(next_node)[0]
+
+            if g.in_degree(next_node) == 2:
+                prev_node = [x for x in g.predecessors(next_node) if x != in_node][0]
+                node_cnt = 0
+                while g.in_degree(prev_node) == 1 and g.out_degree(prev_node) == 1:
+                    node_cnt += 1
+                    prev_node = g.predecessors(prev_node)[0]
+                    if node_cnt >= flank:
+                        break
+                if node_cnt < flank:
+                    continue
+
+
+            rep = [next_node] 
+
+            node_cnt = 0
+
+            if g.in_degree(next_node) == 2 and g.out_degree(next_node) == 1: 
+                next_double_node = g.successors(next_node)[0]
+                rep.append(next_double_node)
+            else:
+                next_double_node = next_node
+
+            while g.in_degree(next_double_node) == 1 and g.out_degree(next_double_node) == 1 and node_cnt < max_nodes:
+                node_cnt += 1
+                next_double_node = g.successors(next_double_node)[0]
+                rep.append(next_double_node)
+
+
+            if next_double_node == st_node:
+                if print_debug:
+                    print 'success!'
+                    print 'rep is:'
+                    print rep
+                    print 'in_node and other_successor:'
+                    print in_node, other_successor
+                resolve_rep(g,rep,in_node,other_successor)
+    #             print next_double_node
+
+                continue
+        
+
+    return g
+
+
 
 
 # In[72]:
@@ -621,6 +855,10 @@ def connect_strands(g):
 
     return g
 
+def write_graphml(g,prefix,suffix,suffix1):
+    h = g.copy()
+    connect_strands(h)
+    nx.write_graphml(h, prefix+suffix+'.'+'suffix1'+'.graphml')
 
 
 
@@ -659,13 +897,32 @@ with open (flname) as f:
 
         
         e1 = (lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4])
-
+        # print lines1
+        # e1_match1 = abs(int(lines1[6].lstrip('['))-int(lines1[7].rstrip(']')))
+        # e1_match2 = abs(int(lines1[8].lstrip('['))-int(lines1[9].rstrip(']')))
+        e1_match_len = int(lines1[2])
+        ra_start = int(lines1[6].lstrip('['))
+        ra_end = int(lines1[7].rstrip(']'))
+        rb_start = int(lines1[8].lstrip('['))
+        rb_end = int(lines1[9].rstrip(']'))
         if e1 in G.edges():
-            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=1)
-            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=1)            
+            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],
+                hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0,
+                read_a_start=ra_start,read_a_end=ra_end,
+                read_b_start=rb_start,read_b_end=rb_end)
+            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),
+                hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0,
+                read_a_start=rb_start,read_a_end=rb_end,
+                read_b_start=ra_start,read_b_end=ra_end)     
         else:
-            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],hinge_edge=int(lines1[5]),intersection=0)
-            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),hinge_edge=int(lines1[5]),intersection=0)
+            G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],
+                hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0,
+                read_a_start=ra_start,read_a_end=ra_end,
+                read_b_start=rb_start,read_b_end=rb_end)
+            G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),
+                hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0,
+                read_a_start=rb_start,read_a_end=rb_end,
+                read_b_start=ra_start,read_b_end=ra_end)
 
 
 
@@ -727,25 +984,46 @@ G0 = G.copy()
 G0 = dead_end_clipping_sym(G0,10)
 
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
-G1,G0 = z_clipping_sym(G0,5,set(),set())
+G1,G0 = z_clipping_sym(G0,6,set(),set())
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 
+
+G1 = bubble_bursting_sym(G1,10)
+
+G1 = dead_end_clipping_sym(G1,5)
+
+nx.write_graphml(G0, prefix+suffix+'.'+'G0'+'.graphml')
+nx.write_graphml(G1, prefix+suffix+'.'+'G1'+'.graphml')
+
+
+G2 = G1.copy()
 
 Gs = random_condensation_sym(G1,1000)
 
 
-nx.write_graphml(G0, prefix+suffix+'.'+'G0'+'.graphml')
+loop_resolution(G2,500,50)
 
-nx.write_graphml(G1, prefix+suffix+'.'+'G1'+'.graphml')
+G2s = random_condensation_sym(G2,1000)
+
+
+
+
+
+nx.write_graphml(G2, prefix+suffix+'.'+'G2'+'.graphml')
 
 nx.write_graphml(Gs, prefix+suffix+'.'+'Gs'+'.graphml')
+
+nx.write_graphml(G2s, prefix+suffix+'.'+'G2s'+'.graphml')
 
 Gc = connect_strands(Gs)
 
 nx.write_graphml(Gc, prefix+suffix+'.'+'Gc'+'.graphml')
 
+G2c = connect_strands(G2s)
+
+nx.write_graphml(G2c, prefix+suffix+'.'+'G2c'+'.graphml')
 
 # H=prune_graph(G1,in_hinges,out_hinges)
 # H=dead_end_clipping(H,5)
