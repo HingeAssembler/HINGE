@@ -53,6 +53,7 @@ public:
     char * aseq;
     char * bseq;
 
+    bool recovered = false;
 
 	void show() {printf("%d %d %d [%d...%d] x [%d...%d] %d diffs\n", read_A_id_, read_B_id_,flags,abpos,aepos,bbpos,bepos,diffs); };
     int read_A_id_; // id of read a
