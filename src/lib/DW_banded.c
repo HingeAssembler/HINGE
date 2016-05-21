@@ -98,10 +98,10 @@ void print_d_path(  d_path_data2 * base, unsigned long max_idx) {
 }
 
 
-alignment * align(char * query_seq, seq_coor_t q_len,
-                  char * target_seq, seq_coor_t t_len,
-                  seq_coor_t band_tolerance,
-                  int get_aln_str) {
+alignment *_align(char *query_seq, seq_coor_t q_len,
+                   char *target_seq, seq_coor_t t_len,
+                   seq_coor_t band_tolerance,
+                   int get_aln_str) {
     seq_coor_t * V;
     seq_coor_t * U;  // array of matched bases for each "k"
     seq_coor_t k_offset;

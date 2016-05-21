@@ -84,9 +84,9 @@ consensus_data * generate_consensus_large( char ** input_seq,
 #define INDEL_ALLOWENCE_2 150
         // WTF are these heuristics
         //printf("reach\n");
-        aln = align(input_seq[j]+arange->s1, arange->e1 - arange->s1 ,
-                    input_seq[0]+arange->s2, arange->e2 - arange->s2 ,
-                    INDEL_ALLOWENCE_2, 1);
+        aln = _align(input_seq[j] + arange->s1, arange->e1 - arange->s1,
+                     input_seq[0] + arange->s2, arange->e2 - arange->s2,
+                     INDEL_ALLOWENCE_2, 1);
         if (aln->aln_str_size > 500 && ((double) aln->dist / (double) aln->aln_str_size) < max_diff) {
             tags_list[aligned_seq_count] = get_align_tags( aln->q_aln_str,
                                                            aln->t_aln_str,
@@ -112,7 +112,7 @@ consensus_data * generate_consensus_large( char ** input_seq,
             //printf("[%d %d] x [%d %d]\n", arange->s1, arange->e1, arange->s2, arange->e2);
             //printf("j:%s\n0:%s\n", input_seq[j] + arange->s1, input_seq[0] + arange->s2);
 
-        } // get align tags
+        } // get _align tags
 
         /*
         int k;

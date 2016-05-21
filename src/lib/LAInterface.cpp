@@ -4046,6 +4046,7 @@ int LAInterface::generateConsensus(std::vector<LAlignment *> &alns) {
 
 int LAInterface::recoverAlignment(LAlignment *alignment) {
 
+    if (alignment->recovered) return -1;
 
     int j;
     uint16 *trace;
@@ -4133,7 +4134,7 @@ int LAInterface::recoverAlignment(LAlignment *alignment) {
         aln->bseq = bseq - bmin;
 
 
-    Compute_Trace_PTS(aln, work, tspace,GREEDIEST);
+    computeTracePTS(aln, work, tspace);
 
 
     /*{
@@ -4145,7 +4146,6 @@ int LAInterface::recoverAlignment(LAlignment *alignment) {
             printf("%d,", (int) trace[u]);
         printf("\n");
     }*/
-
 
 
     alignment->tlen =  aln->path->tlen;
@@ -4165,8 +4165,9 @@ int LAInterface::recoverAlignment(LAlignment *alignment) {
     free(bbuffer - 1);
     free(abuffer - 1);
     Free_Work_Data(work);
-	//free(path->trace);
+	//free(aln->path->trace);
 
+    alignment->recovered = true;
 
 
     return 0;

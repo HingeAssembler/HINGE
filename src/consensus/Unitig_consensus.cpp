@@ -1198,7 +1198,7 @@ int main(int argc, char *argv[]) {
                 //printf("blen %d alen%d\n",strlen(bseq), strlen(aseq));
                 //printf("before get tags\n");
 
-                alignment * alng = align(bseq, blen , aseq, alen , 150, 1);
+                alignment * alng = _align(bseq, blen, aseq, alen, 150, 1);
 
                 char * q_aln_str = (char * )malloc((5+strlen(alng->q_aln_str))*sizeof(char)) ;
                 char * t_aln_str = (char * )malloc((5+strlen(alng->t_aln_str))*sizeof(char));

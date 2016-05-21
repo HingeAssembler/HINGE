@@ -278,7 +278,7 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
         hinged = HINGED_EDGE;
 
     if ((match->match_type_ == FORWARD_INTERNAL) or (match->match_type_ == FORWARD)) {
-        fprintf(file_pointer, "%d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
+        fprintf(file_pointer, "%d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] [%d %d] [%d %d]\n",
                 match->read_A_id_,
                 match->read_B_id_,
                 match->weight,
@@ -292,10 +292,18 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
                 match->eff_read_A_start_,
                 match->eff_read_A_end_,
                 match->eff_read_B_start_,
-                match->eff_read_B_end_);
+                match->eff_read_B_end_,
+
+                match->read_A_match_start_,
+                match->read_A_match_end_,
+                match->read_B_match_start_,
+                match->read_B_match_end_
+
+
+                );
     }
     else if ((match->match_type_ == BACKWARD_INTERNAL) or (match->match_type_ == BACKWARD)){
-        fprintf(file_pointer, "%d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
+        fprintf(file_pointer, "%d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] [%d %d] [%d %d]\n",
                 match->read_B_id_,
                 match->read_A_id_,
                 match->weight,
@@ -309,7 +317,14 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
                 match->eff_read_B_start_,
                 match->eff_read_B_end_,
                 match->eff_read_A_start_,
-                match->eff_read_A_end_);
+                match->eff_read_A_end_,
+
+                match->read_A_match_start_,
+                match->read_A_match_end_,
+                match->read_B_match_start_,
+                match->read_B_match_end_
+
+        );
     }
 }
 

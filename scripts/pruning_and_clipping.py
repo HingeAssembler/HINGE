@@ -1,4 +1,4 @@
-
+#!/usr/bin/python
 # coding: utf-8
 
 # In[115]:
@@ -895,7 +895,6 @@ with open (flname) as f:
         if len(lines1) < 5:
             continue
 
-        
         e1 = (lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4])
         # print lines1
         # e1_match1 = abs(int(lines1[6].lstrip('['))-int(lines1[7].rstrip(']')))
@@ -905,26 +904,39 @@ with open (flname) as f:
         ra_end = int(lines1[7].rstrip(']'))
         rb_start = int(lines1[8].lstrip('['))
         rb_end = int(lines1[9].rstrip(']'))
+        
+        ra_start_raw = int(lines1[-4].lstrip('['))
+        ra_end_raw = int(lines1[-3].rstrip(']'))
+        rb_start_raw = int(lines1[-2].lstrip('['))
+        rb_end_raw = int(lines1[-1].rstrip(']'))
+        
+        
         if e1 in G.edges():
             G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],
                 hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0,
                 read_a_start=ra_start,read_a_end=ra_end,
-                read_b_start=rb_start,read_b_end=rb_end)
+                read_b_start=rb_start,read_b_end=rb_end,
+                read_a_start_raw=ra_start_raw,read_a_end_raw=ra_end_raw,
+                read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
             G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),
                 hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0,
-                read_a_start=rb_start,read_a_end=rb_end,
-                read_b_start=ra_start,read_b_end=ra_end)     
+                read_a_start=ra_start,read_a_end=ra_end,
+                read_b_start=rb_start,read_b_end=rb_end,
+                read_a_start_raw=ra_start_raw,read_a_end_raw=ra_end_raw,
+                read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
         else:
             G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],
                 hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0,
                 read_a_start=ra_start,read_a_end=ra_end,
-                read_b_start=rb_start,read_b_end=rb_end)
+                read_b_start=rb_start,read_b_end=rb_end,
+                read_a_start_raw=ra_start_raw,read_a_end_raw=ra_end_raw,
+                read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
             G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),
                 hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0,
-                read_a_start=rb_start,read_a_end=rb_end,
-                read_b_start=ra_start,read_b_end=ra_end)
-
-
+                read_a_start=ra_start,read_a_end=ra_end,
+                read_b_start=rb_start,read_b_end=rb_end,
+                read_a_start_raw=ra_start_raw,read_a_end_raw=ra_end_raw,
+                read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
 
 
         

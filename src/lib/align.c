@@ -1851,7 +1851,7 @@ Path *Local_Alignment(Alignment *align, Work_Data *ework, Align_Spec *espec,
     int     a, h;
 
     printf("\nA-path (%d,%d)->(%d,%d)",apath->read_A_match_start_,apath->read_B_match_start_,apath->read_A_match_end_,apath->read_B_match_end_);
-    printf(" %c\n",(COMP(align->reverse_complement_match_) ? 'c' : 'n'));
+    printf(" %c\n",(COMP(_align->reverse_complement_match_) ? 'c' : 'n'));
     a = apath->read_B_match_start_;
     for (h = 1; h < apath->tlen; h += 2)
       { int dif = trace[h-1];
@@ -3018,7 +3018,7 @@ int Find_Extension(Alignment *align, Work_Data *ework, Align_Spec *espec,
     int     a, h;
 
     printf("\nA-path (%d,%d)->(%d,%d)",apath->read_A_match_start_,apath->read_B_match_start_,apath->read_A_match_end_,apath->read_B_match_end_);
-    printf(" %c\n",(COMP(align->reverse_complement_match_) ? 'c' : 'n'));
+    printf(" %c\n",(COMP(_align->reverse_complement_match_) ? 'c' : 'n'));
     a = apath->read_B_match_start_;
     for (h = 1; h < apath->tlen; h += 2)
       { int dif = trace[h-1];
@@ -3740,7 +3740,7 @@ int Print_Reference(FILE *file, Alignment *align, Work_Data *ework,
   return (0);
 }
 
-/* Print an ASCII representation of the overlap in align between fragments
+/* Print an ASCII representation of the overlap in _align between fragments
    a and b to given file.                                                  */
 
 static inline void repchar(FILE *file, int symbol, int rep)
