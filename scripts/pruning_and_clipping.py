@@ -762,7 +762,9 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
     print str(len(g.nodes()))
     
     slack = 500
-           
+    max_chr = 0
+
+    chr_length_dict = {}
             
     for node in g.nodes():
         # print node
@@ -770,13 +772,18 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
         # print node_base
 
         #print node
+        g.node[node]['normpos'] = 0.0
         if mapping.has_key(node_base):
+            g.node[node]['chr'] = mapping[node_base][0][2]+1
             g.node[node]['aln_start'] = min (mapping[node_base][0][0],mapping[node_base][0][1])
             g.node[node]['aln_end'] = max(mapping[node_base][0][1],mapping[node_base][0][0])
-#             g.node[node]['chr'] = mapping[node_base][0][2]
+
+
+            max_chr = max(g.node[node]['chr'],max_chr)
             mapped_nodes+=1
         else:
             # pass
+            g.node[node]['chr'] =  0
             g.node[node]['aln_start'] = 0
             g.node[node]['aln_end'] = 0
 #             g.node[node]['aln_strand'] = 0
@@ -786,6 +793,17 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
         else:
             g.node[node]['hinge'] = 0
 
+        if g.node[node]['chr'] in chr_length_dict:
+            chr_length_dict[g.node[node]['chr']] = max(g.node[node]['aln_end'], chr_length_dict[g.node[node]['chr']])
+        else:
+            chr_length_dict[g.node[node]['chr']] = max(g.node[node]['aln_end'], 1)
+
+    max_chr_len = len(str(max_chr))
+    
+    div_num = float(10**(max_chr_len))
+
+    for node in g.nodes():
+        g.node[node]['normpos'] = (g.node[node]['chr'] + g.node[node]['aln_end']/float(chr_length_dict[g.node[node]['chr']]))/div_num
 
     for edge in g.edges_iter():
         in_node=edge[0]
