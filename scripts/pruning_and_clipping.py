@@ -698,7 +698,6 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
                 print 'going on loop'
 
             node_cnt = 0
-
             while g.in_degree(next_node) == 1 and g.out_degree(next_node) == 1 and node_cnt < max_nodes:
                 node_cnt += 1
                 in_node = next_node
@@ -854,6 +853,116 @@ def connect_strands(g):
         g.add_edge(revnode,node)
 
     return g
+
+
+
+
+
+def create_bidirected(g):
+
+    h = nx.DiGraph()
+
+    for u in g.nodes():
+
+        for successor in g.successors(u):
+
+            tail_id, tail_orientation = u.split('_')
+            head_id, head_orientation = successor.split('_')
+
+            h.add_edge(tail_id,head_id,tail_or = int(tail_orientation),head_or = int(head_orientation),
+                read_a_start=g.edge[u][successor]['read_a_start'],
+                read_a_end=g.edge[u][successor]['read_a_end'],
+                read_b_start=g.edge[u][successor]['read_b_start'],
+                read_b_end=g.edge[u][successor]['read_b_end'])
+
+
+    st_nodes = [x for x in g if g.in_degree(x) != 1 or g.out_degree(x) > 1]
+
+    for st_node in st_nodes:
+
+        for sec_node in g.successors(st_node):
+
+            cur_node = st_node
+            cur_id = cur_node.split('_')[0]
+            next_node = sec_node
+            next_id = next_node.split('_')[0]
+            
+            if next_id in h.successors(cur_id) and cur_id in h.successors(next_id):
+                h.remove_edge(next_id,cur_id)
+
+            while g.in_degree(next_node) == 1 and g.out_degree(next_node) == 1:
+
+                cur_node = next_node
+                cur_id = cur_node.split('_')[0]
+                next_node = g.successors(next_node)[0]
+                next_id = next_node.split('_')[0]
+                # else:
+                #     print 'not in h'
+
+                if next_id in h.successors(cur_id) and cur_id in h.successors(next_id):
+                    h.remove_edge(next_id,cur_id)
+                else:
+                    break
+
+
+    return h
+
+
+
+
+def create_bidirected2(g):
+
+    h = nx.DiGraph()
+
+    for u in g.nodes():
+
+        for successor in g.successors(u):
+
+            tail_id, tail_orientation = u.split('_')
+            head_id, head_orientation = successor.split('_')
+
+            h.add_edge(tail_id,head_id)
+
+            # h.add_edge(tail_id,head_id,tail_or = int(tail_orientation),head_or = int(head_orientation),
+            #     read_a_start=g.edge[u][successor]['read_a_start'],
+            #     read_a_end=g.edge[u][successor]['read_a_end'],
+            #     read_b_start=g.edge[u][successor]['read_b_start'],
+            #     read_b_end=g.edge[u][successor]['read_b_end'])
+
+
+    st_nodes = [x for x in g if g.in_degree(x) != 1 or g.out_degree(x) > 1]
+
+    for st_node in st_nodes:
+
+        for sec_node in g.successors(st_node):
+
+            cur_node = st_node
+            cur_id = cur_node.split('_')[0]
+            next_node = sec_node
+            next_id = next_node.split('_')[0]
+            
+            if next_id in h.successors(cur_id) and cur_id in h.successors(next_id):
+                h.remove_edge(next_id,cur_id)
+
+            while g.in_degree(next_node) == 1 and g.out_degree(next_node) == 1:
+
+                cur_node = next_node
+                cur_id = cur_node.split('_')[0]
+                next_node = g.successors(next_node)[0]
+                next_id = next_node.split('_')[0]
+                # else:
+                #     print 'not in h'
+
+                if next_id in h.successors(cur_id) and cur_id in h.successors(next_id):
+                    h.remove_edge(next_id,cur_id)
+                else:
+                    break
+
+
+    return g
+
+
+
 
 def write_graphml(g,prefix,suffix,suffix1):
     h = g.copy()
@@ -1024,6 +1133,13 @@ nx.write_graphml(Gc, prefix+suffix+'.'+'Gc'+'.graphml')
 G2c = connect_strands(G2s)
 
 nx.write_graphml(G2c, prefix+suffix+'.'+'G2c'+'.graphml')
+
+# G2b = create_bidirected2(G2)
+
+# nx.write_graphml(G2b, prefix+suffix+'.'+'G2b'+'.graphml')
+
+
+
 
 # H=prune_graph(G1,in_hinges,out_hinges)
 # H=dead_end_clipping(H,5)
