@@ -680,18 +680,7 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
                 print '----'
                 print first_node   
 
-
             other_successor = [x for x in g.successors(st_node) if x != first_node][0]
-            next_node = other_successor
-            node_cnt = 0
-            while g.in_degree(next_node) == 1 and g.out_degree(next_node) == 1:
-                node_cnt += 1
-                next_node = g.successors(next_node)[0]
-                if node_cnt >= flank:
-                    break
-
-            if node_cnt < flank:
-                continue
 
             next_node = first_node
             if print_debug:
@@ -703,6 +692,8 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
                 in_node = next_node
                 next_node = g.successors(next_node)[0]
 
+            first_node_of_repeat = next_node
+
             if g.in_degree(next_node) == 2:
                 prev_node = [x for x in g.predecessors(next_node) if x != in_node][0]
                 node_cnt = 0
@@ -711,11 +702,23 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
                     prev_node = g.predecessors(prev_node)[0]
                     if node_cnt >= flank:
                         break
-                if node_cnt < flank:
+                if node_cnt < flank and prev_node != st_node:
                     continue
+            
 
+            next_node = other_successor
+            node_cnt = 0
+            while g.in_degree(next_node) == 1 and g.out_degree(next_node) == 1:
+                node_cnt += 1
+                next_node = g.successors(next_node)[0]
+                if node_cnt >= flank:
+                    break
 
-            rep = [next_node] 
+            if node_cnt < flank and next_node != first_node_of_repeat:
+                continue
+
+            rep = [first_node_of_repeat] 
+            next_node = first_node_of_repeat
 
             node_cnt = 0
 
