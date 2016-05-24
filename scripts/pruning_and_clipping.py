@@ -821,8 +821,10 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
             nd_red = (1-lamda)*red + lamda*red_bk
             nd_green = (1-lamda)*green + lamda*green_bk
             nd_blue = (1-lamda)*blue + lamda*blue_bk
-            g.node[node]['color'] = rgb2hex(nd_red, nd_green, nd_blue)
-
+            g.node[node]['color_r'] = nd_red
+            g.node[node]['color_g'] = nd_green
+            g.node[node]['color_b'] = nd_blue
+            
 
     # max_chr_len = len(str(max_chr))
     
