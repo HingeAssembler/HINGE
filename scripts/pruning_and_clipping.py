@@ -6,12 +6,10 @@
 import networkx as nx
 import random
 import sys
-
+import numpy as np 
 import ujson
+from colormap import rgb2hex
 
-
-
-      
 
 # print G.number_of_edges(),G.number_of_nodes()
 
@@ -775,20 +773,20 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
         # print node_base
 
         #print node
-        g.node[node]['normpos'] = 0.0
+        # g.node[node]['normpos'] = 0.0
         if mapping.has_key(node_base):
             g.node[node]['chr'] = mapping[node_base][0][2]+1
             g.node[node]['aln_start'] = min (mapping[node_base][0][0],mapping[node_base][0][1])
             g.node[node]['aln_end'] = max(mapping[node_base][0][1],mapping[node_base][0][0])
 
 
-            max_chr = max(g.node[node]['chr'],max_chr)
-            mapped_nodes+=1
+            # max_chr = max(g.node[node]['chr'],max_chr)
+            # mapped_nodes+=1
         else:
             # pass
             g.node[node]['chr'] =  0
-            g.node[node]['aln_start'] = 0
-            g.node[node]['aln_end'] = 0
+            g.node[node]['aln_start'] = 1
+            g.node[node]['aln_end'] = 1
 #             g.node[node]['aln_strand'] = 0
             
         if node in in_hinges or node in out_hinges:
@@ -801,12 +799,32 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
         else:
             chr_length_dict[g.node[node]['chr']] = max(g.node[node]['aln_end'], 1)
 
-    max_chr_len = len(str(max_chr))
-    
-    div_num = float(10**(max_chr_len))
+    chr_set = set([g.node[x]['chr'] for x in g.nodes()])
+    red_bk = 102
+    green_bk = 102
+    blue_bk = 102
+    for chrom in chr_set:
+        node_set = set([x for x in  g.nodes() if g.node[x]['chr'] == chrom])
 
-    for node in g.nodes():
-        g.node[node]['normpos'] = (g.node[node]['chr'] + g.node[node]['aln_end']/float(chr_length_dict[g.node[node]['chr']]))/div_num
+        max_chr_len = float(max([g.node[x]['aln_end'] for x in  g.nodes() if g.node[x]['chr'] == chrom]))
+
+        red = random.randint(0,255)
+        green = random.randint(0,255)
+        blue = random.randint(0,255)
+        for node in node_set:
+            lamda = (g.node[node]['aln_end']/max_chr_len)**3
+            nd_red = (1-lamda)*red + lamda*red_bk
+            nd_green = (1-lamda)*green + lamda*green_bk
+            nd_blue = (1-lamda)*blue + lamda*blue_bk
+            g.node[node]['color'] = rgb2hex(nd_red, nd_green, nd_blue)
+
+
+    # max_chr_len = len(str(max_chr))
+    
+    # div_num = float(10**(max_chr_len))
+
+    # for node in g.nodes():
+    #     g.node[node]['normpos'] = (g.node[node]['chr'] + g.node[node]['aln_end']/float(chr_length_dict[g.node[node]['chr']]))/div_num
 
     for edge in g.edges_iter():
         in_node=edge[0]
