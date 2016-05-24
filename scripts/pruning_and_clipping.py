@@ -9,8 +9,8 @@ import sys
 import numpy as np 
 import ujson
 from colormap import rgb2hex
-
-
+import operator
+import matplotlib.colors
 # print G.number_of_edges(),G.number_of_nodes()
 
 
@@ -799,32 +799,49 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
         else:
             chr_length_dict[g.node[node]['chr']] = max(g.node[node]['aln_end'], 1)
 
-    chr_set = set([g.node[x]['chr'] for x in g.nodes()])
-    red_bk = 102
-    green_bk = 102
-    blue_bk = 102
-    for chrom in chr_set:
+    chr_list = sorted(chr_length_dict.items(), key=operator.itemgetter(1), reverse=True)
+    print [x for x in chr_list]
+    chr_set =[x [0] for x in chr_list]
+    print chr_set
+    # red_bk = 102
+    # green_bk = 102
+    # blue_bk = 102
+    colour_list = ['red', 'lawngreen', 'deepskyblue', 'deeppink', 'darkorange', 'purple', 'gold', 'mediumblue',   'saddlebrown', 'darkgreen']
+    for colour in colour_list:
+        print  matplotlib.colors.colorConverter.to_rgb(colour)
+    for index, chrom in enumerate(chr_set):
         node_set = set([x for x in  g.nodes() if g.node[x]['chr'] == chrom])
         print chrom
 
 
         max_chr_len = float(max([g.node[x]['aln_end'] for x in  g.nodes() if g.node[x]['chr'] == chrom]))
 
-        red = random.randint(0,255)
-        # green = random.randint(0,255)
-        blue = random.randint(0,255)
-        brightness = 200
-        green  = max(0,min( 255,brightness - int((0.2126 *red +  0.0722 *blue)/0.7152 )))
+        if index < 10:
+            rgb_tuple = matplotlib.colors.colorConverter.to_rgb(colour_list[index])
+            red = int(255*rgb_tuple[0])
+            green = int(255*rgb_tuple[1])
+            blue = int(255*rgb_tuple[2])
+        else:
+            red = random.randint(0,255)
+            # green = random.randint(0,255)
+            blue = random.randint(0,255)
+            brightness = 200
+            green  = max(0,min( 255,brightness - int((0.2126 *red +  0.0722 *blue)/0.7152 )))
+
+        red_bk = max(red-100,0)
+        blue_bk = max(blue-100,0)
+        green_bk = max(green-100,0)
+
         print red,blue,green
         for node in node_set:
-            lamda = (g.node[node]['aln_end']/max_chr_len)**3
+            lamda = (g.node[node]['aln_end']/max_chr_len)
             nd_red = (1-lamda)*red + lamda*red_bk
             nd_green = (1-lamda)*green + lamda*green_bk
             nd_blue = (1-lamda)*blue + lamda*blue_bk
+            g.node[node]['color'] = rgb2hex(nd_red, nd_green, nd_blue)
             g.node[node]['color_r'] = nd_red
             g.node[node]['color_g'] = nd_green
             g.node[node]['color_b'] = nd_blue
-            
 
     # max_chr_len = len(str(max_chr))
     
