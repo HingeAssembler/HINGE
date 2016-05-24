@@ -2,9 +2,9 @@
 
 CI Status: 
 
-master:![image](https://magnum.travis-ci.com/fxia22/AwesomeAssembler.svg?token=i41xfGcHb72GYFyZnvtg&branch=master)
+master:![image](https://magnum.travis-ci.com/fxia22/HingingAssembler.svg?token=i41xfGcHb72GYFyZnvtg&branch=master)
 
-dev:![image](https://magnum.travis-ci.com/fxia22/AwesomeAssembler.svg?token=i41xfGcHb72GYFyZnvtg&branch=dev)
+dev:![image](https://magnum.travis-ci.com/fxia22/HingingAssembler.svg?token=i41xfGcHb72GYFyZnvtg&branch=dev)
 
 ## Introduction 
 
