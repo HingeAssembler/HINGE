@@ -811,8 +811,10 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
         max_chr_len = float(max([g.node[x]['aln_end'] for x in  g.nodes() if g.node[x]['chr'] == chrom]))
 
         red = random.randint(0,255)
-        green = random.randint(0,255)
+        # green = random.randint(0,255)
         blue = random.randint(0,255)
+        brightness = 200
+        green  = max(0,min( 255,brightness - int((0.2126 *red +  0.0722 *blue)/0.7152 )))
         print red,blue,green
         for node in node_set:
             lamda = (g.node[node]['aln_end']/max_chr_len)**3
