@@ -3,7 +3,7 @@ import networkx as nx
 import sys
 
 filename = sys.argv[1]
-outfile = sys.argv[2]
+outfile = filename.split('.')[0] + ".edges.list"
 
 g = nx.read_graphml(filename)
 print nx.info(g)

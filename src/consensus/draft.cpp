@@ -809,12 +809,10 @@ int main(int argc, char *argv[]) {
     std::cout << "add data" << std::endl;
 
 
-    std::string name_input="test.out";
-
+    std::string name_input= out + ".edges.list";
     std::ifstream edges_file(name_input);
 
-
-    std::string name_output = "out.fasta";
+    std::string name_output = out_name + ".fasta";
     std::ofstream out_fa(name_output);
 
     int num_contig = 0;
