@@ -228,7 +228,7 @@ def dead_end_clipping_sym(G,threshold,print_debug = False):
             print cur_path
 
             
-        if len(cur_path) <= threshold and H.in_degree(cur_node) > 1:
+        if len(cur_path) <= threshold and (H.in_degree(cur_node) > 1 or H.out_degree(cur_node) == 0):
             for vertex in cur_path:
                 # try:
                 if print_debug:
@@ -626,7 +626,11 @@ def resolve_rep(g,rep_path,in_node,out_node):
         read_a_start_raw=g.edge[rep_path[-1]][out_node]['read_a_start_raw'],
         read_a_end_raw=g.edge[rep_path[-1]][out_node]['read_a_end_raw'],
         read_b_start_raw=g.edge[rep_path[-1]][out_node]['read_b_start_raw'],
+<<<<<<< HEAD
         read_b_end_raw=g.edge[rep_path[-1]][out_node]['read_b_end_raw'])  
+=======
+        read_b_end_raw=g.edge[rep_path[-1]][out_node]['read_b_end_raw']) 
+>>>>>>> 9b033d6765473375e82fcfaa109a37f4dcb6a8ef
     g.remove_edge(rep_path[-1],out_node)
     
 
@@ -1133,10 +1137,10 @@ with open (flname) as f:
                 read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
             G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),
                 hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0,
-                read_a_start=ra_start,read_a_end=ra_end,
-                read_b_start=rb_start,read_b_end=rb_end,
-                read_a_start_raw=ra_start_raw,read_a_end_raw=ra_end_raw,
-                read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
+                read_a_start=rb_start,read_a_end=rb_end,
+                read_b_start=ra_start,read_b_end=ra_end,
+                read_a_start_raw=rb_start_raw,read_a_end_raw=rb_end_raw,
+                read_b_start_raw=ra_start_raw,read_b_end_raw=ra_end_raw)
         else:
             G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],
                 hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0,
@@ -1146,10 +1150,10 @@ with open (flname) as f:
                 read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
             G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),
                 hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0,
-                read_a_start=ra_start,read_a_end=ra_end,
-                read_b_start=rb_start,read_b_end=rb_end,
-                read_a_start_raw=ra_start_raw,read_a_end_raw=ra_end_raw,
-                read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
+                read_a_start=rb_start,read_a_end=rb_end,
+                read_b_start=ra_start,read_b_end=ra_end,
+                read_a_start_raw=rb_start_raw,read_a_end_raw=rb_end_raw,
+                read_b_start_raw=ra_start_raw,read_b_end_raw=ra_end_raw)
 
 
         
