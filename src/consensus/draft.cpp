@@ -1189,7 +1189,14 @@ int main(int argc, char *argv[]) {
 
 
         printf("In total %d lanes\n", lanes.size());
-        if (lanes.size() == 0) continue;
+        if (lanes.size() == 0) {
+            draft_assembly = breads[0];
+            out_fa << ">Draft_assembly" << num_contig << std::endl;
+            out_fa << draft_assembly << std::endl;
+            continue;
+        }
+
+
 
         /**
          * Consequtive lanes form a column (ladder)
