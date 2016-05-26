@@ -59,6 +59,16 @@ with open(outfile, 'w') as f:
     for i,path in enumerate(paths):
         f.write('>Unitig%d\n'%(i))
         for j in range(len(path)-1):
+            nodeA = path[j].lstrip("B")
+            nodeB = path[j+1].lstrip("B")
+
             d =  g.get_edge_data(path[j],path[j+1])
-            f.write('%s %s %s %s %d %d %d %d %d\n'%((path[j].split('_'))[0],path[j].split('_')[1]  , path[j+1].split('_')[0], path[j+1].split('_')[1], -d['read_a_start_raw'] + d['read_a_end_raw'] - d['read_b_start_raw'] + d['read_b_end_raw'], d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
+
+            f.write('%s %s %s %s %d %d %d %d %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0], nodeB.split('_')[1], -d['read_a_start_raw'] + d['read_a_end_raw'] - d['read_b_start_raw'] + d['read_b_end_raw'], d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
+
+
     f.close()
+
+
+
+
