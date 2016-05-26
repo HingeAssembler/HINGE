@@ -218,13 +218,17 @@ def dead_end_clipping_sym(G,threshold,print_debug = False):
                     print cur_node
 
                 cur_node = H.successors(cur_node)[0]
+
+                if len(cur_path) > threshold + 1:
+                    break
+
                 
         if print_debug:
             print '----2'
             print cur_path
 
             
-        if len(cur_path) <= threshold:
+        if len(cur_path) <= threshold and H.in_degree(cur_node) > 1:
             for vertex in cur_path:
                 # try:
                 if print_debug:
@@ -607,14 +611,22 @@ def resolve_rep(g,rep_path,in_node,out_node):
         read_a_start=g.edge[in_node][rep_path[0]]['read_a_start'],
         read_a_end=g.edge[in_node][rep_path[0]]['read_a_end'],
         read_b_start=g.edge[in_node][rep_path[0]]['read_b_start'],
-        read_b_end=g.edge[in_node][rep_path[0]]['read_b_end']) 
+        read_b_end=g.edge[in_node][rep_path[0]]['read_b_end'],
+        read_a_start_raw=g.edge[in_node][rep_path[0]]['read_a_start_raw'],
+        read_a_end_raw=g.edge[in_node][rep_path[0]]['read_a_end_raw'],
+        read_b_start_raw=g.edge[in_node][rep_path[0]]['read_b_start_raw'],
+        read_b_end_raw=g.edge[in_node][rep_path[0]]['read_b_end_raw']) 
     g.remove_edge(in_node,rep_path[0])
 
     g.add_edge(prefix+rep_path[-1],out_node,
         read_a_start=g.edge[rep_path[-1]][out_node]['read_a_start'],
         read_a_end=g.edge[rep_path[-1]][out_node]['read_a_end'],
         read_b_start=g.edge[rep_path[-1]][out_node]['read_b_start'],
-        read_b_end=g.edge[rep_path[-1]][out_node]['read_b_end']) 
+        read_b_end=g.edge[rep_path[-1]][out_node]['read_b_end'],
+        read_a_start_raw=g.edge[rep_path[-1]][out_node]['read_a_start_raw'],
+        read_a_end_raw=g.edge[rep_path[-1]][out_node]['read_a_end_raw'],
+        read_b_start_raw=g.edge[rep_path[-1]][out_node]['read_b_start_raw'],
+        read_b_end_raw=g.edge[rep_path[-1]][out_node]['read_b_end_raw'])  
     g.remove_edge(rep_path[-1],out_node)
     
 
@@ -622,13 +634,21 @@ def resolve_rep(g,rep_path,in_node,out_node):
         read_a_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_start'],
         read_a_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_end'],
         read_b_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_start'],
-        read_b_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_end']) 
+        read_b_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_end'],
+        read_a_start_raw=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_start_raw'],
+        read_a_end_raw=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_end_raw'],
+        read_b_start_raw=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_start_raw'],
+        read_b_end_raw=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_end_raw']) 
     g.remove_edge(rev_node(rep_path[0]),rev_node(in_node))
     g.add_edge(rev_node(out_node),rev_node(prefix+rep_path[-1]),
         read_a_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_start'],
         read_a_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_end'],
         read_b_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_start'],
-        read_b_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_end']) 
+        read_b_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_end'],
+        read_a_start_raw=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_start_raw'],
+        read_a_end_raw=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_end_raw'],
+        read_b_start_raw=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_start_raw'],
+        read_b_end_raw=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_end_raw']) 
     g.remove_edge(rev_node(out_node),rev_node(rep_path[-1]))
 
 
@@ -639,12 +659,20 @@ def resolve_rep(g,rep_path,in_node,out_node):
             read_a_start=g.edge[rep_path[i]][rep_path[i+1]]['read_a_start'],
             read_a_end=g.edge[rep_path[i]][rep_path[i+1]]['read_a_end'],
             read_b_start=g.edge[rep_path[i]][rep_path[i+1]]['read_b_start'],
-            read_b_end=g.edge[rep_path[i]][rep_path[i+1]]['read_b_end'])
+            read_b_end=g.edge[rep_path[i]][rep_path[i+1]]['read_b_end'],
+            read_a_start_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_a_start_raw'],
+            read_a_end_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_a_end_raw'],
+            read_b_start_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_b_start_raw'],
+            read_b_end_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_b_end_raw'])
         g.add_edge(rev_node(prefix+rep_path[i+1]),rev_node(prefix+rep_path[i]),
             read_a_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_start'],
             read_a_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_end'],
             read_b_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_start'],
-            read_b_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_end'])
+            read_b_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_end'],
+            read_a_start_raw=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_start_raw'],
+            read_a_end_raw=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_end_raw'],
+            read_b_start_raw=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_start_raw'],
+            read_b_end_raw=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_end_raw'])
             
         
 
@@ -656,6 +684,8 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
     if print_debug:
         print '----'
         print starting_nodes
+
+    tandem = []
 
     for st_node in starting_nodes:
 
@@ -742,8 +772,19 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
                 resolve_rep(g,rep,in_node,other_successor)
     #             print next_double_node
 
+                if node_cnt < 5:
+
+                    tandem.append(rep)
+
+
+
                 continue
         
+    if len(tandem) > 0:
+        with open('tandem.txt', 'w') as tandemout:
+            for rep in tandem:
+                tandemout.write(str(rep))
+
 
     return g
 
@@ -1118,6 +1159,8 @@ with open (flname) as f:
         towrite= lines1[1] + "_" + str(1-int(lines1[4])) +' '+ lines1[0] + "_" + str(1-int(lines1[3])) +' '+ lines1[2]+' '+str(int(lines1[13][:-1])-int(lines1[12][1:]))+' '+str(int(lines1[11][:-1])-int(lines1[10][1:]))
         Ginfo[(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])))] = towrite
 
+
+nx.write_graphml(G, prefix+suffix+'.'+'G00'+'.graphml')
 
 
 
