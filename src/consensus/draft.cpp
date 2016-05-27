@@ -345,7 +345,7 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
     match->weight =
             match->eff_read_A_match_end_ - match->eff_read_A_match_start_
             + match->eff_read_B_match_end_ - match->eff_read_B_match_start_;
-    
+
     return contained;
 }
 
@@ -737,12 +737,12 @@ int main(int argc, char *argv[]) {
     // this is the pileup
     std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx_ab;
     /*
-    	idx is a vector of length n_read, each element idx3[read A id] is a map, 
+    	idx is a vector of length n_read, each element idx3[read A id] is a map,
     	from read B id to a vector of overlaps
     */
     //std::vector<std::vector<LOverlap *>> idx2;
     /*
-    	idx2 is a vector of length n_read, each element idx2[read A id] is a vector, 
+    	idx2 is a vector of length n_read, each element idx2[read A id] is a vector,
     	for each read B, we put the best overlap into that vector
     */
     //std::vector<std::unordered_map<int, LOverlap *>> idx3;
@@ -827,7 +827,6 @@ int main(int argc, char *argv[]) {
             std::vector<std::string> tokens = split(edge_line, ' ');
 
             if (tokens.size() == 1) {
-                num_contig += 1;
                 break;
             }
             //std::cout << tokens.size() << std::endl;
@@ -1064,9 +1063,9 @@ int main(int argc, char *argv[]) {
         int nlane = 0;
 
 
-        printf("%d %d\n", mappings[0][800], mappings[0][1000]); // debug output
-        printf("%s\n%s\n", breads[0].substr(bedges[0]->read_A_match_start_ + 800, 50).c_str(),
-               breads[1].substr(bedges[0]->read_B_match_start_ + mappings[0][800], 50).c_str()); //debug output
+        //printf("%d %d\n", mappings[0][800], mappings[0][1000]); // debug output
+        //printf("%s\n%s\n", breads[0].substr(bedges[0]->read_A_match_start_ + 800, 50).c_str(),
+        //       breads[1].substr(bedges[0]->read_B_match_start_ + mappings[0][800], 50).c_str()); //debug output
 
 
         std::vector<std::vector<std::pair<int, int>>> lanes;
@@ -1193,6 +1192,7 @@ int main(int argc, char *argv[]) {
             draft_assembly = breads[0];
             out_fa << ">Draft_assembly" << num_contig << std::endl;
             out_fa << draft_assembly << std::endl;
+            num_contig++;
             continue;
         }
 
@@ -1370,6 +1370,7 @@ int main(int argc, char *argv[]) {
 
         out_fa << ">Draft_assembly" << num_contig << std::endl;
         out_fa << draft_assembly << std::endl;
+        num_contig++;
 
     }
 
