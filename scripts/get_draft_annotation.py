@@ -94,6 +94,23 @@ for vert in vertices_of_interest:
 start_vertices = [x for x in vertices_of_interest if in_graph.in_degree(x) == 0 or in_graph.out_degree(x) > 1]
 h = nx.DiGraph()
 
+read_tuples_raw = {}
+for vertex in vertices_of_interest:
+    successors = in_graph.successors(vertex)
+    if successors:
+        succ = successors[0]
+        d =  in_graph.get_edge_data(vertex,succ)
+        read_tuples_raw[vertex] = (d['read_a_start_raw'], d['read_a_end_raw'])
+    else:
+        predecessors = in_graph.predecessors(vertex)
+        if not predecessors:
+            pred = predecessors[0]
+            d =  in_graph.get_edge_data(pred,vertex)
+            read_tuples_raw[vertex] = (d['read_b_start_raw'], d['read_b_end_raw'])
+        else:
+            read_tuples_raw[vertex] = (0,0)
+        
+
 
 for vertex in vertices_of_interest:
     h.add_node(vertex)
@@ -171,6 +188,15 @@ while set(in_graph.nodes())-vertices_used:
         read_end = min( min([(in_graph.edge[x][vert]['read_b_start']) for x in in_graph.predecessors(vert)]),
                          max([(in_graph.edge[vert][x]['read_a_start']) for x in in_graph.successors(vert)]))
         vertRC = vert_id+"_0"
+    
+    successor_start = in_graph.successors(vert)[0]
+    d =  in_graph.get_edge_data(vert,successor_start)
+    read_tuples_raw[vert] = (d['read_a_start_raw'], d['read_a_end_raw'])
+    
+    successor_start = in_graph.successors(vertRC)[0]
+    d =  in_graph.get_edge_data(vertRC,successor_start)
+    read_tuples_raw[vertRC] = (d['read_a_start_raw'], d['read_a_end_raw'])
+    
     h.add_node(vert)
     node_path = [vert]
     h.node[vert]['path'] = node_path
@@ -252,19 +278,38 @@ with open(gfaname,'w') as f:
         
 outfile = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname + ".edges.list"
 
+vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and 
+ len(nx.node_connected_component(h.to_undirected(), x)) > 2]
+
+while 1:
+    
+    vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and 
+ len(nx.node_connected_component(h.to_undirected(), x)) > 2]
+
+    if not vert_to_merge:
+        break
+    vert = vert_to_merge[0]
+    print vert, 
+    succ = h.successors(vert)[0]
+    preds = h.predecessors(vert)
+    h.node[succ]['segment'] =  h.node[vert]['segment'] + h.node[succ]['segment'] 
+    h.node[succ]['path'] = h.node[vert]['path'] + h.node[succ]['path'][1:]
+    for pred in preds:
+        print pred, succ
+        h.add_edges_from([(pred,succ)])
+        h.remove_edge(pred,vert)
+    h.remove_edge(vert,succ)
+    h.remove_node(vert)
+
 with open(outfile, 'w') as f:
     for i,node in enumerate(h.nodes()):
         print node
         #print h.node[node]
         path = h.node[node]['path']
-        start = h.node[node]['start_read']
-        end = h.node[node]['end_read']
-        
-       
+    
         f.write('>Unitig%d\n'%(i))
-        f.write(str(start)+"\t"+str(end)+"\n")
         if len(path) == 1:
-            f.write(path[0]+"\n")
+            f.write(path[0]+"\t"+str(read_tuples_raw[path[0]][0])+"\t"+str(read_tuples_raw[path[0]][1])+"\n")
         for j in range(len(path)-1):
             nodeA = path[j].lstrip("B")
             nodeB = path[j+1].lstrip("B")
@@ -274,5 +319,11 @@ with open(outfile, 'w') as f:
             f.write('%s %s %s %s %d %d %d %d %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0], 
                     nodeB.split('_')[1], -d['read_a_start_raw'] + d['read_a_end_raw'] - d['read_b_start_raw'] + d['read_b_end_raw'], 
                     d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
+
+out_graphml_name = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname+'_draft.graphml'
+
+for i,node in enumerate(h.nodes()):
+     h.node[node]['path'] = ';'.join(h.node[node]['path'])
+nx.write_graphml(h,out_graphml_name)
 
     
