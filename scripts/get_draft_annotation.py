@@ -309,7 +309,8 @@ with open(outfile, 'w') as f:
     
         f.write('>Unitig%d\n'%(i))
         if len(path) == 1:
-            f.write(path[0]+"\t"+str(read_tuples_raw[path[0]][0])+"\t"+str(read_tuples_raw[path[0]][1])+"\n")
+            print path[0]
+            f.write(path[0].split('_')[0]+"\t"+path[0].split('_')[1]+"\t"+str(read_tuples_raw[path[0]][0])+"\t"+str(read_tuples_raw[path[0]][1])+"\n")
         for j in range(len(path)-1):
             nodeA = path[j].lstrip("B")
             nodeB = path[j+1].lstrip("B")
