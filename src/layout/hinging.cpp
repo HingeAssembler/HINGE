@@ -595,6 +595,8 @@ int main(int argc, char *argv[]) {
 
     int MIN_CONNECTED_COMPONENT_SIZE = (int) reader.GetInteger("layout", "min_connected_component_size", 8);
 
+    bool USE_TWO_MATCHES = (int) reader.GetInteger("layout", "use_two_matches", 1);
+
 
     console->info("LENGTH_THRESHOLD = {}", LENGTH_THRESHOLD);
     console->info("QUALITY_THRESHOLD = {}", QUALITY_THRESHOLD);
@@ -611,6 +613,7 @@ int main(int argc, char *argv[]) {
     console->info("KILL_HINGE_INTERNAL_ALLOWANCE = {}", KILL_HINGE_INTERNAL_ALLOWANCE);
     console->info("MATCHING_HINGE_SLACK = {}", MATCHING_HINGE_SLACK);
     console->info("MIN_CONNECTED_COMPONENT_SIZE = {}", MIN_CONNECTED_COMPONENT_SIZE);
+    console->info("USE_TWO_MATCHES = {}", USE_TWO_MATCHES);
 
 
 
@@ -831,6 +834,37 @@ int main(int argc, char *argv[]) {
                     matches_backward[i].push_back(it->second[0]);
 
             }
+
+
+            if ((it->second.size() > 1) and (USE_TWO_MATCHES)) {
+                //Figure out if read is contained
+                LOverlap *ovl = it->second[1];
+                bool contained_alignment;
+
+                if (strlen(name_db) > 0)
+                    contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                           reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, true);
+                else
+                    contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                           reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, false);
+                if (contained_alignment == true) {
+                    containing_read = ovl->read_B_id_;
+                }
+
+                if (reads[ovl->read_B_id_]->active == true)
+                    contained = contained or contained_alignment;
+
+                //Filter matches that matter.
+                //TODO Figure out a way to do this more efficiently
+                if ((ovl->match_type_ == FORWARD) or (ovl->match_type_ == FORWARD_INTERNAL))
+                    matches_forward[i].push_back(it->second[1]);
+                else if ((ovl->match_type_ == BACKWARD) or (ovl->match_type_ == BACKWARD_INTERNAL))
+                    matches_backward[i].push_back(it->second[1]);
+
+            }
+
+
+
 
         }
         if (contained) {
