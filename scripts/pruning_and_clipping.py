@@ -880,7 +880,7 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
 
         print red,blue,green
         for node in node_set:
-            g.node[node]['normpos'] = g.node[node]['chr'] * max_chr_multiplier + g.node[node]['aln_end']
+            g.node[node]['normpos'] = g.node[node]['chr'] * max_chr_multiplier + (g.node[node]['aln_end']/float(max_chr_len))*max_chr_multiplier
             lamda = (g.node[node]['aln_end']/max_chr_len)
             nd_red = (1-lamda)*red + lamda*red_bk
             nd_green = (1-lamda)*green + lamda*green_bk
