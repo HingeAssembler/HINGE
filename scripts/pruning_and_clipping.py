@@ -814,7 +814,7 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
         # print node_base
 
         #print node
-        # g.node[node]['normpos'] = 0.0
+        g.node[node]['normpos'] = 0
         if mapping.has_key(node_base):
             g.node[node]['chr'] = mapping[node_base][0][2]+1
             g.node[node]['aln_start'] = min (mapping[node_base][0][0],mapping[node_base][0][1])
@@ -841,6 +841,9 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
             chr_length_dict[g.node[node]['chr']] = max(g.node[node]['aln_end'], 1)
 
     chr_list = sorted(chr_length_dict.items(), key=operator.itemgetter(1), reverse=True)
+
+    max_chr_len1 = max([g.node[x]['aln_end'] for x in  g.nodes()])
+    max_chr_multiplier = 10**len(str(max_chr_len1))
     print [x for x in chr_list]
     chr_set =[x [0] for x in chr_list]
     print chr_set
@@ -855,7 +858,9 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
         print chrom
 
 
-        max_chr_len = float(max([g.node[x]['aln_end'] for x in  g.nodes() if g.node[x]['chr'] == chrom]))
+        max_chr_len = max([g.node[x]['aln_end'] for x in  g.nodes() if g.node[x]['chr'] == chrom])
+        # max_chr_multiplier = 10**len(str(max_chr_len))
+
 
         if index < 10:
             rgb_tuple = matplotlib.colors.colorConverter.to_rgb(colour_list[index])
@@ -875,6 +880,7 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
 
         print red,blue,green
         for node in node_set:
+            g.node[node]['normpos'] = g.node[node]['chr'] *  g.node[x]['chr'] + g.node[x]['aln_end']
             lamda = (g.node[node]['aln_end']/max_chr_len)
             nd_red = (1-lamda)*red + lamda*red_bk
             nd_green = (1-lamda)*green + lamda*green_bk
