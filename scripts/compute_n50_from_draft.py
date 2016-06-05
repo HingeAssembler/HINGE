@@ -36,6 +36,11 @@ count1 = 0
 count2 = 0
 
 
+data_dict = {}
+
+
+
+
 fullpath = '/data/pacbio_assembly/pb_data/NCTC/'
 
 for nctc_name in os.listdir(fullpath):
@@ -50,6 +55,13 @@ for nctc_name in os.listdir(fullpath):
 	mypath = mypath+'/'
 
 	count += 1
+
+	hinging_n50 = -1
+	hinging_comp_n50 = -1
+	hgap_n50 = -1
+
+
+	data_dict[nctc_name] = []
 
 	draft_file = [x for x in os.listdir(mypath) if 'draft.graphml' in x]
 
@@ -105,9 +117,18 @@ for nctc_name in os.listdir(fullpath):
 		f.write('hinging_comp'+'\t'+str(hinging_comp_n50)+'\n')
 		f.write('hgap'+'\t'+str(hgap_n50)+'\n')
 
+	data_dict[nctc_name] = [hinging_n50,hinging_comp_n50,hgap_n50]
 
 	print count
 	print count1
 	print count2
+
+
+
+with open(fullpath+'computed.n50','w') as f:
+	for nctc_name in data_dict:
+		vec = data_dict[nctc_name]
+		f.write(nctc_name+'\t'+str(vec[0])+'\t'+str(vec[1])+'\t'+str(vec[2])+'\n')
+
 
 
