@@ -816,6 +816,7 @@ int main(int argc, char *argv[]) {
     std::ofstream out_fa(name_output);
 
     int num_contig = 0;
+    int num_one_read_contig = 0;
     while (true) {
         if (edges_file.eof()) break;
         edgelist.clear();
@@ -843,6 +844,29 @@ int main(int argc, char *argv[]) {
 
                 w = std::stoi(tokens[4]);
                 edgelist.push_back(std::make_tuple(node0, node1, w));
+            }
+
+
+            if (tokens.size() == 4) {
+                out_fa << ">OneReadContig" << num_one_read_contig << std::endl;
+
+
+
+                int node_id = std::stoi(tokens[0]);
+                int node_strand = std::stoi(tokens[1]);
+                int from = std::stoi(tokens[2]);
+                int to = std::stoi(tokens[3]);
+
+
+                std::string current_seq;
+
+
+                if (node_strand == 0) current_seq = reads[node_id]->bases;
+                else current_seq = reverse_complement(reads[node_id]->bases);
+
+                out_fa << current_seq.substr(from, to-from) << std::endl;
+
+                num_one_read_contig++;
             }
         }
 
@@ -1190,7 +1214,7 @@ int main(int argc, char *argv[]) {
         printf("In total %d lanes\n", lanes.size());
         if (lanes.size() == 0) {
             draft_assembly = breads[0];
-            out_fa << ">Draft_assembly" << num_contig << std::endl;
+            out_fa << ">DraftAssemblyContig" << num_contig << std::endl;
             out_fa << draft_assembly << std::endl;
             num_contig++;
             continue;
