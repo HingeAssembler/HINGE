@@ -604,7 +604,7 @@ int main(int argc, char *argv[]) {
     auto console = std::make_shared<spdlog::logger>("log", std::begin(sinks), std::end(sinks));
     spdlog::register_logger(console);
 
-    console->info("Hinging layout");
+    console->info("draft consensus");
     char *buff = (char *) malloc(sizeof(char) * 2000);
     getwd(buff);
     console->info("current user {}, current working directory {}", getlogin(), buff);
@@ -1011,6 +1011,7 @@ int main(int argc, char *argv[]) {
             alen = currentaln->alen;
             blen = currentaln->blen;
 
+
             if (std::get<0>(edgelist[i]).strand == 0) {
                 abpos = currentaln->read_A_match_start_;
                 aepos = currentaln->read_A_match_end_;
@@ -1026,8 +1027,7 @@ int main(int argc, char *argv[]) {
                 aee = alen - currentaln->eff_read_A_start_;
             }
 
-            if (((std::get<1>(edgelist[i]).strand == 0) and (currentaln->reverse_complement_match_ == 0)) or
-                ((std::get<1>(edgelist[i]).strand == 1) and (currentaln->reverse_complement_match_ == 1))) {
+            if (((std::get<1>(edgelist[i]).strand == 0))) {
                 bbpos = currentaln->read_B_match_start_;
                 bepos = currentaln->read_B_match_end_;
 
@@ -1042,8 +1042,12 @@ int main(int argc, char *argv[]) {
                 bee = blen - currentaln->eff_read_B_start_;
 
             }
+            aes = 0;
+            bes = 0;
+            aee = alen;
+            bee = blen;
 
-            printf("[[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", abpos, aepos, aes, aee, bbpos, bepos, bes, bee);
+            printf("%d %d [[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", std::get<0>(edgelist[i]).id, std::get<1>(edgelist[i]).id, abpos, aepos, aes, aee, bbpos, bepos, bes, bee);
 
             LOverlap *new_ovl = new LOverlap();
             new_ovl->read_A_match_start_ = abpos;
@@ -1281,12 +1285,12 @@ int main(int argc, char *argv[]) {
                 maxcoverage << "\n!";
 
 
-                if (ladders[i].size() == 2) {
-                    draft_assembly += breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),
-                                                                                 std::get<2>(ladders[i][mx]) -
-                                                                                 std::get<1>(ladders[i][mx]));
-                    continue;
-                }
+                //if (ladders[i].size() == 2) {
+                //    draft_assembly += breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),
+                //                                                                 std::get<2>(ladders[i][mx]) -
+                //                                                                 std::get<1>(ladders[i][mx]));
+                //    continue;
+               // }
 
 
                 std::string base = breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),
@@ -1366,7 +1370,7 @@ int main(int argc, char *argv[]) {
                 //printf("%d %d\n%s\n",seq_count, strlen(seq), seq);
 
                 consensus = get_cns_from_align_tags(tags_list, seq_count, alen + 1, 1);
-                //printf("Consensus:%s\n",consensus->sequence);
+                printf("Consensus len :%d\n",strlen(consensus->sequence));
                 draft_assembly += std::string(consensus->sequence);
 
                 free_consensus_data(consensus);

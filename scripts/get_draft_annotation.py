@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import sys
 import os
 import subprocess
@@ -52,8 +53,9 @@ def get_string(path):
 #         print read_id
 #         print read_dict[int(read_id)][str_st:str_end]
 #         print read_str
-
+        print 'read len',len(read_str)
         ret_str += read_str
+    print len(path), len(ret_str)
     return ret_str
 
 
@@ -103,7 +105,7 @@ for vertex in vertices_of_interest:
         read_tuples_raw[vertex] = (d['read_a_start_raw'], d['read_a_end_raw'])
     else:
         predecessors = in_graph.predecessors(vertex)
-        if not predecessors:
+        if not len(predecessors) == 0:
             pred = predecessors[0]
             d =  in_graph.get_edge_data(pred,vertex)
             read_tuples_raw[vertex] = (d['read_b_start_raw'], d['read_b_end_raw'])
@@ -118,7 +120,7 @@ for vertex in vertices_of_interest:
         path_var = [(vertex,(read_tuples[vertex][0], read_tuples[vertex][1]))]
     else:
         path_var = [(vertex,(read_tuples[vertex][1], read_tuples[vertex][0]))]
-    print path_var
+    #print path_var
     segment = get_string(path_var)
     h.node[vertex]['start_read'] = path_var[0][1][0]
     h.node[vertex]['end_read'] = path_var[0][1][1]
@@ -171,7 +173,7 @@ for start_vertex in vertices_of_interest:
         h.add_edges_from([(start_vertex,node_name),(node_name,cur_vertex)])
 #         paths.append(cur_path)
 
-print read_tuples
+#print read_tuples
 
 while set(in_graph.nodes())-vertices_used:
     vert = list(set(in_graph.nodes())-vertices_used)[0]
@@ -261,27 +263,17 @@ while set(in_graph.nodes())-vertices_used:
             h.node[node_name]['start_read'] = path_var[0][1][0]
             h.node[node_name]['end_read'] = path_var[-1][1][1]
             h.node[node_name]['segment'] = get_string(cur_path)
+            print len(cur_path)
             h.add_edges_from([(vertRC,node_name),(node_name,vertRC)])
 
 
-
-gfaname = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname+'_draft_python.gfa'
-with open(gfaname,'w') as f:
-    f.write("H\tVN:Z:1.0\n")
-    for vert in h.nodes():
-        seg = h.node[vert]['segment']+"\n"
-        seg_line = "S\t"+vert+"\t"+seg
-        f.write(seg_line)
-    for edge in h.edges():
-        edge_line = "L\t"+edge[0]+"\t+\t"+edge[1]+"\t+\t0M\n"
-        f.write(edge_line)
 
 outfile = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname + ".edges.list"
 
 vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
  len(nx.node_connected_component(h.to_undirected(), x)) > 2]
 
-while 1:
+while True:
 
     vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
  len(nx.node_connected_component(h.to_undirected(), x)) > 2]
@@ -289,27 +281,30 @@ while 1:
     if not vert_to_merge:
         break
     vert = vert_to_merge[0]
-    print vert,
+    #print vert,
     succ = h.successors(vert)[0]
     preds = h.predecessors(vert)
     h.node[succ]['segment'] =  h.node[vert]['segment'] + h.node[succ]['segment']
     h.node[succ]['path'] = h.node[vert]['path'] + h.node[succ]['path'][1:]
     for pred in preds:
-        print pred, succ
+        #print pred, succ
         h.add_edges_from([(pred,succ)])
         h.remove_edge(pred,vert)
     h.remove_edge(vert,succ)
     h.remove_node(vert)
 
+for  i, vert in enumerate(h.nodes()):
+    print i,len(h.node[vert]['path'])
+
 with open(outfile, 'w') as f:
     for i,node in enumerate(h.nodes()):
-        print node
+        #print node
         #print h.node[node]
         path = h.node[node]['path']
 
         f.write('>Unitig%d\n'%(i))
         if len(path) == 1:
-            print path[0]
+            #print path[0]
             f.write(' '.join([path[0].split('_')[0], path[0].split('_')[1], str(read_tuples_raw[path[0]][0]), str(read_tuples_raw[path[0]][1])]) + '\n')
         for j in range(len(path)-1):
             nodeA = path[j].lstrip("B")
@@ -323,8 +318,51 @@ with open(outfile, 'w') as f:
 
 out_graphml_name = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname+'_draft.graphml'
 
+
+
+gfaname = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname+'_draft_python.gfa'
+consensus_name = sys.argv[3]
+
+consensus_contigs = []
+try:
+    with open(consensus_name) as f:
+        for line in f:
+            if line[0] != '>':
+                consensus_contigs.append(line.strip())
+except:
+    pass
+for  i, vert in enumerate(h.nodes()):
+    print i,len(h.node[vert]['path']), len(h.node[vert]['segment']), len(consensus_contigs[i])
+
+
+with open(gfaname,'w') as f:
+    f.write("H\tVN:Z:1.0\n")
+    for i,vert in enumerate(h.nodes()):
+        if len(consensus_contigs) > 0:
+            seg = consensus_contigs[i]
+        else:
+            seg = h.node[vert]['segment']
+
+        seg_line = "S\t"+vert+"\t"+seg + '\n'
+        f.write(seg_line)
+    for edge in h.edges():
+        edge_line = "L\t"+edge[0]+"\t+\t"+edge[1]+"\t+\t0M\n"
+        f.write(edge_line)
+
+#last =  h.nodes()[-1]
+#print h.node[last]
+#path_last = h.node[last]['path']
+
+
+
+#for i in range(len(path_last)-1):
+#    read_a = path_last[i]
+#    read_b = path_last[i+1]
+#    print read_a, read_b, in_graph.edge[read_a][read_b]
+
 for i,node in enumerate(h.nodes()):
      h.node[node]['path'] = ';'.join(h.node[node]['path'])
 nx.write_graphml(h,out_graphml_name)
+
 
 

@@ -44,16 +44,17 @@ int main(int argc, char *argv[]) {
     std::string name_las = std::string(argv[3]);
 	char * name_out = argv[4];
 	char * name_config = argv[5];
-	
-	
+
+    std::ofstream out(name_out);
+
 	INIReader reader(name_config);
 
 	if (reader.ParseError() < 0) {
 	    std::cout << "Can't load "<<name_config<<std::endl;
 	    return 1;
 	}
-		
-		
+
+
 	int LENGTH_THRESHOLD = reader.GetInteger("consensus", "min_length", -1);
 	printf("length threshold:%d\n", LENGTH_THRESHOLD);
     //std::cout<<name_db1 << " " << name_db2 << " " << name_las <<std::endl;
@@ -63,10 +64,10 @@ int main(int argc, char *argv[]) {
     Read *test_read;
 
     la.openDB2(name_db1, name_db2);
-	
+
 	int n_reads = la.getReadNumber2();
     int n_contigs = la.getReadNumber();
-	
+
     std::cout<<"# Contigs:" << n_contigs << std::endl;
     std::cout<<"# Reads:" << n_reads << std::endl;
 
@@ -76,20 +77,20 @@ int main(int argc, char *argv[]) {
     la.openAlignmentFile(name_las);
 
 	int n_alns = la.getAlignmentNumber();
-	
+
     std::cout<<"# Alignments:" << n_alns << std::endl;
-	
+
 	//la.showAlignment(0,1);
-	
+
 	std::vector<LOverlap *> res1;
 	  	la.resetAlignment();
 	  	la.getOverlap(res1, 0, 1); // get alignment(overlap) for reads [3,5)
-	    	
+
 	for (auto i:res1)
 		i->show();
 	printf("\n");
-	
-	
+
+
     std::vector<LAlignment *> res;
     la.resetAlignment();
 	la.getAlignment(res, 0, n_alns); // get all alignments
@@ -113,8 +114,15 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < n_contigs; i++) {
 
+        int j = 0;
+        for (j = 0;j < idx[i].size(); j++)
+            if (idx[i][j]->aepos - idx[i][j]->abpos < 2000)
+                break;
 
-        int seq_count = idx[i].size();
+
+
+
+        int seq_count = j;
         printf("seq_count:%d\n",seq_count);
 
         align_tags_t ** tags_list;
@@ -179,12 +187,14 @@ int main(int argc, char *argv[]) {
             if (q_aln_str!=NULL) free(q_aln_str);
             if (t_aln_str!=NULL) free(t_aln_str);
             if (arange!=NULL) free_aln_range(arange);
+            q_aln_str = NULL;
+            t_aln_str = NULL;
+            arange = NULL;
         }
-
 
         consensus_data * consensus;
         consensus = get_cns_from_align_tags_large( tags_list, seq_count+1, strlen(seq), 6 );
-        std::ofstream out(name_out);
+
         printf("Length:%d\n", strlen(consensus->sequence));
         out << ">Consensus" << i << std::endl << consensus->sequence<<std::endl;
         free_consensus_data(consensus);
