@@ -16,13 +16,6 @@
 #include "DB.h"
 #include "align.h"
 #include "LAInterface.h"
-#include "OverlapGraph.h"
-
-//#include <ogdf/basic/Graph.h>
-//#include <ogdf/basic/graph_generators.h>
-//#include <ogdf/basic/Hashing.h>
-//#include <ogdf/basic/simple_graph_alg.h>
-//#include <ogdf/basic/HashArray.h>
 
 #include <utility>
 #include <boost/graph/adjacency_list.hpp>

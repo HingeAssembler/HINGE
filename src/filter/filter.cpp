@@ -21,7 +21,6 @@
 #include "DB.h"
 #include "align.h"
 #include "LAInterface.h"
-#include "OverlapGraph.h"
 #include "cmdline.h"
 
 #define LAST_READ_SYMBOL  '$'
