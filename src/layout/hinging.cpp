@@ -1782,15 +1782,7 @@ int main(int argc, char *argv[]) {
     << " backward overlaps " << num_reverse_internal_overlaps
     << " backward internal overlaps "<< rev_complemented_matches << " reverse complement overlaps" << std::endl;
      */
-/*    int test_read_no(1291);
-    for (int j = 0; j < matches_forward[test_read_no].size(); j++){
-        if (matches_forward[test_read_no][j]->active){
-            std::cout << matches_forward[test_read_no][j]->read_A_id_ << "\t"
-                    << matches_forward[test_read_no][j]->read_B_id_ << "\t"
-                    << matches_forward[test_read_no][j]->match_type_ << "\t"
-                    << matches_forward[test_read_no][j]->weight << std::endl ;
-        }
-    }*/
+
 
     std::ofstream debug_fle("hinge_debug.txt");
 
@@ -1813,11 +1805,7 @@ int main(int argc, char *argv[]) {
 
 
             for (int j = 0; j < matches_forward[i].size(); j++){
-//                if(i==227622) {
-//                    debug_fle << i << "\t" << forward << "\t" << matches_forward[i][j]->match_type_
-//                            << "\t" << matches_forward[i][j]->weight << "\t"
-//                    << matches_forward[i][j]->active << std::endl;
-//                }
+
 
                 if (matches_forward[i][j]->active) {
 
