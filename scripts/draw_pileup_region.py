@@ -17,8 +17,8 @@ right = int(sys.argv[2])
 ref = sys.argv[3]
 read = sys.argv[4]
 las = sys.argv[5]
-
-length_th = int(sys.argv[6])
+contig = sys.argv[6]
+length_th = int(sys.argv[7])
 
 #path = '/data/pacbio_assembly/AwesomeAssembler/data/ecoli/'
 aln = []
@@ -37,7 +37,7 @@ aln = []
 #bb = set(bb)
 
 
-for i,item in enumerate(util.get_alignments_mapping2(ref, read, las)):
+for i,item in enumerate(util.get_alignments_mapping3(ref, read, las, contig)):
     if i%2000 == 0:
         print i, item
 
