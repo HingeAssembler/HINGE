@@ -18,6 +18,8 @@ ref = sys.argv[3]
 read = sys.argv[4]
 las = sys.argv[5]
 
+length_th = int(sys.argv[6])
+
 #path = '/data/pacbio_assembly/AwesomeAssembler/data/ecoli/'
 aln = []
 
@@ -39,7 +41,7 @@ for i,item in enumerate(util.get_alignments_mapping2(ref, read, las)):
     if i%2000 == 0:
         print i, item
 
-    if item[3] >= left and item[4] <= right:
+    if item[3] >= left and item[4] <= right and item[4] - item[3] > length_th:
         aln.append(item)
 
 
