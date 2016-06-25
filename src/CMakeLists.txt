@@ -44,6 +44,4 @@ add_subdirectory(layout layout)
 
 ## Tests
 
-add_subdirectory(googletest)
-
 add_subdirectory(test)

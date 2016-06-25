@@ -21,7 +21,6 @@
 #include "DB.h"
 #include "align.h"
 #include "LAInterface.h"
-#include "OverlapGraph.h"
 #include "cmdline.h"
 
 #define LAST_READ_SYMBOL  '$'
@@ -816,34 +815,14 @@ int main(int argc, char *argv[]) {
                         left_overhang= std::max(maskvec[temp_id].second-idx_pileup[i][k]->read_B_match_end_,0);
                     }
 
-//                    if (i==174201) {
-//                        debug_file << i << "\tRead B stats\t"
-//                        << maskvec[i].first << "\t" << maskvec[i].second <<  "\n"
-//                        << temp_id << "\t" << idx_pileup[i][k]->read_B_match_start_
-//                        << "\t" << idx_pileup[i][k]->read_B_match_end_ << "\t"
-//                        << idx_pileup[i][k]->reverse_complement_match_  << "\t"
-//                        << maskvec[temp_id].first << "\t"
-//                        << maskvec[temp_id].second << "\t" << left_overhang
-//                        <<  "\t" << right_overhang << std::endl;
-//                    }
+
 
                     if (right_overhang > THETA) {
                         if ((idx_pileup[i][k]->read_A_match_end_ >
                              repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
                             and (idx_pileup[i][k]->read_A_match_end_ <
                                  repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
-//                            if (i==174201) {
-//                                temp_id=idx_pileup[i][k]->read_B_id_;
-//                                debug_file << i << "\tRead B stats******\t"
-//                                << maskvec[i].first << "\t" << maskvec[i].second <<  "\n"
-//                                << temp_id << "\t" << idx_pileup[i][k]->read_B_match_start_
-//                                << "\t" << idx_pileup[i][k]->read_B_match_end_ << "\t"
-//                                << idx_pileup[i][k]->reverse_complement_match_ <<"\t"
-//                                << maskvec[temp_id].first << "\t"
-//                                << maskvec[temp_id].second << "\n"
-//                                << idx_pileup[i][k]->read_A_match_start_ <<"\t"
-//                                << idx_pileup[i][k]->read_A_match_end_ << std::endl;
-//                            }
+
 
                             std::pair <int,int> other_end;
                             other_end.first=idx_pileup[i][k]->read_A_match_start_;
@@ -859,15 +838,7 @@ int main(int argc, char *argv[]) {
                 }
 
                 std::sort(read_other_ends.begin(),read_other_ends.end(), pairAscend);
-//                if (i==174201){
-//                    debug_file << "==========================\n";
-//                    debug_file << repeat_annotation[i][j].second <<"\n";
-//                    for (int id = 0; id < read_other_ends.size() ; ++id){
-//                        debug_file << read_other_ends[id].first <<"\t"
-//                        << read_other_ends[id].second << std::endl;
-//                    }
-//                    debug_file << "==========================\n";
-//                }
+
                 int num_reads_considered=0;
                 int num_reads_extending_to_end=0;
                 int num_reads_with_internal_overlaps=0;
@@ -876,12 +847,7 @@ int main(int argc, char *argv[]) {
                     if (read_other_ends[id].first -maskvec[i].first < HINGE_BIN_LENGTH){
                         num_reads_considered++;
                         num_reads_extending_to_end++;
-//                        if (i==174201){
-//                            debug_file << num_reads_extending_to_end
-//                            << "\t" <<  num_reads_considered
-//                            << "\t" << num_reads_with_internal_overlaps
-//                            <<"\t" << read_other_ends[id].first - read_other_ends[0].first << std::endl;
-//                        }
+
                         if ((num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD) or
                             ((num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) and
                             (read_other_ends[id].first - read_other_ends[0].first > HINGE_BIN_LENGTH))) {
@@ -891,11 +857,7 @@ int main(int argc, char *argv[]) {
                     }
                     else if  (read_other_ends[id].second < THETA){
                         num_reads_considered++;
-//                        if (i==174201){
-//                            debug_file << num_reads_extending_to_end
-//                            << "\t" <<  num_reads_considered
-//                            <<"\t" << read_other_ends[id].first - read_other_ends[0].first << std::endl;
-//                        }
+
                         if ((num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD) or
                             ((num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) and
                              (read_other_ends[id].first - read_other_ends[0].first > HINGE_BIN_LENGTH))) {
@@ -908,11 +870,7 @@ int main(int argc, char *argv[]) {
                         num_reads_considered++;
                         int id1=id+1;
                         int pileup_length=1;
-//                        if (i==174201){
-//                            debug_file << num_reads_extending_to_end
-//                            << "\t" <<  num_reads_considered
-//                            << "\t" << num_reads_with_internal_overlaps << std::endl;
-//                        }
+
                         while (id1 < read_other_ends.size()){
                             if (read_other_ends[id1].first - read_other_ends[id].first  < HINGE_BIN_LENGTH){
                                 pileup_length++;
@@ -922,12 +880,7 @@ int main(int argc, char *argv[]) {
                                 break;
                             }
                         }
-//                        if (i==174201){
-//                            debug_file << num_reads_extending_to_end
-//                            << "\t" <<  num_reads_considered
-//                            << "\t" << num_reads_with_internal_overlaps
-//                            <<"\tPileup" << pileup_length << std::endl;
-//                        }
+
                         if (pileup_length > HINGE_BIN_PILEUP_THRESHOLD){
                             bridged=true;
                             break;
@@ -937,9 +890,6 @@ int main(int argc, char *argv[]) {
                 if ((not bridged) and (support > HINGE_MIN_SUPPORT))
                     hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first,-1));
 
-//                if (i==174201){
-//                    debug_file << bridged << "\n"<<"---------------------------"<<std::endl;
-//                }
 
             } else { // look for in_hinges, positive gradient
                 bool bridged = true;
@@ -963,33 +913,13 @@ int main(int argc, char *argv[]) {
                         left_overhang= std::max(maskvec[temp_id].second-idx_pileup[i][k]->read_B_match_end_,0);
                     }
 
-//                    if (i==174201) {
-//                        temp_id=idx_pileup[i][k]->read_B_id_;
-//                        debug_file << i << "\tRead B stats\t"
-//                        << maskvec[i].first << "\t" << maskvec[i].second <<  "\n"
-//                        << temp_id << "\t" << idx_pileup[i][k]->read_B_match_start_
-//                        << "\t" << idx_pileup[i][k]->read_B_match_end_ << "\t"
-//                        << idx_pileup[i][k]->reverse_complement_match_ <<"\t"
-//                        << maskvec[temp_id].first << "\t"
-//                        << maskvec[temp_id].second << std::endl;
-//                    }
+
                     if (left_overhang > THETA) {
                         if ((idx_pileup[i][k]->read_A_match_start_ >
                              repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
                             and (idx_pileup[i][k]->read_A_match_start_ <
                                  repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
-//                            if (i==174201) {
-//                                temp_id=idx_pileup[i][k]->read_B_id_;
-//                                debug_file << i << "\tRead B stats******\t"
-//                                << maskvec[i].first << "\t" << maskvec[i].second <<  "\n"
-//                                << temp_id << "\t" << idx_pileup[i][k]->read_B_match_start_
-//                                << "\t" << idx_pileup[i][k]->read_B_match_end_ << "\t"
-//                                << idx_pileup[i][k]->reverse_complement_match_ <<"\t"
-//                                << maskvec[temp_id].first << "\t"
-//                                << maskvec[temp_id].second << "\n"
-//                                << idx_pileup[i][k]->read_A_match_start_ <<"\t"
-//                                << idx_pileup[i][k]->read_A_match_end_ << std::endl;
-//                            }
+
                             std::pair <int,int> other_end;
                             other_end.first=idx_pileup[i][k]->read_A_match_end_;
                             other_end.second=right_overhang;
@@ -1005,15 +935,7 @@ int main(int argc, char *argv[]) {
 
                 std::sort(read_other_ends.begin(),read_other_ends.end(),pairDescend);//Sort in descending order
 
-//                if (i==174201){
-//                    debug_file << "==========================\n";
-//                    debug_file << repeat_annotation[i][j].second <<"\n";
-//                    for (int id = 0; id < read_other_ends.size() ; ++id){
-//                        debug_file << read_other_ends[id].first <<"\t"
-//                        << read_other_ends[id].second << std::endl;
-//                    }
-//                    debug_file << "==========================\n";
-//                }
+
                 int num_reads_considered=0;
                 int num_reads_extending_to_end=0;
                 int num_reads_with_internal_overlaps=0;
@@ -1024,12 +946,7 @@ int main(int argc, char *argv[]) {
                     if (maskvec[i].second-read_other_ends[id].first < HINGE_BIN_LENGTH){
                         num_reads_considered++;
                         num_reads_extending_to_end++;
-//                        if (i==174201){
-//                            debug_file << num_reads_extending_to_end
-//                            << "\t" <<  num_reads_considered
-//                            << "\t" << num_reads_with_internal_overlaps
-//                            <<"\t" << read_other_ends[0].first - read_other_ends[id].first << std::endl;
-//                        }
+
                         if ((num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD) or
                             ((num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) and
                              (read_other_ends[0].first - read_other_ends[id].first > HINGE_BIN_LENGTH))) {
@@ -1039,12 +956,7 @@ int main(int argc, char *argv[]) {
                     }
                     else if  (read_other_ends[id].second < THETA){
                         num_reads_considered++;
-//                        if (i==174201){
-//                            debug_file << num_reads_extending_to_end
-//                            << "\t" <<  num_reads_considered
-//                            << "\t" << num_reads_with_internal_overlaps
-//                            <<"\t" << read_other_ends[0].first - read_other_ends[id].first << std::endl;
-//                        }
+
                         if ((num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD) or
                             ((num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) and
                              (read_other_ends[0].first - read_other_ends[id].first > HINGE_BIN_LENGTH))) {
@@ -1057,11 +969,7 @@ int main(int argc, char *argv[]) {
                         num_reads_considered++;
                         int id1=id+1;
                         int pileup_length=1;
-//                        if (i==174201){
-//                            debug_file << num_reads_extending_to_end
-//                            << "\t" <<  num_reads_considered
-//                            << "\t" << num_reads_with_internal_overlaps << std::endl;
-//                        }
+
                         while (id1 < read_other_ends.size()){
                             if (read_other_ends[id].first - read_other_ends[id1].first  < HINGE_BIN_LENGTH){
                                 pileup_length++;
@@ -1071,12 +979,7 @@ int main(int argc, char *argv[]) {
                                 break;
                             }
                         }
-//                        if (i==174201){
-//                            debug_file << num_reads_extending_to_end
-//                            << "\t" <<  num_reads_considered
-//                            << "\t" << num_reads_with_internal_overlaps
-//                            <<"\tPileup" << pileup_length << std::endl;
-//                        }
+
                         if (pileup_length > HINGE_BIN_PILEUP_THRESHOLD){
                             bridged=true;
                             break;
@@ -1087,9 +990,7 @@ int main(int argc, char *argv[]) {
                 if ((not bridged) and (support > HINGE_MIN_SUPPORT))
                     hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first, 1));
 
-//                if (i==174201){
-//                    debug_file << bridged << "\n"<<"---------------------------"<<std::endl;
-//                }
+
             }
         }
     }
