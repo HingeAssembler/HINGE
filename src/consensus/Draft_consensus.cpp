@@ -113,16 +113,22 @@ int main(int argc, char *argv[]) {
     }
 
     for (int i = 0; i < n_contigs; i++) {
+        for (int j = 0; j < idx[i].size(); j++)
+        {
+            la.recoverAlignment(idx[i][j]);
+            idx[i][j]->show();
+        }
+    }
+    for (int i = 0; i < n_contigs; i++) {
 
-        int j = 0;
-        for (j = 0;j < idx[i].size(); j++)
-            if (idx[i][j]->aepos - idx[i][j]->abpos < 2000)
+        int k = 0;
+        for (k = 0;k < idx[i].size(); k++)
+            if (idx[i][k]->aepos - idx[i][k]->abpos < LENGTH_THRESHOLD)
                 break;
 
 
 
-
-        int seq_count = j;
+        int seq_count = k;
         printf("seq_count:%d\n",seq_count);
 
         align_tags_t ** tags_list;
@@ -151,8 +157,8 @@ int main(int argc, char *argv[]) {
 
 
         for (int j = 0; j < seq_count ; j ++) {
-
-
+            printf("j = %d/%d\n", j, seq_count);
+            idx[i][j]->show();
             la.recoverAlignment(idx[i][j]);
             std::pair<std::string, std::string>  alignment = la.getAlignmentTags(idx[i][j]);
 
