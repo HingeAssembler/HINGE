@@ -116,7 +116,7 @@ for i,aln_group in enumerate(alns):
         #if item[2] in bb:
         #    polygon = plt.Polygon(points,fc = 'r', ec = 'none', alpha = 0.8)
         #else:
-        #    polygon = plt.Polygon(points,fc = 'b', ec = 'none', alpha = 0.6)
+        polygon = plt.Polygon(points,fc = 'b', ec = 'none', alpha = 0.6)
 
         polygon.set_url("http://shannon.stanford.edu:5000/aln" + str(item[2]+1) + ".pdf")
         plt.gca().add_patch(polygon)
