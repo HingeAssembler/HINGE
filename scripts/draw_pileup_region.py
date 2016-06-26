@@ -43,6 +43,14 @@ for i,item in enumerate(util.get_alignments_mapping3(ref, read, las, contig)):
 
     if item[3] >= left and item[4] <= right and item[4] - item[3] > length_th:
         aln.append(item)
+        
+        
+        
+covy = np.zeros((right - left, ))
+for item in aln:
+    covy[item[3] - left : item[4] - left] += 1
+    
+covx = np.arange(left, right)
 
 
 print 'number:',len(aln)
@@ -68,26 +76,31 @@ print len(aln), len(alns)
 alns.sort(key = lambda x:min([item[3] for item in x]))
 
 
-plt.figure(figsize = (15,10))
+
+fig = plt.figure(figsize = (15,10))
 plt.axes()
+ax1 = plt.subplot2grid((6,6), (0, 0), colspan=6, rowspan=4)
+ax2 = plt.subplot2grid((6,6), (4, 0), colspan=6, rowspan=1, sharex = ax1)
+
+
 #plt.gca().axes.get_yaxis().set_visible(False)
 #l = aln[0][5]
 tip = (right-left)/5000
 ed = (right-left)/2000
 grid_size = 1.0
-plt.xlim(left-2000,right+2000)
-plt.ylim(-5,num*grid_size)
+ax1.set_xlim(left-2000,right+2000)
+ax1.set_ylim(-5,num*grid_size)
 
 points = [[left,0], [right,0], [right+tip,grid_size/4], [right,grid_size/2], [left,grid_size/2]]
 #rectangle = plt.Rectangle((0, 0), l, 5, fc='r',ec = 'none')
 polygon = plt.Polygon(points,fc = 'r', ec = 'none', alpha = 0.6)
-plt.gca().add_patch(polygon)
+ax1.add_patch(polygon)
 
 dotted_line = plt.Line2D((left, left), (0, num*grid_size ),ls='-.')
-plt.gca().add_line(dotted_line)
+ax1.add_line(dotted_line)
 
 dotted_line2 = plt.Line2D((right, right), (0, num*grid_size ),ls='-.')
-plt.gca().add_line(dotted_line2)
+ax1.add_line(dotted_line2)
 
 for i,aln_group in enumerate(alns):
     for item in aln_group:
@@ -119,14 +132,21 @@ for i,aln_group in enumerate(alns):
         polygon = plt.Polygon(points,fc = 'b', ec = 'none', alpha = 0.6)
 
         polygon.set_url("http://shannon.stanford.edu:5000/aln" + str(item[2]+1) + ".pdf")
-        plt.gca().add_patch(polygon)
+        ax1.add_patch(polygon)
 
         if points_end != []:
             polygon2 = plt.Polygon(points_end,fc = 'g', ec = 'none', alpha = 0.6)
-            plt.gca().add_patch(polygon2)
+            ax1.add_patch(polygon2)
 
         if points_start != []:
             polygon2 = plt.Polygon(points_start,fc = 'g', ec = 'none', alpha = 0.6)
-            plt.gca().add_patch(polygon2)
+            ax1.add_patch(polygon2)
 
-plt.savefig('mapping/map.' + str(left) +'_'+ str(right)+ '.svg')
+
+ax2.plot(covx, covy)
+plt.xlabel('position')
+ax1.set_ylabel('pile-o-gram')
+ax2.set_ylabel('coverage')
+
+
+plt.savefig('mapping/map.' + str(contig) + '_' + str(left) +'_'+ str(right)+ '.svg')
