@@ -9,8 +9,8 @@ import sys
 import numpy as np
 import ujson
 from colormap import rgb2hex
-import operator
-import matplotlib.colors
+
+
 # print G.number_of_edges(),G.number_of_nodes()
 
 
@@ -219,16 +219,12 @@ def dead_end_clipping_sym(G,threshold,print_debug = False):
 
                 cur_node = H.successors(cur_node)[0]
 
-                if len(cur_path) > threshold + 1:
-                    break
-
-
         if print_debug:
             print '----2'
             print cur_path
 
 
-        if len(cur_path) <= threshold and (H.in_degree(cur_node) > 1 or H.out_degree(cur_node) == 0):
+        if len(cur_path) <= threshold:
             for vertex in cur_path:
                 # try:
                 if print_debug:
@@ -611,22 +607,14 @@ def resolve_rep(g,rep_path,in_node,out_node):
         read_a_start=g.edge[in_node][rep_path[0]]['read_a_start'],
         read_a_end=g.edge[in_node][rep_path[0]]['read_a_end'],
         read_b_start=g.edge[in_node][rep_path[0]]['read_b_start'],
-        read_b_end=g.edge[in_node][rep_path[0]]['read_b_end'],
-        read_a_start_raw=g.edge[in_node][rep_path[0]]['read_a_start_raw'],
-        read_a_end_raw=g.edge[in_node][rep_path[0]]['read_a_end_raw'],
-        read_b_start_raw=g.edge[in_node][rep_path[0]]['read_b_start_raw'],
-        read_b_end_raw=g.edge[in_node][rep_path[0]]['read_b_end_raw'])
+        read_b_end=g.edge[in_node][rep_path[0]]['read_b_end'])
     g.remove_edge(in_node,rep_path[0])
 
     g.add_edge(prefix+rep_path[-1],out_node,
         read_a_start=g.edge[rep_path[-1]][out_node]['read_a_start'],
         read_a_end=g.edge[rep_path[-1]][out_node]['read_a_end'],
         read_b_start=g.edge[rep_path[-1]][out_node]['read_b_start'],
-        read_b_end=g.edge[rep_path[-1]][out_node]['read_b_end'],
-        read_a_start_raw=g.edge[rep_path[-1]][out_node]['read_a_start_raw'],
-        read_a_end_raw=g.edge[rep_path[-1]][out_node]['read_a_end_raw'],
-        read_b_start_raw=g.edge[rep_path[-1]][out_node]['read_b_start_raw'],
-        read_b_end_raw=g.edge[rep_path[-1]][out_node]['read_b_end_raw'])
+        read_b_end=g.edge[rep_path[-1]][out_node]['read_b_end'])
     g.remove_edge(rep_path[-1],out_node)
 
 
@@ -634,21 +622,13 @@ def resolve_rep(g,rep_path,in_node,out_node):
         read_a_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_start'],
         read_a_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_end'],
         read_b_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_start'],
-        read_b_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_end'],
-        read_a_start_raw=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_start_raw'],
-        read_a_end_raw=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_end_raw'],
-        read_b_start_raw=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_start_raw'],
-        read_b_end_raw=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_end_raw'])
+        read_b_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_end'])
     g.remove_edge(rev_node(rep_path[0]),rev_node(in_node))
     g.add_edge(rev_node(out_node),rev_node(prefix+rep_path[-1]),
         read_a_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_start'],
         read_a_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_end'],
         read_b_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_start'],
-        read_b_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_end'],
-        read_a_start_raw=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_start_raw'],
-        read_a_end_raw=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_end_raw'],
-        read_b_start_raw=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_start_raw'],
-        read_b_end_raw=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_end_raw'])
+        read_b_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_end'])
     g.remove_edge(rev_node(out_node),rev_node(rep_path[-1]))
 
 
@@ -659,20 +639,12 @@ def resolve_rep(g,rep_path,in_node,out_node):
             read_a_start=g.edge[rep_path[i]][rep_path[i+1]]['read_a_start'],
             read_a_end=g.edge[rep_path[i]][rep_path[i+1]]['read_a_end'],
             read_b_start=g.edge[rep_path[i]][rep_path[i+1]]['read_b_start'],
-            read_b_end=g.edge[rep_path[i]][rep_path[i+1]]['read_b_end'],
-            read_a_start_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_a_start_raw'],
-            read_a_end_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_a_end_raw'],
-            read_b_start_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_b_start_raw'],
-            read_b_end_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_b_end_raw'])
+            read_b_end=g.edge[rep_path[i]][rep_path[i+1]]['read_b_end'])
         g.add_edge(rev_node(prefix+rep_path[i+1]),rev_node(prefix+rep_path[i]),
             read_a_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_start'],
             read_a_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_end'],
             read_b_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_start'],
-            read_b_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_end'],
-            read_a_start_raw=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_start_raw'],
-            read_a_end_raw=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_end_raw'],
-            read_b_start_raw=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_start_raw'],
-            read_b_end_raw=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_end_raw'])
+            read_b_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_end'])
 
 
 
@@ -684,8 +656,6 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
     if print_debug:
         print '----'
         print starting_nodes
-
-    tandem = []
 
     for st_node in starting_nodes:
 
@@ -772,18 +742,7 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
                 resolve_rep(g,rep,in_node,other_successor)
     #             print next_double_node
 
-                if node_cnt < 5:
-
-                    tandem.append(rep)
-
-
-
                 continue
-
-    if len(tandem) > 0:
-        with open('tandem.txt', 'w') as tandemout:
-            for rep in tandem:
-                tandemout.write(str(rep))
 
 
     return g
@@ -814,7 +773,7 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
         # print node_base
 
         #print node
-        g.node[node]['normpos'] = 0
+        # g.node[node]['normpos'] = 0.0
         if mapping.has_key(node_base):
             g.node[node]['chr'] = mapping[node_base][0][2]+1
             g.node[node]['aln_start'] = min (mapping[node_base][0][0],mapping[node_base][0][1])
@@ -840,55 +799,28 @@ def add_groundtruth(g,json_file,in_hinges,out_hinges):
         else:
             chr_length_dict[g.node[node]['chr']] = max(g.node[node]['aln_end'], 1)
 
-    chr_list = sorted(chr_length_dict.items(), key=operator.itemgetter(1), reverse=True)
-
-    max_chr_len1 = max([g.node[x]['aln_end'] for x in  g.nodes()])
-    max_chr_multiplier = 10**len(str(max_chr_len1))
-    print [x for x in chr_list]
-    chr_set =[x [0] for x in chr_list]
-    print chr_set
-    # red_bk = 102
-    # green_bk = 102
-    # blue_bk = 102
-    colour_list = ['red', 'lawngreen', 'deepskyblue', 'deeppink', 'darkorange', 'purple', 'gold', 'mediumblue',   'saddlebrown', 'darkgreen']
-    for colour in colour_list:
-        print  matplotlib.colors.colorConverter.to_rgb(colour)
-    for index, chrom in enumerate(chr_set):
+    chr_set = set([g.node[x]['chr'] for x in g.nodes()])
+    red_bk = 102
+    green_bk = 102
+    blue_bk = 102
+    for chrom in chr_set:
         node_set = set([x for x in  g.nodes() if g.node[x]['chr'] == chrom])
-        print chrom
 
+        max_chr_len = float(max([g.node[x]['aln_end'] for x in  g.nodes() if g.node[x]['chr'] == chrom]))
 
-        max_chr_len = max([g.node[x]['aln_end'] for x in  g.nodes() if g.node[x]['chr'] == chrom])
-        # max_chr_multiplier = 10**len(str(max_chr_len))
-
-
-        if index < 10:
-            rgb_tuple = matplotlib.colors.colorConverter.to_rgb(colour_list[index])
-            red = int(255*rgb_tuple[0])
-            green = int(255*rgb_tuple[1])
-            blue = int(255*rgb_tuple[2])
-        else:
-            red = random.randint(0,255)
-            # green = random.randint(0,255)
-            blue = random.randint(0,255)
-            brightness = 200
-            green  = max(0,min( 255,brightness - int((0.2126 *red +  0.0722 *blue)/0.7152 )))
-
-        red_bk = max(red-100,0)
-        blue_bk = max(blue-100,0)
-        green_bk = max(green-100,0)
-
-        print red,blue,green
+        red = random.randint(0,255)
+        green = random.randint(0,255)
+        blue = random.randint(0,255)
         for node in node_set:
-            g.node[node]['normpos'] = g.node[node]['chr'] * max_chr_multiplier + (g.node[node]['aln_end']/float(max_chr_len))*max_chr_multiplier
-            lamda = (g.node[node]['aln_end']/max_chr_len)
+            lamda = (g.node[node]['aln_end']/max_chr_len)**3
             nd_red = (1-lamda)*red + lamda*red_bk
             nd_green = (1-lamda)*green + lamda*green_bk
             nd_blue = (1-lamda)*blue + lamda*blue_bk
-            g.node[node]['color'] = rgb2hex(nd_red, nd_green, nd_blue)
             g.node[node]['color_r'] = nd_red
             g.node[node]['color_g'] = nd_green
             g.node[node]['color_b'] = nd_blue
+
+
 
     # max_chr_len = len(str(max_chr))
 
@@ -1139,10 +1071,10 @@ with open (flname) as f:
                 read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
             G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),
                 hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0,
-                read_a_start=rb_start,read_a_end=rb_end,
-                read_b_start=ra_start,read_b_end=ra_end,
-                read_a_start_raw=rb_start_raw,read_a_end_raw=rb_end_raw,
-                read_b_start_raw=ra_start_raw,read_b_end_raw=ra_end_raw)
+                read_a_start=ra_start,read_a_end=ra_end,
+                read_b_start=rb_start,read_b_end=rb_end,
+                read_a_start_raw=ra_start_raw,read_a_end_raw=ra_end_raw,
+                read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
         else:
             G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],
                 hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0,
@@ -1152,10 +1084,10 @@ with open (flname) as f:
                 read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
             G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),
                 hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0,
-                read_a_start=rb_start,read_a_end=rb_end,
-                read_b_start=ra_start,read_b_end=ra_end,
-                read_a_start_raw=rb_start_raw,read_a_end_raw=rb_end_raw,
-                read_b_start_raw=ra_start_raw,read_b_end_raw=ra_end_raw)
+                read_a_start=ra_start,read_a_end=ra_end,
+                read_b_start=rb_start,read_b_end=rb_end,
+                read_a_start_raw=ra_start_raw,read_a_end_raw=ra_end_raw,
+                read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
 
 
 
@@ -1165,8 +1097,6 @@ with open (flname) as f:
         towrite= lines1[1] + "_" + str(1-int(lines1[4])) +' '+ lines1[0] + "_" + str(1-int(lines1[3])) +' '+ lines1[2]+' '+str(int(lines1[13][:-1])-int(lines1[12][1:]))+' '+str(int(lines1[11][:-1])-int(lines1[10][1:]))
         Ginfo[(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])))] = towrite
 
-
-nx.write_graphml(G, prefix+suffix+'.'+'G00'+'.graphml')
 
 
 

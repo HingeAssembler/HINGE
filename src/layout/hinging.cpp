@@ -278,7 +278,7 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
         hinged = HINGED_EDGE;
 
     if ((match->match_type_ == FORWARD_INTERNAL) or (match->match_type_ == FORWARD)) {
-        fprintf(file_pointer, "%d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
+        fprintf(file_pointer, "%d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] [%d %d] [%d %d]\n",
                 match->read_A_id_,
                 match->read_B_id_,
                 match->weight,
@@ -292,10 +292,18 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
                 match->eff_read_A_start_,
                 match->eff_read_A_end_,
                 match->eff_read_B_start_,
-                match->eff_read_B_end_);
+                match->eff_read_B_end_,
+
+                match->read_A_match_start_,
+                match->read_A_match_end_,
+                match->read_B_match_start_,
+                match->read_B_match_end_
+
+
+                );
     }
     else if ((match->match_type_ == BACKWARD_INTERNAL) or (match->match_type_ == BACKWARD)){
-        fprintf(file_pointer, "%d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
+        fprintf(file_pointer, "%d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] [%d %d] [%d %d]\n",
                 match->read_B_id_,
                 match->read_A_id_,
                 match->weight,
@@ -309,7 +317,14 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
                 match->eff_read_B_start_,
                 match->eff_read_B_end_,
                 match->eff_read_A_start_,
-                match->eff_read_A_end_);
+                match->eff_read_A_end_,
+
+                match->read_A_match_start_,
+                match->read_A_match_end_,
+                match->read_B_match_start_,
+                match->read_B_match_end_
+
+        );
     }
 }
 
@@ -452,7 +467,10 @@ int main(int argc, char *argv[]) {
     std::string name_cov = out + ".coverage.txt";
     std::string name_garbage = out + ".garbage.txt";
     std::string name_contained = out + ".contained.txt";
+    std::string name_deadend = out_name + ".deadends.txt";
 
+
+    std::ofstream deadend_out(name_deadend);
     std::ofstream maximal_reads(name_max);
     std::ofstream garbage_out(name_garbage);
     std::ofstream contained_out(name_contained);
@@ -460,7 +478,7 @@ int main(int argc, char *argv[]) {
     std::vector<int> homo_reads;
 
 
-    bool delete_telomere = true;
+    bool delete_telomere = false;  // TODO: command line option to set this true
 
     int read_id;
     while (homo >> read_id) homo_reads.push_back(read_id);
@@ -483,6 +501,8 @@ int main(int argc, char *argv[]) {
     free(buff);
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
     console->info("name of fasta: {}, name of .paf file {}", name_fasta, name_paf);
+    console->info("filter files prefix: {}", out);
+    console->info("output prefix: {}", out_name);
 
 
     std::ifstream ini_file(name_config);
@@ -573,6 +593,10 @@ int main(int argc, char *argv[]) {
 
     int NUM_EVENTS_TELOMERE = (int) reader.GetInteger("layout", "num_events_telomere", 7);
 
+    int MIN_CONNECTED_COMPONENT_SIZE = (int) reader.GetInteger("layout", "min_connected_component_size", 8);
+
+    bool USE_TWO_MATCHES = (int) reader.GetInteger("layout", "use_two_matches", 1);
+
 
     console->info("LENGTH_THRESHOLD = {}", LENGTH_THRESHOLD);
     console->info("QUALITY_THRESHOLD = {}", QUALITY_THRESHOLD);
@@ -588,6 +612,12 @@ int main(int argc, char *argv[]) {
     console->info("KILL_HINGE_OVERLAP_ALLOWANCE = {}", KILL_HINGE_OVERLAP_ALLOWANCE);
     console->info("KILL_HINGE_INTERNAL_ALLOWANCE = {}", KILL_HINGE_INTERNAL_ALLOWANCE);
     console->info("MATCHING_HINGE_SLACK = {}", MATCHING_HINGE_SLACK);
+    console->info("MIN_CONNECTED_COMPONENT_SIZE = {}", MIN_CONNECTED_COMPONENT_SIZE);
+    console->info("USE_TWO_MATCHES = {}", USE_TWO_MATCHES);
+
+
+
+
 
 
     omp_set_num_threads(N_PROC);
@@ -805,6 +835,37 @@ int main(int argc, char *argv[]) {
 
             }
 
+
+            if ((it->second.size() > 1) and (USE_TWO_MATCHES)) {
+                //Figure out if read is contained
+                LOverlap *ovl = it->second[1];
+                bool contained_alignment;
+
+                if (strlen(name_db) > 0)
+                    contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                           reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, true);
+                else
+                    contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                           reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, false);
+                if (contained_alignment == true) {
+                    containing_read = ovl->read_B_id_;
+                }
+
+                if (reads[ovl->read_B_id_]->active == true)
+                    contained = contained or contained_alignment;
+
+                //Filter matches that matter.
+                //TODO Figure out a way to do this more efficiently
+                if ((ovl->match_type_ == FORWARD) or (ovl->match_type_ == FORWARD_INTERNAL))
+                    matches_forward[i].push_back(it->second[1]);
+                else if ((ovl->match_type_ == BACKWARD) or (ovl->match_type_ == BACKWARD_INTERNAL))
+                    matches_backward[i].push_back(it->second[1]);
+
+            }
+
+
+
+
         }
         if (contained) {
             reads[i]->active = false;
@@ -984,17 +1045,26 @@ int main(int argc, char *argv[]) {
     FILE *out_g2;
     FILE *out_hg;
     FILE *out_hg2;
+    FILE *out_greedy;
+    FILE *out_skipped;
+
     out_g1 = fopen((std::string(out_name) + ".edges.1").c_str(), "w");
     out_g2 = fopen((std::string(out_name) + ".edges.2").c_str(), "w");
 
-    // Output file for matches 
+    // Output files for edges
     out_hg = fopen((std::string(out_name) + ".edges.hinges").c_str(), "w");
     out_hg2 = fopen((std::string(out_name) + ".edges.hinges2").c_str(), "w");
+    out_greedy = fopen((std::string(out_name) + ".edges.greedy").c_str(), "w");
+    out_skipped = fopen((std::string(out_name) + ".edges.skipped").c_str(), "w");
 
-    // Output file for edges
-
+    // All hinges ikmported from the hinges.txt file
     std::unordered_map<int, std::vector<Hinge> > hinges_vec;
+
+    // Hinges that we were previously killed in filter.cpp due to bridging
     std::unordered_map<int, std::vector<Hinge> > killed_hinges_vec;
+
+    // Hinges that will be killed for being matched with a hinge in killed_hinges_vec
+    std::unordered_map<int, std::vector<Hinge> > new_killed_hinges_vec;
 
     int n = 0;
     int kh = 0;
@@ -1018,6 +1088,15 @@ int main(int argc, char *argv[]) {
     }
     console->info("{} killed hinges", kh);
     console->info("{} hinges", n);
+
+    std::ofstream killed_out(out + ".killed.hinges");
+    for (int i = 0; i < n_read; i++) {
+        killed_out << i << " ";
+        for (int j = 0; j < killed_hinges_vec[i].size(); j++) {
+            killed_out << killed_hinges_vec[i][j].type << " " << killed_hinges_vec[i][j].pos << " ";
+        }
+        killed_out << std::endl;
+    }
 
     n = 0;
     for (int i = 0; i < n_read; i++) {
@@ -1062,6 +1141,12 @@ int main(int argc, char *argv[]) {
             //if (num_near_hinge_reads != HINGE_READS) hinges_vec[i][j].active = false;
         }
     }*/
+
+
+
+
+    // TODO: Technically we dont need this filtering, as we can use the hinge graph
+    // construction to do the filtering as well
 
 
 
@@ -1154,10 +1239,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Hinge graph construction:
+    // Hinge graph construction
+    // En passant, we identify the new_killed_hinges
 
     FILE *out_hgraph;
     out_hgraph = fopen((std::string(out_name) + ".hgraph").c_str(), "w");
+
+    FILE *out_debug;
+    out_debug = fopen((std::string(out_name) + ".debug").c_str(), "w");
 
     FILE * OverlapDebugFile;
     OverlapDebugFile = fopen("overlap_debug.txt", "w");
@@ -1206,10 +1295,7 @@ int main(int argc, char *argv[]) {
                                 if ((hinges_vec[b_id][l].pos < pos_B + MATCHING_HINGE_SLACK) and
                                     (hinges_vec[b_id][l].pos > pos_B - MATCHING_HINGE_SLACK)) {
 
-
-
                                     // found a matching hinge
-
 
                                     if (req_hinge_type == hinges_vec[b_id][l].type) {
 
@@ -1218,7 +1304,6 @@ int main(int argc, char *argv[]) {
 
                                         first_coord=std::make_pair(i,k);
                                         second_coord=std::make_pair(b_id,l);
-
 
 
                                         if (hinges_vec[i][k].type == 1) {
@@ -1245,8 +1330,6 @@ int main(int argc, char *argv[]) {
                                     }
                                 }
 
-
-
                             }
 
                             for (int l = 0; l < killed_hinges_vec[b_id].size(); l++) {
@@ -1258,7 +1341,6 @@ int main(int argc, char *argv[]) {
                                     // found a matching hinge
                                     if (req_hinge_type == killed_hinges_vec[b_id][l].type) {
 
-
                                         if (hinges_vec[i][k].type == 1) {
 
                                             fprintf(out_hgraph, "%d %d %d %d %d %d\n",
@@ -1267,7 +1349,6 @@ int main(int argc, char *argv[]) {
                                                     hinges_vec[i][k].pos,
                                                     killed_hinges_vec[b_id][l].pos, 0,
                                                     rev_int);
-
                                         }
                                         else {
 
@@ -1277,6 +1358,34 @@ int main(int argc, char *argv[]) {
                                                     killed_hinges_vec[b_id][l].pos,
                                                     hinges_vec[i][k].pos, 0,
                                                     rev_int);
+                                        }
+
+                                        if (matches_forward[i][j]->match_type_ == FORWARD) {
+
+                                            new_killed_hinges_vec[i].push_back(Hinge(hinges_vec[i][k].pos,hinges_vec[i][k].type,false));
+
+                                            if (hinges_vec[i][k].type == -1) {
+                                                console->info("This should not have happened.");
+                                                // If this is a -1 hinge, read i should also bridge the repeat,
+                                                // and hinges_vec[i][k] would have been killed in filter
+
+                                                fprintf(out_debug,"%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
+                                                        matches_forward[i][j]->read_A_id_, matches_forward[i][j]->read_B_id_,
+                                                        matches_forward[i][j]->weight, matches_forward[i][j]->reverse_complement_match_,
+                                                        matches_forward[i][j]->match_type_, matches_forward[i][j]->eff_read_A_match_start_,
+                                                        matches_forward[i][j]->eff_read_A_match_end_,
+                                                        matches_forward[i][j]->eff_read_B_match_start_,
+                                                        matches_forward[i][j]->eff_read_B_match_end_,
+                                                        matches_forward[i][j]->eff_read_A_start_, matches_forward[i][j]->eff_read_A_end_,
+                                                        matches_forward[i][j]->eff_read_B_start_, matches_forward[i][j]->eff_read_B_end_);
+
+                                                fprintf(out_debug, "%d %d %d %d\n", hinges_vec[i][k].pos,
+                                                        hinges_vec[i][k].type,
+                                                        killed_hinges_vec[b_id][l].pos,
+                                                        killed_hinges_vec[b_id][l].type);
+
+                                            }
+
                                         }
 
 
@@ -1371,10 +1480,7 @@ int main(int argc, char *argv[]) {
 
                                     // found a matching hinge
 
-
-
                                     if (req_hinge_type == killed_hinges_vec[b_id][l].type) {
-
 
                                         if (hinges_vec[i][k].type == -1) {
 
@@ -1397,6 +1503,20 @@ int main(int argc, char *argv[]) {
                                         }
 
                                     }
+
+                                    if (matches_backward[i][j]->match_type_ == BACKWARD) {
+
+                                        new_killed_hinges_vec[i].push_back(Hinge(hinges_vec[i][k].pos,hinges_vec[i][k].type,false));
+
+                                        if (hinges_vec[i][k].type != -1) {
+                                            console->info("This should not have happened 2.");
+                                            // If this is a +1 hinge, read i should also bridge the repeat,
+                                            // and hinges_vec[i][k] would have been killed in filter
+                                        }
+
+                                    }
+
+
                                 }
 
                             }
@@ -1435,7 +1555,7 @@ int main(int argc, char *argv[]) {
 
 
     for (int i = 0; i != component.size(); ++i) {
-        if (component_size[component[i]] < 10) {
+        if (component_size[component[i]] < MIN_CONNECTED_COMPONENT_SIZE) {
             int ind1, ind2;
             ind1 = hinge_graph_node_map_rev[i].first;
             ind2 = hinge_graph_node_map_rev[i].second;
@@ -1504,6 +1624,8 @@ int main(int argc, char *argv[]) {
                         {
                             if (forward < 1) {
 
+                                PrintOverlapToFile(out_greedy, matches_forward[i][j]);
+
                                 if (matches_forward[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out_g1, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_forward[i][j]->read_A_id_,
@@ -1567,6 +1689,8 @@ int main(int argc, char *argv[]) {
                         /*if (not repeat_status_back[i])*/
                         {
                             if (backward < 1) {
+
+                                PrintOverlapToFile(out_greedy, matches_backward[i][j]);
 
                                 if (matches_backward[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out_g1, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
@@ -1677,6 +1801,8 @@ int main(int argc, char *argv[]) {
 
     std::ofstream debug_fle("hinge_debug.txt");
 
+    console->info("Starting to build assembly graph.");
+
 
 //    int eff_b_id;
     int hinge_pos = -1;
@@ -1689,9 +1815,8 @@ int main(int argc, char *argv[]) {
             int backward = 0;
             int backward_internal = 0;
 
+
             LOverlap * chosen_match = NULL;
-
-
 
 
             for (int j = 0; j < matches_forward[i].size(); j++){
@@ -1704,22 +1829,47 @@ int main(int argc, char *argv[]) {
                 if (matches_forward[i][j]->active) {
 
 
-
                     if ((reads[matches_forward[i][j]->read_B_id_]->active)) { // and (forward == 0)) {
                         //printf("hinge size %d\n", hinges_vec[matches_forward[i][j]->read_B_id_].size());
 
 
                         if ((matches_forward[i][j]->match_type_ == FORWARD) and (forward == 0)) {
-//                            fprintf(out3,"Printed from forward\n");
-//                            PrintOverlapToFile(out3,matches_forward[i][j]);
-//                            edges_forward[i].push_back(matches_forward[i][j]);
 
-                            chosen_match = matches_forward[i][j];
+                            // check if read j has new_killed_hinge
+                            //TODO: should this be checked for FORWARD_INTERNAL as well?
 
-                            hinge_pos = -1;
+                            bool poisoned = false;
 
-                            forward = 1;
-                            //break;
+                            for (int k = 0; k < new_killed_hinges_vec[i].size(); k++) {
+
+                                if ( (matches_forward[i][j]->reverse_complement_match_ != 1) and
+                                        (new_killed_hinges_vec[i][k].type == -1) and
+                                        (new_killed_hinges_vec[i][k].pos > matches_forward[i][j]->eff_read_B_match_end_) ) {
+
+                                    //TODO: do we need a tolerance in the comparison above?
+
+                                    PrintOverlapToFile(out_skipped, matches_forward[i][j]);
+                                    poisoned = true;
+
+                                }
+                                else if ( (matches_forward[i][j]->reverse_complement_match_ == 1) and
+                                          (new_killed_hinges_vec[i][k].type == 1) and
+                                          (new_killed_hinges_vec[i][k].pos < matches_forward[i][j]->eff_read_B_match_start_) ) {
+
+
+                                    PrintOverlapToFile(out_skipped, matches_forward[i][j]);
+                                    poisoned = true;
+
+                                }
+
+                            }
+
+                            if (not poisoned) {
+                                chosen_match = matches_forward[i][j];
+                                hinge_pos = -1;
+                                forward = 1;
+                                //break;
+                            }
 
                         }
                         else if ((matches_forward[i][j]->match_type_ == FORWARD_INTERNAL)
@@ -1770,12 +1920,22 @@ int main(int argc, char *argv[]) {
 
             if (chosen_match != NULL) {
                 PrintOverlapToFile(out_hg,chosen_match);
+
                 edges_forward[i].push_back(chosen_match);
 
                 PrintOverlapToFile2(out_hg2,chosen_match,hinge_pos);
 
-
                 chosen_match = NULL;
+            }
+            else {
+
+                // Deadend debugging
+
+                // Forward dead-end
+                deadend_out << i;
+//                deadend_out << "\t Active: " << reads[i]->active << std::endl;
+                deadend_out << "\t matches_forward size: " << matches_forward[i].size() << std::endl;
+
             }
 
             for (int j = 0; j < matches_backward[i].size(); j++){
@@ -1788,10 +1948,38 @@ int main(int argc, char *argv[]) {
 
                         if ((matches_backward[i][j]->match_type_ == BACKWARD) and (backward == 0)){
 
-                            chosen_match = matches_backward[i][j];
-                            backward = 1;
+                            // check if read j has new_killed_hinge
 
-                            hinge_pos = -1;
+                            bool poisoned = false;
+
+                            for (int k = 0; k < new_killed_hinges_vec[i].size(); k++) {
+
+                                if ( (matches_backward[i][j]->reverse_complement_match_ != 1) and
+                                     (new_killed_hinges_vec[i][k].type == 1) and
+                                     (new_killed_hinges_vec[i][k].pos < matches_backward[i][j]->eff_read_B_match_start_) ) {
+
+                                    //TODO: do we need a tolerance in the comparison above?
+
+                                    PrintOverlapToFile(out_skipped, matches_backward[i][j]);
+                                    poisoned = true;
+
+                                }
+                                else if ( (matches_backward[i][j]->reverse_complement_match_ == 1) and
+                                          (new_killed_hinges_vec[i][k].type == -1) and
+                                          (new_killed_hinges_vec[i][k].pos > matches_backward[i][j]->eff_read_B_match_end_) ) {
+
+                                    PrintOverlapToFile(out_skipped, matches_backward[i][j]);
+                                    poisoned = true;
+
+                                }
+
+                            }
+
+                            if (not poisoned) {
+                                chosen_match = matches_backward[i][j];
+                                backward = 1;
+                                hinge_pos = -1;
+                            }
 
                         }
                         else if ((matches_backward[i][j]->match_type_ == BACKWARD_INTERNAL)
@@ -1844,17 +2032,26 @@ int main(int argc, char *argv[]) {
 
             if (chosen_match != NULL) {
                 PrintOverlapToFile(out_hg,chosen_match);
+
                 edges_backward[i].push_back(chosen_match);
 
                 PrintOverlapToFile2(out_hg2,chosen_match,hinge_pos);
 
+            }
+            else {
+                // Deadend debugging
+
+                // Backward dead-end
+                deadend_out << i;
+//                deadend_out << "\t Active: " << reads[i]->active << std::endl;
+                deadend_out << "\t matches_backward size: " << matches_backward[i].size() << std::endl;
 
             }
         }
     }
 
     console->info("sort and output finished");
-    console->info("version 0.0.1");
+    console->info("version 0.0.3");
 
     if (strlen(name_db) > 0)
     la.closeDB(); //close database

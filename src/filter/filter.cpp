@@ -511,10 +511,10 @@ int main(int argc, char *argv[]) {
          //profileCoverage: get the coverage based on pile-o-gram
          la.profileCoverage(idx_pileup[i], cutoff_coverage, reso, CUT_OFF);
          la.profileCoverage(idx_pileup[i], coverage, reso, 0);
-         //cov << "read " << i <<" ";
-         //for (int j = 0; j < coverage.size(); j++)
-         //    cov << coverage[j].first << ","  << coverage[j].second << " ";
-         //cov << std::endl;
+         cov << "read " << i <<" ";
+         for (int j = 0; j < coverage.size(); j++)
+             cov << coverage[j].first << ","  << coverage[j].second << " ";
+         cov << std::endl;
 
          //Computes coverage gradients.
          if (coverage.size() >= 2)
@@ -540,10 +540,10 @@ int main(int argc, char *argv[]) {
     }
 
     int num_slot = 0;
-    int total_cov = 0;
+    long int total_cov = 0;
 
     std::vector<int> read_coverage;
-    int read_cov=0;
+    long int read_cov=0;
     int read_slot =0;
     //Finding the average coverage, probing a small proportion of reads
 
@@ -764,6 +764,31 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         //std::cout << i <<std::endl;
         hinges[i] = std::vector<std::pair<int, int>>();
+
+        int coverage_at_start(0);
+        int num_at_start(0);
+        int num_at_end(0);
+        int coverage_at_end(0);
+        float avg_coverage_at_start;
+        float avg_coverage_at_end;
+        for (int j = 0; j < coverages[i].size(); j++){
+            if ((coverages[i][j].first <= maskvec[i].first + NO_HINGE_REGION) and
+                (coverages[i][j].first >= maskvec[i].first )){
+                coverage_at_start += coverages[i][j].second;
+                num_at_start++;
+            }
+            if ((coverages[i][j].first <= maskvec[i].second ) and
+                (coverages[i][j].first >= maskvec[i].second - NO_HINGE_REGION )){
+                coverage_at_end += coverages[i][j].second;
+                num_at_end++;
+            }
+        }
+
+        avg_coverage_at_end = (float)coverage_at_end/num_at_end;
+        avg_coverage_at_start = (float)coverage_at_start/num_at_start;
+        if (std::abs(avg_coverage_at_end-avg_coverage_at_start) < 10){
+            continue;
+        }
 
         for (int j = 0; j < repeat_annotation[i].size(); j++) {
 

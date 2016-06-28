@@ -171,12 +171,13 @@ void add_sequence ( seq_coor_t,
 
 void mask_k_mer(seq_coor_t, kmer_lookup *, seq_coor_t);
 
-alignment * align(char *, seq_coor_t,
-                  char *, seq_coor_t,
-                  seq_coor_t,
-                  int); 
-				  
-				  
+
+alignment *_align(char *aseq, seq_coor_t aseq_pos,
+                   char *bseq, seq_coor_t bseq_pos,
+                   seq_coor_t t,
+                   int t2);
+
+
 
 void free_alignment(alignment *);
 

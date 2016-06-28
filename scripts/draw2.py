@@ -45,6 +45,14 @@ qv = list(util.get_QV(path+dbname, [n]))[0]
 qx = []
 qy = []
 ts = int(sys.argv[5])
+
+if len(sys.argv) < 7:
+    rev = 0
+else:
+    rev = int(sys.argv[6])
+
+print 'rev', rev
+
 for i in range(len(qv)):
     qx.append(i*ts)
     qy.append(QVdict[qv[i]])
@@ -97,7 +105,13 @@ grid_size = 1.0
 ax1.set_xlim(-2000,l+2000)
 ax1.set_ylim(-5,num*grid_size)
 
-points = [[0,0], [l,0], [l+tip,grid_size/4], [l,grid_size/2], [0,grid_size/2]]
+if rev == 0:
+    points = [[0,0], [l,0], [l+tip,grid_size/4], [l,grid_size/2], [0,grid_size/2]]
+else:
+    points = [[0,0], [-tip,grid_size/4], [0,grid_size/2],  [l,grid_size/2], [l,0]]
+    
+
+
 #rectangle = plt.Rectangle((0, 0), l, 5, fc='r',ec = 'none')
 polygon = plt.Polygon(points,fc = 'r', ec = 'none', alpha = 0.6)
 ax1.add_patch(polygon)
@@ -110,12 +124,26 @@ ax1.add_line(dotted_line2)
 
 for i,aln_group in enumerate(alns):
     for item in aln_group:
-        abpos = item[3]
-        aepos = item[4]
-        bbpos = item[6]
-        bepos = item[7]
-        blen = item[8]
-        strand = item[0]
+        if rev == 0:
+            abpos = item[3]
+            aepos = item[4]
+            bbpos = item[6]
+            bepos = item[7]
+            blen = item[8]
+            strand = item[0]
+        else:
+            aepos = l - item[3]
+            abpos = l - item[4]
+            blen = item[8]
+            bbpos = blen - item[7]
+            bepos = blen - item[6]
+            strand = item[0]
+            if strand == 'n':
+                strand = 'c'
+            else:
+                strand = 'n'
+            
+                    
         points_start = []
         points_end = []
 
@@ -145,6 +173,12 @@ for i,aln_group in enumerate(alns):
             ax1.add_patch(polygon2)
 
 
+
+
+if rev == 1:
+    covx = [l -item for item in covx]
+    qx = [l - item for item in qx]
+    
 ax2.plot(covx, covy)
 ax3.plot(qx, qy)
 
@@ -154,4 +188,4 @@ ax2.set_ylabel('coverage')
 ax3.set_ylabel('i-qv')
 
 
-plt.savefig(path + sys.argv[4] + '/aln_svg' + str(n)+ '.svg')
+plt.savefig(path + sys.argv[4] + '/aln_svg' + str(n) + '_' + str(rev)+ '.svg')

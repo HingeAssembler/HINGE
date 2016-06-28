@@ -591,9 +591,9 @@ consensus_data * generate_consensus( char ** input_seq,
 #define INDEL_ALLOWENCE_2 150
 		// WTF are these heuristics
         //printf("reach\n");
-        aln = align(input_seq[j]+arange->s1, arange->e1 - arange->s1 ,
-                    input_seq[0]+arange->s2, arange->e2 - arange->s2 , 
-                    INDEL_ALLOWENCE_2, 1);
+        aln = _align(input_seq[j] + arange->s1, arange->e1 - arange->s1,
+                     input_seq[0] + arange->s2, arange->e2 - arange->s2,
+                     INDEL_ALLOWENCE_2, 1);
         if (aln->aln_str_size > 500 && ((double) aln->dist / (double) aln->aln_str_size) < max_diff) {
             tags_list[aligned_seq_count] = get_align_tags( aln->q_aln_str, 
                                                            aln->t_aln_str, 
@@ -619,7 +619,7 @@ consensus_data * generate_consensus( char ** input_seq,
             //printf("[%d %d] x [%d %d]\n", arange->s1, arange->e1, arange->s2, arange->e2);
             //printf("j:%s\n0:%s\n", input_seq[j] + arange->s1, input_seq[0] + arange->s2);
 
-        } // get align tags
+        } // get _align tags
 
 		/*
         int k;
@@ -713,14 +713,14 @@ consensus_data * generate_utg_consensus( char ** input_seq,
             if ( r_len + offset[j] < utg_len ) {
 
                 //printf("1: %ld %u %u\n", offset[j], r_len, utg_len);
-                aln = align(input_seq[j] - offset[j], r_len + offset[j] ,
-                            input_seq[0], r_len + offset[j] , 
-                            500, 1);
+                aln = _align(input_seq[j] - offset[j], r_len + offset[j],
+                             input_seq[0], r_len + offset[j],
+                             500, 1);
             } else {
                 //printf("2: %ld %u %u\n", offset[j], r_len, utg_len);
-                aln = align(input_seq[j] - offset[j], utg_len ,
-                            input_seq[0], utg_len , 
-                            500, 1);
+                aln = _align(input_seq[j] - offset[j], utg_len,
+                             input_seq[0], utg_len,
+                             500, 1);
             }
             offset[j] = 0;
 
@@ -730,14 +730,14 @@ consensus_data * generate_utg_consensus( char ** input_seq,
             }
             if ( offset[j] + r_len > utg_len ) {
                 //printf("3: %ld %u %u\n", offset[j], r_len, utg_len);
-                aln = align(input_seq[j], utg_len - offset[j] ,
-                            input_seq[0]+offset[j], utg_len - offset[j], 
-                            500, 1);
+                aln = _align(input_seq[j], utg_len - offset[j],
+                             input_seq[0] + offset[j], utg_len - offset[j],
+                             500, 1);
             } else {
                 //printf("4: %ld %u %u\n", offset[j], r_len, utg_len);
-                aln = align(input_seq[j], r_len ,
-                            input_seq[0]+offset[j], r_len , 
-                            500, 1);
+                aln = _align(input_seq[j], r_len,
+                             input_seq[0] + offset[j], r_len,
+                             500, 1);
             }
         }
         if (aln->aln_str_size > 500 && ((double) aln->dist / (double) aln->aln_str_size) < max_diff) {
