@@ -2,9 +2,9 @@
 
 CI Status: 
 
-master:![image](https://magnum.travis-ci.com/fxia22/AwesomeAssembler.svg?token=i41xfGcHb72GYFyZnvtg&branch=master)
+master:![image](https://magnum.travis-ci.com/fxia22/HingingAssembler.svg?token=i41xfGcHb72GYFyZnvtg&branch=master)
 
-dev:![image](https://magnum.travis-ci.com/fxia22/AwesomeAssembler.svg?token=i41xfGcHb72GYFyZnvtg&branch=dev)
+dev:![image](https://magnum.travis-ci.com/fxia22/HingingAssembler.svg?token=i41xfGcHb72GYFyZnvtg&branch=dev)
 
 ## Introduction 
 
@@ -36,7 +36,7 @@ This is implemented in `filter/filter.cpp`
 ### Layout 
 The layout is implemented in `layout/hinging.cpp`. It is done by a variant of the greedy algorithm.
 
-The graph output by the layout stage  is post-processed by running `scripts/prune_and_condence.py`.
+The graph output by the layout stage  is post-processed by running `scripts/pruning_and_clipping.py`.
 One output is a graphml file which is the graph representation of the backbone.
 This removes dead ends and Z-structures from the graph enabling easy condensation.
 It can be analyzed and visualized, etc. 
@@ -93,23 +93,28 @@ In order to call the programs from anywhere, I suggest one export the directory 
 A demo run for assembling the ecoli genome is the following:
 
 ```
-source setup.sh %I've changed the setup.sh, as it gave errors while running. -GK
+source setup.sh
 mkdir data/ecoli
 cd data/ecoli
 # reads.fasta should be in data/ecoli
 fasta2DB ecoli reads.fasta
 DBsplit -x500 -s100 ecoli     
-HPCdaligner -dal4 -t16 -e.7 -l500 -s100 ecoli | zsh
+HPCdaligner -t5 ecoli | csh -v
 # alternatively, you can put output of HPCdaligner to a bash file and edit it to support 
 rm ecoli.*.ecoli.*
 LAmerge ecoli.las ecoli.*.las
 rm ecoli.*.las # we only need ecoli.las
+DASqv -c100 ecoli ecoli.las
 
 # Run filter
 Reads_filter --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini
 
 # Run layout
 hinging --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini -o ecoli
+
+# Run postprocessing
+
+python pruning_and_clipping.py ecoli.edges.hinges ecoli.hinge.list <identifier-of-run>
 ```
 
 ## Debugging
