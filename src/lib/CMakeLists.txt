@@ -21,5 +21,3 @@ add_library(falcon falcon.c falcon_utils.c)
 target_link_libraries(falcon kmer_lookup DW_banded)
 
 
-add_library(OverlapGraph OverlapGraph.cpp)
-

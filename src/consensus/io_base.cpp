@@ -16,13 +16,6 @@
 #include "DB.h"
 #include "align.h"
 #include "LAInterface.h"
-#include "OverlapGraph.h"
-
-//#include <ogdf/basic/Graph.h>
-//#include <ogdf/basic/graph_generators.h>
-//#include <ogdf/basic/Hashing.h>
-//#include <ogdf/basic/simple_graph_alg.h>
-//#include <ogdf/basic/HashArray.h>
 
 #include <utility>
 #include <boost/graph/adjacency_list.hpp>
@@ -41,12 +34,6 @@ typedef adjacency_list <vecS, vecS, undirectedS> Graph;
 typedef std::tuple<Node, Node, int> Edge_w;
 typedef std::pair<Node, Node> Edge_nw;
 
-
-static int ORDER(const void *l, const void *r) {
-    int x = *((int32 *) l);
-    int y = *((int32 *) r);
-    return (x - y);
-}
 
 
 std::ostream& operator<<(std::ostream& out, const MatchType value){
@@ -74,32 +61,11 @@ bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
              + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
 }
 
-bool compare_overlap_effective(LOverlap * ovl1, LOverlap * ovl2) {
-    return ((ovl1->eff_read_A_match_end_ - ovl1->eff_read_A_match_start_
-             + ovl1->eff_read_B_match_end_ - ovl1->eff_read_B_match_start_) >
-            (ovl2->eff_read_A_match_end_ - ovl2->eff_read_A_match_start_
-             + ovl2->eff_read_B_match_end_ - ovl2->eff_read_B_match_start_));
-}
-
 bool compare_overlap_weight(LOverlap * ovl1, LOverlap * ovl2) {
     return (ovl1->weight > ovl2->weight);
 }
 
-bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2) {
-    int sum1 = 0;
-    int sum2 = 0;
-    for (int i = 0; i < ovl1->size(); i++)
-        sum1 += (*ovl1)[i]->read_A_match_end_ - (*ovl1)[i]->read_A_match_start_
-                + (*ovl1)[i]->read_B_match_end_ - (*ovl1)[i]->read_B_match_start_;
-    for (int i = 0; i < ovl2->size(); i++)
-        sum2 += (*ovl2)[i]->read_A_match_end_ - (*ovl2)[i]->read_A_match_start_
-                + (*ovl2)[i]->read_B_match_end_ - (*ovl2)[i]->read_B_match_start_;
-    return sum1 > sum2;
-}
 
-bool compare_pos(LOverlap * ovl1, LOverlap * ovl2) {
-    return (ovl1->read_A_match_start_) > (ovl2->read_A_match_start_);
-}
 
 bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
     return ovl1->read_A_match_start_ < ovl2->read_A_match_start_;
@@ -107,306 +73,6 @@ bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
 
 bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
     return ovl1->read_A_match_start_ > ovl2->read_A_match_start_;
-}
-
-std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
-{
-    //std::cout<<"Merge"<<std::endl;
-    std::vector<std::pair<int, int > > ret;
-    int n = intervals.size();
-    if (n == 0) return ret;
-
-    if(n == 1) {
-        ret.push_back(std::pair<int,int>(intervals[0]->read_A_match_start_, intervals[0]->read_A_match_end_));
-        return ret;
-    }
-
-    sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
-
-    int left= intervals[0]->read_A_match_start_ + cutoff, right = intervals[0]->read_A_match_end_ - cutoff;
-    //left, right means maximal possible interval now
-
-    for(int i = 1; i < n; i++)
-    {
-        if(intervals[i]->read_A_match_start_ + cutoff <= right)
-        {
-            right=std::max(right, intervals[i]->read_A_match_end_ - cutoff);
-        }
-        else
-        {
-            ret.push_back(std::pair<int, int>(left,right));
-            left = intervals[i]->read_A_match_start_ + cutoff;
-            right = intervals[i]->read_A_match_end_ - cutoff;
-        }
-    }
-    ret.push_back(std::pair<int, int>(left,right));
-    return ret;
-}
-
-Interval Effective_length(std::vector<LOverlap *> & intervals, int min_cov) {
-    Interval ret;
-    sort(intervals.begin(),intervals.end(),compare_overlap_abpos); //sort according to left
-
-    if (intervals.size() > min_cov) {
-        ret.first = intervals[min_cov]->read_A_match_start_;
-    } else
-        ret.first = 0;
-    sort(intervals.begin(),intervals.end(),compare_overlap_aepos); //sort according to left
-    if (intervals.size() > min_cov) {
-        ret.second = intervals[min_cov]->read_A_match_end_;
-    } else
-        ret.second = 0;
-    return ret;
-}
-
-bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_THRESHOLD,
-                      int THETA, int THETA2, bool trim){
-    //Function takes as input pointers to a match, and the read_A and read_B of that match, set constants
-    //ALN_THRESHOLD and THETA
-    //It inputs the effective read start and end into the match class object
-    //Next it trims match
-    //Finally it figures out the type of match we have here by calling AddTypesAsymmetric() on the
-    //class object
-    //std::cout<<" In ProcessAlignment"<<std::endl;
-    bool contained=false;
-    match->eff_read_A_start_ = read_A->effective_start;
-    match->eff_read_A_end_ = read_A->effective_end;
-
-    // removed the following if, so that things agree with the convention for reverse complement matches
-
-    match->eff_read_B_start_ = read_B->effective_start;
-    match->eff_read_B_end_ = read_B->effective_end;
-
-//    if (match->reverse_complement_match_ == 0) {
-//        match->eff_read_B_start_ = read_B->effective_start;
-//        match->eff_read_B_end_ = read_B->effective_end;
-//    } else {
-//        match->eff_read_B_start_ = read_B->len - read_B->effective_end;
-//        match->eff_read_B_end_ = read_B->len - read_B->effective_start;
-//    }
-
-    /*printf("bef %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_,
-     * match->reverse_complement_match_,
-        match->read_A_match_start_, match->read_A_match_end_, match->read_B_match_start_, match->read_B_match_end_,
-           match->eff_read_A_start_, match->eff_read_A_end_, match->eff_read_B_start_, match->eff_read_B_end_
-    );*/
-
-    if (trim)
-        match->trim_overlap();
-    else {
-        match->eff_read_B_match_start_ = match->read_B_match_start_;
-        match->eff_read_B_match_end_ = match->read_B_match_end_;
-        match->eff_read_A_match_start_ = match->read_A_match_start_;
-        match->eff_read_A_match_end_ = match->read_A_match_end_;
-    }
-    /*printf("aft %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_,
-     * match->reverse_complement_match_,
-           match->eff_read_A_match_start_, match->eff_read_A_match_end_, match->eff_read_B_match_start_,
-           match->eff_read_B_match_end_,
-           match->eff_read_A_start_, match->eff_read_A_end_, match->eff_read_B_start_, match->eff_read_B_end_
-    );*/
-    //std::cout<< contained<<std::endl;
-    if (((match->eff_read_B_match_end_ - match->eff_read_B_match_start_) < ALN_THRESHOLD)
-        or ((match->eff_read_A_match_end_ - match->eff_read_A_match_start_) < ALN_THRESHOLD) or (!match->active))
-
-    {
-        match->active = false;
-        match->match_type_ = NOT_ACTIVE;
-    } else {
-        match->AddTypesAsymmetric(THETA,THETA2);
-        if (match->match_type_ == BCOVERA) {
-            contained = true;
-        }
-        //std::cout<< contained<< std::endl;
-    }
-
-    match->weight =
-            match->eff_read_A_match_end_ - match->eff_read_A_match_start_
-            + match->eff_read_B_match_end_ - match->eff_read_B_match_start_;
-    
-    return contained;
-}
-
-class Hinge {
-public:
-    int pos;
-    int type; // 1, -1
-    bool active;
-    Hinge(int pos, int t, bool active):pos(pos),type(t), active(active) {};
-    Hinge():pos(0),type(1), active(true) {};
-};
-
-// if we uncomment this, we need to make sure it works with the new convention of B_match_start and
-// B_match_end for reverse complement matches
-
-//bool isValidHinge(LOverlap *match, std::vector<Hinge> &read_hinges){
-//    //Returns true if read_hinges (a vector of all hinges corresponding to a read )
-//    // has a hinge of appropriate type within tolerance from positions of start of the
-//    // overlap on read_B of the overlap given.
-//    int tolerance=100;//TODO put as #define
-//    int position=match->eff_read_B_match_start_;   // parei aqui
-//    int type; //TODO : Make enum
-//    if (match->match_type_==FORWARD_INTERNAL)
-//        type=1;
-//    else if (match->match_type_==BACKWARD_INTERNAL)
-//        type=-1;
-//
-//    if (match->reverse_complement_match_==1){
-//        type=-type;
-//        position=match->eff_read_B_match_end_;
-//    }
-//
-//    bool valid=false;
-//    for (int index=0; index < read_hinges.size(); index++) {
-//        if ((abs(position - read_hinges[index].pos) < tolerance) and (type == read_hinges[index].type))
-//            valid = true;
-//        return valid;
-//    }
-//}
-
-
-
-void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
-
-    int direction = match->reverse_complement_match_;
-    int hinged;
-
-    if ((match->match_type_ == FORWARD) or (match->match_type_ == BACKWARD))
-        hinged = UNHINGED_EDGE;
-
-    else if ((match->match_type_ == FORWARD_INTERNAL) or (match->match_type_ == BACKWARD_INTERNAL))
-        hinged = HINGED_EDGE;
-
-    if ((match->match_type_ == FORWARD_INTERNAL) or (match->match_type_ == FORWARD)) {
-        fprintf(file_pointer, "%d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                match->read_A_id_,
-                match->read_B_id_,
-                match->weight,
-                0,
-                direction,
-                hinged,
-                match->eff_read_A_match_start_,
-                match->eff_read_A_match_end_,
-                match->eff_read_B_match_start_,
-                match->eff_read_B_match_end_,
-                match->eff_read_A_start_,
-                match->eff_read_A_end_,
-                match->eff_read_B_start_,
-                match->eff_read_B_end_);
-    }
-    else if ((match->match_type_ == BACKWARD_INTERNAL) or (match->match_type_ == BACKWARD)){
-        fprintf(file_pointer, "%d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                match->read_B_id_,
-                match->read_A_id_,
-                match->weight,
-                direction,
-                0,
-                hinged,
-                match->eff_read_B_match_start_,
-                match->eff_read_B_match_end_,
-                match->eff_read_A_match_start_,
-                match->eff_read_A_match_end_,
-                match->eff_read_B_start_,
-                match->eff_read_B_end_,
-                match->eff_read_A_start_,
-                match->eff_read_A_end_);
-    }
-}
-
-
-
-
-void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
-
-    int direction = match->reverse_complement_match_;
-    int hinged;
-
-//    if ((match->match_type_ == FORWARD) or (match->match_type_ == BACKWARD))
-//        hinged = UNHINGED_EDGE;
-//
-//    else if ((match->match_type_ == FORWARD_INTERNAL) or (match->match_type_ == BACKWARD_INTERNAL))
-//        hinged = HINGED_EDGE;
-
-//    if ((match->match_type_ == FORWARD) or (match->match_type_ == BACKWARD))
-//        hinged = 0;
-//    else if (match->match_type_ == FORWARD_INTERNAL)
-//        hinged = 1;
-//    else if (match->match_type_ == BACKWARD_INTERNAL)
-//        hinged = -1;
-
-    if (match->match_type_ == FORWARD) {
-        fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                match->read_A_id_,
-                match->read_B_id_,
-                match->weight,
-                0,
-                direction,
-                0,
-                -1, // hinge pos
-                match->eff_read_A_match_start_,
-                match->eff_read_A_match_end_,
-                match->eff_read_B_match_start_,
-                match->eff_read_B_match_end_,
-                match->eff_read_A_start_,
-                match->eff_read_A_end_,
-                match->eff_read_B_start_,
-                match->eff_read_B_end_);
-    }
-    else if (match->match_type_ == BACKWARD) {
-        fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                match->read_B_id_,
-                match->read_A_id_,
-                match->weight,
-                direction,
-                0,
-                0,
-                -1, // hinge pos
-                match->eff_read_B_match_start_,
-                match->eff_read_B_match_end_,
-                match->eff_read_A_match_start_,
-                match->eff_read_A_match_end_,
-                match->eff_read_B_start_,
-                match->eff_read_B_end_,
-                match->eff_read_A_start_,
-                match->eff_read_A_end_);
-    }
-    else if (match->match_type_ == FORWARD_INTERNAL) {
-
-        fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                match->read_A_id_,
-                match->read_B_id_,
-                match->weight,
-                0,
-                direction,
-                1, // hinged forward
-                hinge_pos,
-                match->eff_read_A_match_start_,
-                match->eff_read_A_match_end_,
-                match->eff_read_B_match_start_,
-                match->eff_read_B_match_end_,
-                match->eff_read_A_start_,
-                match->eff_read_A_end_,
-                match->eff_read_B_start_,
-                match->eff_read_B_end_);
-    }
-    else if (match->match_type_ == BACKWARD_INTERNAL) {
-        fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
-                match->read_B_id_,
-                match->read_A_id_,
-                match->weight,
-                direction,
-                0,
-                -1, // hinged backward
-                hinge_pos,
-                match->eff_read_B_match_start_,
-                match->eff_read_B_match_end_,
-                match->eff_read_A_match_start_,
-                match->eff_read_A_match_end_,
-                match->eff_read_B_start_,
-                match->eff_read_B_end_,
-                match->eff_read_A_start_,
-                match->eff_read_A_end_);
-    }
 }
 
 
@@ -598,31 +264,10 @@ int main(int argc, char *argv[]) {
     console->info("MIN_CONNECTED_COMPONENT_SIZE = {}", MIN_CONNECTED_COMPONENT_SIZE);
 
 
-
-
-
-
     omp_set_num_threads(N_PROC);
-    //std::vector< std::vector<std::vector<LOverlap*>* > > idx2(n_read);
-    // unordered_map from (aid) to alignments in a vector
     std::vector<Edge_w> edgelist, edgelist_ms; // save output to edgelist
-    //std::unordered_map<int, std::vector <LOverlap * > >idx3,idx4;
-    // this is the pileup
     std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx_ab;
-    /*
-    	idx is a vector of length n_read, each element idx3[read A id] is a map, 
-    	from read B id to a vector of overlaps
-    */
-    //std::vector<std::vector<LOverlap *>> idx2;
-    /*
-    	idx2 is a vector of length n_read, each element idx2[read A id] is a vector, 
-    	for each read B, we put the best overlap into that vector
-    */
-    //std::vector<std::unordered_map<int, LOverlap *>> idx3;
-    /*
-        idx3 is a vector of length n_read, each element idx3[read A id] is a map,
-        from read read B id to the best overlap of read A and read B
-    */
+
     
     if (strlen(name_db) > 0)
     la.closeDB(); //close database

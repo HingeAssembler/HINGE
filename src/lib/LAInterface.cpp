@@ -3671,6 +3671,8 @@ std::pair<std::string, std::string> LAInterface::getAlignmentTags(LAlignment *al
 
     std::string aa = "";
     std::string bb = "";
+    aa.reserve((alignment->aepos - alignment->abpos) * 2);
+    bb.reserve((alignment->bepos - alignment->bbpos) * 2);
 
 #define COLUMN(x,y) \
     {               \
@@ -4287,17 +4289,17 @@ static int qv_map[51] =
     'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
     'Y'
   };
-  
+
 void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
 	int b,e;
     b = from;
     e = to;
 	HITS_READ * reads  = db1->reads;
 	bool UPPER = true;
-	
+
     int64      *qv_idx;
     uint8      *qv_val;
-	
+
     //if (DOIQV)
       { int status, kind;
         HITS_TRACK *track;
@@ -4314,10 +4316,10 @@ void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
         qv_idx = (int64 *) track->anno;
         qv_val = (uint8 *) track->data;
       }
-	  
-	
+
+
     for (int i = b; i < e; i++)
-      { 
+      {
 		int         len;
         int         fst, lst;
         int         flags, qv;
@@ -4398,7 +4400,7 @@ void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
             while (k < e) {
 				qv.push_back(qv_val[k++]);
                 //putchar(qv_map[qv_val[k++]]);
-				
+
             }
                //printf("\n");
 			QV.push_back(qv);
