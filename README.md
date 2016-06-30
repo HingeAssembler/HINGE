@@ -2,9 +2,9 @@
 
 CI Status: 
 
-master:![image](https://travis-ci.com/fxia22/HINGE.svg?token=i41xfGcHb72GYFyZnvtg&branch=master)
+master:![image](https://travis-ci.org/fxia22/HINGE.svg?branch=master)
 
-dev:![image](https://travis-ci.com/fxia22/HINGE.svg?token=i41xfGcHb72GYFyZnvtg&branch=dev)
+dev:![image](https://travis-ci.org/fxia22/HINGE.svg?branch=dev)
 
 ## Introduction 
 
