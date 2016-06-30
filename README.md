@@ -1,4 +1,4 @@
-# AwesomeAssembler
+# HINGE
 
 CI Status: 
 
@@ -8,11 +8,11 @@ dev:![image](https://travis-ci.com/fxia22/HINGE.svg?token=i41xfGcHb72GYFyZnvtg&b
 
 ## Introduction 
 
-AwesomeAssembler is an experimental long read assembler based on an idea called _hinging_. Now AwesomeAssembler is at research prototype stage.
+HINGE is a long read assembler based on an idea called _hinging_.
 
 ## Pipeline Overview
 
-AwesomeAssembler is an OLC(Overlap-Layout-Consensus) assembler. The idea of the pipeline is shown below. 
+HINGE is an OLC(Overlap-Layout-Consensus) assembler. The idea of the pipeline is shown below. 
 
 ![image](High_level_overview.png)
 
@@ -80,7 +80,7 @@ This software is still at prototype stage so it is not well packaged, however it
 Installing the software is very easy. 
 
 ```
-git clone https://github.com/Eureka22/AwesomeAssembler.git
+git clone https://github.com/fxia22/HINGE.git
 git submodule init
 git submodule update
 ./build.sh
