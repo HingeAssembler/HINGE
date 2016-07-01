@@ -4,7 +4,6 @@ CI Status:
 
 master:![image](https://travis-ci.org/fxia22/HINGE.svg?branch=master)
 
-dev:![image](https://travis-ci.org/fxia22/HINGE.svg?branch=dev)
 
 ## Introduction 
 
