@@ -1,8 +1,6 @@
 # HINGE
 
-CI Status: 
-
-master:![image](https://travis-ci.org/fxia22/HINGE.svg?branch=master)
+CI Status: ![image](https://travis-ci.org/fxia22/HINGE.svg?branch=master)
 
 
 ## Introduction 
