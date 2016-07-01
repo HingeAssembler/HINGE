@@ -168,4 +168,4 @@ For ecoli 160X dataset,  after shortening reads to have a mean length of 3500 (w
 
 The graph returned by Falcon here is
 
-![image](Falcon_ecoli_shortened.png = 250x250)
+![image](Falcon_ecoli_shortened.png =250x)
