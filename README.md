@@ -1,43 +1,43 @@
-# AwesomeAssembler
+# HINGE
 
-CI Status: 
+CI Status: ![image](https://travis-ci.org/fxia22/HINGE.svg?branch=master)
 
-master:![image](https://travis-ci.com/fxia22/HINGE.svg?token=i41xfGcHb72GYFyZnvtg&branch=master)
-
-dev:![image](https://travis-ci.com/fxia22/HINGE.svg?token=i41xfGcHb72GYFyZnvtg&branch=dev)
 
 ## Introduction 
 
-AwesomeAssembler is an experimental long read assembler based on sparse string graph (|E|/|V| bounded). Now AwesomeAssembler is at research prototype stage.
+HINGE is a long read assembler based on an idea called _hinging_.
 
 ## Pipeline Overview
 
-AwesomeAssembler is an OLC(Overlap-Layout-Consensus) assembler. The idea of the pipeline is shown below. One significant difference from HGAP or Falcon pipeline is that it does not have a pre-assembly or read correction step. There are mainly two reasons that we don't want that step. The first is that this step will sometimes collapse repeats, thus introduce errors to homologous regions. Secondly, this will throw away information, for example, half bases are thrown away (as for the ecoli dataset) in the preassembly step in falcon pipeline. 
+HINGE is an OLC(Overlap-Layout-Consensus) assembler. The idea of the pipeline is shown below. 
 
-![image](http://fxia.me/static/arc.png)
+![image](High_level_overview.png)
+
+At a high level, the algorithm can be thought of a variation of the classical greedy algorithm.
+The main difference with the greedy algorithm is that rather than each read having a single successor,
+and a single predecessor, we allow a small subset of reads to have a higher number of successors/predecessors.
+This subset is identified by a process called _hinging_. This helps us to recover the graph structure
+directly during assembly.
+
+Another significant difference from HGAP or Falcon pipeline is that it does not have a pre-assembly or read correction step. 
+
+
 
 ## Algorithm Details
 
 ### Reads filtering
-Reads filtering filters reads that have long chimer in the middle, and short reads. 
+Reads filtering filters reads that have long chimer in the middle, and short reads.
+Reads which can have higher number of predecessors/successors are also identified there. 
+This is implemented in `filter/filter.cpp`
 
 ### Layout 
-For the layout step, currently there are two algorithms implemented. For both algorithms, one read and its reverse complement are kept as separated nodes (which needs to be changed later)
+The layout is implemented in `layout/hinging.cpp`. It is done by a variant of the greedy algorithm.
 
-- `Greedy`. Implemented in `Greedy_best_ovl_bursty_resistant.cpp`. The Greedy works at all-approximate-repeats-bridged regime. For this algorithm, every best right extension for a read and its reverse complement are found. 
-- `Not-so-Greedy`. Implemented in `NSG_v1.cpp`. NSG *aims* at working at all-triple-repeats are bridged regime. It is an augmented version for Greedy by adding a step to reduce false negative edges. 
+The graph output by the layout stage  is post-processed by running `scripts/pruning_and_clipping.py`.
+One output is a graphml file which is the graph representation of the backbone.
+This removes dead ends and Z-structures from the graph enabling easy condensation.
+It can be analyzed and visualized, etc. 
 
-### Pruning
-
-Currently pruning is only available for `Greedy`. For the initial layout graph, it keeps removing degree-1 nodes, for a certain number of iterations. Implemented in `prune.py`. One output is a graphml file which is the graph representation of the backbone. It can be analyzed and visualized, etc. 
-
-### Draft assembly
-
-Draft assembly extracts bases from the backbone. First, it reduces the backbone to a linear structure by traversing the backbone assembly, as implemented in `draft_assembly.py`. Then, I use a unitig consensus algorithm to get the draft assembly from the linear structure, as in `Unitig_consensus.cpp`
-
-### Consensus
-
-After the draft assembly is obtained. Reads are mapped to the draft assembly and get the final assembly by doing a majority vote. In `Draft_consensus.cpp`.
 
 ## Parameters
 
@@ -77,7 +77,7 @@ This software is still at prototype stage so it is not well packaged, however it
 Installing the software is very easy. 
 
 ```
-git clone https://github.com/Eureka22/AwesomeAssembler.git
+git clone https://github.com/fxia22/HINGE.git
 git submodule init
 git submodule update
 ./build.sh
@@ -90,37 +90,28 @@ In order to call the programs from anywhere, I suggest one export the directory 
 A demo run for assembling the ecoli genome is the following:
 
 ```
-source setup.sh %I've changed the setup.sh, as it gave errors while running. -GK
+source setup.sh
 mkdir data/ecoli
 cd data/ecoli
 # reads.fasta should be in data/ecoli
 fasta2DB ecoli reads.fasta
 DBsplit -x500 -s100 ecoli     
-HPCdaligner -dal4 -t16 -e.7 -l500 -s100 ecoli | zsh
+HPCdaligner -t5 ecoli | csh -v
 # alternatively, you can put output of HPCdaligner to a bash file and edit it to support 
 rm ecoli.*.ecoli.*
 LAmerge ecoli.las ecoli.*.las
 rm ecoli.*.las # we only need ecoli.las
+DASqv -c100 ecoli ecoli.las
 
-# Old pipeline
-Greedy_best_ovl ecoli ecoli.las ecoli_greedy.edges greedy.ini
-prune.py ecoli_greedy.edges
-draft_assembly.py ecoli.edges
-Unitig_consensus ecoli ecoli.las ecoli.linear.edges ecoli.draft.fasta greedy.ini
+# Run filter
+Reads_filter --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini
 
-# New pipeline
-Reads_filter ecoli ecoli.las ecoli.mas greedy.ini
-NSG ecoli ecoli.las ecoli.edges greedy.ini
-analyse2.py ecoli.edges.1
-# consensus has not finished yet
+# Run layout
+hinging --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini -o ecoli
 
-correct_head.py ecoli.draft.fasta ecoli.draft.pb.fasta 
-fasta2DB draft ecoli.draft.pb.fasta
-HPCmapper -e.73 draft ecoli | zsh -v 
-LAmerge draft.ecoli.las draft.ecoli.*.las
-rm draft.ecoli.*.las
-Draft_consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta greedy.ini 
-# final consensus is in ecoli.consensus.fasta
+# Run postprocessing
+
+python pruning_and_clipping.py ecoli.edges.hinges ecoli.hinge.list <identifier-of-run>
 ```
 
 ## Debugging
@@ -149,13 +140,12 @@ Draw pileup on draft assembly, given a region(start,end):
 draw2_pileup_region.py  3600000 4500000 
 ```
 
-# Preliminary results:
-![image](http://fxia.me/assets/img/awe.png)
-For ecoli 160X dataset, finished assembly can be achieved. 
+# Results:
 
+For ecoli 160X dataset,  after shortening reads to have a mean length of 3500 (with a variance of 1500), the graph is preserved.
 
-# Limitations
+![image](ecoli_shortened.png)
 
-- Only tested on high coverage and microbe datasets
-- Keeping one read and its reverse complement as two nodes lose a lot of information
-- More work needed to make NSG and Z-Pruning working. 
+The graph returned by Falcon here is
+
+![image](Falcon_ecoli_shortened.png)
