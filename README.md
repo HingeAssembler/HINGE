@@ -11,7 +11,7 @@ HINGE is a long read assembler based on an idea called _hinging_.
 
 HINGE is an OLC(Overlap-Layout-Consensus) assembler. The idea of the pipeline is shown below. 
 
-![image](High_level_overview.png)
+![image](misc/High_level_overview.png)
 
 At a high level, the algorithm can be thought of a variation of the classical greedy algorithm.
 The main difference with the greedy algorithm is that rather than each read having a single successor,
@@ -160,8 +160,8 @@ draw2_pileup_region.py  3600000 4500000
 
 For ecoli 160X dataset,  after shortening reads to have a mean length of 3500 (with a variance of 1500), the graph is preserved.
 
-![image](ecoli_shortened.png)
+![image](misc/ecoli_shortened.png)
 
 The graph returned by Falcon here is
 
-![image](Falcon_ecoli_shortened.png)
+![image](misc/Falcon_ecoli_shortened.png)
