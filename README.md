@@ -166,4 +166,4 @@ For ecoli 160X dataset,  after shortening reads to have a mean length of 3500 (w
 
 ![image](ecoli_shortened.png)
 
-
+Results on the bacterial genomes of the NCTC 3000 project can be found at [web.stanford.edu/~gkamath/NCTC/report.html](https://web.stanford.edu/~gkamath/NCTC/report.html)
