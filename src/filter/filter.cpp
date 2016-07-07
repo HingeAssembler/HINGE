@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
                     std::istreambuf_iterator<char>());
 
     console->info("Parameters passed in \n{}", str);
-    
+
     if (strlen(name_db) > 0)
         la.openDB(name_db);
 
@@ -416,7 +416,7 @@ int main(int argc, char *argv[]) {
 
     console->info("use_qv_mask set to {}",use_qv_mask);
 
-    omp_set_num_threads(N_PROC);
+    //omp_set_num_threads(N_PROC);
     console->info("number processes set to {}", N_PROC);
 
     console->info("LENGTH_THRESHOLD = {}",LENGTH_THRESHOLD);
@@ -465,18 +465,18 @@ int main(int argc, char *argv[]) {
         std::sort(idx_pileup[i].begin(), idx_pileup[i].end(), compare_overlap);
     }
 
-# pragma omp parallel for
+//# pragma omp parallel for
     for (int i = 0; i < aln.size(); i++) {
         idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
     }
 
-# pragma omp parallel for
+//# pragma omp parallel for
     for (int i = 0; i < aln.size(); i++) {
         idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
     }
 
 
-# pragma omp parallel for
+//# pragma omp parallel for
     for (int i = 0; i < n_read; i++) {
         for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx_ab[i].begin(); it!= idx_ab[i].end(); it++) {
             std::sort(it->second.begin(), it->second.end(), compare_overlap);

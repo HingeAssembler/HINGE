@@ -216,7 +216,7 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
     match->weight =
             match->eff_read_A_match_end_ - match->eff_read_A_match_start_
             + match->eff_read_B_match_end_ - match->eff_read_B_match_start_;
-    
+
     return contained;
 }
 
@@ -621,12 +621,12 @@ int main(int argc, char *argv[]) {
     // this is the pileup
     std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx_ab;
     /*
-    	idx is a vector of length n_read, each element idx3[read A id] is a map, 
+    	idx is a vector of length n_read, each element idx3[read A id] is a map,
     	from read B id to a vector of overlaps
     */
     //std::vector<std::vector<LOverlap *>> idx2;
     /*
-    	idx2 is a vector of length n_read, each element idx2[read A id] is a vector, 
+    	idx2 is a vector of length n_read, each element idx2[read A id] is a vector,
     	for each read B, we put the best overlap into that vector
     */
     //std::vector<std::unordered_map<int, LOverlap *>> idx3;
@@ -1358,7 +1358,7 @@ int main(int argc, char *argv[]) {
                                             new_killed_hinges_vec[i].push_back(Hinge(hinges_vec[i][k].pos,hinges_vec[i][k].type,false));
 
                                             if (hinges_vec[i][k].type == -1) {
-                                                console->info("This should not have happened.");
+                                                //console->info("This should not have happened.");
                                                 // If this is a -1 hinge, read i should also bridge the repeat,
                                                 // and hinges_vec[i][k] would have been killed in filter
 
@@ -1502,7 +1502,7 @@ int main(int argc, char *argv[]) {
                                         new_killed_hinges_vec[i].push_back(Hinge(hinges_vec[i][k].pos,hinges_vec[i][k].type,false));
 
                                         if (hinges_vec[i][k].type != -1) {
-                                            console->info("This should not have happened 2.");
+                                            //console->info("This should not have happened 2.");
                                             // If this is a +1 hinge, read i should also bridge the repeat,
                                             // and hinges_vec[i][k] would have been killed in filter
                                         }
