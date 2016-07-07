@@ -17,14 +17,14 @@ reads = sorted(list(set([int(x.split("_")[0].lstrip("B")) for x in in_graph.node
 
 dbshow_reads = ' '.join([str(x+1) for x in reads])
 
-DBshow_cmd = "DBshow "+filename+' '+dbshow_reads
+DBshow_cmd = "DBshow "+ filedir + '/' +filename + ' ' + dbshow_reads
 stream = subprocess.Popen(DBshow_cmd.split(),
                                   stdout=subprocess.PIPE,bufsize=1)
 reads_queried = parse_read(stream.stdout)
 read_dict = {}
 for read_id,read in itertools.izip(reads,reads_queried):
     rdlen = len(read[1])
-#     print read
+#    print read
     read_dict[read_id] = read
 
 complement = {'A':'T','C': 'G','T':'A', 'G':'C','a':'t','t':'a','c':'g','g':'c'}
