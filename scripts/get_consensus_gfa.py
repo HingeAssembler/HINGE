@@ -7,9 +7,9 @@ import numpy as np
 import networkx as nx
 import itertools
 
-NCTCname = sys.argv[1]
-filename = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname
-graphml_path = sys.argv[2]
+filedir = sys.argv[1]
+filename = sys.argv[2]
+graphml_path = sys.argv[3]
 
 in_graph = nx.read_graphml(graphml_path)
 
@@ -268,7 +268,7 @@ while set(in_graph.nodes())-vertices_used:
 
 
 
-outfile = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname + ".edges.list"
+outfile = filedir + '/' + filename + ".edges.list"
 
 vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
  len(nx.node_connected_component(h.to_undirected(), x)) > 2]
@@ -316,12 +316,11 @@ with open(outfile, 'w') as f:
                     nodeB.split('_')[1], -d['read_a_start_raw'] + d['read_a_end_raw'] - d['read_b_start_raw'] + d['read_b_end_raw'],
                     d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
 
-out_graphml_name = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname+'_draft.graphml'
+out_graphml_name = filedir + '/' + filename +'_draft.graphml'
 
 
-
-gfaname = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname+'_consensus.gfa'
-consensus_name = sys.argv[3]
+gfaname = filedir + '/' + filename +'_consensus.gfa'
+consensus_name = sys.argv[4]
 
 consensus_contigs = []
 try:
@@ -331,6 +330,7 @@ try:
                 consensus_contigs.append(line.strip())
 except:
     pass
+    
 for  i, vert in enumerate(h.nodes()):
     print i,len(h.node[vert]['path']), len(h.node[vert]['segment']), len(consensus_contigs[i])
 

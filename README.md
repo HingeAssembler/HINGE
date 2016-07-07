@@ -118,7 +118,7 @@ python pruning_and_clipping.py ecoli.edges.hinges ecoli.hinge.list <identifier-o
 
 # get draft assembly 
 
-get_draft_path.py  ecoli ecoli<identifier-of-run>.G2.graphml
+get_draft_path.py <working directory> ecoli ecoli<identifier-of-run>.G2.graphml
 draft_assembly --db ecoli --las ecoli.las --prefix ecoli --config utils/nominal.ini --out ecoli.draft
 
 
@@ -129,7 +129,7 @@ fasta2DB draft ecoli.draft.pb.fasta
 HPCmapper draft ecoli | zsh -v  
 LAmerge draft.ecoli.las draft.ecoli.*.las
 consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta utils/nominal.ini
-get_consensus_gfa.py ecoli ecoli<identifier-of-run>.G2.graphml ecoli.consensus.fasta
+get_consensus_gfa.py <working directory> ecoli ecoli<identifier-of-run>.G2.graphml ecoli.consensus.fasta
 
 #results should be in ecoli_consensus.gfa
 ```
@@ -163,6 +163,7 @@ draw2_pileup_region.py  3600000 4500000
 # Results:
 
 For ecoli 160X dataset,  after shortening reads to have a mean length of 3500 (with a variance of 1500), the graph is preserved.
+
 
 ![image](misc/ecoli_shortened.png)
 
