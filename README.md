@@ -1,6 +1,6 @@
 # HINGE
 
-CI Status: ![image](https://travis-ci.org/fxia22/HINGE.svg?branch=dev)
+CI Status: ![image](https://travis-ci.org/fxia22/HINGE.svg?branch=master)
 
 
 ## Introduction 
@@ -104,14 +104,17 @@ rm ecoli.*.las # we only need ecoli.las
 DASqv -c100 ecoli ecoli.las
 
 # Run filter
-Reads_filter --db ecoli --las ecoli.las -x ecoli --config utils/nominal.ini
+
+Reads_filter --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini
 
 # Run layout
-hinging --db ecoli --las ecoli.las -x ecoli --config utils/nominal.ini -o ecoli
+
+hinging --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini -o ecoli
 
 # Run postprocessing
 
 python pruning_and_clipping.py ecoli.edges.hinges ecoli.hinge.list <identifier-of-run>
+
 
 # get draft assembly 
 
@@ -120,6 +123,7 @@ draft_assembly --db ecoli --las ecoli.las --prefix ecoli --config utils/nominal.
 
 
 # get consensus assembly
+
 correct_head.py ecoli.draft.fasta ecoli.draft.pb.fasta draft_map.txt
 fasta2DB draft ecoli.draft.pb.fasta 
 HPCmapper draft ecoli | zsh -v  
@@ -162,6 +166,4 @@ For ecoli 160X dataset,  after shortening reads to have a mean length of 3500 (w
 
 ![image](misc/ecoli_shortened.png)
 
-The graph returned by Falcon here is
-
-![image](misc/Falcon_ecoli_shortened.png)
+Results on the bacterial genomes of the [NCTC 3000](http://www.sanger.ac.uk/resources/downloads/bacteria/nctc/) project can be found at [web.stanford.edu/~gkamath/NCTC/report.html](https://web.stanford.edu/~gkamath/NCTC/report.html)
