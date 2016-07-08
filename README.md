@@ -80,7 +80,7 @@ Installing the software is very easy.
 git clone https://github.com/fxia22/HINGE.git
 git submodule init
 git submodule update
-./build.sh
+./utils/build.sh
 ```
 
 # Running
@@ -90,7 +90,7 @@ In order to call the programs from anywhere, I suggest one export the directory 
 A demo run for assembling the ecoli genome is the following:
 
 ```
-source setup.sh
+source utils/setup.sh
 mkdir data/ecoli
 cd data/ecoli
 # reads.fasta should be in data/ecoli
