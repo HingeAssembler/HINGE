@@ -85,7 +85,7 @@ git submodule update
 
 # Running
 
-In order to call the programs from anywhere, I suggest one export the directory of binary file to system environment, you can do that by using the script `setup.sh`.
+In order to call the programs from anywhere, I suggest one export the directory of binary file to system environment, you can do that by using the script `setup.sh`. The parameters are initialised in `utils/nominal.ini`. The path to nominal.ini has to be specified to run the scripts.
 
 A demo run for assembling the ecoli genome is the following:
 
@@ -106,11 +106,11 @@ DASqv -c100 ecoli ecoli.las
 # Run filter
 
 mkdir log
-Reads_filter --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini
+Reads_filter --db ecoli --las ecoli.las -x ecoli --config <path to nominal.ini>
 
 # Run layout
 
-hinging --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini -o ecoli
+hinging --db ecoli --las ecoli.las -x ecoli --config <path to nominal.ini> -o ecoli
 
 # Run postprocessing
 
@@ -120,7 +120,7 @@ python pruning_and_clipping.py ecoli.edges.hinges ecoli.hinge.list <identifier-o
 # get draft assembly 
 
 get_draft_path.py <working directory> ecoli ecoli<identifier-of-run>.G2.graphml
-draft_assembly --db ecoli --las ecoli.las --prefix ecoli --config utils/nominal.ini --out ecoli.draft
+draft_assembly --db ecoli --las ecoli.las --prefix ecoli --config <path to nominal.ini> --out ecoli.draft
 
 
 # get consensus assembly
