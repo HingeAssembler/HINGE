@@ -105,6 +105,7 @@ DASqv -c100 ecoli ecoli.las
 
 # Run filter
 
+mkdir log
 Reads_filter --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini
 
 # Run layout
