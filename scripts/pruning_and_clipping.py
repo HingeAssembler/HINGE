@@ -200,12 +200,12 @@ def dead_end_clipping_sym(G,threshold,print_debug = False):
 
         cur_path = [st_node]
 
+        cur_node = st_node
         if print_debug:
             print '----0'
             print st_node
 
         if len(H.successors(st_node)) == 1:
-
             cur_node = H.successors(st_node)[0]
 
             if print_debug:

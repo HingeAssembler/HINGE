@@ -113,7 +113,6 @@ for vertex in vertices_of_interest:
             read_tuples_raw[vertex] = (0,0)
 
 
-
 for vertex in vertices_of_interest:
     h.add_node(vertex)
     if vertex.split("_")[1] == '0':
