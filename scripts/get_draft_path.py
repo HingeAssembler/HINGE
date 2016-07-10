@@ -7,9 +7,9 @@ import numpy as np
 import networkx as nx
 import itertools
 
-NCTCname = sys.argv[1]
-filename = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname
-graphml_path = sys.argv[2]
+filedir = sys.argv[1]
+filename = sys.argv[2]
+graphml_path = sys.argv[3]
 
 in_graph = nx.read_graphml(graphml_path)
 
@@ -17,7 +17,7 @@ reads = sorted(list(set([int(x.split("_")[0].lstrip("B")) for x in in_graph.node
 
 dbshow_reads = ' '.join([str(x+1) for x in reads])
 
-DBshow_cmd = "DBshow "+filename+' '+dbshow_reads
+DBshow_cmd = "DBshow "+ filedir+'/'+ filename+' '+dbshow_reads
 stream = subprocess.Popen(DBshow_cmd.split(),
                                   stdout=subprocess.PIPE,bufsize=1)
 reads_queried = parse_read(stream.stdout)
@@ -167,8 +167,8 @@ for start_vertex in vertices_of_interest:
 #         print cur_path
         node_path = [x[0] for x in cur_path]
         h.node[node_name]['path'] = node_path
-        h.node[node_name]['start_read'] = path_var[0][1][0]
-        h.node[node_name]['end_read'] = path_var[-1][1][1]
+        h.node[node_name]['start_read'] = cur_path[0][1][0]
+        h.node[node_name]['end_read'] = cur_path[-1][1][1]
         #h.node[node_name]['segment'] = get_string(cur_path)
         h.add_edges_from([(start_vertex,node_name),(node_name,cur_vertex)])
 #         paths.append(cur_path)
@@ -227,8 +227,12 @@ while set(in_graph.nodes())-vertices_used:
 
         node_path = [x[0] for x in cur_path]
         h.node[node_name]['path'] = node_path
-        h.node[node_name]['start_read'] = path_var[0][1][0]
-        h.node[node_name]['end_read'] = path_var[-1][1][1]
+        try:
+            h.node[node_name]['start_read'] = cur_path[0][1][0]
+            h.node[node_name]['end_read'] = cur_path[-1][1][1]
+        except:
+            print path_var
+            raise
         #h.node[node_name]['segment'] = get_string(cur_path)
         h.add_edges_from([(vert,node_name),(node_name,vert)])
 
@@ -260,15 +264,15 @@ while set(in_graph.nodes())-vertices_used:
 
             node_path = [x[0] for x in cur_path]
             h.node[node_name]['path'] = node_path
-            h.node[node_name]['start_read'] = path_var[0][1][0]
-            h.node[node_name]['end_read'] = path_var[-1][1][1]
+            h.node[node_name]['start_read'] = cur_path[0][1][0]
+            h.node[node_name]['end_read'] = cur_path[-1][1][1]
             #h.node[node_name]['segment'] = get_string(cur_path)
             print len(cur_path)
             h.add_edges_from([(vertRC,node_name),(node_name,vertRC)])
 
 
 
-outfile = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname + ".edges.list"
+outfile = filedir + '/' + filename + ".edges.list"
 
 vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
  len(nx.node_connected_component(h.to_undirected(), x)) > 2]
@@ -316,11 +320,10 @@ with open(outfile, 'w') as f:
                     nodeB.split('_')[1], -d['read_a_start_raw'] + d['read_a_end_raw'] - d['read_b_start_raw'] + d['read_b_end_raw'],
                     d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
 
-out_graphml_name = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname+'_draft.graphml'
+out_graphml_name = filedir + '/' + filename +'_draft.graphml'
 
 
-
-gfaname = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname+'_draft_python.gfa'
+gfaname = filedir + '/' + filename+ '_draft_python.gfa'
 if len(sys.argv) > 3:
     consensus_name = sys.argv[3]
 else:
