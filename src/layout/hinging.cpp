@@ -471,7 +471,7 @@ int main(int argc, char *argv[]) {
     std::vector<int> homo_reads;
 
 
-    bool delete_telomere = false;  // TODO: command line option to set this true
+//    bool delete_telomere = false;  // TODO: command line option to set this true
 
     int read_id;
     while (homo >> read_id) homo_reads.push_back(read_id);
@@ -589,6 +589,9 @@ int main(int argc, char *argv[]) {
     int MIN_CONNECTED_COMPONENT_SIZE = (int) reader.GetInteger("layout", "min_connected_component_size", 8);
 
     bool USE_TWO_MATCHES = (int) reader.GetInteger("layout", "use_two_matches", 1);
+    bool delete_telomere = (int) reader.GetInteger("layout", "del_telomere", 0);
+
+
 
 
     console->info("LENGTH_THRESHOLD = {}", LENGTH_THRESHOLD);
@@ -607,7 +610,7 @@ int main(int argc, char *argv[]) {
     console->info("MATCHING_HINGE_SLACK = {}", MATCHING_HINGE_SLACK);
     console->info("MIN_CONNECTED_COMPONENT_SIZE = {}", MIN_CONNECTED_COMPONENT_SIZE);
     console->info("USE_TWO_MATCHES = {}", USE_TWO_MATCHES);
-
+    console->info("del_telomeres = {}", delete_telomere);
 
 
 
