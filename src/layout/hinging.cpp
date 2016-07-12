@@ -433,6 +433,8 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("prefix", 'x', "(intermediate output) input file prefix", true, "");
     cmdp.add<std::string>("out", 'o', "final output file name", true, "");
     cmdp.add<std::string>("log", 'g', "log folder name", false, "log");
+    cmdp.add("debug", '\0', "debug mode");
+
 
 
 
@@ -488,10 +490,15 @@ int main(int argc, char *argv[]) {
     spdlog::register_logger(console);
 
     console->info("Hinging layout");
-    char *buff = (char *) malloc(sizeof(char) * 2000);
-    getwd(buff);
-    console->info("current user {}, current working directory {}", getlogin(), buff);
-    free(buff);
+
+
+    if (cmdp.exist("debug")) {
+        char *buff = (char *) malloc(sizeof(char) * 2000);
+        getwd(buff);
+        console->info("current user {}, current working directory {}", getlogin(), buff);
+        free(buff);
+    }
+
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
     console->info("name of fasta: {}, name of .paf file {}", name_fasta, name_paf);
     console->info("filter files prefix: {}", out);

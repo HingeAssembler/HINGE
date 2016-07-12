@@ -215,6 +215,7 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("prefix", 'x', "prefix of (intermediate) output", false, "out");
     cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
     cmdp.add<std::string>("log", 'g', "log folder name", false, "log");
+    cmdp.add("debug", '\0', "debug mode");
     cmdp.parse_check(argc, argv);
 
     LAInterface la;
@@ -244,10 +245,14 @@ int main(int argc, char *argv[]) {
 
 
     console->info("Reads filtering");
-    char * buff = (char*) malloc(sizeof(char) * 2000);
-    getwd(buff);
-    console->info("current user {}, current working directory {}", getlogin(), buff);
-    free(buff);
+
+    if (cmdp.exist("debug")) {
+        char *buff = (char *) malloc(sizeof(char) * 2000);
+        getwd(buff);
+        console->info("current user {}, current working directory {}", getlogin(), buff);
+        free(buff);
+    }
+
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
     console->info("name of fasta: {}, name of .paf file {}", name_fasta, name_paf);
 
