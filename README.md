@@ -72,6 +72,12 @@ In the pipeline described above, most programs not only takes the input file and
 
 # Installation
 
+## Dependencies
+- g++ 4.9
+- cmake 3.x
+- libhdf5
+- boost
+
 This software is still at prototype stage so it is not well packaged, however it is designed in a modular flavor so different combinations of methods can be tested. 
 
 Installing the software is very easy. 
