@@ -10,7 +10,7 @@ DBsplit ecoli
 HPCdaligner ecoli | bash -v
 
 rm ecoli.*.ecoli.*.las
-LAmerge ecoli.las ecoli.*.las
+LAmerge ecoli.las ecoli.+([[:digit:]]).las
 DASqv -c100 ecoli ecoli.las
 
 Reads_filter --db ecoli --las ecoli.las -x ecoli --config ~/HINGE/utils/nominal.ini
