@@ -77,6 +77,13 @@ In the pipeline described above, most programs not only takes the input file and
 - cmake 3.x
 - libhdf5
 - boost
+- Python 2.7
+
+The following python packages are necessary:
+- numpy
+- ujson
+- colormap
+- easydev.tools
 
 This software is still at prototype stage so it is not well packaged, however it is designed in a modular flavor so different combinations of methods can be tested. 
 
