@@ -105,7 +105,7 @@ DBsplit -x500 -s100 ecoli
 HPCdaligner -t5 ecoli | csh -v
 # alternatively, you can put output of HPCdaligner to a bash file and edit it to support 
 rm ecoli.*.ecoli.*
-LAmerge ecoli.las ecoli.*.las
+LAmerge ecoli.las ecoli.+([[:digit:]]).las
 rm ecoli.*.las # we only need ecoli.las
 DASqv -c100 ecoli ecoli.las
 
