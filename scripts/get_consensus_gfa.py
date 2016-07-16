@@ -167,8 +167,8 @@ for start_vertex in vertices_of_interest:
 #         print cur_path
         node_path = [x[0] for x in cur_path]
         h.node[node_name]['path'] = node_path
-        h.node[node_name]['start_read'] = path_var[0][1][0]
-        h.node[node_name]['end_read'] = path_var[-1][1][1]
+        h.node[node_name]['start_read'] = cur_path[0][1][0]
+        h.node[node_name]['end_read'] = cur_path[-1][1][1]
         h.node[node_name]['segment'] = get_string(cur_path)
         h.add_edges_from([(start_vertex,node_name),(node_name,cur_vertex)])
 #         paths.append(cur_path)
@@ -227,8 +227,12 @@ while set(in_graph.nodes())-vertices_used:
 
         node_path = [x[0] for x in cur_path]
         h.node[node_name]['path'] = node_path
-        h.node[node_name]['start_read'] = path_var[0][1][0]
-        h.node[node_name]['end_read'] = path_var[-1][1][1]
+        try:
+            h.node[node_name]['start_read'] = cur_path[0][1][0]
+            h.node[node_name]['end_read'] = cur_path[-1][1][1]
+        except:
+            print cur_path
+            raise
         h.node[node_name]['segment'] = get_string(cur_path)
         h.add_edges_from([(vert,node_name),(node_name,vert)])
 
@@ -260,8 +264,8 @@ while set(in_graph.nodes())-vertices_used:
 
             node_path = [x[0] for x in cur_path]
             h.node[node_name]['path'] = node_path
-            h.node[node_name]['start_read'] = path_var[0][1][0]
-            h.node[node_name]['end_read'] = path_var[-1][1][1]
+            h.node[node_name]['start_read'] = cur_path[0][1][0]
+            h.node[node_name]['end_read'] = cur_path[-1][1][1]
             h.node[node_name]['segment'] = get_string(cur_path)
             print len(cur_path)
             h.add_edges_from([(vertRC,node_name),(node_name,vertRC)])
@@ -330,7 +334,7 @@ try:
                 consensus_contigs.append(line.strip())
 except:
     pass
-    
+
 for  i, vert in enumerate(h.nodes()):
     print i,len(h.node[vert]['path']), len(h.node[vert]['segment']), len(consensus_contigs[i])
 
