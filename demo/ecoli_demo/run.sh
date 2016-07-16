@@ -29,3 +29,4 @@ rm draft.*.ecoli.*.las
 LAmerge draft.ecoli.las draft.ecoli.*.las
 consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta ~/HINGE/utils/nominal.ini
 
+get_consensus_gfa.py $PWD ecoli ecoldemo.G2.graphml ecoli.consensus.fasta
