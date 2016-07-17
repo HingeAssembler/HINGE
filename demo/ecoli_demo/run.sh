@@ -10,7 +10,7 @@ DBsplit ecoli
 HPCdaligner ecoli | bash -v
 
 rm ecoli.*.ecoli.*.las
-LAmerge ecoli.las ecoli.+([[:digit:]]).las
+LAmerge ecoli.las ecoli.[0-9].las
 DASqv -c100 ecoli ecoli.las
 
 mkdir log
