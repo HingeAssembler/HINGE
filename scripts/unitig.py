@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import networkx as nx
 import sys
 import itertools
