@@ -980,10 +980,13 @@ int main(int argc, char *argv[]) {
         std::cout << draft_assembly.size() << std::endl;
 
 
-        out_fa << ">Draft_assembly" << num_contig << std::endl;
-        out_fa << draft_assembly << std::endl;
-        num_contig++;
-
+        for (int i = 0; i < draft_assembly.size()/20000; i++) {
+            int len = 20000;
+            if ((i+1)*20000 > draft_assembly.size()) len = draft_assembly.size()-20000*i;
+            out_fa << ">Draft_assembly_" << num_contig << "_" << i << std::endl;
+            out_fa << draft_assembly.substr(i*20000, len) << std::endl;
+        }
+            num_contig++;
     }
 
     if (strlen(name_db) > 0)

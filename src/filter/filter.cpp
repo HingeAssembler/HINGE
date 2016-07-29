@@ -23,6 +23,7 @@
 #include "LAInterface.h"
 #include "cmdline.h"
 
+
 #define LAST_READ_SYMBOL  '$'
 
 
@@ -205,6 +206,8 @@ float number_of_bridging_reads(std::vector<LOverlap *> ovl_reads, int hinge_loca
 
 
 int main(int argc, char *argv[]) {
+
+    mkdir("log",S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
     cmdline::parser cmdp;
     cmdp.add<std::string>("db", 'b', "db file name", false, "");
