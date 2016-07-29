@@ -392,12 +392,14 @@ int main(int argc, char *argv[]) {
     }
     std::cout << "add data" << std::endl;
 
-
     std::string name_input= out + ".edges.list";
     std::ifstream edges_file(name_input);
 
-    std::string name_output = out_name + ".fasta";
+    std::string name_output = out_name + ".mega.fasta";
     std::ofstream out_fa(name_output);
+
+    std::string name_output_orig = out_name + ".fasta";
+    std::ofstream out_fa_orig(name_output_orig);
 
     int num_contig = 0;
     int num_one_read_contig = 0;
@@ -433,6 +435,8 @@ int main(int argc, char *argv[]) {
 
             if (tokens.size() == 4) {
                 out_fa << ">OneReadContig" << num_one_read_contig << std::endl;
+                out_fa_orig << ">OneReadContig" << num_one_read_contig << std::endl;
+
 
 
 
@@ -449,6 +453,7 @@ int main(int argc, char *argv[]) {
                 else current_seq = reverse_complement(reads[node_id]->bases);
 
                 out_fa << current_seq.substr(from, to-from) << std::endl;
+                out_fa_orig << current_seq.substr(from, to-from) << std::endl;
 
                 num_one_read_contig++;
             }
@@ -980,12 +985,17 @@ int main(int argc, char *argv[]) {
         std::cout << draft_assembly.size() << std::endl;
 
 
-        for (int i = 0; i < draft_assembly.size()/20000; i++) {
-            int len = 20000;
-            if ((i+1)*20000 > draft_assembly.size()) len = draft_assembly.size()-20000*i;
+        for (int i = 0; i < draft_assembly.size()/25000; i++) {
+            int len = 50000;
+            if (i*25000 + 50000 > draft_assembly.size()) len = draft_assembly.size()-25000*i;
             out_fa << ">Draft_assembly_" << num_contig << "_" << i << std::endl;
-            out_fa << draft_assembly.substr(i*20000, len) << std::endl;
+            out_fa << draft_assembly.substr(i*25000, len) << std::endl;
         }
+
+        out_fa_orig << ">Draft_assembly_" << num_contig << std::endl;
+        out_fa_orig << draft_assembly << std::endl;
+
+
             num_contig++;
     }
 
