@@ -17,14 +17,14 @@ reads = sorted(list(set([int(x.split("_")[0].lstrip("B")) for x in in_graph.node
 
 dbshow_reads = ' '.join([str(x+1) for x in reads])
 
-DBshow_cmd = "DBshow "+ filedir+'/'+ filename+' '+dbshow_reads
+DBshow_cmd = "DBshow "+ filedir + '/' +filename + ' ' + dbshow_reads
 stream = subprocess.Popen(DBshow_cmd.split(),
                                   stdout=subprocess.PIPE,bufsize=1)
 reads_queried = parse_read(stream.stdout)
 read_dict = {}
 for read_id,read in itertools.izip(reads,reads_queried):
     rdlen = len(read[1])
-#     print read
+#    print read
     read_dict[read_id] = read
 
 complement = {'A':'T','C': 'G','T':'A', 'G':'C','a':'t','t':'a','c':'g','g':'c'}
@@ -33,18 +33,18 @@ def reverse_complement(string):
     return "".join(map(lambda x:complement[x],reversed(string)))
 
 def get_string(path):
-    print path
+    #print path
     ret_str = ''
     for itm in path:
-        print itm
+#         print itm
         read_id,rd_orientation = itm[0].split("_")
         if rd_orientation == '1':
             assert itm[1][0] >= itm[1][1]
+#             print itm
             str_st = itm[1][1]
             str_end = itm[1][0]
             read_str = read_dict[int(read_id.lstrip("B"))][1][str_st:str_end]
         else:
-
             assert itm[1][0] <= itm[1][1]
             str_st = itm[1][0]
             str_end = itm[1][1]
@@ -121,11 +121,11 @@ for vertex in vertices_of_interest:
     else:
         path_var = [(vertex,(read_tuples[vertex][1], read_tuples[vertex][0]))]
     #print path_var
-    #segment = get_string(path_var)
+    segment = get_string(path_var)
     h.node[vertex]['start_read'] = path_var[0][1][0]
     h.node[vertex]['end_read'] = path_var[0][1][1]
     h.node[vertex]['path'] = [vertex]
-    #h.node[vertex]['segment'] = segment
+    h.node[vertex]['segment'] = segment
 
 vertices_used = set([x for x in h.nodes()])
 contig_no = 1
@@ -167,9 +167,9 @@ for start_vertex in vertices_of_interest:
 #         print cur_path
         node_path = [x[0] for x in cur_path]
         h.node[node_name]['path'] = node_path
-        h.node[node_name]['start_read'] = cur_path[0][1][0]
-        h.node[node_name]['end_read'] = cur_path[-1][1][1]
-        #h.node[node_name]['segment'] = get_string(cur_path)
+        h.node[node_name]['start_read'] = path_var[0][1][0]
+        h.node[node_name]['end_read'] = path_var[-1][1][1]
+        h.node[node_name]['segment'] = get_string(cur_path)
         h.add_edges_from([(start_vertex,node_name),(node_name,cur_vertex)])
 #         paths.append(cur_path)
 
@@ -204,7 +204,7 @@ while set(in_graph.nodes())-vertices_used:
     h.node[vert]['path'] = node_path
     h.node[vert]['start_read'] = read_start
     h.node[vert]['end_read'] = read_end
-    #h.node[vert]['segment'] = get_string([(vert,(read_start, read_end))])
+    h.node[vert]['segment'] = get_string([(vert,(read_start, read_end))])
     vertices_used.add(vert)
 
     first_out_vertices = in_graph.successors(vert)
@@ -227,18 +227,14 @@ while set(in_graph.nodes())-vertices_used:
 
         node_path = [x[0] for x in cur_path]
         h.node[node_name]['path'] = node_path
-        try:
-            h.node[node_name]['start_read'] = cur_path[0][1][0]
-            h.node[node_name]['end_read'] = cur_path[-1][1][1]
-        except:
-            print path_var
-            raise
-        #h.node[node_name]['segment'] = get_string(cur_path)
+        h.node[node_name]['start_read'] = path_var[0][1][0]
+        h.node[node_name]['end_read'] = path_var[-1][1][1]
+        h.node[node_name]['segment'] = get_string(cur_path)
         h.add_edges_from([(vert,node_name),(node_name,vert)])
 
     if vertRC not in vertices_used:
         h.add_node(vertRC)
-        #h.node[vertRC]['segment'] = get_string([(vertRC,(read_end, read_start))])
+        h.node[vertRC]['segment'] = get_string([(vertRC,(read_end, read_start))])
         h.node[vertRC]['path'] = [vertRC]
         h.node[vertRC]['start_read'] = read_end
         h.node[vertRC]['end_read'] = read_start
@@ -264,9 +260,9 @@ while set(in_graph.nodes())-vertices_used:
 
             node_path = [x[0] for x in cur_path]
             h.node[node_name]['path'] = node_path
-            h.node[node_name]['start_read'] = cur_path[0][1][0]
-            h.node[node_name]['end_read'] = cur_path[-1][1][1]
-            #h.node[node_name]['segment'] = get_string(cur_path)
+            h.node[node_name]['start_read'] = path_var[0][1][0]
+            h.node[node_name]['end_read'] = path_var[-1][1][1]
+            h.node[node_name]['segment'] = get_string(cur_path)
             print len(cur_path)
             h.add_edges_from([(vertRC,node_name),(node_name,vertRC)])
 
@@ -288,7 +284,7 @@ while True:
     #print vert,
     succ = h.successors(vert)[0]
     preds = h.predecessors(vert)
-    #h.node[succ]['segment'] =  h.node[vert]['segment'] + h.node[succ]['segment']
+    h.node[succ]['segment'] =  h.node[vert]['segment'] + h.node[succ]['segment']
     h.node[succ]['path'] = h.node[vert]['path'] + h.node[succ]['path'][1:]
     for pred in preds:
         #print pred, succ
@@ -323,11 +319,8 @@ with open(outfile, 'w') as f:
 out_graphml_name = filedir + '/' + filename +'_draft.graphml'
 
 
-gfaname = filedir + '/' + filename+ '_draft_python.gfa'
-if len(sys.argv) > 3:
-    consensus_name = sys.argv[3]
-else:
-    consensus_name = ''
+gfaname = filedir + '/' + filename +'_consensus.gfa'
+consensus_name = sys.argv[4]
 
 consensus_contigs = []
 try:
@@ -337,10 +330,20 @@ try:
                 consensus_contigs.append(line.strip())
 except:
     pass
-#for  i, vert in enumerate(h.nodes()):
-#    print i,len(h.node[vert]['path']), len(h.node[vert]['segment']), len(consensus_contigs[i])
+    
+for  i, vert in enumerate(h.nodes()):
+    print i,len(h.node[vert]['path']), len(h.node[vert]['segment']), len(consensus_contigs[i])
 
 
+with open(gfaname,'w') as f:
+    f.write("H\tVN:Z:1.0\n")
+    for i,vert in enumerate(h.nodes()):
+        seg = consensus_contigs[i]
+        seg_line = "S\t"+vert+"\t"+seg + '\n'
+        f.write(seg_line)
+    for edge in h.edges():
+        edge_line = "L\t"+edge[0]+"\t+\t"+edge[1]+"\t+\t0M\n"
+        f.write(edge_line)
 
 #last =  h.nodes()[-1]
 #print h.node[last]
