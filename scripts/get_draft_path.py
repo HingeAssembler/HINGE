@@ -7,6 +7,7 @@ from parse_read import *
 import numpy as np
 import networkx as nx
 import itertools
+from pbcore.io import FastaIO
 
 filedir = sys.argv[1]
 filename = sys.argv[2]
@@ -121,11 +122,11 @@ for vertex in vertices_of_interest:
     else:
         path_var = [(vertex,(read_tuples[vertex][1], read_tuples[vertex][0]))]
     #print path_var
-    #segment = get_string(path_var)
+    segment = get_string(path_var)
     h.node[vertex]['start_read'] = path_var[0][1][0]
     h.node[vertex]['end_read'] = path_var[0][1][1]
     h.node[vertex]['path'] = [vertex]
-    #h.node[vertex]['segment'] = segment
+    h.node[vertex]['segment'] = segment
 
 vertices_used = set([x for x in h.nodes()])
 contig_no = 1
@@ -169,7 +170,7 @@ for start_vertex in vertices_of_interest:
         h.node[node_name]['path'] = node_path
         h.node[node_name]['start_read'] = cur_path[0][1][0]
         h.node[node_name]['end_read'] = cur_path[-1][1][1]
-        #h.node[node_name]['segment'] = get_string(cur_path)
+        h.node[node_name]['segment'] = get_string(cur_path)
         h.add_edges_from([(start_vertex,node_name),(node_name,cur_vertex)])
 #         paths.append(cur_path)
 
@@ -204,7 +205,7 @@ while set(in_graph.nodes())-vertices_used:
     h.node[vert]['path'] = node_path
     h.node[vert]['start_read'] = read_start
     h.node[vert]['end_read'] = read_end
-    #h.node[vert]['segment'] = get_string([(vert,(read_start, read_end))])
+    h.node[vert]['segment'] = get_string([(vert,(read_start, read_end))])
     vertices_used.add(vert)
 
     first_out_vertices = in_graph.successors(vert)
@@ -233,12 +234,12 @@ while set(in_graph.nodes())-vertices_used:
         except:
             print path_var
             raise
-        #h.node[node_name]['segment'] = get_string(cur_path)
+        h.node[node_name]['segment'] = get_string(cur_path)
         h.add_edges_from([(vert,node_name),(node_name,vert)])
 
     if vertRC not in vertices_used:
         h.add_node(vertRC)
-        #h.node[vertRC]['segment'] = get_string([(vertRC,(read_end, read_start))])
+        h.node[vertRC]['segment'] = get_string([(vertRC,(read_end, read_start))])
         h.node[vertRC]['path'] = [vertRC]
         h.node[vertRC]['start_read'] = read_end
         h.node[vertRC]['end_read'] = read_start
@@ -266,7 +267,7 @@ while set(in_graph.nodes())-vertices_used:
             h.node[node_name]['path'] = node_path
             h.node[node_name]['start_read'] = cur_path[0][1][0]
             h.node[node_name]['end_read'] = cur_path[-1][1][1]
-            #h.node[node_name]['segment'] = get_string(cur_path)
+            h.node[node_name]['segment'] = get_string(cur_path)
             print len(cur_path)
             h.add_edges_from([(vertRC,node_name),(node_name,vertRC)])
 
@@ -288,14 +289,18 @@ while True:
     #print vert,
     succ = h.successors(vert)[0]
     preds = h.predecessors(vert)
-    #h.node[succ]['segment'] =  h.node[vert]['segment'] + h.node[succ]['segment']
+    h.node[succ]['segment'] =  h.node[vert]['segment'] + h.node[succ]['segment']
     h.node[succ]['path'] = h.node[vert]['path'] + h.node[succ]['path'][1:]
+
     for pred in preds:
         #print pred, succ
         h.add_edges_from([(pred,succ)])
         h.remove_edge(pred,vert)
+
     h.remove_edge(vert,succ)
     h.remove_node(vert)
+
+
 
 for  i, vert in enumerate(h.nodes()):
     print i,len(h.node[vert]['path'])
@@ -337,9 +342,29 @@ try:
                 consensus_contigs.append(line.strip())
 except:
     pass
-#for  i, vert in enumerate(h.nodes()):
-#    print i,len(h.node[vert]['path']), len(h.node[vert]['segment']), len(consensus_contigs[i])
+for  i, vert in enumerate(h.nodes()):
+   print i,len(h.node[vert]['path']), len(h.node[vert]['segment']), len(consensus_contigs[i])
 
+
+one_sided_contigs = []
+
+observed_paths = []
+
+for i, vert in enumerate(h.nodes()):
+    path =  [x.split('_')[0] for x in h.node[vert]['path']]
+    path_to_search = list(reversed(path))
+    if path_to_search not in observed_paths:
+        observed_paths.append(path)
+        one_sided_contigs.append(h.node[vert]['segment'])
+
+
+out_nonrevcomp_name = filedir + '/' + filename +'_nonrevcomp.fasta'
+
+writer = FastaIO.FastaWriter(out_nonrevcomp_name)
+for i, ctg in enumerate(one_sided_contigs):
+    print i, len(ctg)
+    new_header = str(i)
+    writer.writeRecord(new_header, ctg)
 
 
 #last =  h.nodes()[-1]
