@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
         for (int j = 0; j < idx[i].size(); j++)
         {
             la.recoverAlignment(idx[i][j]);
-            idx[i][j]->show();
+            //idx[i][j]->show();
         }
     }
     for (int i = 0; i < n_contigs; i++) {
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
         }
 
         consensus_data * consensus;
-        consensus = get_cns_from_align_tags_large( tags_list, seq_count+1, strlen(seq), 6 );
+        consensus = get_cns_from_align_tags( tags_list, seq_count+1, strlen(seq), 6 );
 
         printf("Length:%d\n", strlen(consensus->sequence));
         out << ">Consensus" << i << std::endl << consensus->sequence<<std::endl;
