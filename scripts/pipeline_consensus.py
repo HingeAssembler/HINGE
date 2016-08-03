@@ -71,12 +71,15 @@ if st_point <=7:
     subprocess.check_output(LAmerge_cmd,cwd=base_path,shell=True)
 
 if st_point <= 8:
-    consensus_cmd = 'consensus draft '+bact_id+' draft.'+bact_id+'.las '+bact_id+'.draft.consensus.fasta '+ini_path
+    consensus_cmd = 'consensus draft '+bact_id+' draft.'+bact_id+'.las '+bact_id+'.consensus.fasta '+ini_path
     print '8: '+consensus_cmd
     subprocess.check_output(consensus_cmd,cwd=base_path,shell=True)
     
 
-
+if st_point <= 9:
+    gfa_cmd =  'get_consensus_gfa.py '+base_path+ ' '+ bact_id+ ' '+graphml_file+' '+bact_id+'.consensus.fasta' 
+    print '9: '+gfa_cmd
+    subprocess.check_output(gfa_cmd,cwd=base_path,shell=True)
 
 
 
