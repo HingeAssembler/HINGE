@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
 
         std::vector<int> cov_depth (idx[i][0]->alen,0);
 
-        std::vector<int> zero_scores (4,0); // scores for A,C,G,T are initialized at 0
+        std::vector<int> zero_scores (5,0); // scores for A,C,G,T,- are initialized at 0
         for (int j = 0; j < idx[i][0]->alen; j++) {
             contig_base_scores.push_back(zero_scores);
             insertion_base_scores.push_back(zero_scores);
@@ -151,13 +151,13 @@ int main(int argc, char *argv[]) {
                 }
 
                 if (alignment.first[m] != '-') {
-                    if (base != 4) contig_base_scores[pos_in_contig][base]++;
+                    contig_base_scores[pos_in_contig][base]++;
                     cov_depth[pos_in_contig]++;
                     pos_in_contig++;
                 }
                 else {
                     insertion_score[pos_in_contig]++;
-                    if (base != 4) insertion_base_scores[pos_in_contig][base]++;
+                    insertion_base_scores[pos_in_contig][base]++;
                 }
 
             }
@@ -165,8 +165,8 @@ int main(int argc, char *argv[]) {
         }
 
         int good_bases = 0;
-        int insertions = 0;
-        int deletions = 0;
+        int insertions = 0; // insertion here means that a base is inserted in the consensus
+        int deletions = 0; // deletion here means that the base from the draft is deleted in the consensus
 
         int consensus_length = 0;
 
@@ -176,10 +176,10 @@ int main(int argc, char *argv[]) {
 
             unsigned int max_base = 0;
 
-            for (int b=1; b<4; b++) {
+            for (int b=1; b<5; b++) {
                 if (contig_base_scores[j][b] > contig_base_scores[j][max_base]) max_base = b;
             }
-            if (contig_base_scores[j][max_base] > cov_depth[j]/3) {
+            if (max_base < 4) {
                 out << ToU[max_base];
                 good_bases++;
                 consensus_length++;
@@ -187,6 +187,7 @@ int main(int argc, char *argv[]) {
             else {
                 deletions++;
             }
+
             if (insertion_score[j] > cov_depth[j]/2) {
                 unsigned int max_insertion_base = 0;
                 for (int b=1; b<4; b++) {
