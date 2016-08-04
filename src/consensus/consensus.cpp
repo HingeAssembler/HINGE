@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
     std::cout<<"# Reads:" << n_reads << std::endl;
 
 
-	la.showRead2(4,6);
+//	la.showRead2(4,6);
 
     la.openAlignmentFile(name_las);
 
@@ -82,13 +82,16 @@ int main(int argc, char *argv[]) {
 
 	//la.showAlignment(0,1);
 
-	std::vector<LOverlap *> res1;
-	  	la.resetAlignment();
-	  	la.getOverlap(res1, 0, 1); // get alignment(overlap) for reads [3,5)
 
-	for (auto i:res1)
-		i->show();
-	printf("\n");
+
+    // is this needed?
+//	std::vector<LOverlap *> res1;
+//	  	la.resetAlignment();
+//	  	la.getOverlap(res1, 0, 1); // get alignment(overlap) for reads [3,5)
+//
+//	for (auto i:res1)
+//		i->show();
+//	printf("\n");
 
 
     std::vector<LAlignment *> res;
