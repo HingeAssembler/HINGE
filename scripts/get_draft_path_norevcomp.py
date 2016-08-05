@@ -398,43 +398,6 @@ for  i, vert in enumerate(h.nodes()):
 observed_paths = []
 cnt = 0
 
-with open(outfile, 'w') as f:
-    for i,node in enumerate(h.nodes()):
-        #print node
-        #print h.node[node]
-        path = h.node[node]['path']
-        path_to_check =  [x.split('_')[0] for x in h.node[vert]['path']]
-        
-
-        if path_to_search not in observed_paths:
-            observed_paths.append(path_to_check)
-
-            f.write('>Unitig%d\n'%(cnt))
-            print cnt
-            cnt += 1
-            if len(path) == 1:
-                #print path[0]
-                f.write(' '.join([path[0].split('_')[0], path[0].split('_')[1], str(read_tuples_raw[path[0]][0]), str(read_tuples_raw[path[0]][1])]) + '\n')
-            for j in range(len(path)-1):
-                nodeA = path[j].lstrip("B")
-                nodeB = path[j+1].lstrip("B")
-
-                d =  in_graph.get_edge_data(path[j],path[j+1])
-                try:
-                    f.write('%s %s %s %s %d %d %d %d %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
-                        nodeB.split('_')[1], -d['read_a_start_raw'] + d['read_a_end_raw'] - d['read_b_start_raw'] + d['read_b_end_raw'],
-                        d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
-                except:
-                    print "in error"
-                    # print nodeB
-                    # print node
-                    # print  h.node[node]['start_read']
-                    # print  h.node[node]['end_read']
-                    # print  h.node[node]['path']
-                    # print  len(h.node[node]['segment'])
-                    print d
-                    print in_graph
-                    raise
 
 out_graphml_name = filedir + '/' + filename +'_draft.graphml'
 
@@ -461,12 +424,15 @@ one_sided_contigs = []
 
 observed_paths = []
 
+vertices_to_keep = []
+
 for i, vert in enumerate(h.nodes()):
     path =  [x.split('_')[0] for x in h.node[vert]['path']]
     path_to_search = list(reversed(path))
     if path_to_search not in observed_paths:
         observed_paths.append(path)
         one_sided_contigs.append(h.node[vert]['segment'])
+        vertices_to_keep.append(vert)
 
 
 out_nonrevcomp_name = filedir + '/' + filename +'_nonrevcomp.fasta'
@@ -476,6 +442,43 @@ for i, ctg in enumerate(one_sided_contigs):
     print i, len(ctg)
     new_header = str(i)
     writer.writeRecord(new_header, ctg)
+
+
+with open(outfile, 'w') as f:
+    for i,node in enumerate(h.nodes()):
+        #print node
+        #print h.node[node]
+        path = h.node[node]['path']
+
+        if node in vertices_to_keep:
+
+            f.write('>Unitig%d\n'%(cnt))
+            print "Writing contig number"
+            print cnt
+            cnt += 1
+            if len(path) == 1:
+                #print path[0]
+                f.write(' '.join([path[0].split('_')[0], path[0].split('_')[1], str(read_tuples_raw[path[0]][0]), str(read_tuples_raw[path[0]][1])]) + '\n')
+            for j in range(len(path)-1):
+                nodeA = path[j].lstrip("B")
+                nodeB = path[j+1].lstrip("B")
+
+                d =  in_graph.get_edge_data(path[j],path[j+1])
+                try:
+                    f.write('%s %s %s %s %d %d %d %d %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
+                        nodeB.split('_')[1], -d['read_a_start_raw'] + d['read_a_end_raw'] - d['read_b_start_raw'] + d['read_b_end_raw'],
+                        d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
+                except:
+                    print "in error"
+                    # print nodeB
+                    # print node
+                    # print  h.node[node]['start_read']
+                    # print  h.node[node]['end_read']
+                    # print  h.node[node]['path']
+                    # print  len(h.node[node]['segment'])
+                    print d
+                    print in_graph
+                    raise
 
 
 #last =  h.nodes()[-1]
