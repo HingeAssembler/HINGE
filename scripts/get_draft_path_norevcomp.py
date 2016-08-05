@@ -304,6 +304,23 @@ while True:
     h.remove_edge(vert,succ)
     h.remove_node(vert)
 
+path_to_vert = {}
+RCmap = {}
+
+for i, vert in enumerate(h.nodes()):
+    path =  h.node[vert]['path']
+    path_to_vert[':'.join(path)] = vert 
+
+for path in path_to_vert:
+    path_to_search = ':'.join(list(reversed([ x.split('_')[0]+'_'+str(1-int(x.split('_')[1])) for x in path.split(':')])))
+    RCmap[path_to_vert[path]] = path_to_vert[path_to_search]
+
+# print path_to_vert        
+
+
+# print RCmap
+# print [x for x in h.edges()]
+
 while True:
     vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
     x != h.successors(x)[0] and h.successors(h.successors(x)[0])[0]== x and len(h.successors(h.successors(x)[0])) == 1 and
@@ -315,13 +332,29 @@ while True:
     vert = vert_to_merge[0]
     succ = h.successors(vert)[0]
 
+    # print vert, succ
+
+    vertRC = RCmap[vert]
+    # print vert, vertRC
+
+    predRC = h.predecessors(vertRC)[0]
+
     # print h.node[vert]['path']
     # print h.node[succ]['path']
 
     h.node[succ]['segment'] =  h.node[vert]['segment'] + h.node[succ]['segment']
+    h.node[predRC]['segment'] =  h.node[predRC]['segment'] + h.node[vertRC]['segment']
+
     h.node[succ]['path'] = h.node[vert]['path'] + h.node[succ]['path']
+    h.node[predRC]['path'] = h.node[predRC]['path'] + h.node[vertRC]['path']
+
+    # print vert, succ, predRC, vertRC
+
     h.add_edges_from([(succ,succ)])
+    h.add_edges_from([(predRC,predRC)])
+
     h.remove_node(vert)
+    h.remove_node(vertRC)
 
 
 
@@ -371,12 +404,13 @@ with open(outfile, 'w') as f:
         #print h.node[node]
         path = h.node[node]['path']
         path_to_check =  [x.split('_')[0] for x in h.node[vert]['path']]
-        path_to_search = list(reversed(path_to_check))
+        
 
         if path_to_search not in observed_paths:
             observed_paths.append(path_to_check)
 
             f.write('>Unitig%d\n'%(cnt))
+            print cnt
             cnt += 1
             if len(path) == 1:
                 #print path[0]
@@ -392,13 +426,14 @@ with open(outfile, 'w') as f:
                         d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
                 except:
                     print "in error"
-                    print nodeB
-                    print node
-                    print  h.node[node]['start_read']
-                    print  h.node[node]['end_read']
-                    print  h.node[node]['path']
-                    print  len(h.node[node]['segment'])
+                    # print nodeB
+                    # print node
+                    # print  h.node[node]['start_read']
+                    # print  h.node[node]['end_read']
+                    # print  h.node[node]['path']
+                    # print  len(h.node[node]['segment'])
                     print d
+                    print in_graph
                     raise
 
 out_graphml_name = filedir + '/' + filename +'_draft.graphml'
