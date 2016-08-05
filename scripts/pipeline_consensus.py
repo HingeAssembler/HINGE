@@ -85,7 +85,7 @@ if st_point <= 8 and end_point >= 8:
     
 
 if st_point <= 9 and end_point >= 9:
-    gfa_cmd =  'get_consensus_gfa.py '+base_path+ ' '+ bact_id+ ' '+graphml_file+' '+bact_id+'.consensus.fasta' 
+    gfa_cmd =  'get_consensus_gfa.py '+base_path+ ' '+ bact_id+ ' '+bact_id+'.consensus.fasta' 
     print '9: '+gfa_cmd
     subprocess.check_output(gfa_cmd,cwd=base_path,shell=True)
 
