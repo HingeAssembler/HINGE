@@ -274,6 +274,8 @@ while set(in_graph.nodes())-vertices_used:
 
 
 outfile = filedir + '/' + filename + ".edges.list"
+outfile_norevcomp = filedir + '/' + filename + ".norevcomp.edges.list"
+
 
 vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and 
  x != h.successors(x)[0] and
@@ -302,6 +304,23 @@ while True:
     h.remove_edge(vert,succ)
     h.remove_node(vert)
 
+path_to_vert = {}
+RCmap = {}
+
+for i, vert in enumerate(h.nodes()):
+    path =  h.node[vert]['path']
+    path_to_vert[':'.join(path)] = vert 
+
+for path in path_to_vert:
+    path_to_search = ':'.join(list(reversed([ x.split('_')[0]+'_'+str(1-int(x.split('_')[1])) for x in path.split(':')])))
+    RCmap[path_to_vert[path]] = path_to_vert[path_to_search]
+
+# print path_to_vert        
+
+
+# print RCmap
+# print [x for x in h.edges()]
+
 while True:
     vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
     x != h.successors(x)[0] and h.successors(h.successors(x)[0])[0]== x and len(h.successors(h.successors(x)[0])) == 1 and
@@ -313,13 +332,30 @@ while True:
     vert = vert_to_merge[0]
     succ = h.successors(vert)[0]
 
+    # print vert, succ
+
+    vertRC = RCmap[vert]
+    # print vert, vertRC
+
+    predRC = h.predecessors(vertRC)[0]
+
     # print h.node[vert]['path']
     # print h.node[succ]['path']
 
     h.node[succ]['segment'] =  h.node[vert]['segment'] + h.node[succ]['segment']
+    h.node[predRC]['segment'] =  h.node[predRC]['segment'] + h.node[vertRC]['segment']
+
     h.node[succ]['path'] = h.node[vert]['path'] + h.node[succ]['path']
+    h.node[predRC]['path'] = h.node[predRC]['path'] + h.node[vertRC]['path']
+
+    # print vert, succ, predRC, vertRC
+
     h.add_edges_from([(succ,succ)])
+    h.add_edges_from([(predRC,predRC)])
+
     h.remove_node(vert)
+    h.remove_node(vertRC)
+
 
 
 
@@ -356,6 +392,48 @@ with open(outfile, 'w') as f:
                 print  len(h.node[node]['segment'])
                 print d
                 raise
+
+
+# one_sided_contigs = []
+
+observed_paths = []
+cnt = 0
+
+with open(outfile_norevcomp, 'w') as f:
+    for i,node in enumerate(h.nodes()):
+        #print node
+        #print h.node[node]
+        path = h.node[node]['path']
+        path_to_check =  [x.split('_')[0] for x in h.node[vert]['path']]
+        path_to_search = list(reversed(path_to_check))
+
+        if path_to_search not in observed_paths:
+            observed_paths.append(path_to_check)
+
+            f.write('>Unitig%d\n'%(cnt))
+            cnt += 1
+            if len(path) == 1:
+                #print path[0]
+                f.write(' '.join([path[0].split('_')[0], path[0].split('_')[1], str(read_tuples_raw[path[0]][0]), str(read_tuples_raw[path[0]][1])]) + '\n')
+            for j in range(len(path)-1):
+                nodeA = path[j].lstrip("B")
+                nodeB = path[j+1].lstrip("B")
+
+                d =  in_graph.get_edge_data(path[j],path[j+1])
+                try:
+                    f.write('%s %s %s %s %d %d %d %d %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
+                        nodeB.split('_')[1], -d['read_a_start_raw'] + d['read_a_end_raw'] - d['read_b_start_raw'] + d['read_b_end_raw'],
+                        d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
+                except:
+                    print "in error"
+                    print nodeB
+                    print node
+                    print  h.node[node]['start_read']
+                    print  h.node[node]['end_read']
+                    print  h.node[node]['path']
+                    print  len(h.node[node]['segment'])
+                    print d
+                    raise
 
 out_graphml_name = filedir + '/' + filename +'_draft.graphml'
 
@@ -415,16 +493,16 @@ for i,node in enumerate(h.nodes()):
 nx.write_graphml(h,out_graphml_name)
 
 
-with open(gfaname,'w') as f:
-    f.write("H\tVN:Z:1.0\n")
-    for i,vert in enumerate(h.nodes()):
-        seg = h.node[vert]['segment']
-        print len(seg)
+# with open(gfaname,'w') as f:
+#     f.write("H\tVN:Z:1.0\n")
+#     for i,vert in enumerate(h.nodes()):
+#         seg = h.node[vert]['segment']
+#         print len(seg)
 
-        seg_line = "S\t"+vert+"\t"+seg + '\n'
-        f.write(seg_line)
-    for edge in h.edges():
-        edge_line = "L\t"+edge[0]+"\t+\t"+edge[1]+"\t+\t0M\n"
-        f.write(edge_line)
+#         seg_line = "S\t"+vert+"\t"+seg + '\n'
+#         f.write(seg_line)
+#     for edge in h.edges():
+#         edge_line = "L\t"+edge[0]+"\t+\t"+edge[1]+"\t+\t0M\n"
+#         f.write(edge_line)
 
 
