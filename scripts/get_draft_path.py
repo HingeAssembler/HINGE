@@ -35,10 +35,10 @@ def reverse_complement(string):
     return "".join(map(lambda x:complement[x],reversed(string)))
 
 def get_string(path):
-    print path
+    # print path
     ret_str = ''
     for itm in path:
-        print itm
+        # print itm
         read_id,rd_orientation = itm[0].split("_")
         if rd_orientation == '1':
             assert itm[1][0] >= itm[1][1]
@@ -55,9 +55,9 @@ def get_string(path):
 #         print read_id
 #         print read_dict[int(read_id)][str_st:str_end]
 #         print read_str
-        print 'read len',len(read_str)
+        # print 'read len',len(read_str)
         ret_str += read_str
-    print len(path), len(ret_str)
+    # print len(path), len(ret_str)
     return ret_str
 
 
@@ -85,7 +85,7 @@ for vert in vertices_of_interest:
     else:
         read_end = vert_len
     read_tuples[vert] = (read_start,read_end)
-    print read_starts, read_ends, vert
+    # print read_starts, read_ends, vert
 
 
 for vert in vertices_of_interest:
@@ -132,7 +132,7 @@ vertices_used = set([x for x in h.nodes()])
 contig_no = 1
 for start_vertex in vertices_of_interest:
     first_out_vertices = in_graph.successors(start_vertex)
-    print start_vertex, first_out_vertices
+    # print start_vertex, first_out_vertices
     for vertex in first_out_vertices:
         predecessor = start_vertex
         start_vertex_id,start_vertex_or = start_vertex.split("_")
@@ -268,20 +268,22 @@ while set(in_graph.nodes())-vertices_used:
             h.node[node_name]['start_read'] = cur_path[0][1][0]
             h.node[node_name]['end_read'] = cur_path[-1][1][1]
             h.node[node_name]['segment'] = get_string(cur_path)
-            print len(cur_path)
+            # print len(cur_path)
             h.add_edges_from([(vertRC,node_name),(node_name,vertRC)])
 
 
 
 outfile = filedir + '/' + filename + ".edges.list"
 
-vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
+vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and 
+ x != h.successors(x)[0] and
  len(nx.node_connected_component(h.to_undirected(), x)) > 2]
 
 while True:
 
     vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
- len(nx.node_connected_component(h.to_undirected(), x)) > 2]
+    x != h.successors(x)[0] and
+    len(nx.node_connected_component(h.to_undirected(), x)) > 2]
 
     if not vert_to_merge:
         break
@@ -299,6 +301,26 @@ while True:
 
     h.remove_edge(vert,succ)
     h.remove_node(vert)
+
+while True:
+    vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
+    x != h.successors(x)[0] and h.successors(h.successors(x)[0])[0]== x and len(h.successors(h.successors(x)[0])) == 1 and
+    len(nx.node_connected_component(h.to_undirected(), x)) == 2]
+
+    if not vert_to_merge:
+        break
+
+    vert = vert_to_merge[0]
+    succ = h.successors(vert)[0]
+
+    # print h.node[vert]['path']
+    # print h.node[succ]['path']
+
+    h.node[succ]['segment'] =  h.node[vert]['segment'] + h.node[succ]['segment']
+    h.node[succ]['path'] = h.node[vert]['path'] + h.node[succ]['path']
+    h.add_edges_from([(succ,succ)])
+    h.remove_node(vert)
+
 
 
 
@@ -320,10 +342,20 @@ with open(outfile, 'w') as f:
             nodeB = path[j+1].lstrip("B")
 
             d =  in_graph.get_edge_data(path[j],path[j+1])
-
-            f.write('%s %s %s %s %d %d %d %d %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
+            try:
+                f.write('%s %s %s %s %d %d %d %d %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
                     nodeB.split('_')[1], -d['read_a_start_raw'] + d['read_a_end_raw'] - d['read_b_start_raw'] + d['read_b_end_raw'],
                     d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
+            except:
+                print "in error"
+                print nodeB
+                print node
+                print  h.node[node]['start_read']
+                print  h.node[node]['end_read']
+                print  h.node[node]['path']
+                print  len(h.node[node]['segment'])
+                print d
+                raise
 
 out_graphml_name = filedir + '/' + filename +'_draft.graphml'
 
@@ -342,8 +374,8 @@ try:
                 consensus_contigs.append(line.strip())
 except:
     pass
-for  i, vert in enumerate(h.nodes()):
-   print i,len(h.node[vert]['path']), len(h.node[vert]['segment']), len(consensus_contigs[i])
+# for  i, vert in enumerate(h.nodes()):
+#    print i,len(h.node[vert]['path']), len(h.node[vert]['segment']), len(consensus_contigs[i])
 
 
 one_sided_contigs = []
@@ -382,5 +414,17 @@ for i,node in enumerate(h.nodes()):
      h.node[node]['path'] = ';'.join(h.node[node]['path'])
 nx.write_graphml(h,out_graphml_name)
 
+
+with open(gfaname,'w') as f:
+    f.write("H\tVN:Z:1.0\n")
+    for i,vert in enumerate(h.nodes()):
+        seg = h.node[vert]['segment']
+        print len(seg)
+
+        seg_line = "S\t"+vert+"\t"+seg + '\n'
+        f.write(seg_line)
+    for edge in h.edges():
+        edge_line = "L\t"+edge[0]+"\t+\t"+edge[1]+"\t+\t0M\n"
+        f.write(edge_line)
 
 
