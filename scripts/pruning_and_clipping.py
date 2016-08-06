@@ -731,7 +731,7 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
                     prev_node = g.predecessors(prev_node)[0]
                     if node_cnt >= flank:
                         break
-                if node_cnt < flank and prev_node != st_node:
+                if node_cnt < flank: # and prev_node != st_node:
                     continue
 
 
@@ -743,7 +743,7 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
                 if node_cnt >= flank:
                     break
 
-            if node_cnt < flank and next_node != first_node_of_repeat:
+            if node_cnt < flank: # and next_node != first_node_of_repeat:
                 continue
 
             rep = [first_node_of_repeat]
