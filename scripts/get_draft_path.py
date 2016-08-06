@@ -274,7 +274,7 @@ while set(in_graph.nodes())-vertices_used:
 
 
 outfile = filedir + '/' + filename + ".edges.list"
-outfile_norevcomp = filedir + '/' + filename + ".norevcomp.edges.list"
+# outfile_norevcomp = filedir + '/' + filename + ".norevcomp.edges.list"
 
 
 vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and 
@@ -434,13 +434,19 @@ for i, vert in enumerate(h.nodes()):
         one_sided_contigs.append(h.node[vert]['segment'])
 
 
-out_nonrevcomp_name = filedir + '/' + filename +'_nonrevcomp.fasta'
 
-writer = FastaIO.FastaWriter(out_nonrevcomp_name)
-for i, ctg in enumerate(one_sided_contigs):
-    print i, len(ctg)
-    new_header = str(i)
-    writer.writeRecord(new_header, ctg)
+# commented out the block below so that the non-reverse-complemented contigs are not produced here
+
+# out_nonrevcomp_name = filedir + '/' + filename +'_nonrevcomp.fasta'
+# writer = FastaIO.FastaWriter(out_nonrevcomp_name)
+# for i, ctg in enumerate(one_sided_contigs):
+#     print i, len(ctg)
+#     new_header = str(i)
+#     writer.writeRecord(new_header, ctg)
+
+
+
+
 
 
 #last =  h.nodes()[-1]

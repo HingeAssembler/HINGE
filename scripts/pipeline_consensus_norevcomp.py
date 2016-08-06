@@ -66,21 +66,33 @@ if st_point <= 5 and end_point >= 5:
     print '5: '+mapper_cmd
     subprocess.call(mapper_cmd.split(),stdout=open(base_path+'draft_consensus.sh','w') , cwd=base_path)
 
+
+
 if st_point <= 6 and end_point >= 6:
-    mapper_shell_cmd = "csh -v draft_consensus.sh"
-    print '6: '+mapper_shell_cmd
-    subprocess.check_output(mapper_shell_cmd.split(), cwd=base_path)
+    # modify_cmd = """awk '{gsub("daligner -A -k20 -h50 -e.85","daligner -A",$0); print $0}' draft_consensus.sh"""
+    modify_cmd = ['awk','{gsub("daligner -A -k20 -h50 -e.85","daligner -A",$0); print $0}','draft_consensus.sh']
+    print '6: '+"""awk '{gsub("daligner -A -k20 -h50 -e.85","daligner -A",$0); print $0}' draft_consensus.sh"""
+    subprocess.call(modify_cmd,stdout=open(base_path+'draft_consensus2.sh','w') , cwd=base_path)
+
+
 
 if st_point <= 7 and end_point >= 7:
+    mapper_shell_cmd = "csh -v draft_consensus2.sh"
+    print '7: '+mapper_shell_cmd
+    subprocess.check_output(mapper_shell_cmd.split(), cwd=base_path)
+
+
+if st_point <= 8 and end_point >= 8:
     # remove_cmd = 'rm -f nonrevcompdraft.'+bact_id+'.*.las'
     # subprocess.call(remove_cmd,shell=True,cwd=base_path)
     LAmerge_cmd = "LAmerge draft."+bact_id+".las "+'draft.'+bact_id+'.[0-9].las'
-    print '7: '+LAmerge_cmd
+    print '8: '+LAmerge_cmd
     subprocess.check_output(LAmerge_cmd,cwd=base_path,shell=True)
 
-if st_point <= 8 and end_point >= 8:
-    consensus_cmd = 'consensus draft '+bact_id+' draft.'+bact_id+'.las '+bact_id+'.consensus.fasta '+ini_path
-    print '8: '+consensus_cmd
+
+if st_point <= 9 and end_point >= 9:
+    consensus_cmd = 'consensus draft '+bact_id+' draft.'+bact_id+'.las '+bact_id+'.norevcomp_consensus.fasta '+ini_path
+    print '9: '+consensus_cmd
     subprocess.check_output(consensus_cmd,cwd=base_path,shell=True)
     
 

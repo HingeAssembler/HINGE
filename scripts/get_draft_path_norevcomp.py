@@ -435,13 +435,17 @@ for i, vert in enumerate(h.nodes()):
         vertices_to_keep.append(vert)
 
 
-out_nonrevcomp_name = filedir + '/' + filename +'_nonrevcomp.fasta'
 
-writer = FastaIO.FastaWriter(out_nonrevcomp_name)
-for i, ctg in enumerate(one_sided_contigs):
-    print i, len(ctg)
-    new_header = str(i)
-    writer.writeRecord(new_header, ctg)
+# commented out the block below so that the non-reverse-complemented contigs are not produced here
+
+# out_nonrevcomp_name = filedir + '/' + filename +'_nonrevcomp.fasta'
+# writer = FastaIO.FastaWriter(out_nonrevcomp_name)
+# for i, ctg in enumerate(one_sided_contigs):
+#     print i, len(ctg)
+#     new_header = str(i)
+#     writer.writeRecord(new_header, ctg)
+
+
 
 
 with open(outfile, 'w') as f:
