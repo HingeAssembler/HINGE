@@ -202,6 +202,7 @@ typedef struct {
     unsigned q_id;
 } align_tag_t;
 
+
 typedef struct {
     seq_coor_t len;
     align_tag_t * align_tags;
@@ -222,9 +223,11 @@ typedef struct {
     double score;
 } align_tag_col_t;
 
+
 typedef struct {
     align_tag_col_t * base;
 } msa_base_group_t;
+
 
 typedef struct {
     uint8_t size;
@@ -281,31 +284,20 @@ consensus_data * get_cns_from_align_tags_large( align_tags_t ** tag_seqs,
                                           unsigned t_len, 
                                           unsigned min_cov );
 
-consensus_data * generate_consensus( char ** input_seq, 
-                           unsigned int n_seq, 
-                           unsigned min_cov, 
+consensus_data * generate_consensus( char ** input_seq,
+                           unsigned int n_seq,
+                           unsigned min_cov,
                            unsigned K,
-                           unsigned long local_match_count_window,
-                           unsigned long local_match_count_threshold,
                            double min_idt);
 
 
-consensus_data * generate_consensus_large( char ** input_seq,
-                                     unsigned int n_seq,
-                                     unsigned min_cov,
-                                     unsigned K,
-                                     unsigned long local_match_count_window,
-                                     unsigned long local_match_count_threshold,
-                                     double min_idt);
-
-	
-	
-consensus_data * generate_utg_consensus( char ** input_seq, 
+consensus_data * generate_utg_consensus( char ** input_seq,
                            seq_coor_t *offset,
-                           unsigned int n_seq, 
-                           unsigned min_cov, 
+                           unsigned int n_seq,
+                           unsigned min_cov,
                            unsigned K,
                            double min_idt);
+														  
 						   
 void free_consensus_data( consensus_data * consensus );
 	

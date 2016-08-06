@@ -21,6 +21,9 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/connected_components.hpp>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #define LAST_READ_SYMBOL  '$'
 
 #define HINGED_EDGE 1
@@ -423,6 +426,9 @@ void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
 
 
 int main(int argc, char *argv[]) {
+
+    mkdir("log",S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
 
     cmdline::parser cmdp;
     cmdp.add<std::string>("db", 'b', "db file name", false, "");
