@@ -3,7 +3,7 @@ Software accompanying  "HINGE: Long-Read Assembly Achieves Optimal Repeat Resolu
 
 CI Status: ![image](https://travis-ci.org/fxia22/HINGE.svg?branch=master)
 
-Note : Code to reproduce results presented in the [paper](http://biorxiv.org/content/early/2016/07/05/062117) can be found in this [repository](https://github.com/govinda-kamath/HINGE-analyses).
+**Note** : Code to reproduce results presented in the [paper](http://biorxiv.org/content/early/2016/07/05/062117) can be found in this [repository](https://github.com/govinda-kamath/HINGE-analyses).
 
 ## Introduction 
 
