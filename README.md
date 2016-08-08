@@ -3,7 +3,7 @@ Software accompanying  "HINGE: Long-Read Assembly Achieves Optimal Repeat Resolu
 
 - Preprint: http://biorxiv.org/content/early/2016/07/05/062117
 
-- Code to reproduce results in the paper can be found in this [repository](https://github.com/govinda-kamath/HINGE-analyses).
+- A notebook to reproduce results in the paper can be found in this [repository](https://github.com/govinda-kamath/HINGE-analyses).
 
 CI Status: ![image](https://travis-ci.org/fxia22/HINGE.svg?branch=master)
 
