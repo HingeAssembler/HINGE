@@ -7,3 +7,5 @@ scripts/.ipynb_checkpoints/
 scripts/figures/
 build
 notebook
+demo
+.idea

@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 # coding: utf-8
 
 # In[115]:
@@ -200,12 +201,12 @@ def dead_end_clipping_sym(G,threshold,print_debug = False):
 
         cur_path = [st_node]
 
+        cur_node = st_node
         if print_debug:
             print '----0'
             print st_node
 
         if len(H.successors(st_node)) == 1:
-
             cur_node = H.successors(st_node)[0]
 
             if print_debug:
@@ -730,7 +731,7 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
                     prev_node = g.predecessors(prev_node)[0]
                     if node_cnt >= flank:
                         break
-                if node_cnt < flank and prev_node != st_node:
+                if node_cnt < flank: # and prev_node != st_node:
                     continue
 
 
@@ -742,7 +743,7 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
                 if node_cnt >= flank:
                     break
 
-            if node_cnt < flank and next_node != first_node_of_repeat:
+            if node_cnt < flank: # and next_node != first_node_of_repeat:
                 continue
 
             rep = [first_node_of_repeat]

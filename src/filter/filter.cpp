@@ -23,6 +23,7 @@
 #include "LAInterface.h"
 #include "cmdline.h"
 
+
 #define LAST_READ_SYMBOL  '$'
 
 
@@ -206,6 +207,8 @@ float number_of_bridging_reads(std::vector<LOverlap *> ovl_reads, int hinge_loca
 
 int main(int argc, char *argv[]) {
 
+    mkdir("log",S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
     cmdline::parser cmdp;
     cmdp.add<std::string>("db", 'b', "db file name", false, "");
     cmdp.add<std::string>("las", 'l', "las file name", false, "");
@@ -215,6 +218,7 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("prefix", 'x', "prefix of (intermediate) output", false, "out");
     cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
     cmdp.add<std::string>("log", 'g', "log folder name", false, "log");
+    cmdp.add("debug", '\0', "debug mode");
     cmdp.parse_check(argc, argv);
 
     LAInterface la;
@@ -244,10 +248,14 @@ int main(int argc, char *argv[]) {
 
 
     console->info("Reads filtering");
-    char * buff = (char*) malloc(sizeof(char) * 2000);
-    getwd(buff);
-    console->info("current user {}, current working directory {}", getlogin(), buff);
-    free(buff);
+
+    if (cmdp.exist("debug")) {
+        char *buff = (char *) malloc(sizeof(char) * 2000);
+        getwd(buff);
+        console->info("current user {}, current working directory {}", getlogin(), buff);
+        free(buff);
+    }
+
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
     console->info("name of fasta: {}, name of .paf file {}", name_fasta, name_paf);
 
@@ -257,7 +265,7 @@ int main(int argc, char *argv[]) {
                     std::istreambuf_iterator<char>());
 
     console->info("Parameters passed in \n{}", str);
-    
+
     if (strlen(name_db) > 0)
         la.openDB(name_db);
 

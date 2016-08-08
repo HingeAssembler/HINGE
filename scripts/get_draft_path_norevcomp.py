@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import sys
 import os
 import subprocess
@@ -6,10 +7,11 @@ from parse_read import *
 import numpy as np
 import networkx as nx
 import itertools
+from pbcore.io import FastaIO
 
-NCTCname = sys.argv[1]
-filename = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname
-graphml_path = sys.argv[2]
+filedir = sys.argv[1]
+filename = sys.argv[2]
+graphml_path = sys.argv[3]
 
 in_graph = nx.read_graphml(graphml_path)
 
@@ -17,7 +19,7 @@ reads = sorted(list(set([int(x.split("_")[0].lstrip("B")) for x in in_graph.node
 
 dbshow_reads = ' '.join([str(x+1) for x in reads])
 
-DBshow_cmd = "DBshow "+filename+' '+dbshow_reads
+DBshow_cmd = "DBshow "+ filedir+'/'+ filename+' '+dbshow_reads
 stream = subprocess.Popen(DBshow_cmd.split(),
                                   stdout=subprocess.PIPE,bufsize=1)
 reads_queried = parse_read(stream.stdout)
@@ -33,18 +35,18 @@ def reverse_complement(string):
     return "".join(map(lambda x:complement[x],reversed(string)))
 
 def get_string(path):
-    #print path
+    # print path
     ret_str = ''
     for itm in path:
-#         print itm
+        # print itm
         read_id,rd_orientation = itm[0].split("_")
         if rd_orientation == '1':
             assert itm[1][0] >= itm[1][1]
-#             print itm
             str_st = itm[1][1]
             str_end = itm[1][0]
             read_str = read_dict[int(read_id.lstrip("B"))][1][str_st:str_end]
         else:
+
             assert itm[1][0] <= itm[1][1]
             str_st = itm[1][0]
             str_end = itm[1][1]
@@ -53,9 +55,9 @@ def get_string(path):
 #         print read_id
 #         print read_dict[int(read_id)][str_st:str_end]
 #         print read_str
-        print 'read len',len(read_str)
+        # print 'read len',len(read_str)
         ret_str += read_str
-    print len(path), len(ret_str)
+    # print len(path), len(ret_str)
     return ret_str
 
 
@@ -83,7 +85,7 @@ for vert in vertices_of_interest:
     else:
         read_end = vert_len
     read_tuples[vert] = (read_start,read_end)
-    print read_starts, read_ends, vert
+    # print read_starts, read_ends, vert
 
 
 for vert in vertices_of_interest:
@@ -113,7 +115,6 @@ for vertex in vertices_of_interest:
             read_tuples_raw[vertex] = (0,0)
 
 
-
 for vertex in vertices_of_interest:
     h.add_node(vertex)
     if vertex.split("_")[1] == '0':
@@ -131,7 +132,7 @@ vertices_used = set([x for x in h.nodes()])
 contig_no = 1
 for start_vertex in vertices_of_interest:
     first_out_vertices = in_graph.successors(start_vertex)
-    print start_vertex, first_out_vertices
+    # print start_vertex, first_out_vertices
     for vertex in first_out_vertices:
         predecessor = start_vertex
         start_vertex_id,start_vertex_or = start_vertex.split("_")
@@ -167,8 +168,8 @@ for start_vertex in vertices_of_interest:
 #         print cur_path
         node_path = [x[0] for x in cur_path]
         h.node[node_name]['path'] = node_path
-        h.node[node_name]['start_read'] = path_var[0][1][0]
-        h.node[node_name]['end_read'] = path_var[-1][1][1]
+        h.node[node_name]['start_read'] = cur_path[0][1][0]
+        h.node[node_name]['end_read'] = cur_path[-1][1][1]
         h.node[node_name]['segment'] = get_string(cur_path)
         h.add_edges_from([(start_vertex,node_name),(node_name,cur_vertex)])
 #         paths.append(cur_path)
@@ -227,8 +228,12 @@ while set(in_graph.nodes())-vertices_used:
 
         node_path = [x[0] for x in cur_path]
         h.node[node_name]['path'] = node_path
-        h.node[node_name]['start_read'] = path_var[0][1][0]
-        h.node[node_name]['end_read'] = path_var[-1][1][1]
+        try:
+            h.node[node_name]['start_read'] = cur_path[0][1][0]
+            h.node[node_name]['end_read'] = cur_path[-1][1][1]
+        except:
+            print path_var
+            raise
         h.node[node_name]['segment'] = get_string(cur_path)
         h.add_edges_from([(vert,node_name),(node_name,vert)])
 
@@ -260,23 +265,27 @@ while set(in_graph.nodes())-vertices_used:
 
             node_path = [x[0] for x in cur_path]
             h.node[node_name]['path'] = node_path
-            h.node[node_name]['start_read'] = path_var[0][1][0]
-            h.node[node_name]['end_read'] = path_var[-1][1][1]
+            h.node[node_name]['start_read'] = cur_path[0][1][0]
+            h.node[node_name]['end_read'] = cur_path[-1][1][1]
             h.node[node_name]['segment'] = get_string(cur_path)
-            print len(cur_path)
+            # print len(cur_path)
             h.add_edges_from([(vertRC,node_name),(node_name,vertRC)])
 
 
 
-outfile = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname + ".edges.list"
+outfile = filedir + '/' + filename + ".edges.list"
+outfile_norevcomp = filedir + '/' + filename + ".norevcomp.edges.list"
 
-vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
+
+vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and 
+ x != h.successors(x)[0] and
  len(nx.node_connected_component(h.to_undirected(), x)) > 2]
 
 while True:
 
     vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
- len(nx.node_connected_component(h.to_undirected(), x)) > 2]
+    x != h.successors(x)[0] and
+    len(nx.node_connected_component(h.to_undirected(), x)) > 2]
 
     if not vert_to_merge:
         break
@@ -286,42 +295,118 @@ while True:
     preds = h.predecessors(vert)
     h.node[succ]['segment'] =  h.node[vert]['segment'] + h.node[succ]['segment']
     h.node[succ]['path'] = h.node[vert]['path'] + h.node[succ]['path'][1:]
+
     for pred in preds:
         #print pred, succ
         h.add_edges_from([(pred,succ)])
         h.remove_edge(pred,vert)
+
     h.remove_edge(vert,succ)
     h.remove_node(vert)
+
+path_to_vert = {}
+RCmap = {}
+
+for i, vert in enumerate(h.nodes()):
+    path =  h.node[vert]['path']
+    path_to_vert[':'.join(path)] = vert 
+
+for path in path_to_vert:
+    path_to_search = ':'.join(list(reversed([ x.split('_')[0]+'_'+str(1-int(x.split('_')[1])) for x in path.split(':')])))
+    RCmap[path_to_vert[path]] = path_to_vert[path_to_search]
+
+# print path_to_vert        
+
+
+# print RCmap
+# print [x for x in h.edges()]
+
+while True:
+    vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
+    x != h.successors(x)[0] and h.successors(h.successors(x)[0])[0]== x and len(h.successors(h.successors(x)[0])) == 1 and
+    len(nx.node_connected_component(h.to_undirected(), x)) == 2]
+
+    if not vert_to_merge:
+        break
+
+    vert = vert_to_merge[0]
+    succ = h.successors(vert)[0]
+
+    # print vert, succ
+
+    vertRC = RCmap[vert]
+    # print vert, vertRC
+
+    predRC = h.predecessors(vertRC)[0]
+
+    # print h.node[vert]['path']
+    # print h.node[succ]['path']
+
+    h.node[succ]['segment'] =  h.node[vert]['segment'] + h.node[succ]['segment']
+    h.node[predRC]['segment'] =  h.node[predRC]['segment'] + h.node[vertRC]['segment']
+
+    h.node[succ]['path'] = h.node[vert]['path'] + h.node[succ]['path']
+    h.node[predRC]['path'] = h.node[predRC]['path'] + h.node[vertRC]['path']
+
+    # print vert, succ, predRC, vertRC
+
+    h.add_edges_from([(succ,succ)])
+    h.add_edges_from([(predRC,predRC)])
+
+    h.remove_node(vert)
+    h.remove_node(vertRC)
+
+
+
 
 for  i, vert in enumerate(h.nodes()):
     print i,len(h.node[vert]['path'])
 
-with open(outfile, 'w') as f:
-    for i,node in enumerate(h.nodes()):
-        #print node
-        #print h.node[node]
-        path = h.node[node]['path']
+# with open(outfile, 'w') as f:
+#     for i,node in enumerate(h.nodes()):
+#         #print node
+#         #print h.node[node]
+#         path = h.node[node]['path']
 
-        f.write('>Unitig%d\n'%(i))
-        if len(path) == 1:
-            #print path[0]
-            f.write(' '.join([path[0].split('_')[0], path[0].split('_')[1], str(read_tuples_raw[path[0]][0]), str(read_tuples_raw[path[0]][1])]) + '\n')
-        for j in range(len(path)-1):
-            nodeA = path[j].lstrip("B")
-            nodeB = path[j+1].lstrip("B")
+#         f.write('>Unitig%d\n'%(i))
+#         if len(path) == 1:
+#             #print path[0]
+#             f.write(' '.join([path[0].split('_')[0], path[0].split('_')[1], str(read_tuples_raw[path[0]][0]), str(read_tuples_raw[path[0]][1])]) + '\n')
+#         for j in range(len(path)-1):
+#             nodeA = path[j].lstrip("B")
+#             nodeB = path[j+1].lstrip("B")
 
-            d =  in_graph.get_edge_data(path[j],path[j+1])
+#             d =  in_graph.get_edge_data(path[j],path[j+1])
+#             try:
+#                 f.write('%s %s %s %s %d %d %d %d %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
+#                     nodeB.split('_')[1], -d['read_a_start_raw'] + d['read_a_end_raw'] - d['read_b_start_raw'] + d['read_b_end_raw'],
+#                     d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
+#             except:
+#                 print "in error"
+#                 print nodeB
+#                 print node
+#                 print  h.node[node]['start_read']
+#                 print  h.node[node]['end_read']
+#                 print  h.node[node]['path']
+#                 print  len(h.node[node]['segment'])
+#                 print d
+#                 raise
 
-            f.write('%s %s %s %s %d %d %d %d %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
-                    nodeB.split('_')[1], -d['read_a_start_raw'] + d['read_a_end_raw'] - d['read_b_start_raw'] + d['read_b_end_raw'],
-                    d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
 
-out_graphml_name = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname+'_draft.graphml'
+# one_sided_contigs = []
+
+observed_paths = []
+cnt = 0
 
 
+out_graphml_name = filedir + '/' + filename +'_draft.graphml'
 
-gfaname = '/data/pacbio_assembly/pb_data/NCTC/'+NCTCname+'/'+NCTCname+'_draft_python.gfa'
-consensus_name = sys.argv[3]
+
+gfaname = filedir + '/' + filename+ '_draft_python.gfa'
+if len(sys.argv) > 3:
+    consensus_name = sys.argv[3]
+else:
+    consensus_name = ''
 
 consensus_contigs = []
 try:
@@ -331,23 +416,74 @@ try:
                 consensus_contigs.append(line.strip())
 except:
     pass
-for  i, vert in enumerate(h.nodes()):
-    print i,len(h.node[vert]['path']), len(h.node[vert]['segment']), len(consensus_contigs[i])
+# for  i, vert in enumerate(h.nodes()):
+#    print i,len(h.node[vert]['path']), len(h.node[vert]['segment']), len(consensus_contigs[i])
 
 
-with open(gfaname,'w') as f:
-    f.write("H\tVN:Z:1.0\n")
-    for i,vert in enumerate(h.nodes()):
-        if len(consensus_contigs) > 0:
-            seg = consensus_contigs[i]
-        else:
-            seg = h.node[vert]['segment']
+one_sided_contigs = []
 
-        seg_line = "S\t"+vert+"\t"+seg + '\n'
-        f.write(seg_line)
-    for edge in h.edges():
-        edge_line = "L\t"+edge[0]+"\t+\t"+edge[1]+"\t+\t0M\n"
-        f.write(edge_line)
+observed_paths = []
+
+vertices_to_keep = []
+
+for i, vert in enumerate(h.nodes()):
+    path =  [x.split('_')[0] for x in h.node[vert]['path']]
+    path_to_search = list(reversed(path))
+    if path_to_search not in observed_paths:
+        observed_paths.append(path)
+        one_sided_contigs.append(h.node[vert]['segment'])
+        vertices_to_keep.append(vert)
+
+
+
+# commented out the block below so that the non-reverse-complemented contigs are not produced here
+
+# out_nonrevcomp_name = filedir + '/' + filename +'_nonrevcomp.fasta'
+# writer = FastaIO.FastaWriter(out_nonrevcomp_name)
+# for i, ctg in enumerate(one_sided_contigs):
+#     print i, len(ctg)
+#     new_header = str(i)
+#     writer.writeRecord(new_header, ctg)
+
+
+
+
+with open(outfile, 'w') as f:
+    for i,node in enumerate(h.nodes()):
+        #print node
+        #print h.node[node]
+        path = h.node[node]['path']
+
+        if node in vertices_to_keep:
+
+            f.write('>Unitig%d\n'%(cnt))
+            print "Writing contig number"
+            print cnt
+            cnt += 1
+            if len(path) == 1:
+                #print path[0]
+                f.write(' '.join([path[0].split('_')[0], path[0].split('_')[1], str(read_tuples_raw[path[0]][0]), str(read_tuples_raw[path[0]][1])]) + '\n')
+            for j in range(len(path)-1):
+                nodeA = path[j].lstrip("B")
+                nodeB = path[j+1].lstrip("B")
+
+                d =  in_graph.get_edge_data(path[j],path[j+1])
+                try:
+                    f.write('%s %s %s %s %d %d %d %d %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
+                        nodeB.split('_')[1], -d['read_a_start_raw'] + d['read_a_end_raw'] - d['read_b_start_raw'] + d['read_b_end_raw'],
+                        d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
+                except:
+                    print "in error"
+                    # print nodeB
+                    # print node
+                    # print  h.node[node]['start_read']
+                    # print  h.node[node]['end_read']
+                    # print  h.node[node]['path']
+                    # print  len(h.node[node]['segment'])
+                    print d
+                    print in_graph
+                    raise
+
 
 #last =  h.nodes()[-1]
 #print h.node[last]
@@ -364,5 +500,17 @@ for i,node in enumerate(h.nodes()):
      h.node[node]['path'] = ';'.join(h.node[node]['path'])
 nx.write_graphml(h,out_graphml_name)
 
+
+# with open(gfaname,'w') as f:
+#     f.write("H\tVN:Z:1.0\n")
+#     for i,vert in enumerate(h.nodes()):
+#         seg = h.node[vert]['segment']
+#         print len(seg)
+
+#         seg_line = "S\t"+vert+"\t"+seg + '\n'
+#         f.write(seg_line)
+#     for edge in h.edges():
+#         edge_line = "L\t"+edge[0]+"\t+\t"+edge[1]+"\t+\t0M\n"
+#         f.write(edge_line)
 
 
