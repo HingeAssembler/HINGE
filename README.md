@@ -154,7 +154,7 @@ get_consensus_gfa.py <working directory> ecoli ecoli.consensus.fasta
 #results should be in ecoli_consensus.gfa
 ```
 
-## Debugging
+## Analysis of Results
 
 ### showing ground truth on graph
 Some programs are for debugging and oberservation. For example, one can get the ground truth by mapping reads to reference and get `ecoli.ecoli.ref.las`.
