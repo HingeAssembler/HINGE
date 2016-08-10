@@ -149,7 +149,7 @@ fasta2DB draft ecoli.draft.pb.fasta
 HPCmapper draft ecoli | zsh -v  
 LAmerge draft.ecoli.las draft.ecoli.*.las
 consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta utils/nominal.ini
-get_consensus_gfa.py <working directory> ecoli ecoli<identifier-of-run>.G2.graphml ecoli.consensus.fasta
+get_consensus_gfa.py <working directory> ecoli ecoli.consensus.fasta
 
 #results should be in ecoli_consensus.gfa
 ```
