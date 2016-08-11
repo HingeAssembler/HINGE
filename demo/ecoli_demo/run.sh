@@ -8,7 +8,7 @@ fasta2DB ecoli reads.pb.fasta
 
 DBsplit ecoli
 
-HPCdaligner ecoli | bash -v
+HPC.daligner ecoli | bash -v
 
 rm ecoli.*.ecoli.*.las
 LAmerge ecoli.las ecoli.[0-9].las
@@ -28,7 +28,7 @@ draft_assembly --db ecoli --las ecoli.las --prefix ecoli --config ../../utils/no
 
 correct_head.py ecoli.draft.fasta ecoli.draft.pb.fasta draft_map.txt 
 fasta2DB draft ecoli.draft.pb.fasta
-HPCmapper draft ecoli | bash -v 
+HPC.daligner draft ecoli | bash -v 
 
 rm draft.*.ecoli.*.las
 LAmerge draft.ecoli.las draft.ecoli.*.las
