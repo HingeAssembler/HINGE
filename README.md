@@ -1,4 +1,4 @@
-# HINGE
+# HINGE 
 Software accompanying  "HINGE: Long-Read Assembly Achieves Optimal Repeat Resolution"
 
 - Preprint: http://biorxiv.org/content/early/2016/08/01/062117
@@ -115,8 +115,8 @@ cd data/ecoli
 # reads.fasta should be in data/ecoli
 fasta2DB ecoli reads.fasta
 DBsplit -x500 -s100 ecoli     
-HPCdaligner -t5 ecoli | csh -v
-# alternatively, you can put output of HPCdaligner to a bash file and edit it to support 
+HPC.daligner -t5 ecoli | csh -v
+# alternatively, you can put output of HPC.daligner to a bash file and edit it to support 
 rm ecoli.*.ecoli.*
 LAmerge ecoli.las ecoli.+([[:digit:]]).las
 rm ecoli.*.las # we only need ecoli.las
@@ -146,15 +146,15 @@ draft_assembly --db ecoli --las ecoli.las --prefix ecoli --config <path-to-nomin
 
 correct_head.py ecoli.draft.fasta ecoli.draft.pb.fasta draft_map.txt
 fasta2DB draft ecoli.draft.pb.fasta 
-HPCmapper draft ecoli | zsh -v  
+HPC.daligner draft ecoli | zsh -v  
 LAmerge draft.ecoli.las draft.ecoli.*.las
 consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta utils/nominal.ini
-get_consensus_gfa.py <working directory> ecoli ecoli<identifier-of-run>.G2.graphml ecoli.consensus.fasta
+get_consensus_gfa.py <working directory> ecoli ecoli.consensus.fasta
 
 #results should be in ecoli_consensus.gfa
 ```
 
-## Debugging
+## Analysis of Results
 
 ### showing ground truth on graph
 Some programs are for debugging and oberservation. For example, one can get the ground truth by mapping reads to reference and get `ecoli.ecoli.ref.las`.
