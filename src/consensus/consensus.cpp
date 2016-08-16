@@ -37,6 +37,9 @@ static int ORDER(const void *l, const void *r) {
     return (x - y);
 }
 
+
+static char ToU[4] = { 'A', 'C', 'G', 'T' };
+
 int main(int argc, char *argv[]) {
 
     std::string name_db1 = std::string(argv[1]);
@@ -72,23 +75,11 @@ int main(int argc, char *argv[]) {
     std::cout<<"# Reads:" << n_reads << std::endl;
 
 
-	la.showRead2(4,6);
-
     la.openAlignmentFile(name_las);
 
 	int n_alns = la.getAlignmentNumber();
 
     std::cout<<"# Alignments:" << n_alns << std::endl;
-
-	//la.showAlignment(0,1);
-
-	std::vector<LOverlap *> res1;
-	  	la.resetAlignment();
-	  	la.getOverlap(res1, 0, 1); // get alignment(overlap) for reads [3,5)
-
-	for (auto i:res1)
-		i->show();
-	printf("\n");
 
 
     std::vector<LAlignment *> res;
@@ -112,102 +103,114 @@ int main(int argc, char *argv[]) {
         printf("%d %d\n", i, idx[i].size());
     }
 
-    for (int i = 0; i < n_contigs; i++) {
-        for (int j = 0; j < idx[i].size(); j++)
-        {
-            la.recoverAlignment(idx[i][j]);
-            idx[i][j]->show();
-        }
-    }
+
+    std::cout << "Building consensus sequences..." << std::endl;
+
     for (int i = 0; i < n_contigs; i++) {
 
         int k = 0;
-        for (k = 0;k < idx[i].size(); k++)
+        for (k = 0; k < idx[i].size(); k++)
             if (idx[i][k]->aepos - idx[i][k]->abpos < LENGTH_THRESHOLD)
                 break;
 
-
-
         int seq_count = k;
-        printf("seq_count:%d\n",seq_count);
 
-        align_tags_t ** tags_list;
-        tags_list = (align_tags_t **) calloc( seq_count+1, sizeof(align_tags_t *) );
+        std::cout << "Contig " << i << ": " << seq_count << " reads" << std::endl;
 
-        test_read = la.getRead(i); //get read 0
-        std::string base_structure = test_read->bases;
+        if (seq_count == 0) continue;
 
-        std::transform(base_structure.begin(), base_structure.end(),base_structure.begin(), ::toupper);
+        std::vector<std::vector<int>> contig_base_scores;
 
-        aln_range * arange;
-        arange = (aln_range*) calloc(1 , sizeof(aln_range));
-        arange->s1 = 0;
-        arange->s2 = 0;
-        arange->e1 = base_structure.size();
-        arange->e2 = base_structure.size();
+        std::vector<int> insertion_score (idx[i][0]->alen,0);
+        std::vector<std::vector<int>> insertion_base_scores; // handling single insertions only
 
-        char * seq = (char *) malloc(base_structure.size()* sizeof(char));
-        strcpy(seq, base_structure.c_str());
+        std::vector<int> cov_depth (idx[i][0]->alen,0);
 
-        tags_list[0] = get_align_tags(  seq,
-                                        seq,
-                                        strlen(seq),
-                                        arange, 0, 0);
-
-
+        std::vector<int> zero_scores (5,0); // scores for A,C,G,T,- are initialized at 0
+        for (int j = 0; j < idx[i][0]->alen; j++) {
+            contig_base_scores.push_back(zero_scores);
+            insertion_base_scores.push_back(zero_scores);
+        }
 
         for (int j = 0; j < seq_count ; j ++) {
-            printf("j = %d/%d\n", j, seq_count);
-            idx[i][j]->show();
+
             la.recoverAlignment(idx[i][j]);
             std::pair<std::string, std::string>  alignment = la.getAlignmentTags(idx[i][j]);
 
+            int pos_in_contig = idx[i][j]->abpos;
 
-            char * t_aln_str = (char *) malloc((alignment.first.size()+20)* sizeof(char));
-            char * q_aln_str = (char *) malloc((alignment.second.size()+20)* sizeof(char));
+            for (int m = 0; m < alignment.first.length(); m++) {
 
-            strcpy(q_aln_str, alignment.second.c_str());
-            strcpy(t_aln_str, alignment.first.c_str());
+                unsigned int base = -1;
+                switch (alignment.second[m]) {
+                    case 'A': base = 0; break;
+                    case 'C': base = 1; break;
+                    case 'G': base = 2; break;
+                    case 'T': base = 3; break;
+                    case '-': base = 4; break;
+                }
 
+                if (alignment.first[m] != '-') {
+                    contig_base_scores[pos_in_contig][base]++;
+                    cov_depth[pos_in_contig]++;
+                    pos_in_contig++;
+                }
+                else {
+                    insertion_score[pos_in_contig]++;
+                    insertion_base_scores[pos_in_contig][base]++;
+                }
 
-            //printf("%s\n%s\n",q_aln_str,t_aln_str);
+            }
 
-
-            seq_coor_t aln_str_size = strlen(q_aln_str);
-            if (j%1000 == 0) printf("%d/%d, %d\n", j, seq_count, aln_str_size);
-
-            aln_range * arange = (aln_range*) calloc(1 , sizeof(aln_range));
-            arange->s1 = idx[i][j]->bbpos;
-            arange->e1 = idx[i][j]->bepos;
-            arange->s2 = idx[i][j]->abpos;
-            arange->e2 = idx[i][j]->aepos;
-            arange->score = 5;
-            //printf("before get tags\n");
-            tags_list[j+1] = get_align_tags( q_aln_str,
-                                             t_aln_str,
-                                             aln_str_size,
-                                             arange, (unsigned int)j + 1, 0);
-
-            //printf("after get tags\n");
-
-            if (q_aln_str!=NULL) free(q_aln_str);
-            if (t_aln_str!=NULL) free(t_aln_str);
-            if (arange!=NULL) free_aln_range(arange);
-            q_aln_str = NULL;
-            t_aln_str = NULL;
-            arange = NULL;
         }
 
-        consensus_data * consensus;
-        consensus = get_cns_from_align_tags_large( tags_list, seq_count+1, strlen(seq), 6 );
+        int good_bases = 0;
+        int insertions = 0; // insertion here means that a base is inserted in the consensus
+        int deletions = 0; // deletion here means that the base from the draft is deleted in the consensus
 
-        printf("Length:%d\n", strlen(consensus->sequence));
-        out << ">Consensus" << i << std::endl << consensus->sequence<<std::endl;
-        free_consensus_data(consensus);
-        for (int j = 0; j <seq_count + 1; j++)
-            free_align_tags(tags_list[j]);
+        int consensus_length = 0;
+
+        out << ">Consensus" << i << std::endl;
+
+        for (int j=0; j < idx[i][0]->alen ; j++) {
+
+            unsigned int max_base = 0;
+
+            for (int b=1; b<5; b++) {
+                if (contig_base_scores[j][b] > contig_base_scores[j][max_base]) max_base = b;
+            }
+            if (max_base < 4) {
+                out << ToU[max_base];
+                good_bases++;
+                consensus_length++;
+            }
+            else {
+                deletions++;
+            }
+
+            if (insertion_score[j] > cov_depth[j]/2) {
+                unsigned int max_insertion_base = 0;
+                for (int b=1; b<4; b++) {
+                    if (insertion_base_scores[j][b] > insertion_base_scores[j][max_insertion_base]) max_insertion_base = b;
+                }
+                out << ToU[max_insertion_base];
+                consensus_length++;
+                insertions++;
+            }
+
+        }
+        out <<std::endl;
+
+
+        printf("Good bases: %d/%d\n",good_bases,idx[i][0]->alen);
+        printf("Insertions: %d/%d\n",insertions,idx[i][0]->alen);
+        printf("Deletions: %d/%d\n",deletions,idx[i][0]->alen);
+        printf("Consensus length: %d\n",consensus_length);
+
 
     }
+
+
 
 
     la.closeDB(); //close database*/

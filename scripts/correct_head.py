@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 import sys, os
 from pbcore.io import FastaIO
 

@@ -17,7 +17,7 @@ target_link_libraries(LAInterface LA DB PAF)
 
 add_library(kmer_lookup kmer_lookup.c)
 add_library(DW_banded DW_banded.c)
-add_library(falcon falcon.c falcon_utils.c)
+add_library(falcon falcon.c)
 target_link_libraries(falcon kmer_lookup DW_banded)
 
 

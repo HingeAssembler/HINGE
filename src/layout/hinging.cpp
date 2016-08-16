@@ -21,6 +21,9 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/connected_components.hpp>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #define LAST_READ_SYMBOL  '$'
 
 #define HINGED_EDGE 1
@@ -216,7 +219,7 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
     match->weight =
             match->eff_read_A_match_end_ - match->eff_read_A_match_start_
             + match->eff_read_B_match_end_ - match->eff_read_B_match_start_;
-    
+
     return contained;
 }
 
@@ -424,6 +427,9 @@ void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
 
 int main(int argc, char *argv[]) {
 
+    mkdir("log",S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+
     cmdline::parser cmdp;
     cmdp.add<std::string>("db", 'b', "db file name", false, "");
     cmdp.add<std::string>("las", 'l', "las file name", false, "");
@@ -433,6 +439,8 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("prefix", 'x', "(intermediate output) input file prefix", true, "");
     cmdp.add<std::string>("out", 'o', "final output file name", true, "");
     cmdp.add<std::string>("log", 'g', "log folder name", false, "log");
+    cmdp.add("debug", '\0', "debug mode");
+
 
 
 
@@ -471,7 +479,7 @@ int main(int argc, char *argv[]) {
     std::vector<int> homo_reads;
 
 
-    bool delete_telomere = false;  // TODO: command line option to set this true
+//    bool delete_telomere = false;  // TODO: command line option to set this true
 
     int read_id;
     while (homo >> read_id) homo_reads.push_back(read_id);
@@ -488,10 +496,15 @@ int main(int argc, char *argv[]) {
     spdlog::register_logger(console);
 
     console->info("Hinging layout");
-    char *buff = (char *) malloc(sizeof(char) * 2000);
-    getwd(buff);
-    console->info("current user {}, current working directory {}", getlogin(), buff);
-    free(buff);
+
+
+    if (cmdp.exist("debug")) {
+        char *buff = (char *) malloc(sizeof(char) * 2000);
+        getwd(buff);
+        console->info("current user {}, current working directory {}", getlogin(), buff);
+        free(buff);
+    }
+
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
     console->info("name of fasta: {}, name of .paf file {}", name_fasta, name_paf);
     console->info("filter files prefix: {}", out);
@@ -589,6 +602,9 @@ int main(int argc, char *argv[]) {
     int MIN_CONNECTED_COMPONENT_SIZE = (int) reader.GetInteger("layout", "min_connected_component_size", 8);
 
     bool USE_TWO_MATCHES = (int) reader.GetInteger("layout", "use_two_matches", 1);
+    bool delete_telomere = (int) reader.GetInteger("layout", "del_telomere", 0);
+
+
 
 
     console->info("LENGTH_THRESHOLD = {}", LENGTH_THRESHOLD);
@@ -607,7 +623,7 @@ int main(int argc, char *argv[]) {
     console->info("MATCHING_HINGE_SLACK = {}", MATCHING_HINGE_SLACK);
     console->info("MIN_CONNECTED_COMPONENT_SIZE = {}", MIN_CONNECTED_COMPONENT_SIZE);
     console->info("USE_TWO_MATCHES = {}", USE_TWO_MATCHES);
-
+    console->info("del_telomeres = {}", delete_telomere);
 
 
 
@@ -621,12 +637,12 @@ int main(int argc, char *argv[]) {
     // this is the pileup
     std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx_ab;
     /*
-    	idx is a vector of length n_read, each element idx3[read A id] is a map, 
+    	idx is a vector of length n_read, each element idx3[read A id] is a map,
     	from read B id to a vector of overlaps
     */
     //std::vector<std::vector<LOverlap *>> idx2;
     /*
-    	idx2 is a vector of length n_read, each element idx2[read A id] is a vector, 
+    	idx2 is a vector of length n_read, each element idx2[read A id] is a vector,
     	for each read B, we put the best overlap into that vector
     */
     //std::vector<std::unordered_map<int, LOverlap *>> idx3;
@@ -1358,7 +1374,7 @@ int main(int argc, char *argv[]) {
                                             new_killed_hinges_vec[i].push_back(Hinge(hinges_vec[i][k].pos,hinges_vec[i][k].type,false));
 
                                             if (hinges_vec[i][k].type == -1) {
-                                                console->info("This should not have happened.");
+                                                //console->info("This should not have happened.");
                                                 // If this is a -1 hinge, read i should also bridge the repeat,
                                                 // and hinges_vec[i][k] would have been killed in filter
 
@@ -1502,7 +1518,7 @@ int main(int argc, char *argv[]) {
                                         new_killed_hinges_vec[i].push_back(Hinge(hinges_vec[i][k].pos,hinges_vec[i][k].type,false));
 
                                         if (hinges_vec[i][k].type != -1) {
-                                            console->info("This should not have happened 2.");
+                                            //console->info("This should not have happened 2.");
                                             // If this is a +1 hinge, read i should also bridge the repeat,
                                             // and hinges_vec[i][k] would have been killed in filter
                                         }

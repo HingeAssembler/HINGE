@@ -1,6 +1,12 @@
-# HINGE
+# HINGE 
+Software accompanying  "HINGE: Long-Read Assembly Achieves Optimal Repeat Resolution"
+
+- Preprint: http://biorxiv.org/content/early/2016/08/01/062117
+
+- An ipython notebook to reproduce results in the paper can be found in this [repository](https://github.com/govinda-kamath/HINGE-analyses).
 
 CI Status: ![image](https://travis-ci.org/fxia22/HINGE.svg?branch=master)
+
 
 
 ## Introduction 
@@ -72,6 +78,19 @@ In the pipeline described above, most programs not only takes the input file and
 
 # Installation
 
+## Dependencies
+- g++ 4.9
+- cmake 3.x
+- libhdf5
+- boost
+- Python 2.7
+
+The following python packages are necessary:
+- numpy
+- ujson
+- colormap
+- easydev.tools
+
 This software is still at prototype stage so it is not well packaged, however it is designed in a modular flavor so different combinations of methods can be tested. 
 
 Installing the software is very easy. 
@@ -80,36 +99,37 @@ Installing the software is very easy.
 git clone https://github.com/fxia22/HINGE.git
 git submodule init
 git submodule update
-./build.sh
+./utils/build.sh
 ```
 
 # Running
 
-In order to call the programs from anywhere, I suggest one export the directory of binary file to system environment, you can do that by using the script `setup.sh`.
+In order to call the programs from anywhere, I suggest one export the directory of binary file to system environment, you can do that by using the script `setup.sh`. The parameters are initialised in `utils/nominal.ini`. The path to nominal.ini has to be specified to run the scripts.
 
 A demo run for assembling the ecoli genome is the following:
 
 ```
-source setup.sh
+source utils/setup.sh
 mkdir data/ecoli
 cd data/ecoli
 # reads.fasta should be in data/ecoli
 fasta2DB ecoli reads.fasta
 DBsplit -x500 -s100 ecoli     
-HPCdaligner -t5 ecoli | csh -v
-# alternatively, you can put output of HPCdaligner to a bash file and edit it to support 
+HPC.daligner -t5 ecoli | csh -v
+# alternatively, you can put output of HPC.daligner to a bash file and edit it to support 
 rm ecoli.*.ecoli.*
-LAmerge ecoli.las ecoli.*.las
+LAmerge ecoli.las ecoli.+([[:digit:]]).las
 rm ecoli.*.las # we only need ecoli.las
 DASqv -c100 ecoli ecoli.las
 
 # Run filter
 
-Reads_filter --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini
+mkdir log
+Reads_filter --db ecoli --las ecoli.las -x ecoli --config <path-to-nominal.ini>
 
 # Run layout
 
-hinging --db ecoli --las ecoli.las -x ecoli --config /utils/nominal.ini -o ecoli
+hinging --db ecoli --las ecoli.las -x ecoli --config <path-to-nominal.ini> -o ecoli
 
 # Run postprocessing
 
@@ -119,22 +139,22 @@ python pruning_and_clipping.py ecoli.edges.hinges ecoli.hinge.list <identifier-o
 # get draft assembly 
 
 get_draft_path.py <working directory> ecoli ecoli<identifier-of-run>.G2.graphml
-draft_assembly --db ecoli --las ecoli.las --prefix ecoli --config utils/nominal.ini --out ecoli.draft
+draft_assembly --db ecoli --las ecoli.las --prefix ecoli --config <path-to-nominal.ini> --out ecoli.draft
 
 
 # get consensus assembly
 
 correct_head.py ecoli.draft.fasta ecoli.draft.pb.fasta draft_map.txt
 fasta2DB draft ecoli.draft.pb.fasta 
-HPCmapper draft ecoli | zsh -v  
+HPC.daligner draft ecoli | zsh -v  
 LAmerge draft.ecoli.las draft.ecoli.*.las
 consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta utils/nominal.ini
-get_consensus_gfa.py <working directory> ecoli ecoli<identifier-of-run>.G2.graphml ecoli.consensus.fasta
+get_consensus_gfa.py <working directory> ecoli ecoli.consensus.fasta
 
 #results should be in ecoli_consensus.gfa
 ```
 
-## Debugging
+## Analysis of Results
 
 ### showing ground truth on graph
 Some programs are for debugging and oberservation. For example, one can get the ground truth by mapping reads to reference and get `ecoli.ecoli.ref.las`.
