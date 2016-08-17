@@ -631,7 +631,7 @@ int main(int argc, char *argv[]) {
             aee = alen;
             bee = blen;
 
-            printf("%d %d [[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", std::get<0>(edgelist[i]).id, std::get<1>(edgelist[i]).id, abpos, aepos, aes, aee, bbpos, bepos, bes, bee);
+//            printf("%d %d [[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", std::get<0>(edgelist[i]).id, std::get<1>(edgelist[i]).id, abpos, aepos, aes, aee, bbpos, bepos, bes, bee);
 
             LOverlap *new_ovl = new LOverlap();
             new_ovl->read_A_match_start_ = abpos;
@@ -834,12 +834,12 @@ int main(int argc, char *argv[]) {
          * show ladders
          */
         for (int i = 0; i < ladders.size(); i++) {
-            printf("Ladder %d\n", i);
-            for (int j = 0; j < ladders[i].size(); j++) {
-                //printf("[%d %d-%d] ", std::get<0>(ladders[i][j]), std::get<1>(ladders[i][j]), std::get<2>(ladders[i][j]) );
-                //printf("%s\n", breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j])).c_str());
-
-            }
+//            printf("Ladder %d\n", i);
+//            for (int j = 0; j < ladders[i].size(); j++) {
+//                //printf("[%d %d-%d] ", std::get<0>(ladders[i][j]), std::get<1>(ladders[i][j]), std::get<2>(ladders[i][j]) );
+//                //printf("%s\n", breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j])).c_str());
+//
+//            }
 
             if (ladders[i].size() == 0) {
                 printf("low coverage!\n");
@@ -865,8 +865,8 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                std::cout << "ladder " << i << " num reads " << ladders[i].size() << " possibly error here " <<
-                maxcoverage << "\n!";
+//                std::cout << "ladder " << i << " num reads " << ladders[i].size() << " possibly error here " <<
+//                maxcoverage << "\n!";
 
 
                 //if (ladders[i].size() == 2) {
@@ -881,7 +881,7 @@ int main(int argc, char *argv[]) {
                                                                               std::get<2>(ladders[i][mx]) -
                                                                               std::get<1>(ladders[i][mx]));;
                 int seq_count = ladders[i].size();
-                printf("seq_count:%d, max %d\n", seq_count, mx);
+//                printf("seq_count:%d, max %d\n", seq_count, mx);
                 align_tags_t **tags_list;
                 tags_list = (align_tags_t **) calloc(seq_count, sizeof(align_tags_t *));
                 consensus_data *consensus;
@@ -954,7 +954,7 @@ int main(int argc, char *argv[]) {
                 //printf("%d %d\n%s\n",seq_count, strlen(seq), seq);
 
                 consensus = get_cns_from_align_tags(tags_list, seq_count, alen + 1, 1);
-                printf("Consensus len :%d\n",strlen(consensus->sequence));
+//                printf("Consensus len :%d\n",strlen(consensus->sequence));
                 draft_assembly += std::string(consensus->sequence);
 
                 free_consensus_data(consensus);
