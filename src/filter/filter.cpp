@@ -1104,7 +1104,6 @@ int main(int argc, char *argv[]) {
         la.closeDB(); //close database
     return 0;
 
-    return 0;
 
 
 
