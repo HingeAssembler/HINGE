@@ -1,5 +1,5 @@
-wget http://gembox.cbcb.umd.edu/mhap/raw/ecoli_p4_filtered.fastq.gz
-gunzip ecoli_p4_filtered.fastq.gz
+#wget http://gembox.cbcb.umd.edu/mhap/raw/ecoli_p4_filtered.fastq.gz
+#gunzip ecoli_p4_filtered.fastq.gz
 
 seqtk seq -a ecoli_p4_filtered.fastq > reads.fasta
 correct_head.py reads.fasta reads.pb.fasta map.txt
