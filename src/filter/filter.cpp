@@ -71,11 +71,11 @@ std::ostream& operator<<(std::ostream& out, const MatchType value){
     return out << strings[value];
 }
 
-bool pairAscend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem) {
+bool pairAscend(const std::pair<int, int>& firstElem,  const std::pair<int, int>& secondElem) {
     return firstElem.first < secondElem.first;
 }
 
-bool pairDescend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem) {
+bool pairDescend(const std::pair<int, int>& firstElem,  const std::pair<int, int>& secondElem) {
     return firstElem.first > secondElem.first;
 }
 
@@ -853,7 +853,6 @@ int main(int argc, char *argv[]) {
             }
 
             for (int j = 0; j < repeat_annotation[i].size(); j++) {
-
                 if (repeat_annotation[i][j].second == -1) { // look for out hinges, negative gradient
 
                     bool bridged = true;

@@ -1,6 +1,12 @@
 #!/bin/bash
-pwd=$PWD
+set -e
 
+source /hbb_exe/activate
+
+set -x
+
+
+pwd=/io
 cd $pwd/thirdparty/DAZZ_DB
 make -j 8
 
@@ -16,7 +22,7 @@ make -j 8
 cd $pwd
 mkdir build
 cd $pwd/build
-cmake .. -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8
+cmake .. -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
 make -j 8
 
 exit $?
