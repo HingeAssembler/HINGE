@@ -308,15 +308,11 @@ vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.pre
 
 # while True:
 
-countdown = len(vert_to_merge)
 
 for vert in vert_to_merge:
 
     # and
     # len(nx.node_connected_component(h.to_undirected(), x)) > 2]
-
-    print countdown
-    countdown -= 1
 
     if len(h.successors(x)) != 1 or len(h.predecessors(h.successors(x)[0])) != 1 or x == h.successors(x)[0]:
         continue
