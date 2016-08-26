@@ -19,15 +19,15 @@ reads = sorted(list(set([int(x.split("_")[0].lstrip("B")) for x in in_graph.node
 
 dbshow_reads = ' '.join([str(x+1) for x in reads])
 
-DBshow_cmd = "DBshow "+ filedir+'/'+ filename+' '+dbshow_reads
-stream = subprocess.Popen(DBshow_cmd.split(),
-                                  stdout=subprocess.PIPE,bufsize=1)
-reads_queried = parse_read(stream.stdout)
-read_dict = {}
-for read_id,read in itertools.izip(reads,reads_queried):
-    rdlen = len(read[1])
-#     print read
-    read_dict[read_id] = read
+# DBshow_cmd = "DBshow "+ filedir+'/'+ filename+' '+dbshow_reads
+# stream = subprocess.Popen(DBshow_cmd.split(),
+#                                   stdout=subprocess.PIPE,bufsize=1)
+# reads_queried = parse_read(stream.stdout)
+# read_dict = {}
+# for read_id,read in itertools.izip(reads,reads_queried):
+#     rdlen = len(read[1])
+# #     print read
+#     read_dict[read_id] = read
 
 complement = {'A':'T','C': 'G','T':'A', 'G':'C','a':'t','t':'a','c':'g','g':'c'}
 
@@ -51,13 +51,13 @@ def get_string(path):
             assert itm[1][0] >= itm[1][1]
             str_st = itm[1][1]
             str_end = itm[1][0]
-            read_str = read_dict[int(read_id.lstrip("B"))][1][str_st:str_end]
+            read_str = "ACGT" #read_dict[int(read_id.lstrip("B"))][1][str_st:str_end]
         else:
 
             assert itm[1][0] <= itm[1][1]
             str_st = itm[1][0]
             str_end = itm[1][1]
-            read_str = reverse_complement(read_dict[int(read_id.lstrip("B"))][1][str_st:str_end])
+            read_str = "ACGT" # reverse_complement(read_dict[int(read_id.lstrip("B"))][1][str_st:str_end])
 #         print str_st,str_end
 #         print read_id
 #         print read_dict[int(read_id)][str_st:str_end]
@@ -89,6 +89,8 @@ for vert in in_graph:
 
 
 
+print "here0"
+
 vertices_of_interest = set([x for x in in_graph if in_graph.in_degree(x) != 1 or in_graph.out_degree(x) != 1])
 
 read_tuples = {}
@@ -98,7 +100,7 @@ for vert in vertices_of_interest:
     vert_id, vert_or = vert.split("_")
     if vert_or == '1':
         continue
-    vert_len = len(read_dict[int(vert_id)][1])
+    vert_len = 50000 # len(read_dict[int(vert_id)][1])
 #     print vert_len
     read_starts = [(in_graph.edge[x][vert]['read_b_start']) for x in in_graph.predecessors(vert)]
     read_ends = [(in_graph.edge[vert][x]['read_a_start']) for x in in_graph.successors(vert)]
@@ -140,6 +142,8 @@ for vertex in vertices_of_interest:
         else:
             read_tuples_raw[vertex] = (0,0)
 
+
+print "here1"
 
 for vertex in vertices_of_interest:
     h.add_node(vertex)
@@ -201,6 +205,8 @@ for start_vertex in vertices_of_interest:
 #         paths.append(cur_path)
 
 #print read_tuples
+
+print "here2"
 
 while set(in_graph.nodes())-vertices_used:
     vert = list(set(in_graph.nodes())-vertices_used)[0]
@@ -303,20 +309,38 @@ outfile = filedir + '/' + filename + ".edges.list"
 # outfile_norevcomp = filedir + '/' + filename + ".norevcomp.edges.list"
 
 
+vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and 
+ x != h.successors(x)[0] and
+ len(nx.node_connected_component(h.to_undirected(), x)) > 2]
+
+print "here3"
+
+
 vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
     x != h.successors(x)[0] ]
 
 # while True:
 
+countdown = len(vert_to_merge)
 
 for vert in vert_to_merge:
 
     # and
     # len(nx.node_connected_component(h.to_undirected(), x)) > 2]
 
+    print countdown
+    countdown -= 1
+
     if len(h.successors(x)) != 1 or len(h.predecessors(h.successors(x)[0])) != 1 or x == h.successors(x)[0]:
         continue
 
+    # print "vert_to_merge: "+str(len(vert_to_merge))
+
+    # if not vert_to_merge:
+    #     break
+
+    # vert = vert_to_merge[0]
+    #print vert,
 
     succ = h.successors(vert)[0]
     preds = h.predecessors(vert)
@@ -336,7 +360,6 @@ for vert in vert_to_merge:
     h.remove_node(vert)
 
 
-
 path_to_vert = {}
 RCmap = {}
 
@@ -354,6 +377,8 @@ for path in path_to_vert:
 # print RCmap
 # print [x for x in h.edges()]
 
+print "here4"
+
 
 vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
     x != h.successors(x)[0] and h.successors(h.successors(x)[0])[0]== x and len(h.successors(h.successors(x)[0])) == 1 
@@ -361,6 +386,11 @@ vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.pre
 
 
 for vert in vert_to_merge:
+
+    # if not vert_to_merge:
+    #     break
+
+    # vert = vert_to_merge[0]
 
     if vert not in h.nodes():
         continue

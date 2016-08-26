@@ -967,7 +967,7 @@ int main(int argc, char *argv[]) {
                                                                             std::get<1>(ladders[i][0]));
             }
 
-            printf("\n");
+//            printf("\n");
         }
 
 
