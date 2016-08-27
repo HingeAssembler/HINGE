@@ -399,7 +399,8 @@ for vert in vert_to_merge:
 
 
 for  i, vert in enumerate(h.nodes()):
-    print i,len(h.node[vert]['path'])
+    pass
+    #print i,len(h.node[vert]['path'])
 
 cnt = 0
 with open(outfile, 'w') as f:
