@@ -1,9 +1,9 @@
-FROM ubuntu:14.04
+FROM ubuntu:12.04
 
 RUN apt-get update
 
 RUN apt-get install zlibc zlib1g zlib1g-dev -y
-RUN apt-get install software-properties-common -y
+RUN apt-get install software-properties-common python-software-properties -y
 RUN apt-get install build-essential wget -y
 RUN apt-get install libboost-graph-dev -y 
          
