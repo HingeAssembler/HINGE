@@ -41,7 +41,7 @@ del_contigs = np.nonzero(cols == 'Deleted')[0]
 #     pass
 
 del_contig_ptr = 0
-cols = np.loadtxt('/data/pacbio_assembly/pb_data/yeast/draft_map.txt', dtype=str,usecols=(1,))
+cols = np.loadtxt(map_filename, dtype=str,usecols=(1,))
 del_contigs = np.nonzero(cols == 'Deleted')[0]
 
 consensus_contigs = []
