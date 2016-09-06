@@ -23,6 +23,8 @@ RUN ./b2 install
 
 RUN yum install zlib-devel -y
 
+RUN ln -s /opt/rh/devtoolset-2/root/usr/bin/gcc /usr/bin/gcc-4.8
+RUN ln -s /opt/rh/devtoolset-2/root/usr/bin/g++ /usr/bin/g++-4.8
 ADD . /hinge/
 WORKDIR /hinge/
 RUN ./utils/build.sh
