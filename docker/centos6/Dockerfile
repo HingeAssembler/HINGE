@@ -21,6 +21,8 @@ WORKDIR /boost_1_55_0/
 RUN ./bootstrap.sh --with-libraries=graph
 RUN ./b2 install
 
+RUN yum install zlib-devel -y
+
 ADD . /hinge/
 WORKDIR /hinge/
 RUN ./utils/build.sh
