@@ -103,10 +103,18 @@ int main(int argc, char *argv[]) {
         printf("%d %d\n", i, idx[i].size());
     }
 
+    std::cout << "Getting read lengths" << std::endl;
+    std::vector<Read *> reads_vec;
+    la.getRead(reads_vec, 0, n_contigs);
+    for (int i = 0; i < n_contigs; i++){
+        std::cout << i << "\t" << (reads_vec[i]->bases).size() << std::endl;
+    }
 
     std::cout << "Building consensus sequences..." << std::endl;
 
     for (int i = 0; i < n_contigs; i++) {
+
+
 
         int k = 0;
         for (k = 0; k < idx[i].size(); k++)
@@ -117,7 +125,11 @@ int main(int argc, char *argv[]) {
 
         std::cout << "Contig " << i << ": " << seq_count << " reads" << std::endl;
 
-        if (seq_count == 0) continue;
+        if (seq_count == 0) {
+            out << ">Consensus" << i << std::endl;
+            out << reads_vec[i]->bases << std::endl;
+            continue;
+        }
 
         std::vector<std::vector<int>> contig_base_scores;
 
@@ -199,7 +211,7 @@ int main(int argc, char *argv[]) {
             }
 
         }
-        out <<std::endl;
+        out << std::endl;
 
 
         printf("Good bases: %d/%d\n",good_bases,idx[i][0]->alen);
