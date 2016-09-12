@@ -1,4 +1,4 @@
-# HINGE 
+# HINGE  
 Software accompanying  "HINGE: Long-Read Assembly Achieves Optimal Repeat Resolution"
 
 - Preprint: http://biorxiv.org/content/early/2016/08/01/062117
