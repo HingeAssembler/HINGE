@@ -16,3 +16,7 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test -y
 RUN apt-get update;  apt-get install gcc-4.8 g++-4.8 -y
 RUN gcc-4.8 --version
 RUN which gcc-4.8
+
+ADD . /hinge/
+WORKDIR /hinge/
+RUN ./utils/build.sh

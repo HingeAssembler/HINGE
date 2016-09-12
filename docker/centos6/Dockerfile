@@ -17,6 +17,14 @@ RUN cd cmake-3.2.2 && ./configure && make && make install
 
 RUN wget http://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz --no-check-certificate
 RUN tar -xvzf boost_1_55_0.tar.gz
-RUN cd boost_1_55_0/
+WORKDIR /boost_1_55_0/
 RUN ./bootstrap.sh --with-libraries=graph
 RUN ./b2 install
+
+RUN yum install zlib-devel -y
+
+RUN ln -s /opt/rh/devtoolset-2/root/usr/bin/gcc /usr/bin/gcc-4.8
+RUN ln -s /opt/rh/devtoolset-2/root/usr/bin/g++ /usr/bin/g++-4.8
+ADD . /hinge/
+WORKDIR /hinge/
+RUN ./utils/build.sh
