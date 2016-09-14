@@ -401,10 +401,10 @@ int main(int argc, char *argv[]) {
 
     int num_contig = 0;
     int num_one_read_contig = 0;
-    while (true) {
-        if (edges_file.eof()) break;
+    while (!edges_file.eof()) {
         edgelist.clear();
         std::string edge_line;
+
         while (!edges_file.eof()) {
             std::getline(edges_file, edge_line);
             //std::cout << edge_line << std::endl;
@@ -433,17 +433,13 @@ int main(int argc, char *argv[]) {
 
             if (tokens.size() == 4) {
                 out_fa << ">OneReadContig" << num_one_read_contig << std::endl;
-
-
-
+                console->info("One read contig");
                 int node_id = std::stoi(tokens[0]);
                 int node_strand = std::stoi(tokens[1]);
                 int from = std::stoi(tokens[2]);
                 int to = std::stoi(tokens[3]);
 
-
                 std::string current_seq;
-
 
                 if (node_strand == 0) current_seq = reads[node_id]->bases;
                 else current_seq = reverse_complement(reads[node_id]->bases);
@@ -456,7 +452,6 @@ int main(int argc, char *argv[]) {
 
         std::cout << "list size:" << edgelist.size() << std::endl;
         if (edgelist.size() == 0) continue;
-
 
         std::vector<LAlignment *> full_alns;
         std::vector<LAlignment *> selected;
@@ -979,9 +974,10 @@ int main(int argc, char *argv[]) {
         std::cout << sequence.size() << std::endl;
         std::cout << draft_assembly.size() << std::endl;
 
-
-        out_fa << ">Draft_assembly" << num_contig << std::endl;
-        out_fa << draft_assembly << std::endl;
+        if (draft_assembly.size() > 0) {
+            out_fa << ">Draft_assembly" << num_contig << std::endl;
+            out_fa << draft_assembly << std::endl;
+        }
         num_contig++;
 
     }
