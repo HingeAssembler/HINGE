@@ -48,26 +48,26 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
     //class object
     //std::cout<<" In ProcessAlignment"<<std::endl;
     bool contained=false;
-    match->eff_read_A_start_ = read_A->effective_start;
-    match->eff_read_A_end_ = read_A->effective_end;
+    match->eff_read_A_read_start_ = read_A->effective_start;
+    match->eff_read_A_read_end_ = read_A->effective_end;
 
     // removed the following if, so that things agree with the convention for reverse complement matches
 
-    match->eff_read_B_start_ = read_B->effective_start;
-    match->eff_read_B_end_ = read_B->effective_end;
+    match->eff_read_B_read_start_ = read_B->effective_start;
+    match->eff_read_B_read_end_ = read_B->effective_end;
 
 //    if (match->reverse_complement_match_ == 0) {
-//        match->eff_read_B_start_ = read_B->effective_start;
-//        match->eff_read_B_end_ = read_B->effective_end;
+//        match->eff_read_B_read_start_ = read_B->effective_start;
+//        match->eff_read_B_read_end_ = read_B->effective_end;
 //    } else {
-//        match->eff_read_B_start_ = read_B->len - read_B->effective_end;
-//        match->eff_read_B_end_ = read_B->len - read_B->effective_start;
+//        match->eff_read_B_read_start_ = read_B->len - read_B->effective_end;
+//        match->eff_read_B_read_end_ = read_B->len - read_B->effective_start;
 //    }
 
     /*printf("bef %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_,
      * match->reverse_complement_match_,
         match->read_A_match_start_, match->read_A_match_end_, match->read_B_match_start_, match->read_B_match_end_,
-           match->eff_read_A_start_, match->eff_read_A_end_, match->eff_read_B_start_, match->eff_read_B_end_
+           match->eff_read_A_read_start_, match->eff_read_A_read_end_, match->eff_read_B_read_start_, match->eff_read_B_read_end_
     );*/
 
     if (trim)
@@ -82,7 +82,7 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
      * match->reverse_complement_match_,
            match->eff_read_A_match_start_, match->eff_read_A_match_end_, match->eff_read_B_match_start_,
            match->eff_read_B_match_end_,
-           match->eff_read_A_start_, match->eff_read_A_end_, match->eff_read_B_start_, match->eff_read_B_end_
+           match->eff_read_A_read_start_, match->eff_read_A_read_end_, match->eff_read_B_read_start_, match->eff_read_B_read_end_
     );*/
     //std::cout<< contained<<std::endl;
     if (((match->eff_read_B_match_end_ - match->eff_read_B_match_start_) < ALN_THRESHOLD)
@@ -168,10 +168,10 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
                 match->eff_read_A_match_end_,
                 match->eff_read_B_match_start_,
                 match->eff_read_B_match_end_,
-                match->eff_read_A_start_,
-                match->eff_read_A_end_,
-                match->eff_read_B_start_,
-                match->eff_read_B_end_,
+                match->eff_read_A_read_start_,
+                match->eff_read_A_read_end_,
+                match->eff_read_B_read_start_,
+                match->eff_read_B_read_end_,
 
                 match->read_A_match_start_,
                 match->read_A_match_end_,
@@ -193,10 +193,10 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
                 match->eff_read_B_match_end_,
                 match->eff_read_A_match_start_,
                 match->eff_read_A_match_end_,
-                match->eff_read_B_start_,
-                match->eff_read_B_end_,
-                match->eff_read_A_start_,
-                match->eff_read_A_end_,
+                match->eff_read_B_read_start_,
+                match->eff_read_B_read_end_,
+                match->eff_read_A_read_start_,
+                match->eff_read_A_read_end_,
 
                 match->read_A_match_start_,
                 match->read_A_match_end_,
@@ -241,10 +241,10 @@ void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
                 match->eff_read_A_match_end_,
                 match->eff_read_B_match_start_,
                 match->eff_read_B_match_end_,
-                match->eff_read_A_start_,
-                match->eff_read_A_end_,
-                match->eff_read_B_start_,
-                match->eff_read_B_end_);
+                match->eff_read_A_read_start_,
+                match->eff_read_A_read_end_,
+                match->eff_read_B_read_start_,
+                match->eff_read_B_read_end_);
     }
     else if (match->match_type_ == BACKWARD) {
         fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
@@ -259,10 +259,10 @@ void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
                 match->eff_read_B_match_end_,
                 match->eff_read_A_match_start_,
                 match->eff_read_A_match_end_,
-                match->eff_read_B_start_,
-                match->eff_read_B_end_,
-                match->eff_read_A_start_,
-                match->eff_read_A_end_);
+                match->eff_read_B_read_start_,
+                match->eff_read_B_read_end_,
+                match->eff_read_A_read_start_,
+                match->eff_read_A_read_end_);
     }
     else if (match->match_type_ == FORWARD_INTERNAL) {
 
@@ -278,10 +278,10 @@ void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
                 match->eff_read_A_match_end_,
                 match->eff_read_B_match_start_,
                 match->eff_read_B_match_end_,
-                match->eff_read_A_start_,
-                match->eff_read_A_end_,
-                match->eff_read_B_start_,
-                match->eff_read_B_end_);
+                match->eff_read_A_read_start_,
+                match->eff_read_A_read_end_,
+                match->eff_read_B_read_start_,
+                match->eff_read_B_read_end_);
     }
     else if (match->match_type_ == BACKWARD_INTERNAL) {
         fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
@@ -296,10 +296,10 @@ void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
                 match->eff_read_B_match_end_,
                 match->eff_read_A_match_start_,
                 match->eff_read_A_match_end_,
-                match->eff_read_B_start_,
-                match->eff_read_B_end_,
-                match->eff_read_A_start_,
-                match->eff_read_A_end_);
+                match->eff_read_B_read_start_,
+                match->eff_read_B_read_end_,
+                match->eff_read_A_read_start_,
+                match->eff_read_A_read_end_);
     }
 }
 
@@ -867,8 +867,8 @@ int main(int argc, char *argv[]) {
                             matches_forward[i][j]->eff_read_A_match_end_,
                             matches_forward[i][j]->eff_read_B_match_start_,
                             matches_forward[i][j]->eff_read_B_match_end_,
-                            matches_forward[i][j]->eff_read_A_start_, matches_forward[i][j]->eff_read_A_end_,
-                            matches_forward[i][j]->eff_read_B_start_, matches_forward[i][j]->eff_read_B_end_);
+                            matches_forward[i][j]->eff_read_A_read_start_, matches_forward[i][j]->eff_read_A_read_end_,
+                            matches_forward[i][j]->eff_read_B_read_start_, matches_forward[i][j]->eff_read_B_read_end_);
                     break;
                 }
             }
@@ -888,8 +888,8 @@ int main(int argc, char *argv[]) {
                             matches_backward[i][j]->eff_read_A_match_end_,
                             matches_backward[i][j]->eff_read_B_match_start_,
                             matches_backward[i][j]->eff_read_B_match_end_,
-                            matches_backward[i][j]->eff_read_A_start_, matches_backward[i][j]->eff_read_A_end_,
-                            matches_backward[i][j]->eff_read_B_start_, matches_backward[i][j]->eff_read_B_end_);
+                            matches_backward[i][j]->eff_read_A_read_start_, matches_backward[i][j]->eff_read_A_read_end_,
+                            matches_backward[i][j]->eff_read_B_read_start_, matches_backward[i][j]->eff_read_B_read_end_);
                     break;
                 }
             }
@@ -909,8 +909,8 @@ int main(int argc, char *argv[]) {
                             matches_forward[i][j]->eff_read_A_match_end_,
                             matches_forward[i][j]->eff_read_B_match_start_,
                             matches_forward[i][j]->eff_read_B_match_end_,
-                            matches_forward[i][j]->eff_read_A_start_, matches_forward[i][j]->eff_read_A_end_,
-                            matches_forward[i][j]->eff_read_B_start_, matches_forward[i][j]->eff_read_B_end_);
+                            matches_forward[i][j]->eff_read_A_read_start_, matches_forward[i][j]->eff_read_A_read_end_,
+                            matches_forward[i][j]->eff_read_B_read_start_, matches_forward[i][j]->eff_read_B_read_end_);
             }
     }
     fclose(out_backup);
@@ -926,8 +926,8 @@ int main(int argc, char *argv[]) {
                             matches_backward[i][j]->eff_read_A_match_end_,
                             matches_backward[i][j]->eff_read_B_match_start_,
                             matches_backward[i][j]->eff_read_B_match_end_,
-                            matches_backward[i][j]->eff_read_A_start_, matches_backward[i][j]->eff_read_A_end_,
-                            matches_backward[i][j]->eff_read_B_start_, matches_backward[i][j]->eff_read_B_end_);
+                            matches_backward[i][j]->eff_read_A_read_start_, matches_backward[i][j]->eff_read_A_read_end_,
+                            matches_backward[i][j]->eff_read_B_read_start_, matches_backward[i][j]->eff_read_B_read_end_);
             }
     }
     fclose(out_backup);
@@ -1268,8 +1268,8 @@ int main(int argc, char *argv[]) {
                                                         matches_forward[i][j]->eff_read_A_match_end_,
                                                         matches_forward[i][j]->eff_read_B_match_start_,
                                                         matches_forward[i][j]->eff_read_B_match_end_,
-                                                        matches_forward[i][j]->eff_read_A_start_, matches_forward[i][j]->eff_read_A_end_,
-                                                        matches_forward[i][j]->eff_read_B_start_, matches_forward[i][j]->eff_read_B_end_);
+                                                        matches_forward[i][j]->eff_read_A_read_start_, matches_forward[i][j]->eff_read_A_read_end_,
+                                                        matches_forward[i][j]->eff_read_B_read_start_, matches_forward[i][j]->eff_read_B_read_end_);
 
                                                 fprintf(out_debug, "%d %d %d %d\n", hinges_vec[i][k].pos,
                                                         hinges_vec[i][k].type,
@@ -1526,10 +1526,10 @@ int main(int argc, char *argv[]) {
                                             matches_forward[i][j]->eff_read_A_match_end_,
                                             matches_forward[i][j]->eff_read_B_match_start_,
                                             matches_forward[i][j]->eff_read_B_match_end_,
-                                            matches_forward[i][j]->eff_read_A_start_,
-                                            matches_forward[i][j]->eff_read_A_end_,
-                                            matches_forward[i][j]->eff_read_B_start_,
-                                            matches_forward[i][j]->eff_read_B_end_);
+                                            matches_forward[i][j]->eff_read_A_read_start_,
+                                            matches_forward[i][j]->eff_read_A_read_end_,
+                                            matches_forward[i][j]->eff_read_B_read_start_,
+                                            matches_forward[i][j]->eff_read_B_read_end_);
                                 else
                                     fprintf(out_g1, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_forward[i][j]->read_A_id_,
@@ -1538,10 +1538,10 @@ int main(int argc, char *argv[]) {
                                             matches_forward[i][j]->eff_read_A_match_end_,
                                             matches_forward[i][j]->eff_read_B_match_start_,
                                             matches_forward[i][j]->eff_read_B_match_end_,
-                                            matches_forward[i][j]->eff_read_A_start_,
-                                            matches_forward[i][j]->eff_read_A_end_,
-                                            matches_forward[i][j]->eff_read_B_start_,
-                                            matches_forward[i][j]->eff_read_B_end_);
+                                            matches_forward[i][j]->eff_read_A_read_start_,
+                                            matches_forward[i][j]->eff_read_A_read_end_,
+                                            matches_forward[i][j]->eff_read_B_read_start_,
+                                            matches_forward[i][j]->eff_read_B_read_end_);
 
                                 if (matches_forward[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out_g2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
@@ -1551,10 +1551,10 @@ int main(int argc, char *argv[]) {
                                             matches_forward[i][j]->eff_read_A_match_end_,
                                             matches_forward[i][j]->eff_read_B_match_start_,
                                             matches_forward[i][j]->eff_read_B_match_end_,
-                                            matches_forward[i][j]->eff_read_A_start_,
-                                            matches_forward[i][j]->eff_read_A_end_,
-                                            matches_forward[i][j]->eff_read_B_start_,
-                                            matches_forward[i][j]->eff_read_B_end_);
+                                            matches_forward[i][j]->eff_read_A_read_start_,
+                                            matches_forward[i][j]->eff_read_A_read_end_,
+                                            matches_forward[i][j]->eff_read_B_read_start_,
+                                            matches_forward[i][j]->eff_read_B_read_end_);
                                 else
                                     fprintf(out_g2, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_forward[i][j]->read_B_id_,
@@ -1563,10 +1563,10 @@ int main(int argc, char *argv[]) {
                                             matches_forward[i][j]->eff_read_A_match_end_,
                                             matches_forward[i][j]->eff_read_B_match_start_,
                                             matches_forward[i][j]->eff_read_B_match_end_,
-                                            matches_forward[i][j]->eff_read_A_start_,
-                                            matches_forward[i][j]->eff_read_A_end_,
-                                            matches_forward[i][j]->eff_read_B_start_,
-                                            matches_forward[i][j]->eff_read_B_end_);
+                                            matches_forward[i][j]->eff_read_A_read_start_,
+                                            matches_forward[i][j]->eff_read_A_read_end_,
+                                            matches_forward[i][j]->eff_read_B_read_start_,
+                                            matches_forward[i][j]->eff_read_B_read_end_);
 
                             }
                         }
@@ -1592,10 +1592,10 @@ int main(int argc, char *argv[]) {
                                             matches_backward[i][j]->eff_read_A_match_end_,
                                             matches_backward[i][j]->eff_read_B_match_start_,
                                             matches_backward[i][j]->eff_read_B_match_end_,
-                                            matches_backward[i][j]->eff_read_A_start_,
-                                            matches_backward[i][j]->eff_read_A_end_,
-                                            matches_backward[i][j]->eff_read_B_start_,
-                                            matches_backward[i][j]->eff_read_B_end_);
+                                            matches_backward[i][j]->eff_read_A_read_start_,
+                                            matches_backward[i][j]->eff_read_A_read_end_,
+                                            matches_backward[i][j]->eff_read_B_read_start_,
+                                            matches_backward[i][j]->eff_read_B_read_end_);
                                 else
                                     fprintf(out_g1, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_backward[i][j]->read_A_id_,
@@ -1604,10 +1604,10 @@ int main(int argc, char *argv[]) {
                                             matches_backward[i][j]->eff_read_A_match_end_,
                                             matches_backward[i][j]->eff_read_B_match_start_,
                                             matches_backward[i][j]->eff_read_B_match_end_,
-                                            matches_backward[i][j]->eff_read_A_start_,
-                                            matches_backward[i][j]->eff_read_A_end_,
-                                            matches_backward[i][j]->eff_read_B_start_,
-                                            matches_backward[i][j]->eff_read_B_end_);
+                                            matches_backward[i][j]->eff_read_A_read_start_,
+                                            matches_backward[i][j]->eff_read_A_read_end_,
+                                            matches_backward[i][j]->eff_read_B_read_start_,
+                                            matches_backward[i][j]->eff_read_B_read_end_);
 
                                 if (matches_backward[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out_g2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
@@ -1617,10 +1617,10 @@ int main(int argc, char *argv[]) {
                                             matches_backward[i][j]->eff_read_A_match_end_,
                                             matches_backward[i][j]->eff_read_B_match_start_,
                                             matches_backward[i][j]->eff_read_B_match_end_,
-                                            matches_backward[i][j]->eff_read_A_start_,
-                                            matches_backward[i][j]->eff_read_A_end_,
-                                            matches_backward[i][j]->eff_read_B_start_,
-                                            matches_backward[i][j]->eff_read_B_end_);
+                                            matches_backward[i][j]->eff_read_A_read_start_,
+                                            matches_backward[i][j]->eff_read_A_read_end_,
+                                            matches_backward[i][j]->eff_read_B_read_start_,
+                                            matches_backward[i][j]->eff_read_B_read_end_);
                                 else
                                     fprintf(out_g2, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_backward[i][j]->read_B_id_,
@@ -1629,10 +1629,10 @@ int main(int argc, char *argv[]) {
                                             matches_backward[i][j]->eff_read_A_match_end_,
                                             matches_backward[i][j]->eff_read_B_match_start_,
                                             matches_backward[i][j]->eff_read_B_match_end_,
-                                            matches_backward[i][j]->eff_read_A_start_,
-                                            matches_backward[i][j]->eff_read_A_end_,
-                                            matches_backward[i][j]->eff_read_B_start_,
-                                            matches_backward[i][j]->eff_read_B_end_);
+                                            matches_backward[i][j]->eff_read_A_read_start_,
+                                            matches_backward[i][j]->eff_read_A_read_end_,
+                                            matches_backward[i][j]->eff_read_B_read_start_,
+                                            matches_backward[i][j]->eff_read_B_read_end_);
                             }
                         }
                         backward++;

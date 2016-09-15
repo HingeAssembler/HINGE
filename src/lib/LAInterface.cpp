@@ -4519,7 +4519,7 @@ void LOverlap::trim_overlap() {
     }
 
 
-    //printf("[%6d %6d] [%6d %6d]\n", this->eff_read_A_start_, this->eff_read_A_end_, this->eff_read_B_start_, this->eff_read_B_end_);
+    //printf("[%6d %6d] [%6d %6d]\n", this->eff_read_A_read_start_, this->eff_read_A_read_end_, this->eff_read_B_read_start_, this->eff_read_B_read_end_);
 
     //printf("[%6d %6d] [%6d %6d]\n", this->eff_read_A_match_start_, this->eff_read_A_match_end_, this->eff_read_B_match_start_, this->eff_read_B_match_end_);
 
@@ -4541,8 +4541,8 @@ void LOverlap::trim_overlap() {
         //for trace point pairs, get the first one that is in untrimmed regions for both reads
 
         for (int i = 0; i < trace_points.size(); i++) {
-            if ( (trace_points[i].first >= this->eff_read_A_start_) and
-                (trace_points[i].second >= this->eff_read_B_start_) ) {
+            if ( (trace_points[i].first >= this->eff_read_A_read_start_) and
+                (trace_points[i].second >= this->eff_read_B_read_start_) ) {
                 this->eff_read_A_match_start_ = trace_points[i].first;
                 this->eff_read_B_match_start_ = trace_points[i].second;
                 this->eff_start_trace_point_index_ = i;
@@ -4552,8 +4552,8 @@ void LOverlap::trim_overlap() {
 
         //for trace point pairs, get the last one that is in untrimmed regions for both reads
         for (int i = (int) trace_points.size() - 1; i >= 0; i--) {
-            if ((trace_points[i].first <= this->eff_read_A_end_) and
-                (trace_points[i].second <= this->eff_read_B_end_)) {
+            if ((trace_points[i].first <= this->eff_read_A_read_end_) and
+                (trace_points[i].second <= this->eff_read_B_read_end_)) {
                 this->eff_read_A_match_end_ = trace_points[i].first;
                 this->eff_read_B_match_end_ = trace_points[i].second;
                 this->eff_end_trace_point_index_ = i;
@@ -4565,8 +4565,8 @@ void LOverlap::trim_overlap() {
     else {
 
         for (int i = 0; i < trace_points.size(); i++) {
-            if ( (trace_points[i].first >= this->eff_read_A_start_) and
-                 (trace_points[i].second <= this->eff_read_B_end_) ) {
+            if ( (trace_points[i].first >= this->eff_read_A_read_start_) and
+                 (trace_points[i].second <= this->eff_read_B_read_end_) ) {
                 this->eff_read_A_match_start_ = trace_points[i].first;
                 this->eff_read_B_match_end_ = trace_points[i].second;
                 this->eff_start_trace_point_index_ = i; // "start" with respect to A
@@ -4575,8 +4575,8 @@ void LOverlap::trim_overlap() {
         }
 
         for (int i = (int) trace_points.size() - 1; i >= 0; i--) {
-            if ((trace_points[i].first <= this->eff_read_A_end_) and
-                (trace_points[i].second >= this->eff_read_B_start_)) {
+            if ((trace_points[i].first <= this->eff_read_A_read_end_) and
+                (trace_points[i].second >= this->eff_read_B_read_start_)) {
                 this->eff_read_A_match_end_ = trace_points[i].first;
                 this->eff_read_B_match_start_ = trace_points[i].second;
                 this->eff_end_trace_point_index_ = i;
@@ -4593,10 +4593,10 @@ void LOverlap::trim_overlap() {
 
     /*printf("[%6d %6d] [%6d %6d]\n", this->eff_read_A_match_start_, this->eff_read_A_match_end_, this->eff_read_B_match_start_, this->eff_read_B_match_end_);
 
-    int overhang_read_A_left = this->eff_read_A_match_start_ - this->eff_read_A_start_;
-    int overhang_read_A_right = this->eff_read_A_end_ - this->eff_read_A_match_end_;
-    int overhang_read_B_left = this->eff_read_B_match_start_ - this->eff_read_B_start_;
-    int overhang_read_B_right = this->eff_read_B_end_ - this->eff_read_B_match_end_;
+    int overhang_read_A_left = this->eff_read_A_match_start_ - this->eff_read_A_read_start_;
+    int overhang_read_A_right = this->eff_read_A_read_end_ - this->eff_read_A_match_end_;
+    int overhang_read_B_left = this->eff_read_B_match_start_ - this->eff_read_B_read_start_;
+    int overhang_read_B_right = this->eff_read_B_read_end_ - this->eff_read_B_match_end_;
 
     printf("trim A_left %6d, A_right %6d, B_left %6d, B_right %6d\n",
            overhang_read_A_left, overhang_read_A_right,
@@ -4608,10 +4608,10 @@ void LOverlap::trim_overlap() {
 
 
 void LOverlap::TrimOverlapNaive(){
-    this->eff_read_B_match_start_ = std::max (this->read_B_match_start_,this->eff_read_B_start_);
-    this->eff_read_B_match_end_ = std::min (this->read_B_match_end_,this->eff_read_B_end_);
-    this->eff_read_A_match_start_ = std::max (this->read_A_match_start_,this->eff_read_A_start_);
-    this->eff_read_A_match_end_ = std::min (this->read_A_match_end_,this->eff_read_A_end_);;
+    this->eff_read_B_match_start_ = std::max (this->read_B_match_start_,this->eff_read_B_read_start_);
+    this->eff_read_B_match_end_ = std::min (this->read_B_match_end_,this->eff_read_B_read_end_);
+    this->eff_read_A_match_start_ = std::max (this->read_A_match_start_,this->eff_read_A_read_start_);
+    this->eff_read_A_match_end_ = std::min (this->read_A_match_end_,this->eff_read_A_read_end_);;
 }
 
 
@@ -4623,21 +4623,21 @@ void LOverlap::addtype(int max_overhang) {
         it is based on effective positions, rather than positions
      */
 
-    int overhang = std::min(this->eff_read_A_match_start_ - this->eff_read_A_start_, this->eff_read_B_match_start_ - this->eff_read_B_start_) + std::min(this->eff_read_A_end_ - this->eff_read_A_match_end_, this->eff_read_B_end_ - this->eff_read_B_match_end_);
+    int overhang = std::min(this->eff_read_A_match_start_ - this->eff_read_A_read_start_, this->eff_read_B_match_start_ - this->eff_read_B_read_start_) + std::min(this->eff_read_A_read_end_ - this->eff_read_A_match_end_, this->eff_read_B_read_end_ - this->eff_read_B_match_end_);
 
     //int tol = 0;
     if (overhang > max_overhang)
         this->match_type_ = INTERNAL;
-    else if ((this->eff_read_A_match_start_ - this->eff_read_A_start_ <= this->eff_read_B_match_start_ - this->eff_read_B_start_) and (this->eff_read_A_end_ - this->eff_read_A_match_end_ <= this->eff_read_B_end_ - this->eff_read_B_match_end_))
+    else if ((this->eff_read_A_match_start_ - this->eff_read_A_read_start_ <= this->eff_read_B_match_start_ - this->eff_read_B_read_start_) and (this->eff_read_A_read_end_ - this->eff_read_A_match_end_ <= this->eff_read_B_read_end_ - this->eff_read_B_match_end_))
         this->match_type_ = BCOVERA;
-    else if ((this->eff_read_A_match_start_ - this->eff_read_A_start_ >= this->eff_read_B_match_start_ - this->eff_read_B_start_) and (this->eff_read_A_end_ - this->eff_read_A_match_end_ >= this->eff_read_B_end_ - this->eff_read_B_match_end_))
+    else if ((this->eff_read_A_match_start_ - this->eff_read_A_read_start_ >= this->eff_read_B_match_start_ - this->eff_read_B_read_start_) and (this->eff_read_A_read_end_ - this->eff_read_A_match_end_ >= this->eff_read_B_read_end_ - this->eff_read_B_match_end_))
         this->match_type_ = ACOVERB;
-    else if (this->eff_read_A_match_start_ - this->eff_read_A_start_ > this->eff_read_B_match_start_ - this->eff_read_B_start_) {
-        if ((this->eff_read_B_end_ - this->eff_read_B_match_end_ > 0) and (this->eff_read_A_match_start_ - this->eff_read_A_start_ > 0))
+    else if (this->eff_read_A_match_start_ - this->eff_read_A_read_start_ > this->eff_read_B_match_start_ - this->eff_read_B_read_start_) {
+        if ((this->eff_read_B_read_end_ - this->eff_read_B_match_end_ > 0) and (this->eff_read_A_match_start_ - this->eff_read_A_read_start_ > 0))
             this->match_type_ = FORWARD;
     }
     else {
-        if ((this->eff_read_B_match_start_ - this->eff_read_B_start_ > 0) and (this->eff_read_A_end_ - this->eff_read_A_match_end_ > 0))
+        if ((this->eff_read_B_match_start_ - this->eff_read_B_read_start_ > 0) and (this->eff_read_A_read_end_ - this->eff_read_A_match_end_ > 0))
             this->match_type_ = BACKWARD;
     }
 }
@@ -4647,10 +4647,10 @@ void LOverlap::AddTypesAsymmetric(int max_overhang, int min_overhang) {
     //The function sets the class variable match_type_ according to the relative positions of the reads.
     //Possible things it can set to are:
     // BCOVERA, ACOVERB, INTERNAL, FORWARD, FORWARD_INTERNAL, BACKWARD, BACKWARD_INTERNAL
-    int overhang_read_A_left = this->eff_read_A_match_start_ - this->eff_read_A_start_;
-    int overhang_read_A_right = this->eff_read_A_end_ - this->eff_read_A_match_end_;
-    int overhang_read_B_left = this->eff_read_B_match_start_ - this->eff_read_B_start_;
-    int overhang_read_B_right = this->eff_read_B_end_ - this->eff_read_B_match_end_;
+    int overhang_read_A_left = this->eff_read_A_match_start_ - this->eff_read_A_read_start_;
+    int overhang_read_A_right = this->eff_read_A_read_end_ - this->eff_read_A_match_end_;
+    int overhang_read_B_left = this->eff_read_B_match_start_ - this->eff_read_B_read_start_;
+    int overhang_read_B_right = this->eff_read_B_read_end_ - this->eff_read_B_match_end_;
 
 
     //printf("     A_left %6d, A_right %6d, B_left %6d, B_right %6d\n",
@@ -4659,8 +4659,8 @@ void LOverlap::AddTypesAsymmetric(int max_overhang, int min_overhang) {
 
     if (this->reverse_complement_match_ == 1) {
         //Exchange overhang left and right of read B if match is reverse complement
-        overhang_read_B_left = this->eff_read_B_end_ - this->eff_read_B_match_end_;
-        overhang_read_B_right = this->eff_read_B_match_start_ - this->eff_read_B_start_;
+        overhang_read_B_left = this->eff_read_B_read_end_ - this->eff_read_B_match_end_;
+        overhang_read_B_right = this->eff_read_B_match_start_ - this->eff_read_B_read_start_;
     }
 
 
@@ -4709,15 +4709,15 @@ void LOverlap::AddTypesAsymmetric(int max_overhang, int min_overhang) {
     ofs <<  "===============================================\n"
     << "Read A id "<< std::setfill('0') << std::setw(5) <<this->read_A_id_
     << "\nRead B id "  << std::setfill('0') << std::setw(5) << this->read_B_id_
-    << "\nRead A eff start "<< std::setfill('0') << std::setw(5)  << this->eff_read_A_start_
-    << " Read A eff end "<< std::setfill('0') << std::setw(5)  << this->eff_read_A_end_
+    << "\nRead A eff start "<< std::setfill('0') << std::setw(5)  << this->eff_read_A_read_start_
+    << " Read A eff end "<< std::setfill('0') << std::setw(5)  << this->eff_read_A_read_end_
     << " Read A length " << std::setfill('0') << std::setw(5)  << this->alen
     << " Read A match start "<< std::setfill('0') << std::setw(5) <<  this->read_A_match_start_
     << " Read A eff match start " << std::setfill('0') << std::setw(5) <<  this->eff_read_A_match_start_
     << " Read A match end " << std::setfill('0') << std::setw(5)  << this->read_A_match_end_
     << " Read A eff match end " << std::setfill('0') << std::setw(5)  << this->eff_read_A_match_end_
-    << "\nRead B eff start "  << std::setfill('0') << std::setw(5) << this->eff_read_B_start_
-    << " Read B eff end " << std::setfill('0') << std::setw(5)  << this->eff_read_B_end_
+    << "\nRead B eff start "  << std::setfill('0') << std::setw(5) << this->eff_read_B_read_start_
+    << " Read B eff end " << std::setfill('0') << std::setw(5)  << this->eff_read_B_read_end_
     << " Read B length " << std::setfill('0') << std::setw(5)  << this->blen
     << " Read B match start "<< std::setfill('0') << std::setw(5) <<  this->read_B_match_start_
     << " Read B eff match start " << std::setfill('0') << std::setw(5) <<  this->eff_read_B_match_start_

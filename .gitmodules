@@ -1,6 +1,6 @@
 [submodule "DALIGNER"]
 	path = thirdparty/DALIGNER
-	url = https://github.com/Eureka22/DALIGNER.git
+    url = https://github.com/thegenemyers/DALIGNER.git
 [submodule "DAZZ_DB"]
 	path = thirdparty/DAZZ_DB
 	url = https://github.com/Eureka22/DAZZ_DB.git

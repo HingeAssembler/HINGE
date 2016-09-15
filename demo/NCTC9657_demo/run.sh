@@ -3,7 +3,7 @@ fasta2DB NCTC9657 reads.pb.fasta
 
 DBsplit NCTC9657
 
-HPCdaligner NCTC9657 | bash -v
+HPC.daligner NCTC9657 | bash -v
 
 rm NCTC9657.*.NCTC9657.*.las
 LAmerge NCTC9657.las NCTC9657.[0-9].las
@@ -21,7 +21,7 @@ draft_assembly --db NCTC9657 --las NCTC9657.las --prefix NCTC9657 --config ../..
 
 correct_head.py NCTC9657.draft.fasta NCTC9657.draft.pb.fasta draft_map.txt 
 fasta2DB draft NCTC9657.draft.pb.fasta
-HPCmapper draft NCTC9657 | bash -v 
+HPC.daligner draft NCTC9657 | bash -v 
 
 rm draft.*.NCTC9657.*.las
 LAmerge draft.NCTC9657.las draft.NCTC9657.*.las

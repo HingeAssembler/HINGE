@@ -357,6 +357,7 @@ int main(int argc, char *argv[]) {
         if (edges_file.eof()) break;
         edgelist.clear();
         std::string edge_line;
+
         while (!edges_file.eof()) {
             std::getline(edges_file, edge_line);
             //std::cout << edge_line << std::endl;
@@ -385,17 +386,13 @@ int main(int argc, char *argv[]) {
 
             if (tokens.size() == 4) {
                 out_fa << ">OneReadContig" << num_one_read_contig << std::endl;
-
-
-
+                console->info("One read contig");
                 int node_id = std::stoi(tokens[0]);
                 int node_strand = std::stoi(tokens[1]);
                 int from = std::stoi(tokens[2]);
                 int to = std::stoi(tokens[3]);
 
-
                 std::string current_seq;
-
 
                 if (node_strand == 0) current_seq = reads[node_id]->bases;
                 else current_seq = reverse_complement(reads[node_id]->bases);
@@ -408,7 +405,6 @@ int main(int argc, char *argv[]) {
 
         std::cout << "list size:" << edgelist.size() << std::endl;
         if (edgelist.size() == 0) continue;
-
 
         std::vector<LAlignment *> full_alns;
         std::vector<LAlignment *> selected;
@@ -552,30 +548,30 @@ int main(int argc, char *argv[]) {
                 abpos = currentaln->read_A_match_start_;
                 aepos = currentaln->read_A_match_end_;
 
-                aes = currentaln->eff_read_A_start_;
-                aee = currentaln->eff_read_A_end_;
+                aes = currentaln->eff_read_A_read_start_;
+                aee = currentaln->eff_read_A_read_end_;
 
             } else {
                 abpos = alen - currentaln->read_A_match_end_;
                 aepos = alen - currentaln->read_A_match_start_;
 
-                aes = alen - currentaln->eff_read_A_end_;
-                aee = alen - currentaln->eff_read_A_start_;
+                aes = alen - currentaln->eff_read_A_read_end_;
+                aee = alen - currentaln->eff_read_A_read_start_;
             }
 
             if (((std::get<1>(edgelist[i]).strand == 0))) {
                 bbpos = currentaln->read_B_match_start_;
                 bepos = currentaln->read_B_match_end_;
 
-                bes = currentaln->eff_read_B_start_;
-                bee = currentaln->eff_read_B_end_;
+                bes = currentaln->eff_read_B_read_start_;
+                bee = currentaln->eff_read_B_read_end_;
 
             } else {
                 bbpos = blen - currentaln->read_B_match_end_;
                 bepos = blen - currentaln->read_B_match_start_;
 
-                bes = blen - currentaln->eff_read_B_end_;
-                bee = blen - currentaln->eff_read_B_start_;
+                bes = blen - currentaln->eff_read_B_read_end_;
+                bee = blen - currentaln->eff_read_B_read_start_;
 
             }
             aes = 0;
@@ -583,17 +579,17 @@ int main(int argc, char *argv[]) {
             aee = alen;
             bee = blen;
 
-            printf("%d %d [[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", std::get<0>(edgelist[i]).id, std::get<1>(edgelist[i]).id, abpos, aepos, aes, aee, bbpos, bepos, bes, bee);
+//            printf("%d %d [[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", std::get<0>(edgelist[i]).id, std::get<1>(edgelist[i]).id, abpos, aepos, aes, aee, bbpos, bepos, bes, bee);
 
             LOverlap *new_ovl = new LOverlap();
             new_ovl->read_A_match_start_ = abpos;
             new_ovl->read_A_match_end_ = aepos;
             new_ovl->read_B_match_start_ = bbpos;
             new_ovl->read_B_match_end_ = bepos;
-            new_ovl->eff_read_A_end_ = aee;
-            new_ovl->eff_read_A_start_ = aes;
-            new_ovl->eff_read_B_end_ = bee;
-            new_ovl->eff_read_B_start_ = bes;
+            new_ovl->eff_read_A_read_end_ = aee;
+            new_ovl->eff_read_A_read_start_ = aes;
+            new_ovl->eff_read_B_read_end_ = bee;
+            new_ovl->eff_read_B_read_start_ = bes;
             new_ovl->alen = currentaln->alen;
             new_ovl->blen = currentaln->blen;
             new_ovl->read_A_id_ = std::get<0>(edgelist[i]).id;
@@ -752,7 +748,7 @@ int main(int argc, char *argv[]) {
 
 
         printf("In total %d lanes\n", lanes.size());
-        if (lanes.size() == 0) {
+        if (lanes.size() < 2) {
             draft_assembly = breads[0];
             out_fa << ">DraftAssemblyContig" << num_contig << std::endl;
             out_fa << draft_assembly << std::endl;
@@ -786,12 +782,12 @@ int main(int argc, char *argv[]) {
          * show ladders
          */
         for (int i = 0; i < ladders.size(); i++) {
-            printf("Ladder %d\n", i);
-            for (int j = 0; j < ladders[i].size(); j++) {
-                //printf("[%d %d-%d] ", std::get<0>(ladders[i][j]), std::get<1>(ladders[i][j]), std::get<2>(ladders[i][j]) );
-                //printf("%s\n", breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j])).c_str());
-
-            }
+//            printf("Ladder %d\n", i);
+//            for (int j = 0; j < ladders[i].size(); j++) {
+//                //printf("[%d %d-%d] ", std::get<0>(ladders[i][j]), std::get<1>(ladders[i][j]), std::get<2>(ladders[i][j]) );
+//                //printf("%s\n", breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j])).c_str());
+//
+//            }
 
             if (ladders[i].size() == 0) {
                 printf("low coverage!\n");
@@ -817,8 +813,8 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                std::cout << "ladder " << i << " num reads " << ladders[i].size() << " possibly error here " <<
-                maxcoverage << "\n!";
+//                std::cout << "ladder " << i << " num reads " << ladders[i].size() << " possibly error here " <<
+//                maxcoverage << "\n!";
 
 
                 //if (ladders[i].size() == 2) {
@@ -833,7 +829,7 @@ int main(int argc, char *argv[]) {
                                                                               std::get<2>(ladders[i][mx]) -
                                                                               std::get<1>(ladders[i][mx]));;
                 int seq_count = ladders[i].size();
-                printf("seq_count:%d, max %d\n", seq_count, mx);
+//                printf("seq_count:%d, max %d\n", seq_count, mx);
                 align_tags_t **tags_list;
                 tags_list = (align_tags_t **) calloc(seq_count, sizeof(align_tags_t *));
                 consensus_data *consensus;
@@ -906,7 +902,7 @@ int main(int argc, char *argv[]) {
                 //printf("%d %d\n%s\n",seq_count, strlen(seq), seq);
 
                 consensus = get_cns_from_align_tags(tags_list, seq_count, alen + 1, 1);
-                printf("Consensus len :%d\n",strlen(consensus->sequence));
+//                printf("Consensus len :%d\n",strlen(consensus->sequence));
                 draft_assembly += std::string(consensus->sequence);
 
                 free_consensus_data(consensus);
@@ -919,7 +915,7 @@ int main(int argc, char *argv[]) {
                                                                             std::get<1>(ladders[i][0]));
             }
 
-            printf("\n");
+//            printf("\n");
         }
 
 
@@ -931,9 +927,10 @@ int main(int argc, char *argv[]) {
         std::cout << sequence.size() << std::endl;
         std::cout << draft_assembly.size() << std::endl;
 
-
-        out_fa << ">Draft_assembly" << num_contig << std::endl;
-        out_fa << draft_assembly << std::endl;
+        if (draft_assembly.size() > 0) {
+            out_fa << ">Draft_assembly" << num_contig << std::endl;
+            out_fa << draft_assembly << std::endl;
+        }
         num_contig++;
 
     }

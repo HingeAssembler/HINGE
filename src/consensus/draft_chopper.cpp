@@ -605,30 +605,30 @@ int main(int argc, char *argv[]) {
                 abpos = currentaln->read_A_match_start_;
                 aepos = currentaln->read_A_match_end_;
 
-                aes = currentaln->eff_read_A_start_;
-                aee = currentaln->eff_read_A_end_;
+                aes = currentaln->eff_read_A_read_start_;
+                aee = currentaln->eff_read_A_read_end_;
 
             } else {
                 abpos = alen - currentaln->read_A_match_end_;
                 aepos = alen - currentaln->read_A_match_start_;
 
-                aes = alen - currentaln->eff_read_A_end_;
-                aee = alen - currentaln->eff_read_A_start_;
+                aes = alen - currentaln->eff_read_A_read_end_;
+                aee = alen - currentaln->eff_read_A_read_start_;
             }
 
             if (((std::get<1>(edgelist[i]).strand == 0))) {
                 bbpos = currentaln->read_B_match_start_;
                 bepos = currentaln->read_B_match_end_;
 
-                bes = currentaln->eff_read_B_start_;
-                bee = currentaln->eff_read_B_end_;
+                bes = currentaln->eff_read_B_read_start_;
+                bee = currentaln->eff_read_B_read_end_;
 
             } else {
                 bbpos = blen - currentaln->read_B_match_end_;
                 bepos = blen - currentaln->read_B_match_start_;
 
-                bes = blen - currentaln->eff_read_B_end_;
-                bee = blen - currentaln->eff_read_B_start_;
+                bes = blen - currentaln->eff_read_B_read_end_;
+                bee = blen - currentaln->eff_read_B_read_start_;
 
             }
             aes = 0;
@@ -643,10 +643,10 @@ int main(int argc, char *argv[]) {
             new_ovl->read_A_match_end_ = aepos;
             new_ovl->read_B_match_start_ = bbpos;
             new_ovl->read_B_match_end_ = bepos;
-            new_ovl->eff_read_A_end_ = aee;
-            new_ovl->eff_read_A_start_ = aes;
-            new_ovl->eff_read_B_end_ = bee;
-            new_ovl->eff_read_B_start_ = bes;
+            new_ovl->eff_read_A_read_end_ = aee;
+            new_ovl->eff_read_A_read_start_ = aes;
+            new_ovl->eff_read_B_read_end_ = bee;
+            new_ovl->eff_read_B_read_start_ = bes;
             new_ovl->alen = currentaln->alen;
             new_ovl->blen = currentaln->blen;
             new_ovl->read_A_id_ = std::get<0>(edgelist[i]).id;

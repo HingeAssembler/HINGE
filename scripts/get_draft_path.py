@@ -31,6 +31,13 @@ for read_id,read in itertools.izip(reads,reads_queried):
 
 complement = {'A':'T','C': 'G','T':'A', 'G':'C','a':'t','t':'a','c':'g','g':'c'}
 
+
+def rev_node(node):
+    node_id = node.split('_')[0]
+    return node_id + '_' + str(1-int(node.split('_')[1]))
+
+
+
 def reverse_complement(string):
     return "".join(map(lambda x:complement[x],reversed(string)))
 
@@ -62,6 +69,25 @@ def get_string(path):
 
 
 
+# the following loop removes start/end inconsistencies created in pruning and clipping
+for vert in in_graph:
+
+    vert_id, vert_or = vert.split("_")
+    if vert_or == '1':
+        continue
+
+    read_starts = [(in_graph.edge[x][vert]['read_b_match_start']) for x in in_graph.predecessors(vert)]
+    read_starts.append(0)
+    read_ends = [(in_graph.edge[vert][x]['read_a_match_start']) for x in in_graph.successors(vert)]    
+    read_ends.append(100000)
+
+    if max(read_starts) > min(read_ends):
+
+        for pred in in_graph.predecessors(vert):
+            in_graph.remove_edge(pred,vert)
+            in_graph.remove_edge(rev_node(vert),rev_node(pred))
+
+
 
 vertices_of_interest = set([x for x in in_graph if in_graph.in_degree(x) != 1 or in_graph.out_degree(x) != 1])
 
@@ -74,8 +100,8 @@ for vert in vertices_of_interest:
         continue
     vert_len = len(read_dict[int(vert_id)][1])
 #     print vert_len
-    read_starts = [(in_graph.edge[x][vert]['read_b_start']) for x in in_graph.predecessors(vert)]
-    read_ends = [(in_graph.edge[vert][x]['read_a_start']) for x in in_graph.successors(vert)]
+    read_starts = [(in_graph.edge[x][vert]['read_b_match_start']) for x in in_graph.predecessors(vert)]
+    read_ends = [(in_graph.edge[vert][x]['read_a_match_start']) for x in in_graph.successors(vert)]
     if read_starts:
         read_start = max(read_starts)
     else:
@@ -104,13 +130,13 @@ for vertex in vertices_of_interest:
     if successors:
         succ = successors[0]
         d =  in_graph.get_edge_data(vertex,succ)
-        read_tuples_raw[vertex] = (d['read_a_start_raw'], d['read_a_end_raw'])
+        read_tuples_raw[vertex] = (d['read_a_read_start'], d['read_a_read_end'])
     else:
         predecessors = in_graph.predecessors(vertex)
         if not len(predecessors) == 0:
             pred = predecessors[0]
             d =  in_graph.get_edge_data(pred,vertex)
-            read_tuples_raw[vertex] = (d['read_b_start_raw'], d['read_b_end_raw'])
+            read_tuples_raw[vertex] = (d['read_b_read_start'], d['read_b_read_end'])
         else:
             read_tuples_raw[vertex] = (0,0)
 
@@ -139,15 +165,15 @@ for start_vertex in vertices_of_interest:
         cur_vertex = vertex
         if start_vertex_or == '0':
             cur_path = [(start_vertex,(read_tuples[start_vertex][1],
-                                       in_graph.edge[start_vertex][cur_vertex]['read_a_start']))]
+                                       in_graph.edge[start_vertex][cur_vertex]['read_a_match_start']))]
         elif start_vertex_or == '1':
             cur_path = [(start_vertex,(read_tuples[start_vertex][0],
-                                       in_graph.edge[start_vertex][cur_vertex]['read_a_start']))]
+                                       in_graph.edge[start_vertex][cur_vertex]['read_a_match_start']))]
 
         while cur_vertex not in vertices_of_interest:
             successor = in_graph.successors(cur_vertex)[0]
-            start_point = in_graph.edge[predecessor][cur_vertex]['read_b_start']
-            end_point = in_graph.edge[cur_vertex][successor]['read_a_start']
+            start_point = in_graph.edge[predecessor][cur_vertex]['read_b_match_start']
+            end_point = in_graph.edge[cur_vertex][successor]['read_a_match_start']
             cur_path.append((cur_vertex,(start_point,end_point)))
             vertices_used.add(cur_vertex)
             predecessor = cur_vertex
@@ -155,10 +181,10 @@ for start_vertex in vertices_of_interest:
 
         stop_vertex_id, stop_vertex_or = cur_vertex.split("_")
         if stop_vertex_or == '0':
-            cur_path.append((cur_vertex,(in_graph.edge[predecessor][cur_vertex]['read_b_start'],
+            cur_path.append((cur_vertex,(in_graph.edge[predecessor][cur_vertex]['read_b_match_start'],
                         read_tuples[cur_vertex][0])))
         elif stop_vertex_or == '1':
-            cur_path.append((cur_vertex,(in_graph.edge[predecessor][cur_vertex]['read_b_start'],
+            cur_path.append((cur_vertex,(in_graph.edge[predecessor][cur_vertex]['read_b_match_start'],
                         read_tuples[cur_vertex][1])))
 
 
@@ -180,25 +206,25 @@ while set(in_graph.nodes())-vertices_used:
     vert = list(set(in_graph.nodes())-vertices_used)[0]
     vert_id,vert_or = vert.split("_")
     if vert_or == '0':
-        read_start = min( min([(in_graph.edge[x][vert]['read_b_start']) for x in in_graph.predecessors(vert)]),
-                         max([(in_graph.edge[vert][x]['read_a_start']) for x in in_graph.successors(vert)]))
-        read_end = max( min([(in_graph.edge[x][vert]['read_b_start']) for x in in_graph.predecessors(vert)]),
-                         max([(in_graph.edge[vert][x]['read_a_start']) for x in in_graph.successors(vert)]))
+        read_start = min( min([(in_graph.edge[x][vert]['read_b_match_start']) for x in in_graph.predecessors(vert)]),
+                         max([(in_graph.edge[vert][x]['read_a_match_start']) for x in in_graph.successors(vert)]))
+        read_end = max( min([(in_graph.edge[x][vert]['read_b_match_start']) for x in in_graph.predecessors(vert)]),
+                         max([(in_graph.edge[vert][x]['read_a_match_start']) for x in in_graph.successors(vert)]))
         vertRC = vert_id+"_1"
     else:
-        read_start = max( min([(in_graph.edge[x][vert]['read_b_start']) for x in in_graph.predecessors(vert)]),
-                         max([(in_graph.edge[vert][x]['read_a_start']) for x in in_graph.successors(vert)]))
-        read_end = min( min([(in_graph.edge[x][vert]['read_b_start']) for x in in_graph.predecessors(vert)]),
-                         max([(in_graph.edge[vert][x]['read_a_start']) for x in in_graph.successors(vert)]))
+        read_start = max( min([(in_graph.edge[x][vert]['read_b_match_start']) for x in in_graph.predecessors(vert)]),
+                         max([(in_graph.edge[vert][x]['read_a_match_start']) for x in in_graph.successors(vert)]))
+        read_end = min( min([(in_graph.edge[x][vert]['read_b_match_start']) for x in in_graph.predecessors(vert)]),
+                         max([(in_graph.edge[vert][x]['read_a_match_start']) for x in in_graph.successors(vert)]))
         vertRC = vert_id+"_0"
 
     successor_start = in_graph.successors(vert)[0]
     d =  in_graph.get_edge_data(vert,successor_start)
-    read_tuples_raw[vert] = (d['read_a_start_raw'], d['read_a_end_raw'])
+    read_tuples_raw[vert] = (d['read_a_read_start'], d['read_a_read_end'])
 
     successor_start = in_graph.successors(vertRC)[0]
     d =  in_graph.get_edge_data(vertRC,successor_start)
-    read_tuples_raw[vertRC] = (d['read_a_start_raw'], d['read_a_end_raw'])
+    read_tuples_raw[vertRC] = (d['read_a_read_start'], d['read_a_read_end'])
 
     h.add_node(vert)
     node_path = [vert]
@@ -215,8 +241,8 @@ while set(in_graph.nodes())-vertices_used:
         cur_path = []
         while cur_vertex != vert:
             successor = in_graph.successors(cur_vertex)[0]
-            start_point = in_graph.edge[predecessor][cur_vertex]['read_b_start']
-            end_point = in_graph.edge[cur_vertex][successor]['read_a_start']
+            start_point = in_graph.edge[predecessor][cur_vertex]['read_b_match_start']
+            end_point = in_graph.edge[cur_vertex][successor]['read_a_match_start']
             cur_path.append((cur_vertex,(start_point,end_point)))
             vertices_used.add(cur_vertex)
             predecessor = cur_vertex
@@ -252,8 +278,8 @@ while set(in_graph.nodes())-vertices_used:
             cur_path = []
             while cur_vertex != vertRC:
                 successor = in_graph.successors(cur_vertex)[0]
-                start_point = in_graph.edge[predecessor][cur_vertex]['read_b_start']
-                end_point = in_graph.edge[cur_vertex][successor]['read_a_start']
+                start_point = in_graph.edge[predecessor][cur_vertex]['read_b_match_start']
+                end_point = in_graph.edge[cur_vertex][successor]['read_a_match_start']
                 cur_path.append((cur_vertex,(start_point,end_point)))
                 vertices_used.add(cur_vertex)
                 predecessor = cur_vertex
@@ -277,22 +303,27 @@ outfile = filedir + '/' + filename + ".edges.list"
 # outfile_norevcomp = filedir + '/' + filename + ".norevcomp.edges.list"
 
 
-vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and 
- x != h.successors(x)[0] and
- len(nx.node_connected_component(h.to_undirected(), x)) > 2]
+vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
+    x != h.successors(x)[0] ]
 
-while True:
+# while True:
 
-    vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
-    x != h.successors(x)[0] and
-    len(nx.node_connected_component(h.to_undirected(), x)) > 2]
 
-    if not vert_to_merge:
-        break
-    vert = vert_to_merge[0]
-    #print vert,
+for vert in vert_to_merge:
+
+    # and
+    # len(nx.node_connected_component(h.to_undirected(), x)) > 2]
+
+    if len(h.successors(x)) != 1 or len(h.predecessors(h.successors(x)[0])) != 1 or x == h.successors(x)[0]:
+        continue
+
+
     succ = h.successors(vert)[0]
     preds = h.predecessors(vert)
+
+    if succ in preds:
+        continue
+
     h.node[succ]['segment'] =  h.node[vert]['segment'] + h.node[succ]['segment']
     h.node[succ]['path'] = h.node[vert]['path'] + h.node[succ]['path'][1:]
 
@@ -303,6 +334,8 @@ while True:
 
     h.remove_edge(vert,succ)
     h.remove_node(vert)
+
+
 
 path_to_vert = {}
 RCmap = {}
@@ -321,15 +354,20 @@ for path in path_to_vert:
 # print RCmap
 # print [x for x in h.edges()]
 
-while True:
-    vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
-    x != h.successors(x)[0] and h.successors(h.successors(x)[0])[0]== x and len(h.successors(h.successors(x)[0])) == 1 and
-    len(nx.node_connected_component(h.to_undirected(), x)) == 2]
 
-    if not vert_to_merge:
-        break
+vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
+    x != h.successors(x)[0] and len(h.successors(h.successors(x)[0])) == 1 and h.successors(h.successors(x)[0])[0]== x 
+    and len(nx.node_connected_component(h.to_undirected(), x)) == 2]
 
-    vert = vert_to_merge[0]
+
+for vert in vert_to_merge:
+
+    if vert not in h.nodes():
+        continue
+
+    if len(h.successors(vert)) == 1 and h.successors(vert)[0] == vert:
+        continue
+
     succ = h.successors(vert)[0]
 
     # print vert, succ
@@ -361,7 +399,8 @@ while True:
 
 
 for  i, vert in enumerate(h.nodes()):
-    print i,len(h.node[vert]['path'])
+    pass
+    #print i,len(h.node[vert]['path'])
 
 cnt = 0
 with open(outfile, 'w') as f:
@@ -382,8 +421,8 @@ with open(outfile, 'w') as f:
             d =  in_graph.get_edge_data(path[j],path[j+1])
             try:
                 f.write('%s %s %s %s %d %d %d %d %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
-                    nodeB.split('_')[1], -d['read_a_start_raw'] + d['read_a_end_raw'] - d['read_b_start_raw'] + d['read_b_end_raw'],
-                    d['read_a_start_raw'], d['read_a_end_raw'], d['read_b_start_raw'], d['read_b_end_raw']))
+                    nodeB.split('_')[1], -d['read_a_read_start'] + d['read_a_read_end'] - d['read_b_read_start'] + d['read_b_read_end'],
+                    d['read_a_read_start'], d['read_a_read_end'], d['read_b_read_start'], d['read_b_read_end']))
             except:
                 print "in error"
                 print nodeB
