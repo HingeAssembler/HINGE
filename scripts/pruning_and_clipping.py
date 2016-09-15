@@ -609,47 +609,47 @@ def resolve_rep(g,rep_path,in_node,out_node):
     prefix = 'B'
 
     g.add_edge(in_node,prefix + rep_path[0],
-        read_a_start=g.edge[in_node][rep_path[0]]['read_a_start'],
-        read_a_end=g.edge[in_node][rep_path[0]]['read_a_end'],
-        read_b_start=g.edge[in_node][rep_path[0]]['read_b_start'],
-        read_b_end=g.edge[in_node][rep_path[0]]['read_b_end'],
-        read_a_start_raw=g.edge[in_node][rep_path[0]]['read_a_start_raw'],
-        read_a_end_raw=g.edge[in_node][rep_path[0]]['read_a_end_raw'],
-        read_b_start_raw=g.edge[in_node][rep_path[0]]['read_b_start_raw'],
-        read_b_end_raw=g.edge[in_node][rep_path[0]]['read_b_end_raw'])
+        read_a_match_start=g.edge[in_node][rep_path[0]]['read_a_match_start'],
+        read_a_match_end=g.edge[in_node][rep_path[0]]['read_a_match_end'],
+        read_b_match_start=g.edge[in_node][rep_path[0]]['read_b_match_start'],
+        read_b_match_end=g.edge[in_node][rep_path[0]]['read_b_match_end'],
+        read_a_read_start=g.edge[in_node][rep_path[0]]['read_a_read_start'],
+        read_a_read_end=g.edge[in_node][rep_path[0]]['read_a_read_end'],
+        read_b_read_start=g.edge[in_node][rep_path[0]]['read_b_read_start'],
+        read_b_read_end=g.edge[in_node][rep_path[0]]['read_b_read_end'])
     g.remove_edge(in_node,rep_path[0])
 
     g.add_edge(prefix+rep_path[-1],out_node,
-        read_a_start=g.edge[rep_path[-1]][out_node]['read_a_start'],
-        read_a_end=g.edge[rep_path[-1]][out_node]['read_a_end'],
-        read_b_start=g.edge[rep_path[-1]][out_node]['read_b_start'],
-        read_b_end=g.edge[rep_path[-1]][out_node]['read_b_end'],
-        read_a_start_raw=g.edge[rep_path[-1]][out_node]['read_a_start_raw'],
-        read_a_end_raw=g.edge[rep_path[-1]][out_node]['read_a_end_raw'],
-        read_b_start_raw=g.edge[rep_path[-1]][out_node]['read_b_start_raw'],
-        read_b_end_raw=g.edge[rep_path[-1]][out_node]['read_b_end_raw'])
+        read_a_match_start=g.edge[rep_path[-1]][out_node]['read_a_match_start'],
+        read_a_match_end=g.edge[rep_path[-1]][out_node]['read_a_match_end'],
+        read_b_match_start=g.edge[rep_path[-1]][out_node]['read_b_match_start'],
+        read_b_match_end=g.edge[rep_path[-1]][out_node]['read_b_match_end'],
+        read_a_read_start=g.edge[rep_path[-1]][out_node]['read_a_read_start'],
+        read_a_read_end=g.edge[rep_path[-1]][out_node]['read_a_read_end'],
+        read_b_read_start=g.edge[rep_path[-1]][out_node]['read_b_read_start'],
+        read_b_read_end=g.edge[rep_path[-1]][out_node]['read_b_read_end'])
     g.remove_edge(rep_path[-1],out_node)
 
 
     g.add_edge(rev_node(prefix + rep_path[0]),rev_node(in_node),
-        read_a_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_start'],
-        read_a_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_end'],
-        read_b_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_start'],
-        read_b_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_end'],
-        read_a_start_raw=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_start_raw'],
-        read_a_end_raw=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_end_raw'],
-        read_b_start_raw=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_start_raw'],
-        read_b_end_raw=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_end_raw'])
+        read_a_match_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_match_start'],
+        read_a_match_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_match_end'],
+        read_b_match_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_match_start'],
+        read_b_match_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_match_end'],
+        read_a_read_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_read_start'],
+        read_a_read_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_read_end'],
+        read_b_read_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_read_start'],
+        read_b_read_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_read_end'])
     g.remove_edge(rev_node(rep_path[0]),rev_node(in_node))
     g.add_edge(rev_node(out_node),rev_node(prefix+rep_path[-1]),
-        read_a_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_start'],
-        read_a_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_end'],
-        read_b_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_start'],
-        read_b_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_end'],
-        read_a_start_raw=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_start_raw'],
-        read_a_end_raw=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_end_raw'],
-        read_b_start_raw=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_start_raw'],
-        read_b_end_raw=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_end_raw'])
+        read_a_match_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_match_start'],
+        read_a_match_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_match_end'],
+        read_b_match_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_match_start'],
+        read_b_match_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_match_end'],
+        read_a_read_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_read_start'],
+        read_a_read_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_read_end'],
+        read_b_read_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_read_start'],
+        read_b_read_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_read_end'])
     g.remove_edge(rev_node(out_node),rev_node(rep_path[-1]))
 
 
@@ -657,23 +657,23 @@ def resolve_rep(g,rep_path,in_node,out_node):
 
     for i in range(0,len(rep_path)-1):
         g.add_edge(prefix+rep_path[i],prefix+rep_path[i+1],
-            read_a_start=g.edge[rep_path[i]][rep_path[i+1]]['read_a_start'],
-            read_a_end=g.edge[rep_path[i]][rep_path[i+1]]['read_a_end'],
-            read_b_start=g.edge[rep_path[i]][rep_path[i+1]]['read_b_start'],
-            read_b_end=g.edge[rep_path[i]][rep_path[i+1]]['read_b_end'],
-            read_a_start_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_a_start_raw'],
-            read_a_end_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_a_end_raw'],
-            read_b_start_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_b_start_raw'],
-            read_b_end_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_b_end_raw'])
+            read_a_match_start=g.edge[rep_path[i]][rep_path[i+1]]['read_a_match_start'],
+            read_a_match_end=g.edge[rep_path[i]][rep_path[i+1]]['read_a_match_end'],
+            read_b_match_start=g.edge[rep_path[i]][rep_path[i+1]]['read_b_match_start'],
+            read_b_match_end=g.edge[rep_path[i]][rep_path[i+1]]['read_b_match_end'],
+            read_a_read_start=g.edge[rep_path[i]][rep_path[i+1]]['read_a_read_start'],
+            read_a_read_end=g.edge[rep_path[i]][rep_path[i+1]]['read_a_read_end'],
+            read_b_read_start=g.edge[rep_path[i]][rep_path[i+1]]['read_b_read_start'],
+            read_b_read_end=g.edge[rep_path[i]][rep_path[i+1]]['read_b_read_end'])
         g.add_edge(rev_node(prefix+rep_path[i+1]),rev_node(prefix+rep_path[i]),
-            read_a_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_start'],
-            read_a_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_end'],
-            read_b_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_start'],
-            read_b_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_end'],
-            read_a_start_raw=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_start_raw'],
-            read_a_end_raw=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_end_raw'],
-            read_b_start_raw=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_start_raw'],
-            read_b_end_raw=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_end_raw'])
+            read_a_match_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_match_start'],
+            read_a_match_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_match_end'],
+            read_b_match_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_match_start'],
+            read_b_match_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_match_end'],
+            read_a_read_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_read_start'],
+            read_a_read_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_read_end'],
+            read_b_read_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_read_start'],
+            read_b_read_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_read_end'])
 
 
 
@@ -981,10 +981,10 @@ def create_bidirected(g):
             head_id, head_orientation = successor.split('_')
 
             h.add_edge(tail_id,head_id,tail_or = int(tail_orientation),head_or = int(head_orientation),
-                read_a_start=g.edge[u][successor]['read_a_start'],
-                read_a_end=g.edge[u][successor]['read_a_end'],
-                read_b_start=g.edge[u][successor]['read_b_start'],
-                read_b_end=g.edge[u][successor]['read_b_end'])
+                read_a_match_start=g.edge[u][successor]['read_a_match_start'],
+                read_a_match_end=g.edge[u][successor]['read_a_match_end'],
+                read_b_match_start=g.edge[u][successor]['read_b_match_start'],
+                read_b_match_end=g.edge[u][successor]['read_b_match_end'])
 
 
     st_nodes = [x for x in g if g.in_degree(x) != 1 or g.out_degree(x) > 1]
@@ -1035,10 +1035,10 @@ def create_bidirected2(g):
             h.add_edge(tail_id,head_id)
 
             # h.add_edge(tail_id,head_id,tail_or = int(tail_orientation),head_or = int(head_orientation),
-            #     read_a_start=g.edge[u][successor]['read_a_start'],
-            #     read_a_end=g.edge[u][successor]['read_a_end'],
-            #     read_b_start=g.edge[u][successor]['read_b_start'],
-            #     read_b_end=g.edge[u][successor]['read_b_end'])
+            #     read_a_match_start=g.edge[u][successor]['read_a_match_start'],
+            #     read_a_match_end=g.edge[u][successor]['read_a_match_end'],
+            #     read_b_match_start=g.edge[u][successor]['read_b_match_start'],
+            #     read_b_match_end=g.edge[u][successor]['read_b_match_end'])
 
 
     st_nodes = [x for x in g if g.in_degree(x) != 1 or g.out_degree(x) > 1]
@@ -1120,43 +1120,43 @@ with open (flname) as f:
         # e1_match1 = abs(int(lines1[6].lstrip('['))-int(lines1[7].rstrip(']')))
         # e1_match2 = abs(int(lines1[8].lstrip('['))-int(lines1[9].rstrip(']')))
         e1_match_len = int(lines1[2])
-        ra_start = int(lines1[6].lstrip('['))
-        ra_end = int(lines1[7].rstrip(']'))
-        rb_start = int(lines1[8].lstrip('['))
-        rb_end = int(lines1[9].rstrip(']'))
+        ra_match_start = int(lines1[6].lstrip('['))
+        ra_match_end = int(lines1[7].rstrip(']'))
+        rb_match_start = int(lines1[8].lstrip('['))
+        rb_match_end = int(lines1[9].rstrip(']'))
 
-        ra_start_raw = int(lines1[-4].lstrip('['))
-        ra_end_raw = int(lines1[-3].rstrip(']'))
-        rb_start_raw = int(lines1[-2].lstrip('['))
-        rb_end_raw = int(lines1[-1].rstrip(']'))
+        ra_read_start = int(lines1[-4].lstrip('['))
+        ra_read_end = int(lines1[-3].rstrip(']'))
+        rb_read_start = int(lines1[-2].lstrip('['))
+        rb_read_end = int(lines1[-1].rstrip(']'))
 
 
         if e1 in G.edges():
             G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],
                 hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0,
-                read_a_start=ra_start,read_a_end=ra_end,
-                read_b_start=rb_start,read_b_end=rb_end,
-                read_a_start_raw=ra_start_raw,read_a_end_raw=ra_end_raw,
-                read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
+                read_a_match_start=ra_match_start,read_a_match_end=ra_match_end,
+                read_b_match_start=rb_match_start,read_b_match_end=rb_match_end,
+                read_a_read_start=ra_read_start,read_a_read_end=ra_read_end,
+                read_b_read_start=rb_read_start,read_b_read_end=rb_read_end)
             G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),
                 hinge_edge=int(lines1[5]),intersection=1,length=e1_match_len,z=0,
-                read_a_start=rb_start,read_a_end=rb_end,
-                read_b_start=ra_start,read_b_end=ra_end,
-                read_a_start_raw=rb_start_raw,read_a_end_raw=rb_end_raw,
-                read_b_start_raw=ra_start_raw,read_b_end_raw=ra_end_raw)
+                read_a_match_start=rb_match_start,read_a_match_end=rb_match_end,
+                read_b_match_start=ra_match_start,read_b_match_end=ra_match_end,
+                read_a_read_start=rb_read_start,read_a_read_end=rb_read_end,
+                read_b_read_start=ra_read_start,read_b_read_end=ra_read_end)
         else:
             G.add_edge(lines1[0] + "_" + lines1[3], lines1[1] + "_" + lines1[4],
                 hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0,
-                read_a_start=ra_start,read_a_end=ra_end,
-                read_b_start=rb_start,read_b_end=rb_end,
-                read_a_start_raw=ra_start_raw,read_a_end_raw=ra_end_raw,
-                read_b_start_raw=rb_start_raw,read_b_end_raw=rb_end_raw)
+                read_a_match_start=ra_match_start,read_a_match_end=ra_match_end,
+                read_b_match_start=rb_match_start,read_b_match_end=rb_match_end,
+                read_a_read_start=ra_read_start,read_a_read_end=ra_read_end,
+                read_b_read_start=rb_read_start,read_b_read_end=rb_read_end)
             G.add_edge(lines1[1] + "_" + str(1-int(lines1[4])), lines1[0] + "_" + str(1-int(lines1[3])),
                 hinge_edge=int(lines1[5]),intersection=0,length=e1_match_len,z=0,
-                read_a_start=rb_start,read_a_end=rb_end,
-                read_b_start=ra_start,read_b_end=ra_end,
-                read_a_start_raw=rb_start_raw,read_a_end_raw=rb_end_raw,
-                read_b_start_raw=ra_start_raw,read_b_end_raw=ra_end_raw)
+                read_a_match_start=rb_match_start,read_a_match_end=rb_match_end,
+                read_b_match_start=ra_match_start,read_b_match_end=ra_match_end,
+                read_a_read_start=rb_read_start,read_a_read_end=rb_read_end,
+                read_b_read_start=ra_read_start,read_b_read_end=ra_read_end)
 
 
 
