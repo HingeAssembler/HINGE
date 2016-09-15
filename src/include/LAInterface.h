@@ -232,9 +232,9 @@ public:
 
 
 
-bool pairAscend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem);
+bool pairAscend(const std::pair<int, int>& firstElem,  const std::pair<int, int>& secondElem);
 
-bool pairDescend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem);
+bool pairDescend(const std::pair<int, int>& firstElem,  const std::pair<int, int>& secondElem);
 
 bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2);
 

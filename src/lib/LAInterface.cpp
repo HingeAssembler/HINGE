@@ -4796,11 +4796,11 @@ int LAInterface::loadFASTA(std::string filename, std::vector<Read *> & reads) {
 
 
 
-bool pairAscend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem) {
+bool pairAscend(const std::pair<int, int>& firstElem,  const std::pair<int, int>& secondElem) {
     return firstElem.first < secondElem.first;
 }
 
-bool pairDescend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem) {
+bool pairDescend(const std::pair<int, int>& firstElem,  const std::pair<int, int>& secondElem) {
     return firstElem.first > secondElem.first;
 }
 
