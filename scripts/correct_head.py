@@ -7,8 +7,14 @@ def run(reader, writer, lookupfile):
     with open (lookupfile,'w') as f:
         for i,record in enumerate(reader):
             seq_length = len(record.sequence)
+
             zmw = i+1
             old_header=record.header
+
+            if seq_length < 30:
+                new_header = 'Deleted'
+                f.write(old_header+'\t'+new_header+'\n')
+                continue
             #bounds = record.header.split('/')[-1]
             #start, end = [int(k) for k in bounds.split('_')]
             start = 0

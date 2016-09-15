@@ -356,7 +356,7 @@ for path in path_to_vert:
 
 
 vert_to_merge = [x for x in h.nodes() if len(h.successors(x)) == 1 and len(h.predecessors(h.successors(x)[0])) == 1 and
-    x != h.successors(x)[0] and h.successors(h.successors(x)[0])[0]== x and len(h.successors(h.successors(x)[0])) == 1 
+    x != h.successors(x)[0] and len(h.successors(h.successors(x)[0])) == 1 and h.successors(h.successors(x)[0])[0]== x 
     and len(nx.node_connected_component(h.to_undirected(), x)) == 2]
 
 

@@ -14,22 +14,54 @@ filedir = sys.argv[1]
 filename = sys.argv[2]
 consensus_name = sys.argv[3]
 in_graphml_name = filedir + '/' + filename +'_draft.graphml'
+map_filename = filedir + '/draft_map.txt'
 
 
-h = nx.read_graphml(in_graphml_name)
+g = nx.read_graphml(in_graphml_name)
 
 
 gfaname = filedir + '/' + filename +'_consensus.gfa'
+cols = np.loadtxt(map_filename, dtype=str,usecols=(1,))
+del_contigs = np.nonzero(cols == 'Deleted')[0]
 
+
+# consensus_contigs = []
+# i = 0
+# try:
+#     with open(consensus_name) as f:
+#         for  line in f:
+#             if line[0] != '>':
+#                 consensus_contigs.append(line.strip())
+#                 i += 1
+#                 while i in set(del_contigs):
+#                     consensus_contigs.append('')
+#                     print len()
+#                     i += 1
+# except:
+#     pass
+
+del_contig_ptr = 0
+cols = np.loadtxt(map_filename, dtype=str,usecols=(1,))
+del_contigs = np.nonzero(cols == 'Deleted')[0]
 
 consensus_contigs = []
-try:
-    with open(consensus_name) as f:
-        for line in f:
-            if line[0] != '>':
-                consensus_contigs.append(line.strip())
-except:
-    pass
+i = 0
+with open(consensus_name) as f:
+    for  line in f:
+        if line[0] != '>':
+            while del_contig_ptr < len(del_contigs) :
+                if len(consensus_contigs) == del_contigs[del_contig_ptr]:
+                    consensus_contigs.append('')
+                    del_contig_ptr += 1
+                else:
+                    break
+            consensus_contigs.append(line.strip())
+            i += 1
+
+
+nodes_to_keep = [x for x in g.nodes() if consensus_contigs[g.node[x]['contig_id']] != '' ]
+h = g.subgraph(nodes_to_keep)
+
 
 # for  i, vert in enumerate(h.nodes()):
 #     print i, vert
@@ -41,14 +73,18 @@ except:
 
 print 'Number of contigs'
 print len(consensus_contigs), len(h.nodes())
+# print [len(x) for x in consensus_contigs]
+
+
 with open(gfaname,'w') as f:
     f.write("H\tVN:Z:1.0\n")
     for j,vert in enumerate(h.nodes()):
         
         i = h.node[vert]['contig_id']
-        print j, i
+        # print j, i
 
         seg = consensus_contigs[i]
+        print(len(seg))
         seg_line = "S\t"+vert+"\t"+seg + '\n'
         f.write(seg_line)
     for edge in h.edges():
