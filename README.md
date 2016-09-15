@@ -146,13 +146,14 @@ draft_assembly --db ecoli --las ecoli.las --prefix ecoli --config <path-to-nomin
 
 correct_head.py ecoli.draft.fasta ecoli.draft.pb.fasta draft_map.txt
 fasta2DB draft ecoli.draft.pb.fasta 
-HPC.daligner draft ecoli | zsh -v  
-LAmerge draft.ecoli.las draft.ecoli.*.las
+HPC.daligner ecoli draft | zsh -v  
 consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta utils/nominal.ini
 get_consensus_gfa.py <working directory> ecoli ecoli.consensus.fasta
 
 #results should be in ecoli_consensus.gfa
 ```
+
+
 
 ## Analysis of Results
 
