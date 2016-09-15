@@ -24,20 +24,6 @@ extern "C" {
 #include "INIReader.h"
 
 
-#define LAST_READ_SYMBOL  '$'
-
-bool compare_overlap(LAlignment * ovl1, LAlignment * ovl2) {
-    return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
-}
-
-
-static int ORDER(const void *l, const void *r) {
-    int x = *((int32 *) l);
-    int y = *((int32 *) r);
-    return (x - y);
-}
-
-
 static char ToU[4] = { 'A', 'C', 'G', 'T' };
 
 int main(int argc, char *argv[]) {
@@ -99,7 +85,7 @@ int main(int argc, char *argv[]) {
     }
 
 	for (int i = 0; i < n_contigs; i++) {
-        std::sort(idx[i].begin(), idx[i].end(), compare_overlap);
+        std::sort(idx[i].begin(), idx[i].end(), compare_overlap_aln);
         printf("%d %d\n", i, idx[i].size());
     }
 

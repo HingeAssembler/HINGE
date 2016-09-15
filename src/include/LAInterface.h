@@ -231,4 +231,23 @@ public:
 
 
 
+
+bool pairAscend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem);
+
+bool pairDescend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem);
+
+bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2);
+
+bool compare_pos(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_overlap_weight(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_overlap_aln(LAlignment * ovl1, LAlignment * ovl2);
+
 #endif

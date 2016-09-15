@@ -37,15 +37,6 @@ using namespace boost;
 
 typedef adjacency_list <vecS, vecS, undirectedS> Graph;
 typedef std::tuple<Node, Node, int> Edge_w;
-typedef std::pair<Node, Node> Edge_nw;
-
-
-static int ORDER(const void *l, const void *r) {
-    int x = *((int32 *) l);
-    int y = *((int32 *) r);
-    return (x - y);
-}
-
 
 
 std::vector<int> get_mapping(std::string aln_tag1, std::string aln_tag2) {
@@ -79,23 +70,6 @@ std::string reverse_complement(std::string seq) {
 }
 
 
-
-std::ostream& operator<<(std::ostream& out, const MatchType value){
-    static std::map<MatchType, std::string> strings;
-    if (strings.size() == 0){
-#define INSERT_ELEMENT(p) strings[p] = #p
-        INSERT_ELEMENT(FORWARD);
-        INSERT_ELEMENT(BACKWARD);
-        INSERT_ELEMENT(ACOVERB);
-        INSERT_ELEMENT(BCOVERA);
-        INSERT_ELEMENT(INTERNAL);
-        INSERT_ELEMENT(UNDEFINED);
-        INSERT_ELEMENT(NOT_ACTIVE);
-#undef INSERT_ELEMENT
-    }
-    return out << strings[value];
-}
-
 std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
     std::stringstream ss(s);
     std::string item;
@@ -112,28 +86,6 @@ std::vector<std::string> split(const std::string &s, char delim) {
     return elems;
 }
 
-
-
-bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
-    return ((ovl1->read_A_match_end_ - ovl1->read_A_match_start_
-             + ovl1->read_B_match_end_ - ovl1->read_B_match_start_) >
-            (ovl2->read_A_match_end_ - ovl2->read_A_match_start_
-             + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
-}
-
-
-bool compare_overlap_weight(LOverlap * ovl1, LOverlap * ovl2) {
-    return (ovl1->weight > ovl2->weight);
-}
-
-
-bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
-    return ovl1->read_A_match_start_ < ovl2->read_A_match_start_;
-}
-
-bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
-    return ovl1->read_A_match_start_ > ovl2->read_A_match_start_;
-}
 
 
 int main(int argc, char *argv[]) {

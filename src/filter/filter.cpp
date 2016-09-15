@@ -24,84 +24,7 @@
 #include "cmdline.h"
 
 
-#define LAST_READ_SYMBOL  '$'
 
-
-typedef std::tuple<Node, Node, int> Edge_w; //Edge with weight
-typedef std::pair<Node, Node> Edge_nw; //Edge without weights
-
-
-static int ORDER(const void *l, const void *r) {
-    //Returns the difference between l and r. Why void pointer?
-    int x = *((int32 *) l);
-    int y = *((int32 *) r);
-    return (x - y);
-}
-
-std::ostream& operator<<(std::ostream& out, const MatchType value){
-    //What is this doing?
-    static std::map<MatchType, std::string> strings;
-    if (strings.size() == 0){
-#define INSERT_ELEMENT(p) strings[p] = #p
-        INSERT_ELEMENT(FORWARD);
-        INSERT_ELEMENT(BACKWARD);
-        INSERT_ELEMENT(MISMATCH_LEFT);
-        INSERT_ELEMENT(MISMATCH_RIGHT);
-        INSERT_ELEMENT(COVERED);
-        INSERT_ELEMENT(COVERING);
-        INSERT_ELEMENT(UNDEFINED);
-        INSERT_ELEMENT(MIDDLE);
-#undef INSERT_ELEMENT
-    }
-
-    return out << strings[value];
-}
-
-bool pairAscend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem) {
-    return firstElem.first < secondElem.first;
-}
-
-bool pairDescend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem) {
-    return firstElem.first > secondElem.first;
-}
-
-
-bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
-    //Returns True if the sum of the match lengths of the two reads in ovl1 > the sum of the  overlap lengths of the two reads in ovl2
-    //Returns False otherwise.
-    return ((ovl1->read_A_match_end_ - ovl1->read_A_match_start_ + ovl1->read_B_match_end_ - ovl1->read_B_match_start_)
-            > (ovl2->read_A_match_end_ - ovl2->read_A_match_start_ + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
-}
-
-bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2) {
-    //Returns True if the sum of matches over both reads for overlaps in ovl1  > sum of matches over both reads for overlaps in ovl2
-    //Returns False otherwise
-    int sum1 = 0;
-    int sum2 = 0;
-    for (int i = 0; i < ovl1->size(); i++)
-        sum1 += (*ovl1)[i]->read_A_match_end_ - (*ovl1)[i]->read_A_match_start_ +
-                (*ovl1)[i]->read_B_match_end_ - (*ovl1)[i]->read_B_match_start_;
-    for (int i = 0; i < ovl2->size(); i++)
-        sum2 += (*ovl2)[i]->read_A_match_end_ - (*ovl2)[i]->read_A_match_start_ +
-                (*ovl2)[i]->read_B_match_end_ - (*ovl2)[i]->read_B_match_start_;
-    return sum1 > sum2;
-}
-
-bool compare_pos(LOverlap * ovl1, LOverlap * ovl2) {
-    //True if ovl1 starts earlier than ovl2 on read a.
-    return (ovl1->read_A_match_start_) > (ovl2->read_A_match_start_);
-}
-
-bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
-    //True if ovl2 starts earlier than ovl1 on read a.
-    //flips the two argumenst in compare_pos
-    return ovl1->read_A_match_start_ < ovl2->read_A_match_start_;
-}
-
-bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
-    //Same as compare_pos?
-    return ovl1->read_A_match_start_ > ovl2->read_A_match_start_;
-}
 
 std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
 //Returns sections of read a which are covered by overlaps. Each overlap is considered as
@@ -268,8 +191,6 @@ int main(int argc, char *argv[]) {
 
     if (strlen(name_db) > 0)
         la.openDB(name_db);
-
-
 
     if (strlen(name_las) > 0)
         la.openAlignmentFile(name_las);

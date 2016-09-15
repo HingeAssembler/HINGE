@@ -4792,3 +4792,60 @@ int LAInterface::loadFASTA(std::string filename, std::vector<Read *> & reads) {
     gzclose(fp); // STEP 6: close the file handler
     return num;
 }
+
+
+
+
+bool pairAscend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem) {
+    return firstElem.first < secondElem.first;
+}
+
+bool pairDescend(const std::pair<int, int>& firstElem,  std::pair<int, int>& secondElem) {
+    return firstElem.first > secondElem.first;
+}
+
+
+bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2) {
+    //Returns True if the sum of the match lengths of the two reads in ovl1 > the sum of the  overlap lengths of the two reads in ovl2
+    //Returns False otherwise.
+    return ((ovl1->read_A_match_end_ - ovl1->read_A_match_start_ + ovl1->read_B_match_end_ - ovl1->read_B_match_start_)
+            > (ovl2->read_A_match_end_ - ovl2->read_A_match_start_ + ovl2->read_B_match_end_ - ovl2->read_B_match_start_));
+}
+
+bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2) {
+    //Returns True if the sum of matches over both reads for overlaps in ovl1  > sum of matches over both reads for overlaps in ovl2
+    //Returns False otherwise
+    int sum1 = 0;
+    int sum2 = 0;
+    for (int i = 0; i < ovl1->size(); i++)
+        sum1 += (*ovl1)[i]->read_A_match_end_ - (*ovl1)[i]->read_A_match_start_ +
+                (*ovl1)[i]->read_B_match_end_ - (*ovl1)[i]->read_B_match_start_;
+    for (int i = 0; i < ovl2->size(); i++)
+        sum2 += (*ovl2)[i]->read_A_match_end_ - (*ovl2)[i]->read_A_match_start_ +
+                (*ovl2)[i]->read_B_match_end_ - (*ovl2)[i]->read_B_match_start_;
+    return sum1 > sum2;
+}
+
+bool compare_pos(LOverlap * ovl1, LOverlap * ovl2) {
+    //True if ovl1 starts earlier than ovl2 on read a.
+    return (ovl1->read_A_match_start_) > (ovl2->read_A_match_start_);
+}
+
+bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2) {
+    //True if ovl2 starts earlier than ovl1 on read a.
+    //flips the two argumenst in compare_pos
+    return ovl1->read_A_match_start_ < ovl2->read_A_match_start_;
+}
+
+bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2) {
+    //Same as compare_pos?
+    return ovl1->read_A_match_start_ > ovl2->read_A_match_start_;
+}
+
+bool compare_overlap_weight(LOverlap * ovl1, LOverlap * ovl2) {
+    return (ovl1->weight > ovl2->weight);
+}
+
+bool compare_overlap_aln(LAlignment * ovl1, LAlignment * ovl2) {
+    return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
+}
