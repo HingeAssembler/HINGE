@@ -94,7 +94,7 @@ int LAInterface::openDB2(std::string filename, std::string filename2) {
     strcpy(fn_2, fn2);
     strcat(fn_2, ".db");
 
-    dstub = Fopen(fn_2, "r");
+    dstub = Fopen(fn_2, (char*)"r");
     if (dstub == NULL)
         exit(1);
 
@@ -151,7 +151,7 @@ int LAInterface::openDB(std::string filename) {
     strcpy(fn2, fn);
     strcat(fn2, ".db");
 
-    dstub = Fopen(fn2, "r");
+    dstub = Fopen(fn2, (char*)"r");
     if (dstub == NULL)
         exit(1);
 
@@ -597,7 +597,7 @@ int LAInterface::openAlignmentFile(std::string filename) {
     char *fn = new char[filename.size() + 1];
     strcpy(fn, filename.c_str());
 
-    input = Fopen(fn, "r");
+    input = Fopen(fn, (char*)"r");
     if (input == NULL)
         exit(1);
 
@@ -2490,7 +2490,7 @@ void LAInterface::showOverlap(int from, int to) {
 	      }
 
 	    tmax  = 1000;
-	    trace = (uint16 *) Malloc(sizeof(uint16)*tmax,"Allocating trace vector");
+	    trace = (uint16 *) Malloc(sizeof(uint16)*tmax, (char*)"Allocating trace vector");
 	    if (trace == NULL)
 	      exit (1);
 

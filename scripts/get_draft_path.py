@@ -130,13 +130,13 @@ for vertex in vertices_of_interest:
     if successors:
         succ = successors[0]
         d =  in_graph.get_edge_data(vertex,succ)
-        read_tuples_raw[vertex] = (d['read_a_read_start'], d['read_a_read_end'])
+        read_tuples_raw[vertex] = (d['read_a_match_start_raw'], d['read_a_match_end_raw'])
     else:
         predecessors = in_graph.predecessors(vertex)
         if not len(predecessors) == 0:
             pred = predecessors[0]
             d =  in_graph.get_edge_data(pred,vertex)
-            read_tuples_raw[vertex] = (d['read_b_read_start'], d['read_b_read_end'])
+            read_tuples_raw[vertex] = (d['read_b_match_start_raw'], d['read_b_match_end_raw'])
         else:
             read_tuples_raw[vertex] = (0,0)
 
@@ -220,11 +220,11 @@ while set(in_graph.nodes())-vertices_used:
 
     successor_start = in_graph.successors(vert)[0]
     d =  in_graph.get_edge_data(vert,successor_start)
-    read_tuples_raw[vert] = (d['read_a_read_start'], d['read_a_read_end'])
+    read_tuples_raw[vert] = (d['read_a_match_start_raw'], d['read_a_match_end_raw'])
 
     successor_start = in_graph.successors(vertRC)[0]
     d =  in_graph.get_edge_data(vertRC,successor_start)
-    read_tuples_raw[vertRC] = (d['read_a_read_start'], d['read_a_read_end'])
+    read_tuples_raw[vertRC] = (d['read_a_match_start_raw'], d['read_a_match_end_raw'])
 
     h.add_node(vert)
     node_path = [vert]
@@ -421,8 +421,8 @@ with open(outfile, 'w') as f:
             d =  in_graph.get_edge_data(path[j],path[j+1])
             try:
                 f.write('%s %s %s %s %d %d %d %d %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
-                    nodeB.split('_')[1], -d['read_a_read_start'] + d['read_a_read_end'] - d['read_b_read_start'] + d['read_b_read_end'],
-                    d['read_a_read_start'], d['read_a_read_end'], d['read_b_read_start'], d['read_b_read_end']))
+                    nodeB.split('_')[1], -d['read_a_match_start_raw'] + d['read_a_match_end_raw'] - d['read_b_match_start_raw'] + d['read_b_match_end_raw'],
+                    d['read_a_match_start_raw'], d['read_a_match_end_raw'], d['read_b_match_start_raw'], d['read_b_match_end_raw']))
             except:
                 print "in error"
                 print nodeB
