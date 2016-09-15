@@ -401,7 +401,8 @@ int main(int argc, char *argv[]) {
 
     int num_contig = 0;
     int num_one_read_contig = 0;
-    while (!edges_file.eof()) {
+    while (true) {
+        if (edges_file.eof()) break;
         edgelist.clear();
         std::string edge_line;
 
@@ -795,7 +796,7 @@ int main(int argc, char *argv[]) {
 
 
         printf("In total %d lanes\n", lanes.size());
-        if (lanes.size() == 0) {
+        if (lanes.size() < 2) {
             draft_assembly = breads[0];
             out_fa << ">DraftAssemblyContig" << num_contig << std::endl;
             out_fa << draft_assembly << std::endl;
