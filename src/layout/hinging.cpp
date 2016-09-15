@@ -381,13 +381,6 @@ int main(int argc, char *argv[]) {
     console->info("Hinging layout");
 
 
-    if (cmdp.exist("debug")) {
-        char *buff = (char *) malloc(sizeof(char) * 2000);
-        getwd(buff);
-        console->info("current user {}, current working directory {}", getlogin(), buff);
-        free(buff);
-    }
-
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
     console->info("name of fasta: {}, name of .paf file {}", name_fasta, name_paf);
     console->info("filter files prefix: {}", out);

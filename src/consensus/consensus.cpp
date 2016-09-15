@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 
 	std::vector<std::vector<LAlignment *>> idx;
 
-    printf("%d\n", res.size());
+    printf("%lu\n", res.size());
 
 	for (int i = 0; i < n_contigs; i++)
 		idx.push_back(std::vector<LAlignment *>());
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 
 	for (int i = 0; i < n_contigs; i++) {
         std::sort(idx[i].begin(), idx[i].end(), compare_overlap_aln);
-        printf("%d %d\n", i, idx[i].size());
+        printf("%d %lu\n", i, idx[i].size());
     }
 
     std::cout << "Getting read lengths" << std::endl;

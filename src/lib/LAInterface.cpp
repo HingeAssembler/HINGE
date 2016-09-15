@@ -61,7 +61,7 @@ int LAInterface::openDB2(std::string filename, std::string filename2) {
     strcpy(fn_1, fn);
     strcat(fn_1, ".db");
 
-    FILE * dstub = Fopen(fn_1, "r");
+    FILE * dstub = Fopen(fn_1, (char *)"r");
     if (dstub == NULL)
         exit(1);
 
@@ -69,8 +69,8 @@ int LAInterface::openDB2(std::string filename, std::string filename2) {
 
     printf("%d files\n", nfiles);
 
-    flist = (char **) Malloc(sizeof(char *) * nfiles, "Allocating file list");
-    findx = (int *) Malloc(sizeof(int *) * (nfiles + 1), "Allocating file index");
+    flist = (char **) Malloc(sizeof(char *) * nfiles, (char *)"Allocating file list");
+    findx = (int *) Malloc(sizeof(int *) * (nfiles + 1), (char *)"Allocating file index");
 
     if (flist == NULL || findx == NULL)
         exit(1);
@@ -82,7 +82,7 @@ int LAInterface::openDB2(std::string filename, std::string filename2) {
         char prolog[MAX_NAME], fname[MAX_NAME];
 
         if (fscanf(dstub, DB_FDATA, findx + i, fname, prolog) != 3) SYSTEM_ERROR
-        if ((flist[i] = Strdup(prolog, "Adding to file list")) == NULL)
+        if ((flist[i] = Strdup(prolog, (char *)"Adding to file list")) == NULL)
             exit(1);
     }
 
@@ -102,8 +102,8 @@ int LAInterface::openDB2(std::string filename, std::string filename2) {
 
     printf("%d files\n", nfiles2);
 
-    flist2 = (char **) Malloc(sizeof(char *) * nfiles2, "Allocating file list");
-    findx2 = (int *) Malloc(sizeof(int *) * (nfiles2 + 1), "Allocating file index");
+    flist2 = (char **) Malloc(sizeof(char *) * nfiles2, (char *)"Allocating file list");
+    findx2 = (int *) Malloc(sizeof(int *) * (nfiles2 + 1), (char *)"Allocating file index");
 
     if (flist2 == NULL || findx2 == NULL)
         exit(1);
@@ -115,7 +115,7 @@ int LAInterface::openDB2(std::string filename, std::string filename2) {
         char prolog[MAX_NAME], fname[MAX_NAME];
 
         if (fscanf(dstub, DB_FDATA, findx2 + i, fname, prolog) != 3) SYSTEM_ERROR
-        if ((flist2[i] = Strdup(prolog, "Adding to file list")) == NULL)
+        if ((flist2[i] = Strdup(prolog, (char *)"Adding to file list")) == NULL)
             exit(1);
     }
 
@@ -159,8 +159,8 @@ int LAInterface::openDB(std::string filename) {
 
     //printf("%d files\n", nfiles);
 
-    flist = (char **) Malloc(sizeof(char *) * nfiles, "Allocating file list");
-    findx = (int *) Malloc(sizeof(int *) * (nfiles + 1), "Allocating file index");
+    flist = (char **) Malloc(sizeof(char *) * nfiles, (char *)"Allocating file list");
+    findx = (int *) Malloc(sizeof(int *) * (nfiles + 1), (char *)"Allocating file index");
 
     if (flist == NULL || findx == NULL)
         exit(1);
@@ -172,7 +172,7 @@ int LAInterface::openDB(std::string filename) {
         char prolog[MAX_NAME], fname[MAX_NAME];
 
         if (fscanf(dstub, DB_FDATA, findx + i, fname, prolog) != 3) SYSTEM_ERROR
-        if ((flist[i] = Strdup(prolog, "Adding to file list")) == NULL)
+        if ((flist[i] = Strdup(prolog, (char *)"Adding to file list")) == NULL)
             exit(1);
     }
 
@@ -658,7 +658,7 @@ void LAInterface::showAlignment(int from, int to) {
     }
 
     tmax = 1000;
-    trace = (uint16 *) Malloc(sizeof(uint16) * tmax, "Allocating trace vector");
+    trace = (uint16 *) Malloc(sizeof(uint16) * tmax, (char *)"Allocating trace vector");
     if (trace == NULL)
         exit(1);
     in = 0;
@@ -719,7 +719,7 @@ void LAInterface::showAlignment(int from, int to) {
         Read_Overlap(input, ovl);
         if (ovl->path.tlen > tmax) {
             tmax = ((int) 1.2 * ovl->path.tlen) + 100;
-            trace = (uint16 *) Realloc(trace, sizeof(uint16) * tmax, "Allocating trace vector");
+            trace = (uint16 *) Realloc(trace, sizeof(uint16) * tmax, (char *)"Allocating trace vector");
             if (trace == NULL)
                 exit(1);
         }
@@ -945,7 +945,7 @@ void LAInterface::getAlignmentB(std::vector<int> &result, int from) {
     }
 
     tmax = 1000;
-    trace = (uint16 *) Malloc(sizeof(uint16) * tmax, "Allocating trace vector");
+    trace = (uint16 *) Malloc(sizeof(uint16) * tmax, (char *)"Allocating trace vector");
     if (trace == NULL)
         exit(1);
     in = 0;
@@ -1006,7 +1006,7 @@ void LAInterface::getAlignmentB(std::vector<int> &result, int from) {
         Read_Overlap(input, ovl);
         if (ovl->path.tlen > tmax) {
             tmax = ((int) 1.2 * ovl->path.tlen) + 100;
-            trace = (uint16 *) Realloc(trace, sizeof(uint16) * tmax, "Allocating trace vector");
+            trace = (uint16 *) Realloc(trace, sizeof(uint16) * tmax, (char *)"Allocating trace vector");
             if (trace == NULL)
                 exit(1);
         }
@@ -1414,7 +1414,7 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int6
     aln->path = &(ovl->path);
 
     tmax = 1000;
-    trace = (uint16 *) Malloc(sizeof(uint16) * tmax, "Allocating trace vector");
+    trace = (uint16 *) Malloc(sizeof(uint16) * tmax, (char *)"Allocating trace vector");
     if (trace == NULL)
         exit(1);
     in = 0;
@@ -1438,7 +1438,7 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int6
         Read_Overlap(input, ovl);
         if (ovl->path.tlen > tmax) {
             tmax = ((int) 1.2 * ovl->path.tlen) + 100;
-            trace = (uint16 *) Realloc(trace, sizeof(uint16) * tmax, "Allocating trace vector");
+            trace = (uint16 *) Realloc(trace, sizeof(uint16) * tmax, (char *)"Allocating trace vector");
             if (trace == NULL)
                 exit(1);
         }
@@ -1526,7 +1526,7 @@ void LAInterface::getOverlapw(std::vector<LOverlap *> &result_vec, int from, int
     aln->path = &(ovl->path);
 
     tmax = 1000;
-    trace = (uint16 *) Malloc(sizeof(uint16) * tmax, "Allocating trace vector");
+    trace = (uint16 *) Malloc(sizeof(uint16) * tmax, (char *)"Allocating trace vector");
     if (trace == NULL)
         exit(1);
     in = 0;
@@ -1550,7 +1550,7 @@ void LAInterface::getOverlapw(std::vector<LOverlap *> &result_vec, int from, int
         Read_Overlap(input, ovl);
         if (ovl->path.tlen > tmax) {
             tmax = ((int) 1.2 * ovl->path.tlen) + 100;
-            trace = (uint16 *) Realloc(trace, sizeof(uint16) * tmax, "Allocating trace vector");
+            trace = (uint16 *) Realloc(trace, sizeof(uint16) * tmax, (char *)"Allocating trace vector");
             if (trace == NULL)
                 exit(1);
         }
@@ -1671,7 +1671,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
 
 
     tmax = 1000;
-    trace = (uint16 *) Malloc(sizeof(uint16) * tmax, "Allocating trace vector");
+    trace = (uint16 *) Malloc(sizeof(uint16) * tmax, (char *)"Allocating trace vector");
     if (trace == NULL)
         exit(1);
     in = 0;
@@ -1730,7 +1730,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, int from, 
         Read_Overlap(input, ovl);
         if (ovl->path.tlen > tmax) {
             tmax = ((int) 1.2 * ovl->path.tlen) + 100;
-            trace = (uint16 *) Realloc(trace, sizeof(uint16) * tmax, "Allocating trace vector");
+            trace = (uint16 *) Realloc(trace, sizeof(uint16) * tmax, (char *)"Allocating trace vector");
             if (trace == NULL)
                 exit(1);
         }
@@ -2068,7 +2068,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
 
 
     tmax = 1000;
-    trace = (uint16 *) Malloc(sizeof(uint16) * tmax, "Allocating trace vector");
+    trace = (uint16 *) Malloc(sizeof(uint16) * tmax, (char *)"Allocating trace vector");
     if (trace == NULL)
         exit(1);
     in = 0;
@@ -2133,7 +2133,7 @@ void LAInterface::getAlignment(std::vector<LAlignment *> &result_vec, std::vecto
         Read_Overlap(input, ovl);
         if (ovl->path.tlen > tmax) {
             tmax = ((int) 1.2 * ovl->path.tlen) + 100;
-            trace = (uint16 *) Realloc(trace, sizeof(uint16) * tmax, "Allocating trace vector");
+            trace = (uint16 *) Realloc(trace, sizeof(uint16) * tmax, (char *)"Allocating trace vector");
             if (trace == NULL)
                 exit(1);
         }
@@ -2548,7 +2548,7 @@ void LAInterface::showOverlap(int from, int to) {
 	      { Read_Overlap(input,ovl);
 	        if (ovl->path.tlen > tmax)
 	          { tmax = ((int) 1.2*ovl->path.tlen) + 100;
-	            trace = (uint16 *) Realloc(trace,sizeof(uint16)*tmax,"Allocating trace vector");
+	            trace = (uint16 *) Realloc(trace,sizeof(uint16)*tmax, (char *)"Allocating trace vector");
 	            if (trace == NULL)
 	              exit (1);
 	          }
@@ -2752,7 +2752,7 @@ static int enlarge_vector(_Work_Data *work, int newmax)
     int   max;
 
     max = ((int) (newmax*1.2)) + 10000;
-    vec = Realloc(work->vector,max,"Enlarging DP vector");
+    vec = Realloc(work->vector,max, (char *)"Enlarging DP vector");
     if (vec == NULL)
         EXIT(1);
     work->vecmax = max;
@@ -3023,7 +3023,7 @@ static int enlarge_trace(_Work_Data *work, int newmax)
     int   max;
 
     max = ((int) (newmax*1.2)) + 10000;
-    vec = Realloc(work->trace,max,"Enlarging trace vector");
+    vec = Realloc(work->trace,max,(char *)"Enlarging trace vector");
     if (vec == NULL)
         EXIT(1);
     work->tramax = max;
@@ -3471,24 +3471,24 @@ int LAInterface::showAlignmentTags(LAlignment *alignment) {
     mtag = ':';
     dtag = ':';
 
-#define COLUMN(x,y) \
+#define COLUMN2(x,y) \
     {               \
         printf(" %c-%c ",ToU[x],ToU[y]); \
     }               \
 
 
     while (prefa > prefb)
-    { COLUMN(a[i],4)
+    { COLUMN2(a[i],4)
         i += 1;
         prefa -= 1;
     }
     while (prefb > prefa)
-    { COLUMN(4,b[j])
+    { COLUMN2(4,b[j])
         j += 1;
         prefb -= 1;
     }
     while (prefa > 0)
-    { COLUMN(a[i],b[j])
+    { COLUMN2(a[i],b[j])
         i += 1;
         j += 1;
         prefa -= 1;
@@ -3496,7 +3496,7 @@ int LAInterface::showAlignmentTags(LAlignment *alignment) {
 
     mtag = '[';
     if (prefb > 0)
-    COLUMN(5,5)
+    COLUMN2(5,5)
 
     mtag  = '|';
     dtag  = '*';
@@ -3510,7 +3510,7 @@ int LAInterface::showAlignmentTags(LAlignment *alignment) {
             { p = -p;
                 //printf("%d\n",trace[c]);
                 while (i != p)
-                { COLUMN(a[i],b[j])
+                { COLUMN2(a[i],b[j])
                     if (a[i] == b[j])
                         match += 1;
                     else
@@ -3518,13 +3518,13 @@ int LAInterface::showAlignmentTags(LAlignment *alignment) {
                     i += 1;
                     j += 1;
                 }
-                COLUMN(7,b[j])
+                COLUMN2(7,b[j])
                 j += 1;
                 diff += 1;
             }
             else
             { while (j != p)
-                { COLUMN(a[i],b[j])
+                { COLUMN2(a[i],b[j])
                     if (a[i] == b[j])
                         match += 1;
                     else
@@ -3532,13 +3532,13 @@ int LAInterface::showAlignmentTags(LAlignment *alignment) {
                     i += 1;
                     j += 1;
                 }
-                COLUMN(a[i],7)
+                COLUMN2(a[i],7)
                 i += 1;
                 diff += 1;
             }
         p = alignment->aepos;
         while (i <= p)
-        { COLUMN(a[i],b[j])
+        { COLUMN2(a[i],b[j])
             if (a[i] == b[j])
                 match += 1;
             else
@@ -3552,7 +3552,7 @@ int LAInterface::showAlignmentTags(LAlignment *alignment) {
 
         mtag = ']';
         if (a[i] != 4 && b[j] != 4 && border > 0)
-        COLUMN(6,6)
+        COLUMN2(6,6)
 
         mtag = ':';
         dtag = ':';
@@ -3561,16 +3561,16 @@ int LAInterface::showAlignmentTags(LAlignment *alignment) {
         while (c < border && (a[i] != 4 || b[j] != 4))
         { if (a[i] != 4)
             if (b[j] != 4)
-            { COLUMN(a[i],b[j])
+            { COLUMN2(a[i],b[j])
                 i += 1;
                 j += 1;
             }
             else
-            { COLUMN(a[i],4)
+            { COLUMN2(a[i],4)
                 i += 1;
             }
             else
-            { COLUMN(4,b[j])
+            { COLUMN2(4,b[j])
                 j += 1;
             }
             c += 1;
@@ -3674,7 +3674,7 @@ std::pair<std::string, std::string> LAInterface::getAlignmentTags(LAlignment *al
     aa.reserve((alignment->aepos - alignment->abpos) * 2);
     bb.reserve((alignment->bepos - alignment->bbpos) * 2);
 
-#define COLUMN(x,y) \
+#define COLUMN3(x,y) \
     {               \
         aa.append(1,ToU[x]); \
         bb.append(1,ToU[y]); \
@@ -3714,7 +3714,7 @@ std::pair<std::string, std::string> LAInterface::getAlignmentTags(LAlignment *al
             { p = -p;
                 //printf("%d\n",trace[c]);
                 while (i != p)
-                { COLUMN(a[i],b[j])
+                { COLUMN3(a[i],b[j])
                     if (a[i] == b[j])
                         match += 1;
                     else
@@ -3722,13 +3722,13 @@ std::pair<std::string, std::string> LAInterface::getAlignmentTags(LAlignment *al
                     i += 1;
                     j += 1;
                 }
-                COLUMN(7,b[j])
+                COLUMN3(7,b[j])
                 j += 1;
                 diff += 1;
             }
             else
             { while (j != p)
-                { COLUMN(a[i],b[j])
+                { COLUMN3(a[i],b[j])
                     if (a[i] == b[j])
                         match += 1;
                     else
@@ -3736,13 +3736,13 @@ std::pair<std::string, std::string> LAInterface::getAlignmentTags(LAlignment *al
                     i += 1;
                     j += 1;
                 }
-                COLUMN(a[i],7)
+                COLUMN3(a[i],7)
                 i += 1;
                 diff += 1;
             }
         p = alignment->aepos;
         while (i <= p)
-        { COLUMN(a[i],b[j])
+        { COLUMN3(a[i],b[j])
             if (a[i] == b[j])
                 match += 1;
             else
@@ -3838,48 +3838,6 @@ int LAInterface::printAlignment_exp(FILE *file, LAlignment *align, Work_Data *ew
 
     Abuf[width] = Bbuf[width] = Dbuf[width] = '\0';
     /* buffer/output next column */
-#define COLUMN(x,y)							\
-{ int u, v;								\
-  if (o >= width)							\
-    { fprintf(file,"\n");						\
-      fprintf(file,"%*s",indent,"");					\
-      if (coord > 0)							\
-        { if (sa <= aend)						\
-            fprintf(file," %*d",coord,sa);				\
-          else								\
-            fprintf(file," %*s",coord,"");				\
-          fprintf(file," %s\n",Abuf);					\
-          fprintf(file,"%*s %*s %s\n",indent,"",coord,"",Dbuf);		\
-          fprintf(file,"%*s",indent,"");				\
-          if (sb <= bend)						\
-            fprintf(file," %*d",coord,sb);				\
-          else								\
-            fprintf(file," %*s",coord,"");				\
-          fprintf(file," %s",Bbuf);					\
-        }								\
-      else								\
-        { fprintf(file," %s\n",Abuf);					\
-          fprintf(file,"%*s %s\n",indent,"",Dbuf);			\
-          fprintf(file,"%*s %s",indent,"",Bbuf);			\
-        }								\
-      fprintf(file," %5.1f%%\n",(100.*diff)/(diff+match));		\
-      o  = 0;								\
-      sa = i;								\
-      sb = j;								\
-      match = diff = 0;							\
-    }									\
-  u = (x);								\
-  v = (y);								\
-  if (u == 4 || v == 4)							\
-    Dbuf[o] = ' ';							\
-  else if (u == v)							\
-    Dbuf[o] = mtag;							\
-  else									\
-    Dbuf[o] = dtag;							\
-  Abuf[o] = N2A[u];							\
-  Bbuf[o] = N2A[v];							\
-  o += 1;								\
-}
 
     a = align->aseq - 1;
     b = align->bseq - 1;
@@ -4303,7 +4261,7 @@ void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
     //if (DOIQV)
       { int status, kind;
         HITS_TRACK *track;
-        status = Check_Track(db1,"qual",&kind);
+        status = Check_Track(db1, (char *)"qual",&kind);
         if (status == -2)
           { fprintf(stderr,"%s: .qual-track does not exist for this db.\n",Prog_Name);
             exit (1);
@@ -4312,7 +4270,7 @@ void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
           { fprintf(stderr,"%s: .qual-track not sync'd with db.\n",Prog_Name);
             exit (1);
           }
-        track = Load_Track(db1,"qual");
+        track = Load_Track(db1, (char *)"qual");
         qv_idx = (int64 *) track->anno;
         qv_val = (uint8 *) track->data;
       }
