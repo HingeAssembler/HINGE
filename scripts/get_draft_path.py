@@ -231,8 +231,11 @@ with open(outfile, 'w') as f:
 
             prev_contig = out_graph.predecessors(vertex)[0]
             cut_start = out_graph.node[prev_contig]['cut_end']
+            if out_graph.node[prev_contig].has_key('path'):
+                nodeA = out_graph.node[prev_contig]['path'].split(';')[-1]
+            else:
+                nodeA = prev_contig
 
-            nodeA = out_graph.node[prev_contig]['path'].split(';')[-1]
             nodeB = node_list[0]
             f.write('%s %s %s %s %s %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
                 nodeB.split('_')[1], out_graph.edge[prev_contig][vertex]['length'], cut_start) )
@@ -262,7 +265,10 @@ with open(outfile, 'w') as f:
             cut_end = out_graph.node[next_contig]['cut_start']
 
             nodeA = node_list[len(weights_list)]
-            nodeB = out_graph.node[next_contig]['path'].split(';')[0]
+            if out_graph.node[next_contig].has_key('path'):
+                nodeB = out_graph.node[next_contig]['path'].split(';')[0]
+            else:
+                nodeB = next_contig
 
             f.write('%s %s %s %s %s %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
                 nodeB.split('_')[1], out_graph.edge[vertex][next_contig]['length'], cut_end) )
@@ -289,7 +295,10 @@ with open(outfile, 'w') as f:
             next_contig = out_graph.successors(vertex)[0]
 
             nodeB = rev_node(node_list[len(weights_list)])
-            nodeA = rev_node(out_graph.node[next_contig]['path'].split(';')[0])
+            if out_graph.node[next_contig].has_key('path'):
+                nodeA = rev_node(out_graph.node[next_contig]['path'].split(';')[0])
+            else:
+                nodeA = rev_node(next_contig)
 
             # we start this contig where the previous (rc: next) one ended
             cut_start = len(read_dict[int(nodeA.split('_')[0])][1]) - out_graph.node[next_contig]['cut_start']
@@ -324,8 +333,11 @@ with open(outfile, 'w') as f:
             prev_contig = out_graph.predecessors(vertex)[0]
 
             nodeA = rev_node(node_list[0])
-            nodeB = rev_node(out_graph.node[prev_contig]['path'].split(';')[-1])
 
+            if out_graph.node[prev_contig].has_key('path'):
+                nodeB = rev_node(out_graph.node[prev_contig]['path'].split(';')[-1])
+            else:
+                nodeB = rev_node(prev_contig)
             cut_end = len(read_dict[int(nodeB.split('_')[0])][1]) - out_graph.node[prev_contig]['cut_end']
 
             f.write('%s %s %s %s %s %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
