@@ -319,8 +319,8 @@ int main(int argc, char *argv[]) {
     const int MIN_REPEAT_ANNOTATION_THRESHOLD = (int) reader.GetInteger("filter", "min_repeat_annotation_threshold", 10);
     const int MAX_REPEAT_ANNOTATION_THRESHOLD = (int) reader.GetInteger("filter", "max_repeat_annotation_threshold", 20);
     const int REPEAT_ANNOTATION_GAP_THRESHOLD = (int) reader.GetInteger("filter", "repeat_annotation_gap_threshold",300);
-    const int NO_HINGE_REGION = (int) reader.GetInteger("filter", "no_hinge_region",500);
     //How far two hinges of the same type can be
+    const int NO_HINGE_REGION = (int) reader.GetInteger("filter", "no_hinge_region",500);
     const int HINGE_MIN_SUPPORT = (int) reader.GetInteger("filter", "hinge_min_support", 7);
     //Minimum number of reads that have to start in a reso length interval to be considered in hinge calling
     const int HINGE_BIN_PILEUP_THRESHOLD = (int) reader.GetInteger("filter", "hinge_min_pileup", 7);
