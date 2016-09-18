@@ -609,6 +609,7 @@ def resolve_rep(g,rep_path,in_node,out_node):
     prefix = 'B'
 
     g.add_edge(in_node,prefix + rep_path[0],
+        length=g.edge[in_node][rep_path[0]]['length'],
         read_a_match_start=g.edge[in_node][rep_path[0]]['read_a_match_start'],
         read_a_match_end=g.edge[in_node][rep_path[0]]['read_a_match_end'],
         read_b_match_start=g.edge[in_node][rep_path[0]]['read_b_match_start'],
@@ -620,6 +621,7 @@ def resolve_rep(g,rep_path,in_node,out_node):
     g.remove_edge(in_node,rep_path[0])
 
     g.add_edge(prefix+rep_path[-1],out_node,
+               length=g.edge[rep_path[-1]][out_node]['length'],
         read_a_match_start=g.edge[rep_path[-1]][out_node]['read_a_match_start'],
         read_a_match_end=g.edge[rep_path[-1]][out_node]['read_a_match_end'],
         read_b_match_start=g.edge[rep_path[-1]][out_node]['read_b_match_start'],
@@ -632,6 +634,7 @@ def resolve_rep(g,rep_path,in_node,out_node):
 
 
     g.add_edge(rev_node(prefix + rep_path[0]),rev_node(in_node),
+               length =g.edge[rev_node(rep_path[0])][rev_node(in_node)]['length'],
         read_a_match_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_match_start'],
         read_a_match_end=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_a_match_end'],
         read_b_match_start=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_match_start'],
@@ -642,6 +645,7 @@ def resolve_rep(g,rep_path,in_node,out_node):
         read_b_match_end_raw=g.edge[rev_node(rep_path[0])][rev_node(in_node)]['read_b_match_end_raw'])
     g.remove_edge(rev_node(rep_path[0]),rev_node(in_node))
     g.add_edge(rev_node(out_node),rev_node(prefix+rep_path[-1]),
+               length=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['length'],
         read_a_match_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_match_start'],
         read_a_match_end=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_a_match_end'],
         read_b_match_start=g.edge[rev_node(out_node)][rev_node(rep_path[-1])]['read_b_match_start'],
@@ -657,6 +661,7 @@ def resolve_rep(g,rep_path,in_node,out_node):
 
     for i in range(0,len(rep_path)-1):
         g.add_edge(prefix+rep_path[i],prefix+rep_path[i+1],
+                   length=g.edge[rep_path[i]][rep_path[i+1]]['length'],
             read_a_match_start=g.edge[rep_path[i]][rep_path[i+1]]['read_a_match_start'],
             read_a_match_end=g.edge[rep_path[i]][rep_path[i+1]]['read_a_match_end'],
             read_b_match_start=g.edge[rep_path[i]][rep_path[i+1]]['read_b_match_start'],
@@ -666,6 +671,7 @@ def resolve_rep(g,rep_path,in_node,out_node):
             read_b_match_start_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_b_match_start_raw'],
             read_b_match_end_raw=g.edge[rep_path[i]][rep_path[i+1]]['read_b_match_end_raw'])
         g.add_edge(rev_node(prefix+rep_path[i+1]),rev_node(prefix+rep_path[i]),
+                   length =g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['length'],
             read_a_match_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_match_start'],
             read_a_match_end=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_a_match_end'],
             read_b_match_start=g.edge[rev_node(rep_path[i+1])][rev_node(rep_path[i])]['read_b_match_start'],
