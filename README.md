@@ -47,41 +47,7 @@ It can be analyzed and visualized, etc.
 
 ## Parameters
 
-In the pipeline described above, several programs load their parameters from a configuration file in the ini format. Some of these parameters are explained below. All tunable parameters are described in [parameter_description](parameter_description.md).
-
-
-
-###[filter]
-- length_threshold = 1000; // Minimum read length
-<!--- quality_threshold = 0.23; // Quality threshold for edges to be considered in the backbone -->
-<!--- n_iter = 2; // iterations of filtering, the filtering needs several iterations, because when filter reads, you got rid of some edges; when filter edges, you got rid of some reads (if the last edge is filtered.) Typically 2-3 iterations will be enough.-->
-- aln_threshold = 2500; // Minimum alignment length between two reads to be considered when building graph
-- min_cov = 5; // Minimum coverage depth for a segment on a read to not be considered erroneous/chimeric
-- cut_off = 300; // When looking for chimeric segments, we look for coverage gaps on a read, after reducing all matches by cut_off in the beginning and in the end
-- theta = 300; // When classifying a match between two reads as a right/left overlap, internal match, etc., we allow overhangs of length up to theta
-
-
-###[running]
-- n_proc = 12; // number of CPUs for layout step
-
-###[draft]
-<!--- min_cov = 10; //obsolete-->
-<!--- trim = 200; //obsolete-->
-<!--- edge_safe = 100; //obsolete-->
-- tspace = 900; //space between new "trace points"
-- step = 50;
-
-
-###[consensus]
-- min_length = 4000; // Minimal length of reads used for final consensus
-- trim_end = 200; // Trim ends for alignments for final consensus
-- best_n = 1; // If one read has multiple alignments with the bacbone assembly, choose the longest n segments for consensus.
-- quality_threshold = 0.23; // alignment quality threshold
-
-
-
-<!--- hinge_slack = 1000;-->
-<!--- min_connected_component_size = 8; -->
+In the pipeline described above, several programs load their parameters from a configuration file in the ini format.  All tunable parameters are described in [this document](parameter_description.md).
 
 
 # Installation
