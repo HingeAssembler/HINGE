@@ -46,6 +46,7 @@ def merge_nodes(g,in_node,out_node):
     for nodeB in g.successors(out_node):
         g.add_edge(in_node,nodeB,length=g.edge[out_node][nodeB]['length'])
 
+
     g.node[in_node]['cut_end'] = g.node[out_node]['cut_end']
     g.remove_node(out_node)
 
@@ -129,10 +130,15 @@ for vert in out_graph.nodes():
 
 
 
-
 # next we merge the nodes in out_graph to form the contigs
 
 nodes_to_merge = [x for x in out_graph.nodes() if out_graph.in_degree(x) == 1 and out_graph.out_degree(out_graph.predecessors(x)[0]) == 1]
+
+
+
+# print len(read_dict[41260][1])
+# print len(read_dict[4697][1])
+
 
 while nodes_to_merge:
 
@@ -140,15 +146,21 @@ while nodes_to_merge:
 
     prev_node = out_graph.predecessors(cur_node)[0]
 
+
     if prev_node != cur_node:
         merge_nodes(out_graph,prev_node,cur_node)
     else:
         out_graph.node[cur_node]['path'] = out_graph.node[cur_node]['path'] + ';' + cur_node
         out_graph.node[cur_node]['weightspath'] = out_graph.node[cur_node]['weightspath'] + ';' + str(out_graph.edge[prev_node][cur_node]['length'])
+        out_graph.node[cur_node]['cut_end'] = len(read_dict[int(cur_node.split('_')[0])][1])
+
 
     nodes_to_merge.pop(0)
 
     # print len(nodes_to_merge)
+
+
+
 
 
 
@@ -163,14 +175,14 @@ printed_nodes = set()
 
 # debug output
 
-for node in out_graph.nodes():
-    print node
-    print out_graph.node[node]
+# for node in out_graph.nodes():
+#     print node
+#     print out_graph.node[node]
 
 
-for edge in out_graph.edges():
-    print edge
-    print out_graph.edge[edge[0]][edge[1]]
+# for edge in out_graph.edges():
+#     print edge
+#     print out_graph.edge[edge[0]][edge[1]]
 
 
 
@@ -281,6 +293,8 @@ with open(outfile, 'w') as f:
                 weights_list[-1], out_graph.node[vertex]['cut_end']) )
 
 
+
+
         # if we want reverse complement contigs, we print them next to each other
 
         if rev_comp_contig == False:
@@ -289,6 +303,8 @@ with open(outfile, 'w') as f:
 
         f.write('>Unitig%d\n'%(contig_no))
         contig_no += 1
+
+
 
         if out_graph.out_degree(vertex) == 1 and out_graph.successors(vertex)[0] != vertex:
 
@@ -318,6 +334,7 @@ with open(outfile, 'w') as f:
             f.write('%s %s %s %s %s %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0], nodeB.split('_')[1],
                 weights_list[-1], len(read_dict[int(nodeA.split('_')[0])][1]) - out_graph.node[vertex]['cut_end']) )
 
+            
 
         for i in range(len(weights_list)-1,1,-1):
             nodeA = rev_node(node_list[i])
