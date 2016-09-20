@@ -103,6 +103,7 @@ public:
 	void TrimOverlapNaive();
     int eff_start_trace_point_index_, eff_end_trace_point_index_;
     int weight;
+    int length;
 };
 
 

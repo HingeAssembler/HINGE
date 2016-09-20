@@ -103,6 +103,9 @@ bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_TH
             match->eff_read_A_match_end_ - match->eff_read_A_match_start_
             + match->eff_read_B_match_end_ - match->eff_read_B_match_start_;
 
+    match->length = match->read_A_match_end_ - match->read_A_match_start_
+            + match->read_B_match_end_ - match->read_B_match_start_;
+
     return contained;
 }
 
@@ -160,7 +163,7 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
         fprintf(file_pointer, "%d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] [%d %d] [%d %d]\n",
                 match->read_A_id_,
                 match->read_B_id_,
-                match->weight,
+                match->length,
                 0,
                 direction,
                 hinged,
@@ -185,7 +188,7 @@ void PrintOverlapToFile(FILE * file_pointer, LOverlap * match) {
         fprintf(file_pointer, "%d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] [%d %d] [%d %d]\n",
                 match->read_B_id_,
                 match->read_A_id_,
-                match->weight,
+                match->length,
                 direction,
                 0,
                 hinged,
@@ -232,7 +235,7 @@ void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
         fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                 match->read_A_id_,
                 match->read_B_id_,
-                match->weight,
+                match->length,
                 0,
                 direction,
                 0,
@@ -250,7 +253,7 @@ void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
         fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                 match->read_B_id_,
                 match->read_A_id_,
-                match->weight,
+                match->length,
                 direction,
                 0,
                 0,
@@ -269,7 +272,7 @@ void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
         fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                 match->read_A_id_,
                 match->read_B_id_,
-                match->weight,
+                match->length,
                 0,
                 direction,
                 1, // hinged forward
@@ -287,7 +290,7 @@ void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
         fprintf(file_pointer, "%d %d %d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                 match->read_B_id_,
                 match->read_A_id_,
-                match->weight,
+                match->length,
                 direction,
                 0,
                 -1, // hinged backward
@@ -855,7 +858,7 @@ int main(int argc, char *argv[]) {
                 if (reads[matches_forward[i][j]->read_B_id_]->active) {
                     fprintf(G_out, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
                             matches_forward[i][j]->read_A_id_, matches_forward[i][j]->read_B_id_,
-                            matches_forward[i][j]->weight, matches_forward[i][j]->reverse_complement_match_,
+                            matches_forward[i][j]->length, matches_forward[i][j]->reverse_complement_match_,
                             matches_forward[i][j]->match_type_, matches_forward[i][j]->eff_read_A_match_start_,
                             matches_forward[i][j]->eff_read_A_match_end_,
                             matches_forward[i][j]->eff_read_B_match_start_,
@@ -876,7 +879,7 @@ int main(int argc, char *argv[]) {
                 if (reads[matches_backward[i][j]->read_B_id_]->active) {
                     fprintf(G_out, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
                             matches_backward[i][j]->read_A_id_, matches_backward[i][j]->read_B_id_,
-                            matches_backward[i][j]->weight, matches_backward[i][j]->reverse_complement_match_,
+                            matches_backward[i][j]->length, matches_backward[i][j]->reverse_complement_match_,
                             matches_backward[i][j]->match_type_, matches_backward[i][j]->eff_read_A_match_start_,
                             matches_backward[i][j]->eff_read_A_match_end_,
                             matches_backward[i][j]->eff_read_B_match_start_,
@@ -897,7 +900,7 @@ int main(int argc, char *argv[]) {
                 if (reads[matches_forward[i][j]->read_B_id_]->active)
                     fprintf(out_backup, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
                             matches_forward[i][j]->read_A_id_, matches_forward[i][j]->read_B_id_,
-                            matches_forward[i][j]->weight, matches_forward[i][j]->reverse_complement_match_,
+                            matches_forward[i][j]->length, matches_forward[i][j]->reverse_complement_match_,
                             matches_forward[i][j]->match_type_, matches_forward[i][j]->eff_read_A_match_start_,
                             matches_forward[i][j]->eff_read_A_match_end_,
                             matches_forward[i][j]->eff_read_B_match_start_,
@@ -914,7 +917,7 @@ int main(int argc, char *argv[]) {
                 if (reads[matches_backward[i][j]->read_B_id_]->active)
                     fprintf(out_backup, "%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
                             matches_backward[i][j]->read_A_id_, matches_backward[i][j]->read_B_id_,
-                            matches_backward[i][j]->weight, matches_backward[i][j]->reverse_complement_match_,
+                            matches_backward[i][j]->length, matches_backward[i][j]->reverse_complement_match_,
                             matches_backward[i][j]->match_type_, matches_backward[i][j]->eff_read_A_match_start_,
                             matches_backward[i][j]->eff_read_A_match_end_,
                             matches_backward[i][j]->eff_read_B_match_start_,
@@ -1256,7 +1259,7 @@ int main(int argc, char *argv[]) {
 
                                                 fprintf(out_debug,"%d %d %d %d %d [%d %d] [%d %d] [%d %d] [%d %d] \n",
                                                         matches_forward[i][j]->read_A_id_, matches_forward[i][j]->read_B_id_,
-                                                        matches_forward[i][j]->weight, matches_forward[i][j]->reverse_complement_match_,
+                                                        matches_forward[i][j]->length, matches_forward[i][j]->reverse_complement_match_,
                                                         matches_forward[i][j]->match_type_, matches_forward[i][j]->eff_read_A_match_start_,
                                                         matches_forward[i][j]->eff_read_A_match_end_,
                                                         matches_forward[i][j]->eff_read_B_match_start_,
@@ -1514,7 +1517,7 @@ int main(int argc, char *argv[]) {
                                 if (matches_forward[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out_g1, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_forward[i][j]->read_A_id_,
-                                            matches_forward[i][j]->read_B_id_, matches_forward[i][j]->weight,
+                                            matches_forward[i][j]->read_B_id_, matches_forward[i][j]->length,
                                             matches_forward[i][j]->eff_read_A_match_start_,
                                             matches_forward[i][j]->eff_read_A_match_end_,
                                             matches_forward[i][j]->eff_read_B_match_start_,
@@ -1526,7 +1529,7 @@ int main(int argc, char *argv[]) {
                                 else
                                     fprintf(out_g1, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_forward[i][j]->read_A_id_,
-                                            matches_forward[i][j]->read_B_id_, matches_forward[i][j]->weight,
+                                            matches_forward[i][j]->read_B_id_, matches_forward[i][j]->length,
                                             matches_forward[i][j]->eff_read_A_match_start_,
                                             matches_forward[i][j]->eff_read_A_match_end_,
                                             matches_forward[i][j]->eff_read_B_match_start_,
@@ -1539,7 +1542,7 @@ int main(int argc, char *argv[]) {
                                 if (matches_forward[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out_g2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_forward[i][j]->read_B_id_,
-                                            matches_forward[i][j]->read_A_id_, matches_forward[i][j]->weight,
+                                            matches_forward[i][j]->read_A_id_, matches_forward[i][j]->length,
                                             matches_forward[i][j]->eff_read_A_match_start_,
                                             matches_forward[i][j]->eff_read_A_match_end_,
                                             matches_forward[i][j]->eff_read_B_match_start_,
@@ -1551,7 +1554,7 @@ int main(int argc, char *argv[]) {
                                 else
                                     fprintf(out_g2, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_forward[i][j]->read_B_id_,
-                                            matches_forward[i][j]->read_A_id_, matches_forward[i][j]->weight,
+                                            matches_forward[i][j]->read_A_id_, matches_forward[i][j]->length,
                                             matches_forward[i][j]->eff_read_A_match_start_,
                                             matches_forward[i][j]->eff_read_A_match_end_,
                                             matches_forward[i][j]->eff_read_B_match_start_,
@@ -1580,7 +1583,7 @@ int main(int argc, char *argv[]) {
                                 if (matches_backward[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out_g1, "%d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_backward[i][j]->read_A_id_,
-                                            matches_backward[i][j]->read_B_id_, matches_backward[i][j]->weight,
+                                            matches_backward[i][j]->read_B_id_, matches_backward[i][j]->length,
                                             matches_backward[i][j]->eff_read_A_match_start_,
                                             matches_backward[i][j]->eff_read_A_match_end_,
                                             matches_backward[i][j]->eff_read_B_match_start_,
@@ -1592,7 +1595,7 @@ int main(int argc, char *argv[]) {
                                 else
                                     fprintf(out_g1, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_backward[i][j]->read_A_id_,
-                                            matches_backward[i][j]->read_B_id_, matches_backward[i][j]->weight,
+                                            matches_backward[i][j]->read_B_id_, matches_backward[i][j]->length,
                                             matches_backward[i][j]->eff_read_A_match_start_,
                                             matches_backward[i][j]->eff_read_A_match_end_,
                                             matches_backward[i][j]->eff_read_B_match_start_,
@@ -1605,7 +1608,7 @@ int main(int argc, char *argv[]) {
                                 if (matches_backward[i][j]->reverse_complement_match_ == 0)
                                     fprintf(out_g2, "%d' %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_backward[i][j]->read_B_id_,
-                                            matches_backward[i][j]->read_A_id_, matches_backward[i][j]->weight,
+                                            matches_backward[i][j]->read_A_id_, matches_backward[i][j]->length,
                                             matches_backward[i][j]->eff_read_A_match_start_,
                                             matches_backward[i][j]->eff_read_A_match_end_,
                                             matches_backward[i][j]->eff_read_B_match_start_,
@@ -1617,7 +1620,7 @@ int main(int argc, char *argv[]) {
                                 else
                                     fprintf(out_g2, "%d %d' %d [%d %d] [%d %d] [%d %d] [%d %d]\n",
                                             matches_backward[i][j]->read_B_id_,
-                                            matches_backward[i][j]->read_A_id_, matches_backward[i][j]->weight,
+                                            matches_backward[i][j]->read_A_id_, matches_backward[i][j]->length,
                                             matches_backward[i][j]->eff_read_A_match_start_,
                                             matches_backward[i][j]->eff_read_A_match_end_,
                                             matches_backward[i][j]->eff_read_B_match_start_,
