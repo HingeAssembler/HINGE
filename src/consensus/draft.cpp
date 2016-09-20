@@ -87,6 +87,543 @@ std::vector<std::string> split(const std::string &s, char delim) {
 }
 
 
+int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::vector<LOverlap *> & aln,
+                       std::unordered_map<int, std::vector<LOverlap *> > &idx3,
+                       std::unordered_map<int, std::unordered_map<int, std::vector<LOverlap *> > > & idx,
+        std::vector<Read *> & reads, int TSPACE, int EDGE_SAFE, int MIN_COV2) {
+    std::cout << "list size:" << edgelist.size() << std::endl;
+    if (edgelist.size() == 0) return -1; //error
+
+    std::vector<LAlignment *> full_alns;
+    std::vector<LAlignment *> selected;
+    std::unordered_map<int, std::vector<LAlignment *>> idx_aln;
+    la.resetAlignment();
+    std::vector<int> range;
+
+    for (int i = 0; i < edgelist.size(); i++) {
+        range.push_back(std::get<0>(edgelist[i]).id);
+        idx_aln[std::get<0>(edgelist[i]).id] = std::vector<LAlignment *>();
+    }
+
+    std::sort(range.begin(), range.end());
+
+    la.getAlignment(full_alns, range);
+
+    for (auto i:full_alns) {
+        idx_aln[i->read_A_id_].push_back(i);
+    }
+
+    for (int i = 0; i < edgelist.size(); i++) {
+        int aid = std::get<0>(edgelist[i]).id;
+        int bid = std::get<1>(edgelist[i]).id;
+        bool found = false;
+        for (int j = 0; j < idx_aln[std::get<0>(edgelist[i]).id].size(); j++) {
+            //printf("%d %d %d %d\n",bid, idx_aln[aid][j]->bid, idx_aln[aid][j]->read_A_match_end_ - idx_aln[aid][j]->read_A_match_start_, std::get<2>(edgelist[i]));
+            if ((idx_aln[aid][j]->read_B_id_ == bid) and \
+            (idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos + idx_aln[aid][j]->bepos - idx_aln[aid][j]->bbpos == std::get<2>(edgelist[i]))) {
+                selected.push_back(idx_aln[aid][j]);
+                found = true;
+                break;
+            }
+            if (found) continue;
+        }
+    }
+
+    std::cout << "selected:" << selected.size() << std::endl;
+
+    std::unordered_map<int, std::unordered_map<int, std::pair<std::string, std::string> > > aln_tags_map;
+    std::vector<std::pair<std::string, std::string> > aln_tags_list;
+    std::vector<std::pair<std::string, std::string> > aln_tags_list_true_strand;
+
+
+    for (int i = 0; i < selected.size(); i++) {
+        la.recoverAlignment(selected[i]);
+        //printf("%d %d\n",selected[i]->tlen, selected[i]->trace_pts_len);
+        std::pair<std::string, std::string> res = la.getAlignmentTags(selected[i]);
+        aln_tags_map[selected[i]->read_A_id_][selected[i]->read_B_id_] = res;
+        aln_tags_list.push_back(res);
+    }
+
+
+
+    std::string sequence = "";
+
+    std::vector<LOverlap *> bedges;
+    std::vector<std::string> breads;
+
+    std::vector<std::vector<std::pair<int, int> > > pitfalls;
+
+
+    range.clear();
+    for (int i = 0; i < edgelist.size(); i++) {
+        range.push_back(std::get<0>(edgelist[i]).id);
+    }
+
+    std::vector<std::vector<int> *> coverages;
+
+    for (int i = 0; i < range.size(); i++) {
+        int aread = range[i];
+        if (idx3[aread].size() > 0) {
+            std::vector<int> *res = la.getCoverage(idx3[aread]);
+            std::vector<std::pair<int, int> > *res2 = la.lowCoverageRegions(*res, MIN_COV2);
+            //delete res;
+            coverages.push_back(res);
+            //printf("%d %d: (%d %d) ", i, aread, 0, idx3[aread][0]->alen);
+            //for (int j = 0; j < res2->size(); j++) {
+            //    printf("[%d %d] ", res2->at(j).first, res2->at(j).second);
+            //}
+            //printf("\n");
+            pitfalls.push_back(*res2);
+            delete res2;
+        }
+    }
+
+
+    /***
+     * Prepare the data
+     */
+
+    for (int i = 0; i < edgelist.size(); i++) {
+
+        std::vector<LOverlap *> currentalns = idx[std::get<0>(edgelist[i]).id][std::get<1>(edgelist[i]).id];
+
+        LOverlap *currentaln = NULL;
+
+        for (int j = 0; j < currentalns.size(); j++) {
+            //std::cout << std::get<0>(edgelist[i]).id << " " << std::get<1>(edgelist[i]).id << " " << currentalns[j]->match_type_ << std::endl;
+            if (currentalns[j]->read_A_match_end_ - currentalns[j]->read_A_match_start_ + currentalns[j]->read_B_match_end_ - currentalns[j]->read_B_match_start_ ==
+                std::get<2>(edgelist[i]))
+                currentaln = currentalns[j];
+        }
+
+        if (currentaln == NULL) exit(1);
+        //currentaln->show();
+
+        std::string current_seq;
+        std::string next_seq;
+
+        std::string aln_tags1;
+        std::string aln_tags2;
+
+
+        if (std::get<0>(edgelist[i]).strand == 0)
+            current_seq = reads[std::get<0>(edgelist[i]).id]->bases;
+        else
+            current_seq = reverse_complement(reads[std::get<0>(edgelist[i]).id]->bases);
+
+        if (std::get<0>(edgelist[i]).strand == 0) {
+            aln_tags1 = aln_tags_list[i].first;
+            aln_tags2 = aln_tags_list[i].second;
+        } else {
+            aln_tags1 = reverse_complement(aln_tags_list[i].first);
+            aln_tags2 = reverse_complement(aln_tags_list[i].second);
+        }
+
+        aln_tags_list_true_strand.push_back(std::pair<std::string, std::string>(aln_tags1, aln_tags2));
+
+        if (std::get<1>(edgelist[i]).strand == 0)
+            next_seq = reads[std::get<1>(edgelist[i]).id]->bases;
+        else
+            next_seq = reverse_complement(reads[std::get<1>(edgelist[i]).id]->bases);
+
+        int abpos, aepos, alen, bbpos, bepos, blen, aes, aee, bes, bee;
+
+        alen = currentaln->alen;
+        blen = currentaln->blen;
+
+
+        if (std::get<0>(edgelist[i]).strand == 0) {
+            abpos = currentaln->read_A_match_start_;
+            aepos = currentaln->read_A_match_end_;
+
+            aes = currentaln->eff_read_A_read_start_;
+            aee = currentaln->eff_read_A_read_end_;
+
+        } else {
+            abpos = alen - currentaln->read_A_match_end_;
+            aepos = alen - currentaln->read_A_match_start_;
+
+            aes = alen - currentaln->eff_read_A_read_end_;
+            aee = alen - currentaln->eff_read_A_read_start_;
+        }
+
+        if (((std::get<1>(edgelist[i]).strand == 0))) {
+            bbpos = currentaln->read_B_match_start_;
+            bepos = currentaln->read_B_match_end_;
+
+            bes = currentaln->eff_read_B_read_start_;
+            bee = currentaln->eff_read_B_read_end_;
+
+        } else {
+            bbpos = blen - currentaln->read_B_match_end_;
+            bepos = blen - currentaln->read_B_match_start_;
+
+            bes = blen - currentaln->eff_read_B_read_end_;
+            bee = blen - currentaln->eff_read_B_read_start_;
+
+        }
+        aes = 0;
+        bes = 0;
+        aee = alen;
+        bee = blen;
+
+//            printf("%d %d [[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", std::get<0>(edgelist[i]).id, std::get<1>(edgelist[i]).id, abpos, aepos, aes, aee, bbpos, bepos, bes, bee);
+
+        LOverlap *new_ovl = new LOverlap();
+        new_ovl->read_A_match_start_ = abpos;
+        new_ovl->read_A_match_end_ = aepos;
+        new_ovl->read_B_match_start_ = bbpos;
+        new_ovl->read_B_match_end_ = bepos;
+        new_ovl->eff_read_A_read_end_ = aee;
+        new_ovl->eff_read_A_read_start_ = aes;
+        new_ovl->eff_read_B_read_end_ = bee;
+        new_ovl->eff_read_B_read_start_ = bes;
+        new_ovl->alen = currentaln->alen;
+        new_ovl->blen = currentaln->blen;
+        new_ovl->read_A_id_ = std::get<0>(edgelist[i]).id;
+        new_ovl->read_B_id_ = std::get<1>(edgelist[i]).id;
+
+
+        bedges.push_back(new_ovl);
+        breads.push_back(current_seq);
+
+
+    }
+    //need to trim the end
+
+
+
+    std::vector<std::vector<int> > mappings;
+    for (int i = 0; i < range.size(); i++) {
+        mappings.push_back(get_mapping(aln_tags_list_true_strand[i].first, aln_tags_list_true_strand[i].second));
+    }
+
+    std::cout << bedges.size() << " " << breads.size() << " " << selected.size() << " "
+    << aln_tags_list.size() << " " << pitfalls.size() << " " << aln_tags_list_true_strand.size()
+    << " " << mappings.size() << " " << coverages.size() << std::endl;
+
+    /*for (int i = 0; i < bedges.size() - 1; i++) {
+        printf("%d %d %d %d %d\n", bedges[i]->read_B_match_start_, bedges[i]->read_B_match_end_, bedges[i+1]->read_A_match_start_, bedges[i+1]->read_A_match_end_, bedges[i]->read_B_match_end_ - bedges[i+1]->read_A_match_start_);
+    }*/
+
+
+    int tspace = TSPACE; // set lane length to be 500
+    int nlane = 0;
+
+
+    //printf("%d %d\n", mappings[0][800], mappings[0][1000]); // debug output
+    //printf("%s\n%s\n", breads[0].substr(bedges[0]->read_A_match_start_ + 800, 50).c_str(),
+    //       breads[1].substr(bedges[0]->read_B_match_start_ + mappings[0][800], 50).c_str()); //debug output
+
+
+    std::vector<std::vector<std::pair<int, int>>> lanes;
+
+    std::string draft_assembly = "";
+
+
+    int currentlane = 0;
+    int current_starting_read = 0;
+    int current_starting_space = 1;
+    int current_starting_offset = 0;
+    int n_bb_reads = range.size();
+    std::vector<std::vector<int>> trace_pts(n_bb_reads);
+    bool revert = false;
+
+
+    int rmax = -1;
+    /**
+     * Move forward and put "trace points"
+     */
+    while (current_starting_read < n_bb_reads - 1) {
+        int currentread = current_starting_read;
+        int additional_offset = 0;
+        while (bedges[current_starting_read]->read_A_match_start_ + current_starting_space * tspace +
+               current_starting_offset + additional_offset <
+               bedges[current_starting_read]->read_A_match_end_ - EDGE_SAFE) {
+            int waypoint = bedges[current_starting_read]->read_A_match_start_ + tspace * current_starting_space +
+                           current_starting_offset + additional_offset;
+            //if ((waypoint - bedges[current_starting_read]->read_A_match_start_) < EDGE_SAFE)
+            //    waypoint += EDGE_SAFE;
+
+            //int next_waypoint = mappings[currentread][waypoint - bedges[current_starting_read]->read_A_match_start_] + bedges[current_starting_read]->read_B_match_start_;
+            std::vector<std::pair<int, int> > lane;
+
+            while ((waypoint > bedges[currentread]->read_A_match_start_) and
+                   (waypoint < bedges[currentread]->read_A_match_end_)) {
+
+                printf("%d %d\n", currentread, waypoint);
+                trace_pts[currentread].push_back(waypoint);
+
+
+                /*if (waypoint > bedges[currentread]->read_A_match_end_ - EDGE_SAFE) {
+                    printf("Reaching the end, neglect low coverage\n");
+                }
+
+                if ((coverages[currentread]->at(waypoint) < MIN_COV2) and (waypoint < bedges[currentread]->read_A_match_end_ - EDGE_SAFE)) {
+                    revert = true;
+                    printf("Low coverage, revert\n");
+                    break;
+                }*/
+
+
+                lane.push_back(std::pair<int, int>(currentread, waypoint));
+                if (currentread > rmax) rmax = currentread;
+                //int previous_wp = waypoint;
+                waypoint = mappings[currentread][waypoint - bedges[currentread]->read_A_match_start_] +
+                           bedges[currentread]->read_B_match_start_;
+                //printf("%s\n%s\n", breads[currentread].substr(previous_wp,50).c_str(), breads[currentread+1].substr(waypoint,50).c_str());
+                currentread++;
+                if (currentread >= n_bb_reads) break;
+            }
+            if (currentread < n_bb_reads) if (waypoint < bedges[currentread]->alen) {
+                lane.push_back(std::pair<int, int>(currentread, waypoint));
+                if (currentread > rmax) rmax = currentread;
+            }
+            /*if (revert) {
+                printf("revert\n");
+                revert = false;
+                while (currentread >= current_starting_read) {
+                    trace_pts[currentread].pop_back();
+                    currentread --;
+                    additional_offset += STEP;
+                }
+                currentread = current_starting_read;
+            }
+            else*/
+            {
+                if (currentread >= rmax)
+                    lanes.push_back(lane);
+                current_starting_space++;
+                currentread = current_starting_read;
+
+            }
+
+        }
+
+        current_starting_read++;
+        current_starting_space = 1;//get next space;
+        if (trace_pts[current_starting_read].size() == 0)
+            current_starting_offset = 0;
+        else
+            current_starting_offset =
+                    trace_pts[current_starting_read].back() - bedges[current_starting_read]->read_A_match_start_;
+    }
+
+
+    /**
+     * Show trace points on reads
+     */
+    for (int i = 0; i < n_bb_reads; i++) {
+        printf("Read %d:", i);
+        for (int j = 0; j < trace_pts[i].size(); j++) {
+            printf("%d ", trace_pts[i][j]);
+        }
+        printf("\n");
+    }
+
+    /**
+     * Show lanes
+     */
+
+    for (int i = 0; i < lanes.size(); i++) {
+
+        printf("Lane %d\n", i);
+        for (int j = 0; j < lanes[i].size(); j++) {
+            printf("[%d %d] ", lanes[i][j].first, lanes[i][j].second);
+        }
+        printf("\n");
+    }
+
+
+    //printf("In total %lu lanes\n", lanes.size());
+    //if (lanes.size() < 2) {
+    //    draft_assembly = breads[0];
+    //    out_fa << ">DraftAssemblyContig" << num_contig << std::endl;
+    //    out_fa << draft_assembly << std::endl;
+    //    num_contig++;
+    //    continue;
+    //}
+
+
+
+    /**
+     * Consequtive lanes form a column (ladder)
+     */
+
+    std::vector<std::vector<std::tuple<int, int, int> > > ladders;
+
+    for (int i = 0; i < lanes.size() - 1; i++) {
+        std::vector<std::pair<int, int> > lane1 = lanes[i];
+        std::vector<std::pair<int, int> > lane2 = lanes[i + 1];
+        std::vector<std::tuple<int, int, int> > ladder;
+        int pos = 0;
+        for (int j = 0; j < lane2.size(); j++) {
+            while ((lane1[pos].first != lane2[j].first) and (pos < lane1.size() - 1)) pos++;
+            if ((lane1[pos].first == lane2[j].first))
+                ladder.push_back(std::make_tuple(lane2[j].first, lane1[pos].second, lane2[j].second));
+        }
+        ladders.push_back(ladder);
+    }
+
+
+    /**
+     * show ladders
+     */
+    for (int i = 0; i < ladders.size(); i++) {
+//            printf("Ladder %d\n", i);
+//            for (int j = 0; j < ladders[i].size(); j++) {
+//                //printf("[%d %d-%d] ", std::get<0>(ladders[i][j]), std::get<1>(ladders[i][j]), std::get<2>(ladders[i][j]) );
+//                //printf("%s\n", breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j])).c_str());
+//
+//            }
+
+        if (ladders[i].size() == 0) {
+            printf("low coverage!\n");
+            continue;
+        }
+
+        if (ladders[i].size() > 1) {
+
+
+            int mx = 0;
+            int maxcoverage = 0;
+            for (int j = 0; j < ladders[i].size(); j++) {
+                int mincoverage = 10000;
+                int read = std::get<0>(ladders[i][j]);
+                int start = std::get<1>(ladders[i][j]);
+                int end = std::get<2>(ladders[i][j]);
+                for (int pos = start; pos < end; pos++) {
+                    if (coverages[read]->at(pos) < mincoverage) mincoverage = coverages[read]->at(pos);
+                }
+                if (mincoverage > maxcoverage) {
+                    maxcoverage = mincoverage;
+                    mx = j;
+                }
+            }
+
+//                std::cout << "ladder " << i << " num reads " << ladders[i].size() << " possibly error here " <<
+//                maxcoverage << "\n!";
+
+
+            //if (ladders[i].size() == 2) {
+            //    draft_assembly += breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),
+            //                                                                 std::get<2>(ladders[i][mx]) -
+            //                                                                 std::get<1>(ladders[i][mx]));
+            //    continue;
+            // }
+
+
+            std::string base = breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),
+                                                                          std::get<2>(ladders[i][mx]) -
+                                                                          std::get<1>(ladders[i][mx]));;
+            int seq_count = ladders[i].size();
+//                printf("seq_count:%d, max %d\n", seq_count, mx);
+            align_tags_t **tags_list;
+            tags_list = (align_tags_t **) calloc(seq_count, sizeof(align_tags_t *));
+            consensus_data *consensus;
+
+            int alen = (std::get<2>(ladders[i][mx]) - std::get<1>(ladders[i][mx]));
+            for (int j = 0; j < ladders[i].size(); j++) {
+
+                int blen = (std::get<2>(ladders[i][j]) - std::get<1>(ladders[i][j]));
+                char *aseq = (char *) malloc(
+                        (20 + (std::get<2>(ladders[i][mx]) - std::get<1>(ladders[i][mx]))) * sizeof(char));
+                char *bseq = (char *) malloc(
+                        (20 + (std::get<2>(ladders[i][j]) - std::get<1>(ladders[i][j]))) * sizeof(char));
+                strcpy(aseq, breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),
+                                                                        std::get<2>(ladders[i][mx]) -
+                                                                        std::get<1>(ladders[i][mx])).c_str());
+                strcpy(bseq, breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),
+                                                                       std::get<2>(ladders[i][j]) -
+                                                                       std::get<1>(ladders[i][j])).c_str());
+
+
+                aln_range *arange = (aln_range *) calloc(1, sizeof(aln_range));
+                arange->s1 = 0;
+                arange->e1 = strlen(bseq);
+                arange->s2 = 0;
+                arange->e2 = strlen(aseq);
+                arange->score = 5;
+
+                //printf("blen %d alen%d\n",strlen(bseq), strlen(aseq));
+                //printf("before get tags\n");
+
+                alignment *alng = _align(bseq, blen, aseq, alen, 150, 1);
+
+                char *q_aln_str = (char *) malloc((5 + strlen(alng->q_aln_str)) * sizeof(char));
+                char *t_aln_str = (char *) malloc((5 + strlen(alng->t_aln_str)) * sizeof(char));
+
+
+                strcpy(q_aln_str + 1, alng->q_aln_str);
+                strcpy(t_aln_str + 1, alng->t_aln_str);
+                q_aln_str[0] = 'T';
+                t_aln_str[0] = 'T';
+
+
+                for (int pos = 0; pos < strlen(q_aln_str); pos++) q_aln_str[pos] = toupper(q_aln_str[pos]);
+                for (int pos = 0; pos < strlen(t_aln_str); pos++) t_aln_str[pos] = toupper(t_aln_str[pos]);
+
+                //printf("Q:%s\nT:%s\n", q_aln_str, t_aln_str);
+
+                tags_list[j] = get_align_tags(q_aln_str,
+                                              t_aln_str,
+                                              strlen(alng->q_aln_str) + 1,
+                                              arange, (unsigned int) j, 0);
+                //free(aseq);
+                //free(bseq);
+
+                /*for (int k = 0; k < tags_list[j]->len; k++) {
+                    printf("%d %d %ld %d %c %c\n",j, k, tags_list[j]->align_tags[k].t_pos,
+                           tags_list[j]->align_tags[k].delta,
+                            //tags_list[j]->align_tags[k].p_q_base,
+                           aseq[tags_list[j]->align_tags[k].t_pos],
+                           tags_list[j]->align_tags[k].q_base);
+                }*/
+                free(q_aln_str);
+                free(t_aln_str);
+                free(aseq);
+                free(bseq);
+                free_alignment(alng);
+
+            }
+
+            //printf("%d %d\n%s\n",seq_count, strlen(seq), seq);
+
+            consensus = get_cns_from_align_tags(tags_list, seq_count, alen + 1, 1);
+//                printf("Consensus len :%d\n",strlen(consensus->sequence));
+            draft_assembly += std::string(consensus->sequence);
+
+            free_consensus_data(consensus);
+            for (int j = 0; j < seq_count; j++)
+                free_align_tags(tags_list[j]);
+
+        } else {
+            draft_assembly += breads[std::get<0>(ladders[i][0])].substr(std::get<1>(ladders[i][0]),
+                                                                        std::get<2>(ladders[i][0]) -
+                                                                        std::get<1>(ladders[i][0]));
+        }
+
+//            printf("\n");
+    }
+
+
+
+    /*for (int i = 0; i < mapping.size(); i++)
+        printf("%d %d\n", i, mapping[i]);
+    printf("[%d %d], [%d %d]\n", bedges[0]->read_A_match_start_, bedges[0]->read_A_match_end_, bedges[0]->read_B_match_start_, bedges[0]->read_B_match_end_);*/
+
+    std::cout << sequence.size() << std::endl;
+    std::cout << draft_assembly.size() << std::endl;
+
+    //if (draft_assembly.size() > 0) {
+    //    out_fa << ">Draft_assembly" << num_contig << std::endl;
+    //    out_fa << draft_assembly << std::endl;
+    //}
+    //num_contig++;
+    return 0;
+}
+
+
 
 int main(int argc, char *argv[]) {
 
@@ -188,7 +725,7 @@ int main(int argc, char *argv[]) {
     if (strlen(name_db) > 0)
         n_read = la.getReadNumber();
 
-    std::vector<Read *> reads; //Vector of pointers to all reads
+                    std::vector<Read *> reads; //Vector of pointers to all reads
 
     if (strlen(name_fasta) > 0) {
         n_read = la.loadFASTA(name_fasta, reads);
@@ -397,535 +934,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        std::cout << "list size:" << edgelist.size() << std::endl;
-        if (edgelist.size() == 0) continue;
-
-        std::vector<LAlignment *> full_alns;
-        std::vector<LAlignment *> selected;
-        std::unordered_map<int, std::vector<LAlignment *>> idx_aln;
-        la.resetAlignment();
-        std::vector<int> range;
-
-        for (int i = 0; i < edgelist.size(); i++) {
-            range.push_back(std::get<0>(edgelist[i]).id);
-            idx_aln[std::get<0>(edgelist[i]).id] = std::vector<LAlignment *>();
-        }
-
-        std::sort(range.begin(), range.end());
-
-        la.getAlignment(full_alns, range);
-
-        for (auto i:full_alns) {
-            idx_aln[i->read_A_id_].push_back(i);
-        }
-
-        for (int i = 0; i < edgelist.size(); i++) {
-            int aid = std::get<0>(edgelist[i]).id;
-            int bid = std::get<1>(edgelist[i]).id;
-            bool found = false;
-            for (int j = 0; j < idx_aln[std::get<0>(edgelist[i]).id].size(); j++) {
-                //printf("%d %d %d %d\n",bid, idx_aln[aid][j]->bid, idx_aln[aid][j]->read_A_match_end_ - idx_aln[aid][j]->read_A_match_start_, std::get<2>(edgelist[i]));
-                if ((idx_aln[aid][j]->read_B_id_ == bid) and \
-            (idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos + idx_aln[aid][j]->bepos - idx_aln[aid][j]->bbpos == std::get<2>(edgelist[i]))) {
-                    selected.push_back(idx_aln[aid][j]);
-                    found = true;
-                    break;
-                }
-                if (found) continue;
-            }
-        }
-
-        std::cout << "selected:" << selected.size() << std::endl;
-
-        std::unordered_map<int, std::unordered_map<int, std::pair<std::string, std::string> > > aln_tags_map;
-        std::vector<std::pair<std::string, std::string> > aln_tags_list;
-        std::vector<std::pair<std::string, std::string> > aln_tags_list_true_strand;
-
-
-        for (int i = 0; i < selected.size(); i++) {
-            la.recoverAlignment(selected[i]);
-            //printf("%d %d\n",selected[i]->tlen, selected[i]->trace_pts_len);
-            std::pair<std::string, std::string> res = la.getAlignmentTags(selected[i]);
-            aln_tags_map[selected[i]->read_A_id_][selected[i]->read_B_id_] = res;
-            aln_tags_list.push_back(res);
-        }
-
-
-
-        std::string sequence = "";
-
-        std::vector<LOverlap *> bedges;
-        std::vector<std::string> breads;
-
-        std::vector<std::vector<std::pair<int, int> > > pitfalls;
-
-
-        range.clear();
-        for (int i = 0; i < edgelist.size(); i++) {
-            range.push_back(std::get<0>(edgelist[i]).id);
-        }
-
-        std::vector<std::vector<int> *> coverages;
-
-        for (int i = 0; i < range.size(); i++) {
-            int aread = range[i];
-            if (idx3[aread].size() > 0) {
-                std::vector<int> *res = la.getCoverage(idx3[aread]);
-                std::vector<std::pair<int, int> > *res2 = la.lowCoverageRegions(*res, MIN_COV2);
-                //delete res;
-                coverages.push_back(res);
-                //printf("%d %d: (%d %d) ", i, aread, 0, idx3[aread][0]->alen);
-                //for (int j = 0; j < res2->size(); j++) {
-                //    printf("[%d %d] ", res2->at(j).first, res2->at(j).second);
-                //}
-                //printf("\n");
-                pitfalls.push_back(*res2);
-                delete res2;
-            }
-        }
-
-
-        /***
-         * Prepare the data
-         */
-
-        for (int i = 0; i < edgelist.size(); i++) {
-
-            std::vector<LOverlap *> currentalns = idx[std::get<0>(edgelist[i]).id][std::get<1>(edgelist[i]).id];
-
-            LOverlap *currentaln = NULL;
-
-            for (int j = 0; j < currentalns.size(); j++) {
-                //std::cout << std::get<0>(edgelist[i]).id << " " << std::get<1>(edgelist[i]).id << " " << currentalns[j]->match_type_ << std::endl;
-                if (currentalns[j]->read_A_match_end_ - currentalns[j]->read_A_match_start_ + currentalns[j]->read_B_match_end_ - currentalns[j]->read_B_match_start_ ==
-                    std::get<2>(edgelist[i]))
-                    currentaln = currentalns[j];
-            }
-
-            if (currentaln == NULL) exit(1);
-            //currentaln->show();
-
-            std::string current_seq;
-            std::string next_seq;
-
-            std::string aln_tags1;
-            std::string aln_tags2;
-
-
-            if (std::get<0>(edgelist[i]).strand == 0)
-                current_seq = reads[std::get<0>(edgelist[i]).id]->bases;
-            else
-                current_seq = reverse_complement(reads[std::get<0>(edgelist[i]).id]->bases);
-
-            if (std::get<0>(edgelist[i]).strand == 0) {
-                aln_tags1 = aln_tags_list[i].first;
-                aln_tags2 = aln_tags_list[i].second;
-            } else {
-                aln_tags1 = reverse_complement(aln_tags_list[i].first);
-                aln_tags2 = reverse_complement(aln_tags_list[i].second);
-            }
-
-            aln_tags_list_true_strand.push_back(std::pair<std::string, std::string>(aln_tags1, aln_tags2));
-
-            if (std::get<1>(edgelist[i]).strand == 0)
-                next_seq = reads[std::get<1>(edgelist[i]).id]->bases;
-            else
-                next_seq = reverse_complement(reads[std::get<1>(edgelist[i]).id]->bases);
-
-            int abpos, aepos, alen, bbpos, bepos, blen, aes, aee, bes, bee;
-
-            alen = currentaln->alen;
-            blen = currentaln->blen;
-
-
-            if (std::get<0>(edgelist[i]).strand == 0) {
-                abpos = currentaln->read_A_match_start_;
-                aepos = currentaln->read_A_match_end_;
-
-                aes = currentaln->eff_read_A_read_start_;
-                aee = currentaln->eff_read_A_read_end_;
-
-            } else {
-                abpos = alen - currentaln->read_A_match_end_;
-                aepos = alen - currentaln->read_A_match_start_;
-
-                aes = alen - currentaln->eff_read_A_read_end_;
-                aee = alen - currentaln->eff_read_A_read_start_;
-            }
-
-            if (((std::get<1>(edgelist[i]).strand == 0))) {
-                bbpos = currentaln->read_B_match_start_;
-                bepos = currentaln->read_B_match_end_;
-
-                bes = currentaln->eff_read_B_read_start_;
-                bee = currentaln->eff_read_B_read_end_;
-
-            } else {
-                bbpos = blen - currentaln->read_B_match_end_;
-                bepos = blen - currentaln->read_B_match_start_;
-
-                bes = blen - currentaln->eff_read_B_read_end_;
-                bee = blen - currentaln->eff_read_B_read_start_;
-
-            }
-            aes = 0;
-            bes = 0;
-            aee = alen;
-            bee = blen;
-
-//            printf("%d %d [[%d %d] << [%d %d]] x [[%d %d] << [%d %d]]\n", std::get<0>(edgelist[i]).id, std::get<1>(edgelist[i]).id, abpos, aepos, aes, aee, bbpos, bepos, bes, bee);
-
-            LOverlap *new_ovl = new LOverlap();
-            new_ovl->read_A_match_start_ = abpos;
-            new_ovl->read_A_match_end_ = aepos;
-            new_ovl->read_B_match_start_ = bbpos;
-            new_ovl->read_B_match_end_ = bepos;
-            new_ovl->eff_read_A_read_end_ = aee;
-            new_ovl->eff_read_A_read_start_ = aes;
-            new_ovl->eff_read_B_read_end_ = bee;
-            new_ovl->eff_read_B_read_start_ = bes;
-            new_ovl->alen = currentaln->alen;
-            new_ovl->blen = currentaln->blen;
-            new_ovl->read_A_id_ = std::get<0>(edgelist[i]).id;
-            new_ovl->read_B_id_ = std::get<1>(edgelist[i]).id;
-
-
-            bedges.push_back(new_ovl);
-            breads.push_back(current_seq);
-
-
-        }
-        //need to trim the end
-
-
-
-        std::vector<std::vector<int> > mappings;
-        for (int i = 0; i < range.size(); i++) {
-            mappings.push_back(get_mapping(aln_tags_list_true_strand[i].first, aln_tags_list_true_strand[i].second));
-        }
-
-        std::cout << bedges.size() << " " << breads.size() << " " << selected.size() << " "
-        << aln_tags_list.size() << " " << pitfalls.size() << " " << aln_tags_list_true_strand.size()
-        << " " << mappings.size() << " " << coverages.size() << std::endl;
-
-        /*for (int i = 0; i < bedges.size() - 1; i++) {
-            printf("%d %d %d %d %d\n", bedges[i]->read_B_match_start_, bedges[i]->read_B_match_end_, bedges[i+1]->read_A_match_start_, bedges[i+1]->read_A_match_end_, bedges[i]->read_B_match_end_ - bedges[i+1]->read_A_match_start_);
-        }*/
-
-
-        int tspace = TSPACE; // set lane length to be 500
-        int nlane = 0;
-
-
-        //printf("%d %d\n", mappings[0][800], mappings[0][1000]); // debug output
-        //printf("%s\n%s\n", breads[0].substr(bedges[0]->read_A_match_start_ + 800, 50).c_str(),
-        //       breads[1].substr(bedges[0]->read_B_match_start_ + mappings[0][800], 50).c_str()); //debug output
-
-
-        std::vector<std::vector<std::pair<int, int>>> lanes;
-
-        std::string draft_assembly = "";
-
-
-        int currentlane = 0;
-        int current_starting_read = 0;
-        int current_starting_space = 1;
-        int current_starting_offset = 0;
-        int n_bb_reads = range.size();
-        std::vector<std::vector<int>> trace_pts(n_bb_reads);
-        bool revert = false;
-
-
-        int rmax = -1;
-        /**
-         * Move forward and put "trace points"
-         */
-        while (current_starting_read < n_bb_reads - 1) {
-            int currentread = current_starting_read;
-            int additional_offset = 0;
-            while (bedges[current_starting_read]->read_A_match_start_ + current_starting_space * tspace +
-                   current_starting_offset + additional_offset <
-                   bedges[current_starting_read]->read_A_match_end_ - EDGE_SAFE) {
-                int waypoint = bedges[current_starting_read]->read_A_match_start_ + tspace * current_starting_space +
-                               current_starting_offset + additional_offset;
-                //if ((waypoint - bedges[current_starting_read]->read_A_match_start_) < EDGE_SAFE)
-                //    waypoint += EDGE_SAFE;
-
-                //int next_waypoint = mappings[currentread][waypoint - bedges[current_starting_read]->read_A_match_start_] + bedges[current_starting_read]->read_B_match_start_;
-                std::vector<std::pair<int, int> > lane;
-
-                while ((waypoint > bedges[currentread]->read_A_match_start_) and
-                       (waypoint < bedges[currentread]->read_A_match_end_)) {
-
-                    printf("%d %d\n", currentread, waypoint);
-                    trace_pts[currentread].push_back(waypoint);
-
-
-                    /*if (waypoint > bedges[currentread]->read_A_match_end_ - EDGE_SAFE) {
-                        printf("Reaching the end, neglect low coverage\n");
-                    }
-
-                    if ((coverages[currentread]->at(waypoint) < MIN_COV2) and (waypoint < bedges[currentread]->read_A_match_end_ - EDGE_SAFE)) {
-                        revert = true;
-                        printf("Low coverage, revert\n");
-                        break;
-                    }*/
-
-
-                    lane.push_back(std::pair<int, int>(currentread, waypoint));
-                    if (currentread > rmax) rmax = currentread;
-                    //int previous_wp = waypoint;
-                    waypoint = mappings[currentread][waypoint - bedges[currentread]->read_A_match_start_] +
-                               bedges[currentread]->read_B_match_start_;
-                    //printf("%s\n%s\n", breads[currentread].substr(previous_wp,50).c_str(), breads[currentread+1].substr(waypoint,50).c_str());
-                    currentread++;
-                    if (currentread >= n_bb_reads) break;
-                }
-                if (currentread < n_bb_reads) if (waypoint < bedges[currentread]->alen) {
-                    lane.push_back(std::pair<int, int>(currentread, waypoint));
-                    if (currentread > rmax) rmax = currentread;
-                }
-                /*if (revert) {
-                    printf("revert\n");
-                    revert = false;
-                    while (currentread >= current_starting_read) {
-                        trace_pts[currentread].pop_back();
-                        currentread --;
-                        additional_offset += STEP;
-                    }
-                    currentread = current_starting_read;
-                }
-                else*/
-                {
-                    if (currentread >= rmax)
-                        lanes.push_back(lane);
-                    current_starting_space++;
-                    currentread = current_starting_read;
-
-                }
-
-            }
-
-            current_starting_read++;
-            current_starting_space = 1;//get next space;
-            if (trace_pts[current_starting_read].size() == 0)
-                current_starting_offset = 0;
-            else
-                current_starting_offset =
-                        trace_pts[current_starting_read].back() - bedges[current_starting_read]->read_A_match_start_;
-        }
-
-
-        /**
-         * Show trace points on reads
-         */
-        for (int i = 0; i < n_bb_reads; i++) {
-            printf("Read %d:", i);
-            for (int j = 0; j < trace_pts[i].size(); j++) {
-                printf("%d ", trace_pts[i][j]);
-            }
-            printf("\n");
-        }
-
-        /**
-         * Show lanes
-         */
-
-        for (int i = 0; i < lanes.size(); i++) {
-
-            printf("Lane %d\n", i);
-            for (int j = 0; j < lanes[i].size(); j++) {
-                printf("[%d %d] ", lanes[i][j].first, lanes[i][j].second);
-            }
-            printf("\n");
-        }
-
-
-        printf("In total %lu lanes\n", lanes.size());
-        if (lanes.size() < 2) {
-            draft_assembly = breads[0];
-            out_fa << ">DraftAssemblyContig" << num_contig << std::endl;
-            out_fa << draft_assembly << std::endl;
-            num_contig++;
-            continue;
-        }
-
-
-
-        /**
-         * Consequtive lanes form a column (ladder)
-         */
-
-        std::vector<std::vector<std::tuple<int, int, int> > > ladders;
-
-        for (int i = 0; i < lanes.size() - 1; i++) {
-            std::vector<std::pair<int, int> > lane1 = lanes[i];
-            std::vector<std::pair<int, int> > lane2 = lanes[i + 1];
-            std::vector<std::tuple<int, int, int> > ladder;
-            int pos = 0;
-            for (int j = 0; j < lane2.size(); j++) {
-                while ((lane1[pos].first != lane2[j].first) and (pos < lane1.size() - 1)) pos++;
-                if ((lane1[pos].first == lane2[j].first))
-                    ladder.push_back(std::make_tuple(lane2[j].first, lane1[pos].second, lane2[j].second));
-            }
-            ladders.push_back(ladder);
-        }
-
-
-        /**
-         * show ladders
-         */
-        for (int i = 0; i < ladders.size(); i++) {
-//            printf("Ladder %d\n", i);
-//            for (int j = 0; j < ladders[i].size(); j++) {
-//                //printf("[%d %d-%d] ", std::get<0>(ladders[i][j]), std::get<1>(ladders[i][j]), std::get<2>(ladders[i][j]) );
-//                //printf("%s\n", breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),std::get<2>(ladders[i][j])-std::get<1>(ladders[i][j])).c_str());
-//
-//            }
-
-            if (ladders[i].size() == 0) {
-                printf("low coverage!\n");
-                continue;
-            }
-
-            if (ladders[i].size() > 1) {
-
-
-                int mx = 0;
-                int maxcoverage = 0;
-                for (int j = 0; j < ladders[i].size(); j++) {
-                    int mincoverage = 10000;
-                    int read = std::get<0>(ladders[i][j]);
-                    int start = std::get<1>(ladders[i][j]);
-                    int end = std::get<2>(ladders[i][j]);
-                    for (int pos = start; pos < end; pos++) {
-                        if (coverages[read]->at(pos) < mincoverage) mincoverage = coverages[read]->at(pos);
-                    }
-                    if (mincoverage > maxcoverage) {
-                        maxcoverage = mincoverage;
-                        mx = j;
-                    }
-                }
-
-//                std::cout << "ladder " << i << " num reads " << ladders[i].size() << " possibly error here " <<
-//                maxcoverage << "\n!";
-
-
-                //if (ladders[i].size() == 2) {
-                //    draft_assembly += breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),
-                //                                                                 std::get<2>(ladders[i][mx]) -
-                //                                                                 std::get<1>(ladders[i][mx]));
-                //    continue;
-               // }
-
-
-                std::string base = breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),
-                                                                              std::get<2>(ladders[i][mx]) -
-                                                                              std::get<1>(ladders[i][mx]));;
-                int seq_count = ladders[i].size();
-//                printf("seq_count:%d, max %d\n", seq_count, mx);
-                align_tags_t **tags_list;
-                tags_list = (align_tags_t **) calloc(seq_count, sizeof(align_tags_t *));
-                consensus_data *consensus;
-
-                int alen = (std::get<2>(ladders[i][mx]) - std::get<1>(ladders[i][mx]));
-                for (int j = 0; j < ladders[i].size(); j++) {
-
-                    int blen = (std::get<2>(ladders[i][j]) - std::get<1>(ladders[i][j]));
-                    char *aseq = (char *) malloc(
-                            (20 + (std::get<2>(ladders[i][mx]) - std::get<1>(ladders[i][mx]))) * sizeof(char));
-                    char *bseq = (char *) malloc(
-                            (20 + (std::get<2>(ladders[i][j]) - std::get<1>(ladders[i][j]))) * sizeof(char));
-                    strcpy(aseq, breads[std::get<0>(ladders[i][mx])].substr(std::get<1>(ladders[i][mx]),
-                                                                            std::get<2>(ladders[i][mx]) -
-                                                                            std::get<1>(ladders[i][mx])).c_str());
-                    strcpy(bseq, breads[std::get<0>(ladders[i][j])].substr(std::get<1>(ladders[i][j]),
-                                                                           std::get<2>(ladders[i][j]) -
-                                                                           std::get<1>(ladders[i][j])).c_str());
-
-
-                    aln_range *arange = (aln_range *) calloc(1, sizeof(aln_range));
-                    arange->s1 = 0;
-                    arange->e1 = strlen(bseq);
-                    arange->s2 = 0;
-                    arange->e2 = strlen(aseq);
-                    arange->score = 5;
-
-                    //printf("blen %d alen%d\n",strlen(bseq), strlen(aseq));
-                    //printf("before get tags\n");
-
-                    alignment *alng = _align(bseq, blen, aseq, alen, 150, 1);
-
-                    char *q_aln_str = (char *) malloc((5 + strlen(alng->q_aln_str)) * sizeof(char));
-                    char *t_aln_str = (char *) malloc((5 + strlen(alng->t_aln_str)) * sizeof(char));
-
-
-                    strcpy(q_aln_str + 1, alng->q_aln_str);
-                    strcpy(t_aln_str + 1, alng->t_aln_str);
-                    q_aln_str[0] = 'T';
-                    t_aln_str[0] = 'T';
-
-
-                    for (int pos = 0; pos < strlen(q_aln_str); pos++) q_aln_str[pos] = toupper(q_aln_str[pos]);
-                    for (int pos = 0; pos < strlen(t_aln_str); pos++) t_aln_str[pos] = toupper(t_aln_str[pos]);
-
-                    //printf("Q:%s\nT:%s\n", q_aln_str, t_aln_str);
-
-                    tags_list[j] = get_align_tags(q_aln_str,
-                                                  t_aln_str,
-                                                  strlen(alng->q_aln_str) + 1,
-                                                  arange, (unsigned int) j, 0);
-                    //free(aseq);
-                    //free(bseq);
-
-                    /*for (int k = 0; k < tags_list[j]->len; k++) {
-                        printf("%d %d %ld %d %c %c\n",j, k, tags_list[j]->align_tags[k].t_pos,
-                               tags_list[j]->align_tags[k].delta,
-                                //tags_list[j]->align_tags[k].p_q_base,
-                               aseq[tags_list[j]->align_tags[k].t_pos],
-                               tags_list[j]->align_tags[k].q_base);
-                    }*/
-                    free(q_aln_str);
-                    free(t_aln_str);
-                    free(aseq);
-                    free(bseq);
-                    free_alignment(alng);
-
-                }
-
-                //printf("%d %d\n%s\n",seq_count, strlen(seq), seq);
-
-                consensus = get_cns_from_align_tags(tags_list, seq_count, alen + 1, 1);
-//                printf("Consensus len :%d\n",strlen(consensus->sequence));
-                draft_assembly += std::string(consensus->sequence);
-
-                free_consensus_data(consensus);
-                for (int j = 0; j < seq_count; j++)
-                    free_align_tags(tags_list[j]);
-
-            } else {
-                draft_assembly += breads[std::get<0>(ladders[i][0])].substr(std::get<1>(ladders[i][0]),
-                                                                            std::get<2>(ladders[i][0]) -
-                                                                            std::get<1>(ladders[i][0]));
-            }
-
-//            printf("\n");
-        }
-
-
-
-        /*for (int i = 0; i < mapping.size(); i++)
-            printf("%d %d\n", i, mapping[i]);
-        printf("[%d %d], [%d %d]\n", bedges[0]->read_A_match_start_, bedges[0]->read_A_match_end_, bedges[0]->read_B_match_start_, bedges[0]->read_B_match_end_);*/
-
-        std::cout << sequence.size() << std::endl;
-        std::cout << draft_assembly.size() << std::endl;
-
-        if (draft_assembly.size() > 0) {
-            out_fa << ">Draft_assembly" << num_contig << std::endl;
-            out_fa << draft_assembly << std::endl;
-        }
-        num_contig++;
+        draft_assembly_ctg(edgelist, la, aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2);
 
     }
 
