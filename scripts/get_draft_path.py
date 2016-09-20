@@ -200,7 +200,7 @@ with open(outfile, 'w') as f:
             contig_no += 1
 
             # we repeat the same node twice so that the line is easily distinguishable (6 numbers)
-            f.write('O %s %s %s %s %d %d\n'%(vertex.split('_')[0],vertex.split('_')[1]  , vertex.split('_')[0],
+            f.write('O %s %s %s %s %d %d\n'%(vertex.split('_')[0].lstrip('B'), vertex.split('_')[1]  , vertex.split('_')[0].lstrip('B'),
                 vertex.split('_')[1], out_graph.node[vertex]['cut_start'], out_graph.node[vertex]['cut_end']) )
 
             printed_nodes = printed_nodes | set([vertex])
@@ -209,7 +209,7 @@ with open(outfile, 'w') as f:
             contig_no += 1
 
             vertex_rc = rev_node(vertex)
-            f.write('O %s %s %s %s %d %d\n'%(vertex_rc.split('_')[0],vertex_rc.split('_')[1]  , vertex_rc.split('_')[0],
+            f.write('O %s %s %s %s %d %d\n'%(vertex_rc.split('_')[0].lstrip('B'), vertex_rc.split('_')[1]  , vertex_rc.split('_')[0].lstrip('B'),
                 vertex_rc.split('_')[1], out_graph.node[vertex_rc]['cut_start'], out_graph.node[vertex_rc]['cut_end']) )
 
             continue
@@ -249,28 +249,28 @@ with open(outfile, 'w') as f:
                 nodeA = prev_contig
 
             nodeB = node_list[0]
-            f.write('S %s %s %s %s %s %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
+            f.write('S %s %s %s %s %s %d\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'),
                 nodeB.split('_')[1], out_graph.edge[prev_contig][vertex]['length'], cut_start) )
             nodeA = node_list[0]
             nodeB = node_list[1]
-            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0], nodeB.split('_')[1], weights_list[0]) )
+            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'),nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[0]) )
 
         else:
             nodeA = node_list[0]
             nodeB = node_list[1]
-            f.write('S %s %s %s %s %s %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0], nodeB.split('_')[1],
+            f.write('S %s %s %s %s %s %d\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1],
                 weights_list[0], out_graph.node[vertex]['cut_start']) )
 
         for i in range(1,len(weights_list)-1):
             nodeA = node_list[i]
             nodeB = node_list[i+1]
-            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0], nodeB.split('_')[1], weights_list[i]) )
+            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[i]) )
 
         if out_graph.out_degree(vertex) == 1 and out_graph.successors(vertex)[0] != vertex:
 
             nodeA = node_list[len(weights_list)-1]
             nodeB = node_list[len(weights_list)]
-            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0], nodeB.split('_')[1], weights_list[-1]) )
+            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[-1]) )
 
             next_contig = out_graph.successors(vertex)[0]
             # we end this contig where the next one begins
@@ -282,14 +282,14 @@ with open(outfile, 'w') as f:
             else:
                 nodeB = next_contig
 
-            f.write('E %s %s %s %s %s %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
+            f.write('E %s %s %s %s %s %d\n'%(nodeA.split('_')[0].lstrip('B'),nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'),
                 nodeB.split('_')[1], out_graph.edge[vertex][next_contig]['length'], cut_end) )
 
         else:
 
             nodeA = node_list[len(weights_list)-1]
             nodeB = node_list[len(weights_list)]
-            f.write('E %s %s %s %s %s %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0], nodeB.split('_')[1],
+            f.write('E %s %s %s %s %s %d\n'%(nodeA.split('_')[0].lstrip('B'),nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1],
                 weights_list[-1], out_graph.node[vertex]['cut_end']) )
 
 
@@ -319,19 +319,19 @@ with open(outfile, 'w') as f:
             # we start this contig where the previous (rc: next) one ended
             cut_start = len(read_dict[int(nodeA.split('_')[0])][1]) - out_graph.node[next_contig]['cut_start']
 
-            f.write('S %s %s %s %s %s %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
+            f.write('S %s %s %s %s %s %d\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'),
                 nodeB.split('_')[1], out_graph.edge[vertex][next_contig]['length'], cut_start) )
 
             nodeA = rev_node(node_list[len(weights_list)])
             nodeB = rev_node(node_list[len(weights_list)-1])
-            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0], nodeB.split('_')[1], weights_list[-1]) )
+            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[-1]) )
 
         else:
 
             nodeA = rev_node(node_list[len(weights_list)])
             nodeB = rev_node(node_list[len(weights_list)-1])
 
-            f.write('S %s %s %s %s %s %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0], nodeB.split('_')[1],
+            f.write('S %s %s %s %s %s %d\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1],
                 weights_list[-1], len(read_dict[int(nodeA.split('_')[0])][1]) - out_graph.node[vertex]['cut_end']) )
 
 
@@ -339,13 +339,13 @@ with open(outfile, 'w') as f:
         for i in range(len(weights_list)-1,1,-1):
             nodeA = rev_node(node_list[i])
             nodeB = rev_node(node_list[i-1])
-            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0], nodeB.split('_')[1], weights_list[i-1]) )
+            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[i-1]) )
 
         if out_graph.in_degree(vertex) == 1 and out_graph.predecessors(vertex)[0] != vertex:
 
             nodeA = rev_node(node_list[1])
             nodeB = rev_node(node_list[0])
-            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0], nodeB.split('_')[1], weights_list[0]) )
+            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[0]) )
 
             prev_contig = out_graph.predecessors(vertex)[0]
 
@@ -357,13 +357,13 @@ with open(outfile, 'w') as f:
                 nodeB = rev_node(prev_contig)
             cut_end = len(read_dict[int(nodeB.split('_')[0])][1]) - out_graph.node[prev_contig]['cut_end']
 
-            f.write('E %s %s %s %s %s %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0],
+            f.write('E %s %s %s %s %s %d\n'%(nodeA.split('_')[0].lstrip('B'),nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'),
                 nodeB.split('_')[1], out_graph.edge[prev_contig][vertex]['length'], cut_end) )
 
         else:
             nodeB = rev_node(node_list[0])
             nodeA = rev_node(node_list[1])
-            f.write('E %s %s %s %s %s %d\n'%(nodeA.split('_')[0],nodeA.split('_')[1]  , nodeB.split('_')[0], nodeB.split('_')[1],
+            f.write('E %s %s %s %s %s %d\n'%(nodeA.split('_')[0].lstrip('B'),nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1],
                 weights_list[0], len(read_dict[int(nodeB.split('_')[0])][1]) - out_graph.node[vertex]['cut_start']) )
 
 
