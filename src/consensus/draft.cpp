@@ -884,57 +884,62 @@ int main(int argc, char *argv[]) {
 
     int num_contig = 0;
     int num_one_read_contig = 0;
-    while (true) {
-        if (edges_file.eof()) break;
-        edgelist.clear();
-        std::string edge_line;
+    std::string current_name;
+    std::string edge_line;
+    bool one_read_contig = false;
 
-        while (!edges_file.eof()) {
-            std::getline(edges_file, edge_line);
-            //std::cout << edge_line << std::endl;
 
-            std::vector<std::string> tokens = split(edge_line, ' ');
+    while (!edges_file.eof()) {
+        std::getline(edges_file, edge_line);
+        if (edge_line[0] == '>') {
+            // process edge list
+            std::cout << current_name << std::endl;
+            edgelist.clear();
+            current_name = edge_line;
+            one_read_contig = false;
+            continue;
+        }
 
-            if (tokens.size() == 1) {
-                break;
-            }
-            //std::cout << tokens.size() << std::endl;
+        if (edges_file.eof()) {
+            // process edges list
+            std::cout << current_name << std::endl;
+            edgelist.clear();
+            one_read_contig = false;
+            continue;
+        }
 
+        std::vector<std::string> tokens = split(edge_line, ' ');
+        if (tokens.size() < 6) std::cout << "Error! Wrong format." << std::endl;
+        std::cout << edge_line << std::endl;
+
+        Node node0;
+        Node node1;
+        int w;
+        node0.id = std::stoi(tokens[1]);
+        node0.strand = std::stoi(tokens[2]);
+
+        node1.id = std::stoi(tokens[3]);
+        node1.strand = std::stoi(tokens[4]);;
+
+        w = 0;
+        edgelist.push_back(std::make_tuple(node0, node1, w));
+/*
             Node node0;
             Node node1;
             int w;
             if (tokens.size() > 5 ) {
                 node0.id = std::stoi(tokens[0]);
                 node0.strand = std::stoi(tokens[1]);
-
                 node1.id = std::stoi(tokens[2]);
                 node1.strand = std::stoi(tokens[3]);;
-
                 w = std::stoi(tokens[4]);
                 edgelist.push_back(std::make_tuple(node0, node1, w));
             }
+*/
 
 
-            if (tokens.size() == 4) {
-                out_fa << ">OneReadContig" << num_one_read_contig << std::endl;
-                console->info("One read contig");
-                int node_id = std::stoi(tokens[0]);
-                int node_strand = std::stoi(tokens[1]);
-                int from = std::stoi(tokens[2]);
-                int to = std::stoi(tokens[3]);
+        //draft_assembly_ctg(edgelist, la, aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2);
 
-                std::string current_seq;
-
-                if (node_strand == 0) current_seq = reads[node_id]->bases;
-                else current_seq = reverse_complement(reads[node_id]->bases);
-
-                out_fa << current_seq.substr(from, to-from) << std::endl;
-
-                num_one_read_contig++;
-            }
-        }
-
-        draft_assembly_ctg(edgelist, la, aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2);
 
     }
 
