@@ -907,10 +907,12 @@ int main(int argc, char *argv[]) {
         if (edge_line[0] == '>') {
             std::cout << current_name << std::endl;
 
-            draft_assembly_ctg(edgelist, la, aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2, cut_start, cut_end, one_read_contig, contig);
-            out_fa << current_name << std::endl;
-            out_fa << contig << std::endl;
-
+            if (edgelist.size() > 0)
+            {
+                draft_assembly_ctg(edgelist, la, aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2, cut_start, cut_end, one_read_contig, contig);
+                out_fa << current_name << std::endl;
+                out_fa << contig << std::endl;
+            }
             edgelist.clear();
             current_name = edge_line;
             one_read_contig = false;
