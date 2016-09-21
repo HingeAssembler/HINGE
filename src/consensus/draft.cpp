@@ -90,9 +90,20 @@ std::vector<std::string> split(const std::string &s, char delim) {
 int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::vector<LOverlap *> & aln,
                        std::unordered_map<int, std::vector<LOverlap *> > &idx3,
                        std::unordered_map<int, std::unordered_map<int, std::vector<LOverlap *> > > & idx,
-        std::vector<Read *> & reads, int TSPACE, int EDGE_SAFE, int MIN_COV2) {
+                       std::vector<Read *> & reads, int TSPACE, int EDGE_SAFE, int MIN_COV2,
+                       int cut_start, int cut_end, bool one_read_contig, std::string& contig) {
     std::cout << "list size:" << edgelist.size() << std::endl;
     if (edgelist.size() == 0) return -1; //error
+
+    std::string draft_assembly = "";
+
+    if (one_read_contig) {
+        if (std::get<0>(edgelist[0]).strand == 0) draft_assembly = reads[std::get<0>(edgelist[0]).id]->bases;
+        else draft_assembly = reverse_complement(reads[std::get<0>(edgelist[0]).id]->bases);
+        contig = draft_assembly;
+        return 1;
+    }
+
 
     std::vector<LAlignment *> full_alns;
     std::vector<LAlignment *> selected;
@@ -318,7 +329,6 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
 
     std::vector<std::vector<std::pair<int, int>>> lanes;
 
-    std::string draft_assembly = "";
 
 
     int currentlane = 0;
@@ -620,6 +630,7 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     //    out_fa << draft_assembly << std::endl;
     //}
     //num_contig++;
+    contig = draft_assembly;
     return 0;
 }
 
@@ -886,23 +897,36 @@ int main(int argc, char *argv[]) {
     int num_one_read_contig = 0;
     std::string current_name;
     std::string edge_line;
+    std::string contig;
     bool one_read_contig = false;
+    int cut_start = 0, cut_end = 0;
 
 
     while (!edges_file.eof()) {
         std::getline(edges_file, edge_line);
         if (edge_line[0] == '>') {
-            // process edge list
             std::cout << current_name << std::endl;
+
+            draft_assembly_ctg(edgelist, la, aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2, cut_start, cut_end, one_read_contig, contig);
+            out_fa << current_name << std::endl;
+            out_fa << contig << std::endl;
+
             edgelist.clear();
             current_name = edge_line;
             one_read_contig = false;
+            cut_start = 0;
+            cut_end = 0;
             continue;
         }
 
         if (edges_file.eof()) {
             // process edges list
             std::cout << current_name << std::endl;
+            draft_assembly_ctg(edgelist, la, aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2, cut_start, cut_end, one_read_contig, contig);
+
+            out_fa << current_name << std::endl;
+            out_fa << contig << std::endl;
+
             edgelist.clear();
             one_read_contig = false;
             continue;
@@ -921,24 +945,23 @@ int main(int argc, char *argv[]) {
         node1.id = std::stoi(tokens[3]);
         node1.strand = std::stoi(tokens[4]);;
 
-        w = 0;
+        if (tokens[0] == "O") {
+            w = 0;
+            one_read_contig = true;
+        }
+        else w = std::stoi(tokens[5]);
+
         edgelist.push_back(std::make_tuple(node0, node1, w));
-/*
-            Node node0;
-            Node node1;
-            int w;
-            if (tokens.size() > 5 ) {
-                node0.id = std::stoi(tokens[0]);
-                node0.strand = std::stoi(tokens[1]);
-                node1.id = std::stoi(tokens[2]);
-                node1.strand = std::stoi(tokens[3]);;
-                w = std::stoi(tokens[4]);
-                edgelist.push_back(std::make_tuple(node0, node1, w));
-            }
-*/
 
+        if (tokens[0] == "O") {
+             cut_start = std::stoi(tokens[5]);
+             cut_end = std::stoi(tokens[6]);
+        } else if (tokens[0] == "S") {
+            cut_start = std::stoi(tokens[6]);
+        } else if (tokens[1] == "E") {
+            cut_end = std::stoi(tokens[6]);
+        }
 
-        //draft_assembly_ctg(edgelist, la, aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2);
 
 
     }
