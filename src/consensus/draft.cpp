@@ -100,7 +100,7 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     if (one_read_contig) {
         if (std::get<0>(edgelist[0]).strand == 0) draft_assembly = reads[std::get<0>(edgelist[0]).id]->bases;
         else draft_assembly = reverse_complement(reads[std::get<0>(edgelist[0]).id]->bases);
-        contig = draft_assembly;
+        contig = draft_assembly.substr(cut_start, cut_end);
         return 1;
     }
 
@@ -313,9 +313,9 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     << aln_tags_list.size() << " " << pitfalls.size() << " " << aln_tags_list_true_strand.size()
     << " " << mappings.size() << " " << coverages.size() << std::endl;
 
-    /*for (int i = 0; i < bedges.size() - 1; i++) {
+    for (int i = 0; i < bedges.size() - 1; i++) {
         printf("%d %d %d %d %d\n", bedges[i]->read_B_match_start_, bedges[i]->read_B_match_end_, bedges[i+1]->read_A_match_start_, bedges[i+1]->read_A_match_end_, bedges[i]->read_B_match_end_ - bedges[i+1]->read_A_match_start_);
-    }*/
+    }
 
 
     int tspace = TSPACE; // set lane length to be 500
@@ -445,7 +445,7 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     }
 
 
-    //printf("In total %lu lanes\n", lanes.size());
+    printf("In total %lu lanes\n", lanes.size());
     //if (lanes.size() < 2) {
     //    draft_assembly = breads[0];
     //    out_fa << ">DraftAssemblyContig" << num_contig << std::endl;
@@ -454,7 +454,14 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     //    continue;
     //}
 
+    int first_start = lanes[0][0].second;
+    int last_end = lanes.back().back().second;
 
+    std::cout << "first " << first_start << " last " << last_end << std::endl;
+    std::cout << "len " << reads[std::get<0>(edgelist[0]).id]->len << " " << reads[std::get<0>(edgelist.back()).id]->len << std::endl;
+    std::string prefix = reads[std::get<0>(edgelist[0]).id]->bases.substr(0,first_start);
+    std::string suffix = reads[std::get<0>(edgelist.back()).id]->bases.substr(last_end);
+    cut_end = reads[std::get<0>(edgelist.back()).id]->len - cut_end;
 
     /**
      * Consequtive lanes form a column (ladder)
@@ -630,7 +637,8 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     //    out_fa << draft_assembly << std::endl;
     //}
     //num_contig++;
-    contig = draft_assembly;
+    contig = prefix + draft_assembly + suffix;
+    contig = contig.substr(cut_start, contig.size() - cut_end);
     return 0;
 }
 
