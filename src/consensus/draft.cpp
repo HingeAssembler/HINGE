@@ -100,7 +100,10 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     if (one_read_contig) {
         if (std::get<0>(edgelist[0]).strand == 0) draft_assembly = reads[std::get<0>(edgelist[0]).id]->bases;
         else draft_assembly = reverse_complement(reads[std::get<0>(edgelist[0]).id]->bases);
-        contig = draft_assembly.substr(cut_start, cut_end);
+        std::cout << cut_start << " " << cut_end << " " << reads[std::get<0>(edgelist[0]).id]->len << std::endl;
+        assert(cut_start <= draft_assembly.size());
+        assert(cut_end <= draft_assembly.size());
+        contig = draft_assembly.substr(cut_start, cut_end-cut_start);
         return 1;
     }
 
@@ -322,9 +325,6 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     int nlane = 0;
 
 
-    //printf("%d %d\n", mappings[0][800], mappings[0][1000]); // debug output
-    //printf("%s\n%s\n", breads[0].substr(bedges[0]->read_A_match_start_ + 800, 50).c_str(),
-    //       breads[1].substr(bedges[0]->read_B_match_start_ + mappings[0][800], 50).c_str()); //debug output
 
 
     std::vector<std::vector<std::pair<int, int>>> lanes;
@@ -381,7 +381,6 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
                 //int previous_wp = waypoint;
                 waypoint = mappings[currentread][waypoint - bedges[currentread]->read_A_match_start_] +
                            bedges[currentread]->read_B_match_start_;
-                //printf("%s\n%s\n", breads[currentread].substr(previous_wp,50).c_str(), breads[currentread+1].substr(waypoint,50).c_str());
                 currentread++;
                 if (currentread >= n_bb_reads) break;
             }
@@ -459,6 +458,8 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
 
     std::cout << "first " << first_start << " last " << last_end << std::endl;
     std::cout << "len " << reads[std::get<0>(edgelist[0]).id]->len << " " << reads[std::get<0>(edgelist.back()).id]->len << std::endl;
+    assert(first_start <= reads[std::get<0>(edgelist[0]).id]->len);
+    assert(last_end <= reads[std::get<0>(edgelist.back()).id]->len);
     std::string prefix = reads[std::get<0>(edgelist[0]).id]->bases.substr(0,first_start);
     std::string suffix = reads[std::get<0>(edgelist.back()).id]->bases.substr(last_end);
     cut_end = reads[std::get<0>(edgelist.back()).id]->len - cut_end;
@@ -638,6 +639,8 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     //}
     //num_contig++;
     contig = prefix + draft_assembly + suffix;
+    assert(cut_start <= contig.size());
+    assert(cut_end <= contig.size());
     contig = contig.substr(cut_start, contig.size() - cut_end);
     return 0;
 }
