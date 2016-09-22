@@ -90,7 +90,7 @@ public:
     int eff_read_A_match_start_, eff_read_B_match_start_, eff_read_A_match_end_, eff_read_B_match_end_;
     int tps;
     int reverse_complement_match_; //reverse_complement_match_, reverse complement = 1, same direction = 0
-    int eff_read_A_start_, eff_read_A_end_, eff_read_B_start_, eff_read_B_end_;
+    int eff_read_A_read_start_, eff_read_A_read_end_, eff_read_B_read_start_, eff_read_B_read_end_;
     MatchType match_type_ = UNDEFINED;
     void addtype(int max_overhang); //classify overlaps
     void AddTypesAsymmetric(int max_overhang, int min_overhang);
@@ -103,6 +103,7 @@ public:
 	void TrimOverlapNaive();
     int eff_start_trace_point_index_, eff_end_trace_point_index_;
     int weight;
+    int length;
 };
 
 
@@ -230,5 +231,24 @@ public:
 };
 
 
+
+
+bool pairAscend(const std::pair<int, int>& firstElem,  const std::pair<int, int>& secondElem);
+
+bool pairDescend(const std::pair<int, int>& firstElem,  const std::pair<int, int>& secondElem);
+
+bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2);
+
+bool compare_pos(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_overlap_weight(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_overlap_aln(LAlignment * ovl1, LAlignment * ovl2);
 
 #endif

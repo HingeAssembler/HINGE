@@ -1,5 +1,5 @@
-wget http://gembox.cbcb.umd.edu/mhap/raw/ecoli_p4_filtered.fastq.gz
-gunzip ecoli_p4_filtered.fastq.gz
+#wget http://gembox.cbcb.umd.edu/mhap/raw/ecoli_p4_filtered.fastq.gz
+#gunzip ecoli_p4_filtered.fastq.gz
 
 seqtk seq -a ecoli_p4_filtered.fastq > reads.fasta
 correct_head.py reads.fasta reads.pb.fasta map.txt
@@ -18,7 +18,7 @@ mkdir log
 
 
 
-Reads_filter --db ecoli --las ecoli.las -x ecoli --config ../../utils/nominal.ini
+Reads_filter --db ecoli --las "ecoli.*.las" -x ecoli --config ../../utils/nominal.ini
 hinging --db ecoli --las ecoli.las -x ecoli --config ../../utils/nominal.ini -o ecoli
 
 pruning_and_clipping.py ecoli.edges.hinges ecoli.hinge.list demo
