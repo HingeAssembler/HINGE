@@ -33,8 +33,8 @@ fasta2DB draft ecoli.draft.pb.fasta
 
 HPC.daligner ecoli draft | bash -v 
 
-rm draft.*.ecoli.*.las
-LAmerge draft.ecoli.las draft.ecoli.*.las
+#rm draft.*.ecoli.*.las
+#LAmerge draft.ecoli.las draft.ecoli.*.las
 
 consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta ../../utils/nominal.ini
 
