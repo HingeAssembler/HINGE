@@ -639,9 +639,12 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     //}
     //num_contig++;
     contig = prefix + draft_assembly + suffix;
+	
+	std::cout << "ctg size:" << contig.size() << "cut_start:" << cut_start << "cut_end:" << cut_end << std::endl;
+	
     assert(cut_start <= contig.size());
     assert(cut_end <= contig.size());
-    contig = contig.substr(cut_start, contig.size() - cut_end);
+    contig = contig.substr(cut_start, contig.size() - cut_end - cut_start);
     return 0;
 }
 
