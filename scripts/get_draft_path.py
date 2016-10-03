@@ -166,7 +166,7 @@ while nodes_to_merge:
 
 # next we print the contigs out to the .edges.list file
 contig_no = 0
-print "Writing out_graph with "+str(len(out_graph.nodes()))+" contigs/nodes"
+# print "Writing out_graph with "+str(len(out_graph.nodes()))+" contigs/nodes"
 
 
 # we keep track of the already printed nodes so that reverse complement pairs are printed together
@@ -211,13 +211,42 @@ with open(outfile, 'w') as f:
             vertex_rc = rev_node(vertex)
             f.write('O %s %s %s %s %d %d\n'%(vertex_rc.split('_')[0].lstrip('B'), vertex_rc.split('_')[1]  , vertex_rc.split('_')[0].lstrip('B'),
                 vertex_rc.split('_')[1], out_graph.node[vertex_rc]['cut_start'], out_graph.node[vertex_rc]['cut_end']) )
-
             continue
+
 
 
 
         node_list = out_graph.node[vertex]['path'].split(';')
         weights_list = out_graph.node[vertex]['weightspath'].split(';')
+
+
+
+
+        # double-node contig
+        if out_graph.in_degree(vertex) != 1 and out_graph.out_degree(vertex) != 1 and len(node_list) == 2:
+            f.write('>Unitig%d\n'%(contig_no))
+            contig_no += 1
+
+            nodeA = node_list[0]
+            nodeB = node_list[1]
+            f.write('D %s %s %s %s %s %d %d\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1],
+                weights_list[0], out_graph.node[vertex]['cut_start'], out_graph.node[vertex]['cut_end']) )
+
+            printed_nodes = printed_nodes | set(node_list)
+
+            f.write('>Unitig%d\n'%(contig_no))
+            contig_no += 1
+
+            nodeA = rev_node(node_list[1])
+            nodeB = rev_node(node_list[0])
+            f.write('D %s %s %s %s %s %d %d\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1],
+                weights_list[0], len(read_dict[int(nodeA.split('_')[0])][1]) - out_graph.node[vertex]['cut_end'], len(read_dict[int(nodeB.split('_')[0])][1]) - out_graph.node[vertex]['cut_start'] ) )
+
+            continue
+
+
+
+
 
         # print out_graph.node[vertex]['path']
         # print node_list
@@ -232,9 +261,10 @@ with open(outfile, 'w') as f:
 
         printed_nodes = printed_nodes | set(node_list)
 
-        # print 'Unitig ' +str(contig_no)
+        # print 'Unitig ' +str(contig_no) + ' ('+str(len(node_list))+' nodes)'
         f.write('>Unitig%d\n'%(contig_no))
         contig_no += 1
+
 
         # prev_vert = out_graph.node[node_list[0]]['prev_node']
         # if prev_vert != '':
@@ -251,9 +281,14 @@ with open(outfile, 'w') as f:
             nodeB = node_list[0]
             f.write('S %s %s %s %s %s %d\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'),
                 nodeB.split('_')[1], out_graph.edge[prev_contig][vertex]['length'], cut_start) )
-            nodeA = node_list[0]
-            nodeB = node_list[1]
-            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'),nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[0]) )
+
+
+            if len(node_list) > 2:
+
+                nodeA = node_list[0]
+                nodeB = node_list[1]
+                f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'),nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[0]) )
+
 
         else:
             nodeA = node_list[0]
@@ -266,11 +301,15 @@ with open(outfile, 'w') as f:
             nodeB = node_list[i+1]
             f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[i]) )
 
+
+
         if out_graph.out_degree(vertex) == 1 and out_graph.successors(vertex)[0] != vertex:
 
-            nodeA = node_list[len(weights_list)-1]
-            nodeB = node_list[len(weights_list)]
-            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[-1]) )
+            if len(node_list) > 2:
+
+                nodeA = node_list[len(weights_list)-1]
+                nodeB = node_list[len(weights_list)]
+                f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[-1]) )
 
             next_contig = out_graph.successors(vertex)[0]
             # we end this contig where the next one begins
@@ -284,6 +323,8 @@ with open(outfile, 'w') as f:
 
             f.write('E %s %s %s %s %s %d\n'%(nodeA.split('_')[0].lstrip('B'),nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'),
                 nodeB.split('_')[1], out_graph.edge[vertex][next_contig]['length'], cut_end) )
+
+
 
         else:
 
@@ -322,9 +363,12 @@ with open(outfile, 'w') as f:
             f.write('S %s %s %s %s %s %d\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'),
                 nodeB.split('_')[1], out_graph.edge[vertex][next_contig]['length'], cut_start) )
 
-            nodeA = rev_node(node_list[len(weights_list)])
-            nodeB = rev_node(node_list[len(weights_list)-1])
-            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[-1]) )
+
+            if len(node_list) > 2:
+
+                nodeA = rev_node(node_list[len(weights_list)])
+                nodeB = rev_node(node_list[len(weights_list)-1])
+                f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[-1]) )
 
         else:
 
@@ -343,9 +387,11 @@ with open(outfile, 'w') as f:
 
         if out_graph.in_degree(vertex) == 1 and out_graph.predecessors(vertex)[0] != vertex:
 
-            nodeA = rev_node(node_list[1])
-            nodeB = rev_node(node_list[0])
-            f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[0]) )
+            if len(node_list) > 2:
+
+                nodeA = rev_node(node_list[1])
+                nodeB = rev_node(node_list[0])
+                f.write('T %s %s %s %s %s\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1], weights_list[0]) )
 
             prev_contig = out_graph.predecessors(vertex)[0]
 
