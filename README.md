@@ -99,30 +99,30 @@ DASqv -c100 ecoli ecoli.las
 # Run filter
 
 mkdir log
-Reads_filter --db ecoli --las ecoli.las -x ecoli --config <path-to-nominal.ini>
+hinge filter --db ecoli --las ecoli.las -x ecoli --config <path-to-nominal.ini>
 
 # Run layout
 
-hinging --db ecoli --las ecoli.las -x ecoli --config <path-to-nominal.ini> -o ecoli
+hinge layout --db ecoli --las ecoli.las -x ecoli --config <path-to-nominal.ini> -o ecoli
 
 # Run postprocessing
 
-python pruning_and_clipping.py ecoli.edges.hinges ecoli.hinge.list <identifier-of-run>
+hinge clip ecoli.edges.hinges ecoli.hinge.list <identifier-of-run>
 
 
 # get draft assembly 
 
-get_draft_path.py <working directory> ecoli ecoli<identifier-of-run>.G2.graphml
-draft_assembly --db ecoli --las ecoli.las --prefix ecoli --config <path-to-nominal.ini> --out ecoli.draft
+hinge draft-path <working directory> ecoli ecoli<identifier-of-run>.G2.graphml
+hinge draft --db ecoli --las ecoli.las --prefix ecoli --config <path-to-nominal.ini> --out ecoli.draft
 
 
 # get consensus assembly
 
-correct_head.py ecoli.draft.fasta ecoli.draft.pb.fasta draft_map.txt
+hinge correct-head ecoli.draft.fasta ecoli.draft.pb.fasta draft_map.txt
 fasta2DB draft ecoli.draft.pb.fasta 
 HPC.daligner ecoli draft | zsh -v  
-consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta utils/nominal.ini
-get_consensus_gfa.py <working directory> ecoli ecoli.consensus.fasta
+hinge consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta utils/nominal.ini
+hinge gfa <working directory> ecoli ecoli.consensus.fasta
 
 #results should be in ecoli_consensus.gfa
 ```
