@@ -1,0 +1,43 @@
+#!/bin/bash
+
+export PATH="`dirname $BASH_SOURCE`/../lib/hinge:$PATH"
+
+subcommand="$1"
+shift
+
+case "$subcommand" in
+    filter)
+	Reads_filter $*
+	;;
+    layout)
+	hinging $*
+	;;
+    clip)
+	pruning_and_clipping.py $*
+	;;
+    draft-path)
+	get_draft_path.py $*
+	;;
+    draft)
+	draft_assembly $*
+	;;
+    correct-head)
+	correct_head.py $*
+	;;
+    consensus)
+	consensus $*
+	;;
+    gfa)
+	get_consensus_gfa.py $*
+	;;
+    visualize|visualise)
+	Visualise_graph.py $*
+	;;
+    condense)
+	condense_graph.py $*
+	;;
+    *)
+	echo "See hinge(1) for usage information."
+	exit 1
+	;;
+esac
