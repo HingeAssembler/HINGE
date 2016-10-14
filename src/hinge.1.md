@@ -22,15 +22,19 @@ Run each subcommand without arguments for usage information.
 :    generate a layout for assembly
 
 **clip**
-:    Prune and clip output of the **layout** command
+:    prune and clip output of the **layout** command
 
 **draft-path**
+:    get assembly graph as list of nodes
 
 **draft**
+:    construct draft assembly
 
 **correct-head**
+:    convert fasta file to daligner-specific format
 
 **consensus**
+:    construct consensus sequence
 
 **gfa**
 :    Create a graphical fragment assembly file from **consensus** output

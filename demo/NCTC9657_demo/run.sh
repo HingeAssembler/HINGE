@@ -1,4 +1,4 @@
-correct_head.py NCTC9657_reads.fasta reads.pb.fasta map.txt
+hinge correct-head NCTC9657_reads.fasta reads.pb.fasta map.txt
 fasta2DB NCTC9657 reads.pb.fasta
 
 DBsplit NCTC9657
@@ -11,20 +11,33 @@ DASqv -c100 NCTC9657 NCTC9657.las
 
 mkdir log
 
-Reads_filter --db NCTC9657 --las NCTC9657.las -x NCTC9657 --config ../../utils/nominal.ini
-hinging --db NCTC9657 --las NCTC9657.las -x NCTC9657 --config ../../utils/nominal.ini -o NCTC9657
 
-pruning_and_clipping.py NCTC9657.edges.hinges NCTC9657.hinge.list demo
 
-get_draft_path.py $PWD NCTC9657 NCTC9657demo.G2.graphml
-draft_assembly --db NCTC9657 --las NCTC9657.las --prefix NCTC9657 --config ../../utils/nominal.ini --out NCTC9657.draft
+hinge filter --db NCTC9657 --las "NCTC9657.*.las" -x NCTC9657 --config ../../utils/nominal.ini
+hinge layout --db NCTC9657 --las NCTC9657.las -x NCTC9657 --config ../../utils/nominal.ini -o NCTC9657
 
-correct_head.py NCTC9657.draft.fasta NCTC9657.draft.pb.fasta draft_map.txt 
+hinge clip NCTC9657.edges.hinges NCTC9657.hinge.list demo
+
+hinge draft-path $PWD NCTC9657 NCTC9657demo.G2.graphml
+hinge draft --db NCTC9657 --las NCTC9657.las --prefix NCTC9657 --config ../../utils/nominal.ini --out NCTC9657.draft
+
+
+
+
+
+
+hinge correct-head NCTC9657.draft.fasta NCTC9657.draft.pb.fasta draft_map.txt 
 fasta2DB draft NCTC9657.draft.pb.fasta
-HPC.daligner draft NCTC9657 | bash -v 
+HPC.daligner NCTC9657 draft | bash -v 
 
-rm draft.*.NCTC9657.*.las
-LAmerge draft.NCTC9657.las draft.NCTC9657.*.las
-consensus draft NCTC9657 draft.NCTC9657.las NCTC9657.consensus.fasta ../../utils/nominal.ini
+# rm draft.*.NCTC9657.*.las
+# LAmerge draft.NCTC9657.las draft.NCTC9657.*.las
 
-get_consensus_gfa.py $PWD NCTC9657 NCTC9657demo.G2.graphml NCTC9657.consensus.fasta
+hinge consensus draft NCTC9657 draft.NCTC9657.las NCTC9657.consensus.fasta ../../utils/nominal.ini
+
+hinge gfa $PWD NCTC9657 NCTC9657demo.G2.graphml NCTC9657.consensus.fasta
+
+
+
+
+
