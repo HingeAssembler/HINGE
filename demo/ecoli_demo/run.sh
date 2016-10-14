@@ -38,4 +38,4 @@ HPC.daligner ecoli draft | bash -v
 
 hinge consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta ../../utils/nominal.ini
 
-hinge gfa $PWD ecoli ecolidemo.G2.graphml ecoli.consensus.fasta
+hinge gfa $PWD ecoli  ecoli.consensus.fasta

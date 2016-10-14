@@ -35,7 +35,7 @@ HPC.daligner NCTC9657 draft | bash -v
 
 hinge consensus draft NCTC9657 draft.NCTC9657.las NCTC9657.consensus.fasta ../../utils/nominal.ini
 
-hinge gfa $PWD NCTC9657 NCTC9657demo.G2.graphml NCTC9657.consensus.fasta
+hinge gfa $PWD NCTC9657 NCTC9657.consensus.fasta
 
 
 

@@ -121,7 +121,7 @@ hinge draft --db ecoli --las ecoli.las --prefix ecoli --config <path-to-nominal.
 hinge correct-head ecoli.draft.fasta ecoli.draft.pb.fasta draft_map.txt
 fasta2DB draft ecoli.draft.pb.fasta 
 HPC.daligner ecoli draft | zsh -v  
-hinge consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta utils/nominal.ini
+hinge consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta <path-to-nominal.ini>
 hinge gfa <working directory> ecoli ecoli.consensus.fasta
 
 #results should be in ecoli_consensus.gfa
