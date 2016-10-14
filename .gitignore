@@ -9,3 +9,4 @@ build
 notebook
 demo
 .idea
+inst/
