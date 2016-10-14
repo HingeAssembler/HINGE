@@ -171,7 +171,8 @@ contig_no = 0
 
 # we keep track of the already printed nodes so that reverse complement pairs are printed together
 # we don't add to printed_nodes the "border" nodes so that we still have a partition of the nodes into contigs
-printed_nodes = set()
+# printed_nodes = set()
+printed_nodes = {}
 
 # debug output
 
@@ -192,18 +193,27 @@ with open(outfile, 'w') as f:
     for vertex in out_graph.nodes():
 
         if rev_node(vertex) in printed_nodes:
+            out_graph.node[vertex]['contig_id'] = printed_nodes[rev_node(vertex)] + 1
+
             continue
 
         # single-node contig
         if 'path' not in out_graph.node[vertex]:
+
+            out_graph.node[vertex]['contig_id'] = contig_no + 1
             f.write('>Unitig%d\n'%(contig_no))
+
+            # printed_nodes = printed_nodes | set([vertex])
+            printed_nodes[vertex] = contig_no
+
             contig_no += 1
 
             # we repeat the same node twice so that the line is easily distinguishable (6 numbers)
             f.write('O %s %s %s %s %d %d\n'%(vertex.split('_')[0].lstrip('B'), vertex.split('_')[1]  , vertex.split('_')[0].lstrip('B'),
                 vertex.split('_')[1], out_graph.node[vertex]['cut_start'], out_graph.node[vertex]['cut_end']) )
 
-            printed_nodes = printed_nodes | set([vertex])
+
+
 
             f.write('>Unitig%d\n'%(contig_no))
             contig_no += 1
@@ -224,7 +234,14 @@ with open(outfile, 'w') as f:
 
         # double-node contig
         if out_graph.in_degree(vertex) != 1 and out_graph.out_degree(vertex) != 1 and len(node_list) == 2:
+
+            out_graph.node[vertex]['contig_id'] = contig_no
             f.write('>Unitig%d\n'%(contig_no))
+
+            # printed_nodes = printed_nodes | set(node_list)
+            printed_nodes[node_list[0]] = contig_no
+            printed_nodes[node_list[1]] = contig_no
+
             contig_no += 1
 
             nodeA = node_list[0]
@@ -232,7 +249,7 @@ with open(outfile, 'w') as f:
             f.write('D %s %s %s %s %s %d %d\n'%(nodeA.split('_')[0].lstrip('B'), nodeA.split('_')[1]  , nodeB.split('_')[0].lstrip('B'), nodeB.split('_')[1],
                 weights_list[0], out_graph.node[vertex]['cut_start'], out_graph.node[vertex]['cut_end']) )
 
-            printed_nodes = printed_nodes | set(node_list)
+
 
             f.write('>Unitig%d\n'%(contig_no))
             contig_no += 1
@@ -259,9 +276,14 @@ with open(outfile, 'w') as f:
             print 'Something went wrong with contig '+str(contig_no)
             continue
 
-        printed_nodes = printed_nodes | set(node_list)
+        # printed_nodes = printed_nodes | set(node_list)
+        for curnode in node_list:
+            printed_nodes[curnode] = contig_no
+
 
         # print 'Unitig ' +str(contig_no) + ' ('+str(len(node_list))+' nodes)'
+
+        out_graph.node[vertex]['contig_id'] = contig_no
         f.write('>Unitig%d\n'%(contig_no))
         contig_no += 1
 
