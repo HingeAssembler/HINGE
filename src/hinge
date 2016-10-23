@@ -27,6 +27,9 @@ case "$subcommand" in
     consensus)
 	consensus $*
 	;;
+    fasta2q)
+        fasta_to_fastq.py $*
+	;;
     gfa)
 	get_consensus_gfa.py $*
 	;;

@@ -16,3 +16,6 @@
 [submodule "src/spdlog"]
 	path = src/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "thirdparty/racon"]
+	path = thirdparty/racon
+	url = https://github.com/isovic/racon.git
