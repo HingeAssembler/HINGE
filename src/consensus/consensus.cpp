@@ -175,7 +175,20 @@ int main(int argc, char *argv[]) {
 
         out << ">Consensus" << i << std::endl;
 
+        if ( (reads_vec[i]->bases).size() == idx[i][0]->alen){
+            std::cout << "Debug passed." << std::endl;
+        }
+        else {
+            std::cout << "Debug did not pass." << std::endl;
+        }
+
+
         for (int j=0; j < idx[i][0]->alen ; j++) {
+
+            if (cov_depth[j] < 3) {
+                out << reads_vec[i]->bases[j];
+                continue;
+            }
 
             if (insertion_score[j] > cov_depth[j]/2) {
                 int max_insertion_base = 0;
@@ -192,6 +205,7 @@ int main(int argc, char *argv[]) {
             for (int b=1; b<5; b++) {
                 if (contig_base_scores[j][b] > contig_base_scores[j][max_base]) max_base = b;
             }
+
             if (max_base < 4) {
                 out << ToU[max_base];
                 good_bases++;
