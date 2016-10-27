@@ -175,17 +175,12 @@ int main(int argc, char *argv[]) {
 
         out << ">Consensus" << i << std::endl;
 
-        if ( (reads_vec[i]->bases).size() == idx[i][0]->alen){
-            std::cout << "Debug passed." << std::endl;
-        }
-        else {
-            std::cout << "Debug did not pass." << std::endl;
-        }
-
 
         for (int j=0; j < idx[i][0]->alen ; j++) {
 
             if (cov_depth[j] < 3) {
+                std::cout << "Low coverage." << std::endl;
+
                 out << reads_vec[i]->bases[j];
                 continue;
             }
