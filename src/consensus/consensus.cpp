@@ -26,6 +26,23 @@ extern "C" {
 
 static char ToU[4] = { 'A', 'C', 'G', 'T' };
 
+
+char toLower(char c) {
+
+    char base = c;
+
+    switch (c) {
+        case 'A': base = 'a'; break;
+        case 'C': base = 'c'; break;
+        case 'G': base = 'g'; break;
+        case 'T': base = 't'; break;
+    }
+
+    return base;
+
+}
+
+
 int main(int argc, char *argv[]) {
 
     std::string name_db1 = std::string(argv[1]);
@@ -173,15 +190,22 @@ int main(int argc, char *argv[]) {
 
         int consensus_length = 0;
 
+        int low_coverage_bases = 0;
+
+        long int sum_coverage = 0;
+
         out << ">Consensus" << i << std::endl;
 
 
         for (int j=0; j < idx[i][0]->alen ; j++) {
 
-            if (cov_depth[j] < 3) {
-                std::cout << "Low coverage." << std::endl;
+            sum_coverage += cov_depth[j];
 
-                out << reads_vec[i]->bases[j];
+            if (cov_depth[j] < 3) {
+//                std::cout << "Low coverage." << std::endl;
+
+                low_coverage_bases++;
+                out << toLower(reads_vec[i]->bases[j]);
                 continue;
             }
 
@@ -215,9 +239,11 @@ int main(int argc, char *argv[]) {
         out << std::endl;
 
 
+        printf("Average coverage: %f\n",(1.0*sum_coverage)/idx[i][0]->alen);
         printf("Good bases: %d/%d\n",good_bases,idx[i][0]->alen);
         printf("Insertions: %d/%d\n",insertions,idx[i][0]->alen);
         printf("Deletions: %d/%d\n",deletions,idx[i][0]->alen);
+        printf("Low coverage bases: %d/%d\n",low_coverage_bases,idx[i][0]->alen);
         printf("Consensus length: %d\n",consensus_length);
 
 
