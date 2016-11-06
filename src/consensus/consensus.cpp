@@ -26,6 +26,23 @@ extern "C" {
 
 static char ToU[4] = { 'A', 'C', 'G', 'T' };
 
+
+char toLower(char c) {
+
+    char base = c;
+
+    switch (c) {
+        case 'A': base = 'a'; break;
+        case 'C': base = 'c'; break;
+        case 'G': base = 'g'; break;
+        case 'T': base = 't'; break;
+    }
+
+    return base;
+
+}
+
+
 int main(int argc, char *argv[]) {
 
     std::string name_db1 = std::string(argv[1]);
@@ -136,10 +153,11 @@ int main(int argc, char *argv[]) {
             std::pair<std::string, std::string>  alignment = la.getAlignmentTags(idx[i][j]);
 
             int pos_in_contig = idx[i][j]->abpos;
+            
 
             for (int m = 0; m < alignment.first.length(); m++) {
 
-                unsigned int base = -1;
+                int base = -1;
                 switch (alignment.second[m]) {
                     case 'A': base = 0; break;
                     case 'C': base = 1; break;
@@ -149,11 +167,15 @@ int main(int argc, char *argv[]) {
                 }
 
                 if (alignment.first[m] != '-') {
-                    contig_base_scores[pos_in_contig][base]++;
-                    cov_depth[pos_in_contig]++;
+
+                    if (base != -1) {
+                        contig_base_scores[pos_in_contig][base]++;
+                        cov_depth[pos_in_contig]++;
+                    }
+
                     pos_in_contig++;
                 }
-                else {
+                else if (base != -1) {
                     insertion_score[pos_in_contig]++;
                     insertion_base_scores[pos_in_contig][base]++;
                 }
@@ -168,15 +190,41 @@ int main(int argc, char *argv[]) {
 
         int consensus_length = 0;
 
+        int low_coverage_bases = 0;
+
+        long int sum_coverage = 0;
+
         out << ">Consensus" << i << std::endl;
+
 
         for (int j=0; j < idx[i][0]->alen ; j++) {
 
-            unsigned int max_base = 0;
+            sum_coverage += cov_depth[j];
+
+            if (cov_depth[j] < 3) {
+//                std::cout << "Low coverage." << std::endl;
+
+                low_coverage_bases++;
+                out << toLower(reads_vec[i]->bases[j]);
+                continue;
+            }
+
+            if (insertion_score[j] > cov_depth[j]/2) {
+                int max_insertion_base = 0;
+                for (int b=1; b<4; b++) {
+                    if (insertion_base_scores[j][b] > insertion_base_scores[j][max_insertion_base]) max_insertion_base = b;
+                }
+                out << ToU[max_insertion_base];
+                consensus_length++;
+                insertions++;
+            }
+
+            int max_base = 0;
 
             for (int b=1; b<5; b++) {
                 if (contig_base_scores[j][b] > contig_base_scores[j][max_base]) max_base = b;
             }
+
             if (max_base < 4) {
                 out << ToU[max_base];
                 good_bases++;
@@ -186,23 +234,16 @@ int main(int argc, char *argv[]) {
                 deletions++;
             }
 
-            if (insertion_score[j] > cov_depth[j]/2) {
-                unsigned int max_insertion_base = 0;
-                for (int b=1; b<4; b++) {
-                    if (insertion_base_scores[j][b] > insertion_base_scores[j][max_insertion_base]) max_insertion_base = b;
-                }
-                out << ToU[max_insertion_base];
-                consensus_length++;
-                insertions++;
-            }
 
         }
         out << std::endl;
 
 
+        printf("Average coverage: %f\n",(1.0*sum_coverage)/idx[i][0]->alen);
         printf("Good bases: %d/%d\n",good_bases,idx[i][0]->alen);
         printf("Insertions: %d/%d\n",insertions,idx[i][0]->alen);
         printf("Deletions: %d/%d\n",deletions,idx[i][0]->alen);
+        printf("Low coverage bases: %d/%d\n",low_coverage_bases,idx[i][0]->alen);
         printf("Consensus length: %d\n",consensus_length);
 
 
