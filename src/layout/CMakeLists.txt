@@ -7,3 +7,5 @@ INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
 add_executable(hinging hinging)
 target_link_libraries(hinging LAInterface ini spdlog ${Boost_LIBRARIES})
+
+install(TARGETS hinging DESTINATION ${libexec})
