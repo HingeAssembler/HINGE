@@ -18,7 +18,7 @@ mkdir -p log
 
 
 
-Reads_filter --db ecoli --las "ecoli.*.las" -x ecoli --config ~/AwesomeAssembler/utils/nominal.ini
+Reads_filter --db ecoli --las ecoli --mlas -x ecoli --config ~/AwesomeAssembler/utils/nominal.ini
 hinging --db ecoli --las ecoli.las -x ecoli --config ~/AwesomeAssembler/utils/nominal.ini -o ecoli
 
 pruning_and_clipping.py ecoli.edges.hinges ecoli.hinge.list demo

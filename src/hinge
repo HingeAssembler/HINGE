@@ -12,6 +12,9 @@ case "$subcommand" in
     layout)
 	hinging $*
 	;;
+	maximal)
+	get_maximal_reads $*
+	;;
     clip)
 	pruning_and_clipping.py $*
 	;;

@@ -53,6 +53,8 @@ install(PROGRAMS hinge DESTINATION bin)
 
 add_subdirectory(filter filter)
 
+add_subdirectory(maximal maximal)
+
 add_subdirectory(consensus consensus)
 
 add_subdirectory(layout layout)

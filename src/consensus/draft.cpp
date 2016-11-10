@@ -728,7 +728,7 @@ int main(int argc, char *argv[]) {
 
 
     std::string name_mask = out + ".mas";
-    std::string name_max = out + ".max";
+//    std::string name_max = out + ".max";
     std::string name_homo = out + ".homologous.txt";
     std::string name_rep = out + ".repeat.txt";
     std::string name_hg = out + ".hinges.txt";
@@ -739,7 +739,7 @@ int main(int argc, char *argv[]) {
 
 
     std::ofstream deadend_out(name_deadend);
-    std::ofstream maximal_reads(name_max);
+//    std::ofstream maximal_reads(name_max);
     std::ofstream garbage_out(name_garbage);
     std::ofstream contained_out(name_contained);
     std::ifstream homo(name_homo);
