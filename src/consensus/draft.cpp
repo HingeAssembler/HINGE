@@ -9,6 +9,7 @@
 #include <omp.h>
 #include <tuple>
 #include <iomanip>
+#include <glob.h>
 
 #include "spdlog/spdlog.h"
 #include "cmdline.h"
@@ -682,6 +683,19 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
 
 
 
+inline std::vector<std::string> glob(const std::string& pat){
+    using namespace std;
+    glob_t glob_result;
+    glob(pat.c_str(),GLOB_TILDE,NULL,&glob_result);
+    vector<string> ret;
+    for(unsigned int i=0;i<glob_result.gl_pathc;++i){
+        ret.push_back(string(glob_result.gl_pathv[i]));
+    }
+    globfree(&glob_result);
+    return ret;
+};
+
+
 int main(int argc, char *argv[]) {
 
     cmdline::parser cmdp;
@@ -767,6 +781,15 @@ int main(int argc, char *argv[]) {
         la.openDB(name_db);
 
 
+    std::vector<std::string> name_las_list;
+    std::string name_las_str(name_las);
+
+    if (name_las_str.find('*') != -1)
+        name_las_list = glob(name_las_str);
+    else
+        name_las_list.push_back(name_las_str);
+
+
     if (strlen(name_las) > 0)
         la.openAlignmentFile(name_las);
 
@@ -779,10 +802,11 @@ int main(int argc, char *argv[]) {
     }
 
     int n_read;
-    if (strlen(name_db) > 0)
+    if (strlen(name_db) > 0) {
         n_read = la.getReadNumber();
+    }
 
-                    std::vector<Read *> reads; //Vector of pointers to all reads
+    std::vector<Read *> reads; //Vector of pointers to all reads
 
     if (strlen(name_fasta) > 0) {
         n_read = la.loadFASTA(name_fasta, reads);
@@ -948,6 +972,22 @@ int main(int argc, char *argv[]) {
     bool two_read_contig = false;
     int cut_start = 0, cut_end = 0;
 
+    while (!edges_file.eof()) {
+        std::getline(edges_file, edge_line);
+        if (edge_line[0] == '>') continue;
+
+        std::vector<std::string> tokens = split(edge_line, ' ');
+        if (tokens.size() < 6) std::cout << "Error! Wrong format." << std::endl;
+        std::cout << edge_line << std::endl;
+
+        Node node0;
+        Node node1;
+        node0.id = std::stoi(tokens[1]);
+        node1.id = std::stoi(tokens[3]);
+    }
+
+    edges_file.clear();
+    edges_file.seekg(0, std::ios::beg);
 
     while (!edges_file.eof()) {
         std::getline(edges_file, edge_line);
@@ -1018,9 +1058,6 @@ int main(int argc, char *argv[]) {
              cut_start = std::stoi(tokens[6]);
              cut_end = std::stoi(tokens[7]);
         }
-
-
-
     }
 
     if (strlen(name_db) > 0)
