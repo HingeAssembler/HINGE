@@ -46,7 +46,76 @@ inline std::vector<std::string> glob(const std::string& pat){
     return ret;
 }
 
+bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_THRESHOLD,
+                      int THETA, int THETA2, bool trim){
+    //Function takes as input pointers to a match, and the read_A and read_B of that match, set constants
+    //ALN_THRESHOLD and THETA
+    //It inputs the effective read start and end into the match class object
+    //Next it trims match
+    //Finally it figures out the type of match we have here by calling AddTypesAsymmetric() on the
+    //class object
+    //std::cout<<" In ProcessAlignment"<<std::endl;
+    bool contained=false;
+    match->eff_read_A_read_start_ = read_A->effective_start;
+    match->eff_read_A_read_end_ = read_A->effective_end;
 
+    // removed the following if, so that things agree with the convention for reverse complement matches
+
+    match->eff_read_B_read_start_ = read_B->effective_start;
+    match->eff_read_B_read_end_ = read_B->effective_end;
+
+//    if (match->reverse_complement_match_ == 0) {
+//        match->eff_read_B_read_start_ = read_B->effective_start;
+//        match->eff_read_B_read_end_ = read_B->effective_end;
+//    } else {
+//        match->eff_read_B_read_start_ = read_B->len - read_B->effective_end;
+//        match->eff_read_B_read_end_ = read_B->len - read_B->effective_start;
+//    }
+
+    /*printf("bef %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_,
+     * match->reverse_complement_match_,
+        match->read_A_match_start_, match->read_A_match_end_, match->read_B_match_start_, match->read_B_match_end_,
+           match->eff_read_A_read_start_, match->eff_read_A_read_end_, match->eff_read_B_read_start_, match->eff_read_B_read_end_
+    );*/
+
+    if (trim)
+        match->trim_overlap();
+    else {
+        match->eff_read_B_match_start_ = match->read_B_match_start_;
+        match->eff_read_B_match_end_ = match->read_B_match_end_;
+        match->eff_read_A_match_start_ = match->read_A_match_start_;
+        match->eff_read_A_match_end_ = match->read_A_match_end_;
+    }
+    /*printf("aft %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_,
+     * match->reverse_complement_match_,
+           match->eff_read_A_match_start_, match->eff_read_A_match_end_, match->eff_read_B_match_start_,
+           match->eff_read_B_match_end_,
+           match->eff_read_A_read_start_, match->eff_read_A_read_end_, match->eff_read_B_read_start_, match->eff_read_B_read_end_
+    );*/
+    //std::cout<< contained<<std::endl;
+    if (((match->eff_read_B_match_end_ - match->eff_read_B_match_start_) < ALN_THRESHOLD)
+        or ((match->eff_read_A_match_end_ - match->eff_read_A_match_start_) < ALN_THRESHOLD) or (!match->active))
+
+    {
+        match->active = false;
+        match->match_type_ = NOT_ACTIVE;
+    } else {
+        match->AddTypesAsymmetric(THETA,THETA2);
+        if (match->match_type_ == BCOVERA) {
+            contained = true;
+        }
+        //std::cout<< contained<< std::endl;
+    }
+
+    match->weight =
+            match->eff_read_A_match_end_ - match->eff_read_A_match_start_
+            + match->eff_read_B_match_end_ - match->eff_read_B_match_start_;
+
+    match->length = match->read_A_match_end_ - match->read_A_match_start_
+                    + match->read_B_match_end_ - match->read_B_match_start_;
+
+    return contained;
+}
 
 std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
 //Returns sections of read a which are covered by overlaps. Each overlap is considered as
@@ -176,6 +245,7 @@ int main(int argc, char *argv[]) {
     std::string out = cmdp.get<std::string>("prefix");
     bool has_qv = true;
     const char * name_restrict = cmdp.get<std::string>("restrictreads").c_str();
+    std::string name_mask = out + ".mas";
 
     std::string name_las_string;
     if (cmdp.exist("mlas"))
@@ -261,6 +331,7 @@ int main(int argc, char *argv[]) {
     }
 
 
+
     if (has_qv)
         for (int i = 0; i < n_read; i++) {
             for (int j = 0; j < QV[i].size(); j++) QV[i][j] = int(QV[i][j] < 40);
@@ -336,6 +407,7 @@ int main(int argc, char *argv[]) {
     int MIN_COV = reader.GetInteger("filter", "min_cov", -1);
     int CUT_OFF = reader.GetInteger("filter", "cut_off", -1);
     int THETA = reader.GetInteger("filter", "theta", -1);
+    int THETA2 = (int) reader.GetInteger("filter", "theta2", 0);
     int N_PROC = reader.GetInteger("running", "n_proc", 4);
     int EST_COV = reader.GetInteger("filter", "ec", 0); // load the estimated coverage (probably from other programs) from ini file, if it is zero, then estimate it
     int reso = 40; // resolution of masks, repeat annotation, coverage, etc  = 40 basepairs
@@ -356,6 +428,8 @@ int main(int argc, char *argv[]) {
     int HINGE_BIN_LENGTH = (int) reader.GetInteger("filter", "hinge_bin", 100);
     //Physical length of the bins considered
     const int HINGE_TOLERANCE_LENGTH = (int) reader.GetInteger("filter", "hinge_tolerance_length", 100);
+    bool USE_TWO_MATCHES = (int) reader.GetInteger("layout", "use_two_matches", 1);
+
     //Reads starting at +/- HINGE_TOLERANCE_LENGTH are considered reads starting at hinges
     HINGE_BIN_LENGTH=2*HINGE_TOLERANCE_LENGTH;
 
@@ -404,8 +478,35 @@ int main(int argc, char *argv[]) {
     std::ofstream homo(out + ".homologous.txt");
     std::ofstream rep(out + ".repeat.txt");
     std::ofstream filtered(out + ".filtered.fasta");
-//    std::ofstream hg(out + ".hinges.txt");
-    std::ofstream mask(out + ".mas");
+    std::ofstream contained_out(out + ".contained.txt");
+    std::ofstream maximal_reads(out + ".max");
+
+
+    FILE *mask_file;
+    mask_file = fopen(name_mask.c_str(), "r");
+    int read, rs, re;
+
+    while (fscanf(mask_file, "%d %d %d", &read, &rs, &re) != EOF) {
+        reads[read]->effective_start = rs;
+        reads[read]->effective_end = re;
+    }
+    console->info("read mask finished");
+
+    int num_active_read = 0;
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->active) num_active_read++;
+    }
+    console->info("active reads at start: {}", num_active_read);
+
+
+    num_active_read = 0;
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->effective_end - reads[i]->effective_start < LENGTH_THRESHOLD) {
+            reads[i]->active = false;
+        }
+        else num_active_read++;
+    }
+    console->info("active reads after correcting for read lengths: {}", num_active_read);
 
     console->info("number of las files: {}", name_las_list.size());
 
@@ -570,6 +671,7 @@ int main(int argc, char *argv[]) {
 
 
 
+
         size_t median_id = read_coverage.size() / 2;
         if (median_id > 0)
             std::nth_element(read_coverage.begin(), read_coverage.begin()+median_id, read_coverage.end());
@@ -606,6 +708,126 @@ int main(int argc, char *argv[]) {
             console->info("After accounting for neighbours of reads selected, have {} reads", reads_to_keep.size());
         }
 
+        std::unordered_map<int, std::vector<LOverlap *> > matches_forward, matches_backward;
+
+        for (int i = r_begin; i <= r_end; i ++) {
+            //An initialisation for loop
+            //TODO Preallocate memory. Much more efficient.
+            //idx2.push_back(std::vector<LOverlap *>());
+            matches_forward[i] = std::vector<LOverlap *>();
+            matches_backward[i] = std::vector<LOverlap *>();
+        }
+
+
+
+
+        for (int i = r_begin; i <= r_end; i ++) {
+            bool contained = false;
+            //std::cout<< "Testing opt " << i << std::endl;
+            if (reads[i]->active == false) {
+                continue;
+            }
+
+            int containing_read;
+
+            for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx_ab[i].begin();
+                 it != idx_ab[i].end(); it++) {
+                std::sort(it->second.begin(), it->second.end(), compare_overlap);//Sort overlaps by lengths
+                //std::cout<<"Giving input to ProcessAlignment "<<it->second.size() <<std::endl;
+
+                if (it->second.size() > 0) {
+                    //Figure out if read is contained
+                    LOverlap *ovl = it->second[0];
+                    bool contained_alignment;
+
+                    if (strlen(name_db) > 0)
+                        contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                               reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, true);
+                    else
+                        contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                               reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, false);
+                    if (contained_alignment == true) {
+                        containing_read = ovl->read_B_id_;
+                    }
+
+                    if (reads[ovl->read_B_id_]->active == true)
+                        contained = contained or contained_alignment;
+
+                    //Filter matches that matter.
+                    //TODO Figure out a way to do this more efficiently
+                    if ((ovl->match_type_ == FORWARD) or (ovl->match_type_ == FORWARD_INTERNAL))
+                        matches_forward[i].push_back(it->second[0]);
+                    else if ((ovl->match_type_ == BACKWARD) or (ovl->match_type_ == BACKWARD_INTERNAL))
+                        matches_backward[i].push_back(it->second[0]);
+
+                }
+
+
+                if ((it->second.size() > 1) and (USE_TWO_MATCHES)) {
+                    //Figure out if read is contained
+                    LOverlap *ovl = it->second[1];
+                    bool contained_alignment;
+
+                    if (strlen(name_db) > 0)
+                        contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                               reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, true);
+                    else
+                        contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                               reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, false);
+                    if (contained_alignment == true) {
+                        containing_read = ovl->read_B_id_;
+                    }
+
+                    if (reads[ovl->read_B_id_]->active == true)
+                        contained = contained or contained_alignment;
+
+                    //Filter matches that matter.
+                    //TODO Figure out a way to do this more efficiently
+                    if ((ovl->match_type_ == FORWARD) or (ovl->match_type_ == FORWARD_INTERNAL))
+                        matches_forward[i].push_back(it->second[1]);
+                    else if ((ovl->match_type_ == BACKWARD) or (ovl->match_type_ == BACKWARD_INTERNAL))
+                        matches_backward[i].push_back(it->second[1]);
+
+                }
+
+
+
+
+            }
+            if (contained) {
+                reads[i]->active = false;
+                contained_out << i << "\t" << containing_read << std::endl;
+
+            }
+        }
+        int num_overlaps = 0;
+        int num_forward_overlaps(0), num_forward_internal_overlaps(0), num_reverse_overlaps(0),
+                num_reverse_internal_overlaps(0), rev_complemented_matches(0);
+        for (int i = 0; i < n_read; i++) {//Isn't this just 0 or 1?
+            num_overlaps += matches_forward[i].size() + matches_backward[i].size();
+            for (int j = 0; j < matches_forward[i].size(); j++)
+                rev_complemented_matches += matches_forward[i][j]->reverse_complement_match_;
+            for (int j = 0; j < matches_backward[i].size(); j++)
+                rev_complemented_matches += matches_backward[i][j]->reverse_complement_match_;
+        }
+        console->info("{} overlaps", num_overlaps);
+        console->info("{} rev overlaps", rev_complemented_matches);
+
+        num_active_read = 0;
+        for (int i = r_begin; i <= r_end; i ++) {
+            if (reads[i]->active) {
+                num_active_read++;
+                maximal_reads << i << std::endl;
+            }
+        }
+        console->info("removed contained reads, active reads: {}", num_active_read);
+
+        num_active_read = 0;
+        for (int i = r_begin; i <= r_end; i ++) {
+            if (reads[i]->active) num_active_read++;
+        }
+        console->info("active reads: {}", num_active_read);
+        console->info("total reads: {}", r_end-r_begin+1);
 
 
         for (int i = 0; i < aln.size(); i++) {
