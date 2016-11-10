@@ -25,18 +25,27 @@
 #include "LAInterface.h"
 #include "cmdline.h"
 
+std::string lastN(std::string input, int n)
+{
+    return input.substr(input.size() - n);
+}
 
 inline std::vector<std::string> glob(const std::string& pat){
     using namespace std;
     glob_t glob_result;
     glob(pat.c_str(),GLOB_TILDE,NULL,&glob_result);
     vector<string> ret;
+    std::cout << "-------------------------"<< std::endl;
+    std::cout << "Number of files " << glob_result.gl_pathc << std::endl;
+    std::cout << "Input string " << pat.c_str() << std::endl;
+    std::cout << "-------------------------"<< std::endl;
     for(unsigned int i=0;i<glob_result.gl_pathc;++i){
         ret.push_back(string(glob_result.gl_pathv[i]));
     }
     globfree(&glob_result);
     return ret;
 }
+
 
 
 std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
@@ -116,7 +125,7 @@ float number_of_bridging_reads(std::vector<LOverlap *> ovl_reads, int hinge_loca
     if (hinge_type==1){
         for (int i=0; i < ovl_reads.size(); i++){
             if ((ovl_reads[i]->read_A_match_start_ > hinge_location-threshold ) and
-                        (ovl_reads[i]->read_A_match_start_ < hinge_location+threshold ))
+                (ovl_reads[i]->read_A_match_start_ < hinge_location+threshold ))
                 read_ends.push_back(ovl_reads[i]->read_A_match_end_);
         }
     }
@@ -154,18 +163,32 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("prefix", 'x', "prefix of (intermediate) output", false, "out");
     cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
     cmdp.add<std::string>("log", 'g', "log folder name", false, "log");
+    cmdp.add("mlas", '\0', "multiple las files");
     cmdp.add("debug", '\0', "debug mode");
     cmdp.parse_check(argc, argv);
 
     LAInterface la;
     const char * name_db = cmdp.get<std::string>("db").c_str(); //.db file of reads to load
-    const char * name_las = cmdp.get<std::string>("las").c_str();//.las file of alignments
+    const char * name_las_base = cmdp.get<std::string>("las").c_str();//.las file of alignments
     const char * name_paf = cmdp.get<std::string>("paf").c_str();
     const char * name_fasta = cmdp.get<std::string>("fasta").c_str();
     const char * name_config = cmdp.get<std::string>("config").c_str();//name of the configuration file, in INI format
     std::string out = cmdp.get<std::string>("prefix");
     bool has_qv = true;
     const char * name_restrict = cmdp.get<std::string>("restrictreads").c_str();
+
+    std::string name_las_string;
+    if (cmdp.exist("mlas"))
+        name_las_string =  std::string(name_las_base) + ".*.las";
+    else {
+        if (lastN(std::string(name_las_base), 4) == ".las")
+            name_las_string = std::string(name_las_base);
+        else
+            name_las_string = std::string(name_las_base) + ".las";
+    }
+
+
+    const char * name_las = name_las_string.c_str();
     /**
      * There are two sets of input, the first is db+las, which corresponds to daligner as an overlapper,
      * the other is fasta + paf, which corresponds to minimap as an overlapper.
@@ -202,8 +225,11 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::string> name_las_list;
     std::string name_las_str(name_las);
-    if (name_las_str.find('*') != -1)
+    console->info("Las files: {}", name_las_str);
+    if (name_las_str.find('*') != -1) {
+        console->info("Calling glob.");
         name_las_list = glob(name_las_str);
+    }
     else
         name_las_list.push_back(name_las_str);
 
@@ -380,6 +406,8 @@ int main(int argc, char *argv[]) {
     std::ofstream filtered(out + ".filtered.fasta");
 //    std::ofstream hg(out + ".hinges.txt");
     std::ofstream mask(out + ".mas");
+
+    console->info("number of las files: {}", name_las_list.size());
 
     for (int part = 0; part < name_las_list.size(); part++) {
 
