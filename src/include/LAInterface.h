@@ -162,8 +162,10 @@ public:
 
     void getAlignmentB(std::vector<int> &, int n); // get all b reads aligned with a read
 
-    void getOverlap(std::vector<LOverlap *> &, int from, int64 to); // get overlap(simplified version of alignment) with a read in a range
+    void getOverlap(std::vector<LOverlap *> &, std::vector<int> &range); // get overlap(simplified version of alignment) with a read in a range
 
+    void getOverlap(std::vector<LOverlap *> &, int from, int64 to); // get overlap(simplified version of alignment) with a read in a range
+	
     void getOverlapw(std::vector<LOverlap *> &, int from, int to); // get overlap(simplified version of alignment) with a read in a range
 
     void getOverlap(std::vector<LOverlap *> &, int n);
