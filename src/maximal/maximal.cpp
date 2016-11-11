@@ -33,15 +33,29 @@ std::string lastN(std::string input, int n)
 inline std::vector<std::string> glob(const std::string& pat){
     using namespace std;
     glob_t glob_result;
-    glob(pat.c_str(),GLOB_TILDE,NULL,&glob_result);
+    int i = 1;
+    std::string search_name;
+    search_name = pat + "."+std::to_string(i)+".las";
+    std::cout << search_name << endl;
+    glob(search_name.c_str(),GLOB_TILDE,NULL,&glob_result);
+//    std::cout << "Number of files " << glob_result.gl_pathc << std::endl;
+
     vector<string> ret;
+
+
+    while (glob_result.gl_pathc != 0){
+        ret.push_back(string(glob_result.gl_pathv[0]));
+        i ++;
+        search_name = pat + "."+std::to_string(i)+".las";
+        glob(search_name.c_str(),GLOB_TILDE,NULL,&glob_result);
+//        std::cout << "Number of files " << glob_result.gl_pathc << std::endl;
+    }
+
     std::cout << "-------------------------"<< std::endl;
-    std::cout << "Number of files " << glob_result.gl_pathc << std::endl;
+    std::cout << "Number of files " << i-1 << std::endl;
     std::cout << "Input string " << pat.c_str() << std::endl;
     std::cout << "-------------------------"<< std::endl;
-    for(unsigned int i=0;i<glob_result.gl_pathc;++i){
-        ret.push_back(string(glob_result.gl_pathv[i]));
-    }
+
     globfree(&glob_result);
     return ret;
 }
@@ -249,7 +263,7 @@ int main(int argc, char *argv[]) {
 
     std::string name_las_string;
     if (cmdp.exist("mlas"))
-        name_las_string =  std::string(name_las_base) + ".*.las";
+        name_las_string =  std::string(name_las_base);
     else {
         if (lastN(std::string(name_las_base), 4) == ".las")
             name_las_string = std::string(name_las_base);
@@ -276,7 +290,7 @@ int main(int argc, char *argv[]) {
     //auto console = std::make_shared<spdlog::logger>("name", begin(sinks), end(sinks));
 
 
-    console->info("Reads filtering");
+    console->info("Getting maximal reads");
 
 
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
@@ -296,7 +310,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> name_las_list;
     std::string name_las_str(name_las);
     console->info("Las files: {}", name_las_str);
-    if (name_las_str.find('*') != -1) {
+    if (cmdp.exist("mlas")) {
         console->info("Calling glob.");
         name_las_list = glob(name_las_str);
     }
