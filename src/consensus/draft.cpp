@@ -228,6 +228,8 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
      * Prepare the data
      */
 
+    std::string overhang;
+    int len_overhang = 0;
     for (int i = 0; i < edgelist.size(); i++) {
 
         std::vector<LOverlap *> currentalns = idx[std::get<0>(edgelist[i]).id][std::get<1>(edgelist[i]).id];
@@ -331,12 +333,16 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
 
         bedges.push_back(new_ovl);
         breads.push_back(current_seq);
-
+        overhang = next_seq;
+        len_overhang = new_ovl->blen - new_ovl->read_B_match_end_ - (new_ovl->alen - new_ovl->read_A_match_end_);
 
     }
     //need to trim the end
 
 
+    if ((len_overhang > 0) and (len_overhang < overhang.size())) {
+        overhang = overhang.substr(overhang.size()-len_overhang);
+    } else overhang = "";
 
     std::vector<std::vector<int> > mappings;
     for (int i = 0; i < range.size(); i++) {
@@ -671,7 +677,7 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     //    out_fa << draft_assembly << std::endl;
     //}
     //num_contig++;
-    contig = prefix + draft_assembly + suffix;
+    contig = prefix + draft_assembly + suffix + overhang;
 
 	std::cout << "ctg size:" << contig.size() << "cut_start:" << cut_start << "cut_end:" << cut_end << std::endl;
 
