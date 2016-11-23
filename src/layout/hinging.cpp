@@ -347,10 +347,11 @@ void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<st
                     int n_read, const char *name_db, const char *name_las_base, bool mult_las,
                     int ALN_THRESHOLD, int THETA, int THETA2, bool USE_TWO_MATCHES, int64 n_aln_full,
                     const std::shared_ptr<spdlog::logger> console,
-                    std::string name_maximal_reads ){
+                    std::string name_maximal_reads, bool KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS ){
 
     std::ifstream max_reads_file(name_maximal_reads);
     n_aln_full = 0;
+    int num_active_reads(0);
     int64 n_aln_kept_full(0);
     int64 n_rev_aln_full(0);
     int64 n_rev_aln_kept_full(0);
@@ -390,7 +391,9 @@ void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<st
         int read_number;
         read_number = atoi(read_line.c_str());
         maximal_read[read_number] = true;
+        num_active_reads++;
     }
+    console->info("Total number of active reads: {}/{}", num_active_reads, n_read);
 
     for (int i = 0; i < n_read; i++){
         reads[i]->active = maximal_read[i];
@@ -424,26 +427,33 @@ void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<st
 
         int r_begin = aln.front()->read_A_id_;
         int r_end = aln.back()->read_A_id_;
+        int num_active_reads_part (0);
 
-
+        for (int i = r_begin; i <= r_end; i++) {
+            if (reads[i]->active)
+                num_active_reads_part++;
+        }
         console->info("# reads: {}", r_end-r_begin+1);
+        console->info("# active reads: {}/{}",num_active_reads_part, r_end-r_begin+1);
         console->info("Input data finished, part {}/{}", part + 1, name_las_list.size());
 
 
 
-        for (int i = 0; i < aln.size(); i++)
-        {
-            if ((reads[aln[i]->read_A_id_]->active) and  (reads[aln[i]->read_B_id_]->active)) {
+        for (int i = 0; i < aln.size(); i++) {
+            if ((reads[aln[i]->read_A_id_]->active) and
+                    ((reads[aln[i]->read_B_id_]->active) and KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS)) {
                 idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
                 n_aln_accept++;
-                n_aln_rcomp_accept +=aln[i]->reverse_complement_match_;
+                n_aln_rcomp_accept += aln[i]->reverse_complement_match_;
             }
         }
 
         for (int i = 0; i < aln.size(); i++) {
-            if ((reads[aln[i]->read_A_id_]->active) and  (reads[aln[i]->read_B_id_]->active))
+            if ((reads[aln[i]->read_A_id_]->active) and
+                ((reads[aln[i]->read_B_id_]->active) and KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS))
                 idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
         }
+
 
         int n_overlaps = 0;
         int n_rev_overlaps = 0;
@@ -720,6 +730,8 @@ int main(int argc, char *argv[]) {
     int MIN_CONNECTED_COMPONENT_SIZE = (int) reader.GetInteger("layout", "min_connected_component_size", 8);
 
     bool USE_TWO_MATCHES = (int) reader.GetInteger("layout", "use_two_matches", 1);
+    bool KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS = (int) reader.GetInteger("layout",
+                                                    "keep_only_matches_between_maximal_reads", 1);
     bool delete_telomere = (int) reader.GetInteger("layout", "del_telomere", 0);
 
 
@@ -904,7 +916,8 @@ int main(int argc, char *argv[]) {
 
     GetAlignment ( la, reads,  idx_ab, matches_forward, matches_backward,
             n_read,  name_db, name_las, mult_las, ALN_THRESHOLD,  THETA,  THETA2,
-                   USE_TWO_MATCHES, n_aln, console, name_max);
+                   USE_TWO_MATCHES, n_aln, console, name_max,
+                   KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS);
 
     for (int i = 0; i < n_read; i++) {//Isn't this just 0 or 1?
         num_overlaps += matches_forward[i].size() + matches_backward[i].size();
