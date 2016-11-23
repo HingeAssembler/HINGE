@@ -18,7 +18,6 @@
 #include "DB.h"
 #include "align.h"
 #include "LAInterface.h"
-#include "../../../../anaconda/include/jmorecfg.h"
 
 #include <utility>
 #include <boost/graph/adjacency_list.hpp>
@@ -434,7 +433,7 @@ void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<st
 
         for (int i = 0; i < aln.size(); i++)
         {
-            if (reads[aln[i]->read_A_id_]->active) {
+            if ((reads[aln[i]->read_A_id_]->active) and  (reads[aln[i]->read_B_id_]->active)) {
                 idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
                 n_aln_accept++;
                 n_aln_rcomp_accept +=aln[i]->reverse_complement_match_;
@@ -442,7 +441,7 @@ void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<st
         }
 
         for (int i = 0; i < aln.size(); i++) {
-            if (reads[aln[i]->read_A_id_]->active)
+            if ((reads[aln[i]->read_A_id_]->active) and  (reads[aln[i]->read_B_id_]->active))
                 idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
         }
 
