@@ -980,11 +980,11 @@ int main(int argc, char *argv[]) {
 
     while (!edges_file.eof()) {
         std::getline(edges_file, edge_line);
+        std::cout << edge_line << std::endl;
+        if (edge_line.size() == 0) continue;
         if (edge_line[0] == '>') continue;
-
         std::vector<std::string> tokens = split(edge_line, ' ');
         if (tokens.size() < 6) std::cout << "Error! Wrong format." << std::endl;
-        std::cout << edge_line << std::endl;
 
         Node node0;
         Node node1;
