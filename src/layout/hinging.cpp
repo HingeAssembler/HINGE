@@ -9,6 +9,8 @@
 #include <omp.h>
 #include <tuple>
 #include <iomanip>
+#include <glob.h>
+
 
 #include "spdlog/spdlog.h"
 #include "cmdline.h"
@@ -36,7 +38,40 @@ using namespace boost;
 typedef adjacency_list <vecS, vecS, undirectedS> Graph;
 typedef std::tuple<Node, Node, int> Edge_w;
 
+std::string lastN(std::string input, int n)
+{
+    return input.substr(input.size() - n);
+}
 
+inline std::vector<std::string> glob(const std::string& pat){
+    using namespace std;
+    glob_t glob_result;
+    int i = 1;
+    std::string search_name;
+    search_name = pat + "."+std::to_string(i)+".las";
+    std::cout << search_name << endl;
+    glob(search_name.c_str(),GLOB_TILDE,NULL,&glob_result);
+//    std::cout << "Number of files " << glob_result.gl_pathc << std::endl;
+
+    vector<string> ret;
+
+
+    while (glob_result.gl_pathc != 0){
+        ret.push_back(string(glob_result.gl_pathv[0]));
+        i ++;
+        search_name = pat + "."+std::to_string(i)+".las";
+        glob(search_name.c_str(),GLOB_TILDE,NULL,&glob_result);
+//        std::cout << "Number of files " << glob_result.gl_pathc << std::endl;
+    }
+
+    std::cout << "-------------------------"<< std::endl;
+    std::cout << "Number of files " << i-1 << std::endl;
+    std::cout << "Input string " << pat.c_str() << std::endl;
+    std::cout << "-------------------------"<< std::endl;
+
+    globfree(&glob_result);
+    return ret;
+}
 
 bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_THRESHOLD,
                       int THETA, int THETA2, bool trim){
@@ -307,6 +342,230 @@ void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
 }
 
 
+void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<std::unordered_map<int, std::vector<LOverlap *> > > & idx_ab,
+                    std::vector<std::vector<LOverlap *>> & matches_forward, std::vector<std::vector<LOverlap *>>& matches_backward,
+                    int n_read, const char *name_db, const char *name_las_base, bool mult_las,
+                    int ALN_THRESHOLD, int THETA, int THETA2, bool USE_TWO_MATCHES, int64 n_aln_full,
+                    const std::shared_ptr<spdlog::logger> console,
+                    std::string name_maximal_reads, bool KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS ){
+
+    std::ifstream max_reads_file(name_maximal_reads);
+    n_aln_full = 0;
+    int num_active_reads(0);
+    int64 n_aln_kept_full(0);
+    int64 n_rev_aln_full(0);
+    int64 n_rev_aln_kept_full(0);
+    std::string name_las_string;
+    console->info("Multiple las files: {}", mult_las);
+
+    if (mult_las)
+        name_las_string =  std::string(name_las_base);
+    else {
+        if (lastN(std::string(name_las_base), 4) == ".las")
+            name_las_string = std::string(name_las_base);
+        else
+            name_las_string = std::string(name_las_base) + ".las";
+    }
+
+    n_aln_full = 0;
+    const char * name_las = name_las_string.c_str();
+
+    std::vector<std::string> name_las_list;
+    std::string name_las_str(name_las);
+    console->info("Las files: {}", name_las_str);
+
+    if (mult_las) {
+        console->info("Calling glob.");
+        name_las_list = glob(name_las_str);
+    }
+    else
+        name_las_list.push_back(name_las_str);
+
+    console->info("number of las files: {}", name_las_list.size());
+
+    std::vector<bool> maximal_read;
+    maximal_read.resize(n_read, false);
+    std::string read_line;
+    while(std::getline(max_reads_file, read_line))
+    {
+        int read_number;
+        read_number = atoi(read_line.c_str());
+        maximal_read[read_number] = true;
+        num_active_reads++;
+    }
+    console->info("Total number of active reads: {}/{}", num_active_reads, n_read);
+
+    for (int i = 0; i < n_read; i++){
+        reads[i]->active = maximal_read[i];
+    }
+
+
+    for (int part = 0; part < name_las_list.size(); part++) {
+
+        console->info("name of las: {}", name_las_list[part]);
+
+        if (strlen(name_las_list[part].c_str()) > 0)
+            la.openAlignmentFile(name_las_list[part]);
+
+        int64 n_aln = 0;
+        int64 n_aln_accept = 0;
+        int64 n_aln_rcomp_accept = 0;
+
+        if (strlen(name_las_list[part].c_str()) > 0) {
+            n_aln = la.getAlignmentNumber();
+            console->info("Load alignments from {}", name_las_list[part]);
+            console->info("# Alignments: {}", n_aln);
+        }
+
+        std::vector<LOverlap *> aln;//Vector of pointers to all alignments
+
+
+        if (strlen(name_las_list[part].c_str()) > 0) {
+            la.resetAlignment();
+            la.getOverlap(aln, 0, n_aln);
+        }
+
+        int r_begin = aln.front()->read_A_id_;
+        int r_end = aln.back()->read_A_id_;
+        int num_active_reads_part (0);
+
+        for (int i = r_begin; i <= r_end; i++) {
+            if (reads[i]->active)
+                num_active_reads_part++;
+        }
+        console->info("# reads: {}", r_end-r_begin+1);
+        console->info("# active reads: {}/{}",num_active_reads_part, r_end-r_begin+1);
+        console->info("Input data finished, part {}/{}", part + 1, name_las_list.size());
+
+
+
+        for (int i = 0; i < aln.size(); i++) {
+            if ((reads[aln[i]->read_A_id_]->active) and
+                    ((reads[aln[i]->read_B_id_]->active) and KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS)) {
+                idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
+                n_aln_accept++;
+                n_aln_rcomp_accept += aln[i]->reverse_complement_match_;
+            }
+        }
+
+        for (int i = 0; i < aln.size(); i++) {
+            if ((reads[aln[i]->read_A_id_]->active) and
+                ((reads[aln[i]->read_B_id_]->active) and KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS))
+                idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
+        }
+
+
+        int n_overlaps = 0;
+        int n_rev_overlaps = 0;
+        for (int i = 0; i < aln.size(); i++) {
+            n_overlaps++;
+            n_rev_overlaps += aln[i]->reverse_complement_match_;
+        }
+
+        console->info("kept {}/{} overlaps,  {}/{} rev_overlaps in part {}/{}",n_aln_accept,
+                      n_overlaps, n_aln_rcomp_accept,
+                      n_rev_overlaps,
+                      part + 1, name_las_list.size());
+
+        n_aln_full += n_aln;
+        n_aln_kept_full += n_aln_accept;
+        n_rev_aln_full += n_rev_overlaps;
+        n_rev_aln_kept_full += n_aln_rcomp_accept;
+
+        console->info("index finished");
+
+
+
+
+        for (int i = r_begin; i <= r_end; i++) {
+            bool contained = false;
+            //std::cout<< "Testing opt " << i << std::endl;
+            if (reads[i]->active == false) {
+                continue;
+            }
+
+            int containing_read;
+
+            for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx_ab[i].begin();
+                 it != idx_ab[i].end(); it++) {
+                std::sort(it->second.begin(), it->second.end(), compare_overlap);//Sort overlaps by lengths
+                //std::cout<<"Giving input to ProcessAlignment "<<it->second.size() <<std::endl;
+
+                if (it->second.size() > 0) {
+                    //Figure out if read is contained
+                    LOverlap *ovl = it->second[0];
+                    bool contained_alignment;
+
+                    if (strlen(name_db) > 0)
+                        contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                               reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2,
+                                                               true);
+                    else
+                        contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                               reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2,
+                                                               false);
+                    if (contained_alignment == true) {
+                        containing_read = ovl->read_B_id_;
+                    }
+
+                    if (reads[ovl->read_B_id_]->active == true)
+                        contained = contained or contained_alignment;
+
+                    //Filter matches that matter.
+                    //TODO Figure out a way to do this more efficiently
+                    if ((ovl->match_type_ == FORWARD) or (ovl->match_type_ == FORWARD_INTERNAL))
+                        matches_forward[i].push_back(it->second[0]);
+                    else if ((ovl->match_type_ == BACKWARD) or (ovl->match_type_ == BACKWARD_INTERNAL))
+                        matches_backward[i].push_back(it->second[0]);
+
+                }
+
+
+                if ((it->second.size() > 1) and (USE_TWO_MATCHES)) {
+                    //Figure out if read is contained
+                    LOverlap *ovl = it->second[1];
+                    bool contained_alignment;
+
+                    if (strlen(name_db) > 0)
+                        contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                               reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2,
+                                                               true);
+                    else
+                        contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                               reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2,
+                                                               false);
+                    if (contained_alignment == true) {
+                        containing_read = ovl->read_B_id_;
+                    }
+
+                    if (reads[ovl->read_B_id_]->active == true)
+                        contained = contained or contained_alignment;
+
+                    //Filter matches that matter.
+                    //TODO Figure out a way to do this more efficiently
+                    if ((ovl->match_type_ == FORWARD) or (ovl->match_type_ == FORWARD_INTERNAL))
+                        matches_forward[i].push_back(it->second[1]);
+                    else if ((ovl->match_type_ == BACKWARD) or (ovl->match_type_ == BACKWARD_INTERNAL))
+                        matches_backward[i].push_back(it->second[1]);
+
+                }
+
+
+            }
+            if (contained) {
+                std::cout << "[contained] Should not happen" << std::endl;
+                reads[i]->active = false;
+            }
+        }
+
+    }
+
+    console->info("kept {}/{} overlaps,  {}/{} rev_overlaps in {} part(s)", n_aln_kept_full,
+                  n_aln_full, n_rev_aln_kept_full,
+                  n_rev_aln_full,
+                  name_las_list.size());
+}
+
 
 
 
@@ -326,6 +585,8 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("out", 'o', "final output file name", true, "");
     cmdp.add<std::string>("log", 'g', "log folder name", false, "log");
     cmdp.add("debug", '\0', "debug mode");
+    cmdp.add("mlas", '\0', "multiple las files");
+
 
 
 
@@ -358,9 +619,7 @@ int main(int argc, char *argv[]) {
 
 
     std::ofstream deadend_out(name_deadend);
-    std::ofstream maximal_reads(name_max);
     std::ofstream garbage_out(name_garbage);
-    std::ofstream contained_out(name_contained);
     std::ifstream homo(name_homo);
     std::vector<int> homo_reads;
 
@@ -383,12 +642,14 @@ int main(int argc, char *argv[]) {
 
     console->info("Hinging layout");
 
-
+    bool mult_las;
+    mult_las = cmdp.exist("mlas");
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
     console->info("name of fasta: {}, name of .paf file {}", name_fasta, name_paf);
     console->info("filter files prefix: {}", out);
     console->info("output prefix: {}", out_name);
-
+    console->info("Multiple las files: {}", mult_las);
+    console->info("Multiple las files: {}", cmdp.exist("mlas"));
 
     std::ifstream ini_file(name_config);
     std::string str((std::istreambuf_iterator<char>(ini_file)),
@@ -400,16 +661,10 @@ int main(int argc, char *argv[]) {
         la.openDB(name_db);
 
 
-    if (strlen(name_las) > 0)
-        la.openAlignmentFile(name_las);
 
     int64 n_aln = 0;
 
-    if (strlen(name_las) > 0) {
-        n_aln = la.getAlignmentNumber();
-        console->info("Load alignments from {}", name_las);
-        console->info("# Alignments: {}", n_aln);
-    }
+
 
     int n_read;
     if (strlen(name_db) > 0)
@@ -423,23 +678,17 @@ int main(int argc, char *argv[]) {
 
     console->info("# Reads: {}", n_read); // output some statistics
 
-    std::vector<LOverlap *> aln;//Vector of pointers to all alignments
 
-    if (strlen(name_las) > 0) {
-        la.resetAlignment();
-        la.getOverlap(aln, 0, n_aln);
-    }
+////    if (strlen(name_paf) > 0) {
+//        n_aln = la.loadPAF(std::string(name_paf), aln);
+//        console->info("Load alignments from {}", name_paf);
+//        console->info("# Alignments: {}", n_aln);
+//    }
 
-    if (strlen(name_paf) > 0) {
-        n_aln = la.loadPAF(std::string(name_paf), aln);
-        console->info("Load alignments from {}", name_paf);
-        console->info("# Alignments: {}", n_aln);
-    }
-
-    if (n_aln == 0) {
-        console->error("No alignments!");
-        return 1;
-    }
+//    if (n_aln == 0) {
+//        console->error("No alignments!");
+//        return 1;
+//    }
 
 
     if (strlen(name_db) > 0) {
@@ -481,6 +730,8 @@ int main(int argc, char *argv[]) {
     int MIN_CONNECTED_COMPONENT_SIZE = (int) reader.GetInteger("layout", "min_connected_component_size", 8);
 
     bool USE_TWO_MATCHES = (int) reader.GetInteger("layout", "use_two_matches", 1);
+    bool KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS = (int) reader.GetInteger("layout",
+                                                    "keep_only_matches_between_maximal_reads", 1);
     bool delete_telomere = (int) reader.GetInteger("layout", "del_telomere", 0);
 
 
@@ -661,107 +912,12 @@ int main(int argc, char *argv[]) {
     int num_forward_overlaps(0), num_forward_internal_overlaps(0), num_reverse_overlaps(0),
             num_reverse_internal_overlaps(0), rev_complemented_matches(0);
 //# pragma omp parallel for
-    for (int i = 0; i < aln.size(); i++) {
-        idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
-    }
-
-    for (int i = 0; i < aln.size(); i++) {
-        idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
-    }
-
-    int n_overlaps = 0;
-    int n_rev_overlaps = 0;
-    for (int i = 0; i < aln.size(); i++) {
-        n_overlaps++;
-        n_rev_overlaps += aln[i]->reverse_complement_match_;
-    }
-
-    console->info("overlaps {} rev_overlaps {}", n_overlaps, n_rev_overlaps);
-
-    console->info("index finished");
-    console->info("Number reads {}", n_read);
 
 
-    for (int i = 0; i < n_read; i++) {
-        bool contained = false;
-        //std::cout<< "Testing opt " << i << std::endl;
-        if (reads[i]->active == false) {
-            continue;
-        }
-
-        int containing_read;
-
-        for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx_ab[i].begin();
-             it != idx_ab[i].end(); it++) {
-            std::sort(it->second.begin(), it->second.end(), compare_overlap);//Sort overlaps by lengths
-            //std::cout<<"Giving input to ProcessAlignment "<<it->second.size() <<std::endl;
-
-            if (it->second.size() > 0) {
-                //Figure out if read is contained
-                LOverlap *ovl = it->second[0];
-                bool contained_alignment;
-
-                if (strlen(name_db) > 0)
-                    contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
-                                                           reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, true);
-                else
-                    contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
-                                                           reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, false);
-                if (contained_alignment == true) {
-                    containing_read = ovl->read_B_id_;
-                }
-
-                if (reads[ovl->read_B_id_]->active == true)
-                    contained = contained or contained_alignment;
-
-                //Filter matches that matter.
-                //TODO Figure out a way to do this more efficiently
-                if ((ovl->match_type_ == FORWARD) or (ovl->match_type_ == FORWARD_INTERNAL))
-                    matches_forward[i].push_back(it->second[0]);
-                else if ((ovl->match_type_ == BACKWARD) or (ovl->match_type_ == BACKWARD_INTERNAL))
-                    matches_backward[i].push_back(it->second[0]);
-
-            }
-
-
-            if ((it->second.size() > 1) and (USE_TWO_MATCHES)) {
-                //Figure out if read is contained
-                LOverlap *ovl = it->second[1];
-                bool contained_alignment;
-
-                if (strlen(name_db) > 0)
-                    contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
-                                                           reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, true);
-                else
-                    contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
-                                                           reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, false);
-                if (contained_alignment == true) {
-                    containing_read = ovl->read_B_id_;
-                }
-
-                if (reads[ovl->read_B_id_]->active == true)
-                    contained = contained or contained_alignment;
-
-                //Filter matches that matter.
-                //TODO Figure out a way to do this more efficiently
-                if ((ovl->match_type_ == FORWARD) or (ovl->match_type_ == FORWARD_INTERNAL))
-                    matches_forward[i].push_back(it->second[1]);
-                else if ((ovl->match_type_ == BACKWARD) or (ovl->match_type_ == BACKWARD_INTERNAL))
-                    matches_backward[i].push_back(it->second[1]);
-
-            }
-
-
-
-
-        }
-        if (contained) {
-            reads[i]->active = false;
-            contained_out << i << "\t" << containing_read << std::endl;
-
-        }
-    }
-
+    GetAlignment ( la, reads,  idx_ab, matches_forward, matches_backward,
+            n_read,  name_db, name_las, mult_las, ALN_THRESHOLD,  THETA,  THETA2,
+                   USE_TWO_MATCHES, n_aln, console, name_max,
+                   KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS);
 
     for (int i = 0; i < n_read; i++) {//Isn't this just 0 or 1?
         num_overlaps += matches_forward[i].size() + matches_backward[i].size();
@@ -777,7 +933,6 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
             num_active_read++;
-            maximal_reads << i << std::endl;
         }
     }
     console->info("removed contained reads, active reads: {}", num_active_read);

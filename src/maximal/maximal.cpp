@@ -535,14 +535,14 @@ int main(int argc, char *argv[]) {
 
         int64 n_aln = 0;
 
-        if (strlen(name_las) > 0) {
+        if (strlen(name_las_list[part].c_str()) > 0) {
             n_aln = la.getAlignmentNumber();
             console->info("Load alignments from {}", name_las_list[part]);
             console->info("# Alignments: {}", n_aln);
         }
 
 
-        if (strlen(name_las) > 0) {
+        if (strlen(name_las_list[part].c_str()) > 0) {
             la.resetAlignment();
             la.getOverlap(aln, 0, n_aln);
         }
