@@ -14,7 +14,7 @@ max_las_size = args.max_size
 
 
 x = os.path.getsize(laspath)
-num_divisions = (x/10**9)/max_las_size + 10
+num_divisions = (x/10**9)/max_las_size + 1
 out_las_name = laspath.split('.las')[0]+'.# '
 
 LAsplit_cmd = 'LAsplit -v '+out_las_name+ str(num_divisions) +' < ' + laspath
