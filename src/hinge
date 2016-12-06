@@ -36,6 +36,9 @@ case "$subcommand" in
     condense)
 	condense_graph.py $*
 	;;
+    correct_head)
+        correct_head.py $*
+	;;
     *)
 	echo "See hinge(1) for usage information."
 	exit 1
