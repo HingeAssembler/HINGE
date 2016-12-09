@@ -18,6 +18,9 @@ case "$subcommand" in
     clip)
 	pruning_and_clipping.py $*
 	;;
+    clip-nanopore)
+    pruning_and_clipping_nanopore.py $*
+    ;;
     draft-path)
 	get_draft_path.py $*
 	;;
