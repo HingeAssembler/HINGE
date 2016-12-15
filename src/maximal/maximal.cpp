@@ -490,7 +490,6 @@ int main(int argc, char *argv[]) {
 
     std::ofstream cov(out + ".coverage.txt");
     std::ofstream homo(out + ".homologous.txt");
-    std::ofstream rep(out + ".repeat.txt");
     std::ofstream filtered(out + ".filtered.fasta");
     std::ofstream contained_out(out + ".contained.txt");
     std::ofstream maximal_reads(out + ".max");
