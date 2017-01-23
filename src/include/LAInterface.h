@@ -140,7 +140,7 @@ public:
     int openAlignmentFile(std::string filename); // open .las Alignment file
 
     void showRead(int from, int to); // show reads in a range
-	
+
     void showRead2(int from, int to); // show reads in a range
 
     void showAlignment(int from, int to); // show alignment with 'A read' in a range
@@ -154,8 +154,8 @@ public:
     Read *getRead2(int number); //get one read
 
     void getRead(std::vector<Read *> &reads, int from, int to); // get reads within a range
-	
-	void getQV(std::vector<std::vector<int> > & QV, int from, int to);
+
+    int getQV(std::vector<std::vector<int> > & QV, int from, int to);
 
     void getRead2(std::vector<Read *> &reads, int from, int to); // get reads within a range
 
@@ -165,7 +165,7 @@ public:
     void getOverlap(std::vector<LOverlap *> &, std::vector<int> &range); // get overlap(simplified version of alignment) with a read in a range
 
     void getOverlap(std::vector<LOverlap *> &, int from, int64 to); // get overlap(simplified version of alignment) with a read in a range
-	
+
     void getOverlapw(std::vector<LOverlap *> &, int from, int to); // get overlap(simplified version of alignment) with a read in a range
 
     void getOverlap(std::vector<LOverlap *> &, int n);

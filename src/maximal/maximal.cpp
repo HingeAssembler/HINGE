@@ -341,7 +341,8 @@ int main(int argc, char *argv[]) {
 
     if (strlen(name_db) > 0) {
         la.getRead(reads,0,n_read);
-        la.getQV(QV,0,n_read); // load QV track from .db file
+        if (la.getQV(QV,0,n_read) != 0) // load QV track from .db file
+            has_qv = false;
     }
 
 
