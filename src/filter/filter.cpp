@@ -420,6 +420,7 @@ int main(int argc, char *argv[]) {
     std::ofstream filtered(out + ".filtered.fasta");
     std::ofstream hg(out + ".hinges.txt");
     std::ofstream mask(out + ".mas");
+    std::ofstream comask(out + ".cmas");
 
     for (int part = 0; part < name_las_list.size(); part++) {
 
@@ -628,9 +629,12 @@ int main(int argc, char *argv[]) {
             int start = 0;
             int end = start;
             int maxlen = 0, maxstart = 0, maxend = 0;
+            int start_coord = 0, end_coord = 0;
+            int max_start_coord = 0, max_end_coord = 0;
             for (int j = 0; j < cutoff_coverages[i].size(); j++) {
                 if (cutoff_coverages[i][j].second > 0) {
                     end = cutoff_coverages[i][j].first;
+                    end_coord = j;
                 } else {
                     if (end > start) {
                         //std::cout<<"read" << i << " "<<start+reso << "->" << end << std::endl;
@@ -638,12 +642,18 @@ int main(int argc, char *argv[]) {
                             maxlen = end - start - reso;
                             maxstart = start + reso;
                             maxend = end;
+                            max_start_coord = start_coord + 1;
+                            max_end_coord = end_coord;
                         }
                     }
                     start = cutoff_coverages[i][j].first;
+                    start_coord =j;
+                    end_coord = start_coord;
                     end = start;
                 }
             }
+
+
             //std::cout << i << " " << maxstart << " " << maxend << std::endl;
             //int s = std::max(maxstart, QV_mask[i].first);
             //int l = std::min(maxend, QV_mask[i].second) - std::max(maxstart, QV_mask[i].first);
@@ -651,13 +661,36 @@ int main(int argc, char *argv[]) {
             //filtered << ">read_" << i << std::endl;
             //filtered << reads[i]->bases.substr(s,l) << std::endl;
 
+            int start_coverage = 0, end_coverage = 0;
+            if (max_end_coord - max_start_coord + 1 > 20){
+                for (int dummy_index = 0; dummy_index < 10; dummy_index ++){
+                    start_coverage += cutoff_coverages[i][max_start_coord + dummy_index].second + MIN_COV;
+                    end_coverage += cutoff_coverages[i][max_end_coord - dummy_index].second + MIN_COV;
+                }
+                start_coverage = start_coverage/10;
+                end_coverage = end_coverage/10;
+            }
+            else{
+                int limit = (max_end_coord - max_start_coord)/2;
+                for (int dummy_index = 0; dummy_index < limit; dummy_index ++){
+                    start_coverage += cutoff_coverages[i][max_start_coord + dummy_index].second + MIN_COV;
+                    end_coverage += cutoff_coverages[i][max_end_coord - dummy_index].second + MIN_COV;
+                }
+                start_coverage = start_coverage/limit;
+                end_coverage = end_coverage/limit;
+            }
+
             if (reads_to_keep.size()>0) {
-                if (reads_to_keep.find(i) == reads_to_keep.end()){
+                if ((reads_to_keep.find(i) == reads_to_keep.end()) or
+                        (start_coverage > 10*end_coverage) or (end_coverage > 10*start_coverage) ){
 //                std::cout<<"setting masks equal";
                     maxend=maxstart;
                     QV_mask[i].second=QV_mask[i].first;
                 }
             }
+
+            comask << i << " " << max_start_coord << " " << max_end_coord << std::endl;
+
             if ((use_qv_mask) and (use_coverage_mask)) {
                 maskvec[i] = (
                         std::pair<int, int>(std::max(maxstart, QV_mask[i].first), std::min(maxend, QV_mask[i].second)));
