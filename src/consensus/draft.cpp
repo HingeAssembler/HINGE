@@ -103,9 +103,8 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
         if (std::get<0>(edgelist[0]).strand == 0) draft_assembly = reads[std::get<0>(edgelist[0]).id]->bases;
         else draft_assembly = reverse_complement(reads[std::get<0>(edgelist[0]).id]->bases);
         std::cout << cut_start << " " << cut_end << " " << reads[std::get<0>(edgelist[0]).id]->len << std::endl;
-        assert(cut_start <= draft_assembly.size());
-        assert(cut_end <= draft_assembly.size());
-        contig = draft_assembly.substr(cut_start, cut_end-cut_start);
+        if ((cut_start <= draft_assembly.size()) and (cut_end <= draft_assembly.size()))
+            contig = draft_assembly.substr(cut_start, cut_end-cut_start);
         return 1;
     }
 
@@ -135,7 +134,7 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
         int bid = std::get<1>(edgelist[i]).id;
         bool found = false;
         for (int j = 0; j < idx_aln[std::get<0>(edgelist[i]).id].size(); j++) {
-            //printf("%d %d %d %d\n",bid, idx_aln[aid][j]->bid, idx_aln[aid][j]->read_A_match_end_ - idx_aln[aid][j]->read_A_match_start_, std::get<2>(edgelist[i]));
+            printf("%d %d %d %d\n",bid, idx_aln[aid][j]->read_B_id_, idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos + idx_aln[aid][j]->bepos - idx_aln[aid][j]->bbpos, std::get<2>(edgelist[i]));
             if ((idx_aln[aid][j]->read_B_id_ == bid) and \
             (idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos + idx_aln[aid][j]->bepos - idx_aln[aid][j]->bbpos == std::get<2>(edgelist[i]))) {
                 selected.push_back(idx_aln[aid][j]);
@@ -169,9 +168,8 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
         draft_assembly += readB.substr(bstart);
 
         std::cout << cut_start << " " << cut_end << " " << reads[std::get<0>(edgelist[0]).id]->len << std::endl;
-        assert(cut_start <= draft_assembly.size());
-        assert(cut_end <= draft_assembly.size());
-        contig = draft_assembly.substr(cut_start, cut_end-cut_start);
+        if ((cut_start <= draft_assembly.size()) and (cut_end <= draft_assembly.size()))
+            contig = draft_assembly.substr(cut_start, cut_end-cut_start);
         return 2;
     }
 
@@ -681,8 +679,7 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
 
 	std::cout << "ctg size:" << contig.size() << "cut_start:" << cut_start << "cut_end:" << cut_end << std::endl;
 
-    assert(cut_start <= contig.size());
-    assert(cut_end <= contig.size());
+    if ((cut_start <= contig.size()) and (cut_end <= contig.size()))
     contig = contig.substr(cut_start, contig.size() - cut_end - cut_start);
     return 0;
 }

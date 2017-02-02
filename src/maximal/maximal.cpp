@@ -341,7 +341,8 @@ int main(int argc, char *argv[]) {
 
     if (strlen(name_db) > 0) {
         la.getRead(reads,0,n_read);
-        la.getQV(QV,0,n_read); // load QV track from .db file
+        if (la.getQV(QV,0,n_read) != 0) // load QV track from .db file
+            has_qv = false;
     }
 
 
@@ -490,7 +491,6 @@ int main(int argc, char *argv[]) {
 
     std::ofstream cov(out + ".coverage.txt");
     std::ofstream homo(out + ".homologous.txt");
-    std::ofstream rep(out + ".repeat.txt");
     std::ofstream filtered(out + ".filtered.fasta");
     std::ofstream contained_out(out + ".contained.txt");
     std::ofstream maximal_reads(out + ".max");

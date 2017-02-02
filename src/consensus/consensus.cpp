@@ -25,7 +25,24 @@ extern "C" {
 
 
 static char ToU[4] = { 'A', 'C', 'G', 'T' };
+int chop_end(std::pair<std::string, std::string> * alignment, int chop) {
+    int len = alignment->first.size();
+    if (len < chop*2 + 10)
+        return 0;
 
+    int start = chop;
+    while (alignment->first[start] == '-') start++;
+    int offset = 0;
+    for (int i =0; i < start; i++)
+        if (alignment->first[i]!= '-')
+            offset++;
+
+    alignment->first = alignment->first.substr(start, len-start-chop);
+    alignment->second = alignment->second.substr(start, len-start-chop);
+
+    return offset;
+
+}
 
 char toLower(char c) {
 
@@ -151,9 +168,15 @@ int main(int argc, char *argv[]) {
 
             la.recoverAlignment(idx[i][j]);
             std::pair<std::string, std::string>  alignment = la.getAlignmentTags(idx[i][j]);
+            //std::cout<<"before:" << alignment.first.substr(0,200) << std::endl;
 
-            int pos_in_contig = idx[i][j]->abpos;
-            
+            int offset = chop_end(&alignment,100);
+            std::cout << offset<<std::endl;
+
+            //std::cout<<"after:" << alignment.first.substr(0,200) << std::endl;
+
+            int pos_in_contig = idx[i][j]->abpos + offset;
+
 
             for (int m = 0; m < alignment.first.length(); m++) {
 

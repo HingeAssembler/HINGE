@@ -4361,7 +4361,7 @@ static int qv_map[51] =
     'Y'
   };
 
-void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
+int LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
 	int b,e;
     b = from;
     e = to;
@@ -4377,11 +4377,11 @@ void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
         status = Check_Track(db1, (char *)"qual",&kind);
         if (status == -2)
           { fprintf(stderr,"%s: .qual-track does not exist for this db.\n",Prog_Name);
-            exit (1);
+             return (1);
           }
         if (status == -1)
           { fprintf(stderr,"%s: .qual-track not sync'd with db.\n",Prog_Name);
-            exit (1);
+            return (1);
           }
         track = Load_Track(db1, (char *)"qual");
         qv_idx = (int64 *) track->anno;
@@ -4485,7 +4485,7 @@ void LAInterface::getQV(std::vector<std::vector<int> > & QV, int from, int to) {
               }
           }*/
 	  }
-	return;
+	return 0;
 }
 
 
