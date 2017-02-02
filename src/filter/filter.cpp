@@ -373,6 +373,7 @@ int main(int argc, char *argv[]) {
     const int HINGE_TOLERANCE_LENGTH = (int) reader.GetInteger("filter", "hinge_tolerance_length", 100);
     //Reads starting at +/- HINGE_TOLERANCE_LENGTH are considered reads starting at hinges
     HINGE_BIN_LENGTH=2*HINGE_TOLERANCE_LENGTH;
+    bool delete_telomere = (int) reader.GetInteger("layout", "del_telomere", 0);
 
     console->info("use_qv_mask set to {}",use_qv_mask);
     use_qv_mask = use_qv_mask and has_qv;
@@ -625,7 +626,7 @@ int main(int argc, char *argv[]) {
                 cutoff_coverages[i][j].second -= MIN_COV;
                 if (cutoff_coverages[i][j].second < 0) cutoff_coverages[i][j].second = 0;
             }
-
+//            std::cout << "in here " << i << std::endl;
             //get the longest consecutive region that has decent coverage, decent coverage = estimated coverage / 3
             int start = 0;
             int end = start;
@@ -653,7 +654,7 @@ int main(int argc, char *argv[]) {
                     end = start;
                 }
             }
-
+//            std::cout << "in here 2 " << i  << std::endl;
 
             //std::cout << i << " " << maxstart << " " << maxend << std::endl;
             //int s = std::max(maxstart, QV_mask[i].first);
@@ -668,8 +669,10 @@ int main(int argc, char *argv[]) {
                     start_coverage += cutoff_coverages[i][max_start_coord + dummy_index].second + MIN_COV;
                     end_coverage += cutoff_coverages[i][max_end_coord - dummy_index].second + MIN_COV;
                 }
+//                std::cout << "in here 3 " << i  << std::endl;
                 start_coverage = start_coverage/10;
                 end_coverage = end_coverage/10;
+
             }
             else{
                 int limit = (max_end_coord - max_start_coord)/2;
@@ -677,13 +680,31 @@ int main(int argc, char *argv[]) {
                     start_coverage += cutoff_coverages[i][max_start_coord + dummy_index].second + MIN_COV;
                     end_coverage += cutoff_coverages[i][max_end_coord - dummy_index].second + MIN_COV;
                 }
-                start_coverage = start_coverage/limit;
-                end_coverage = end_coverage/limit;
+//                std::cout << "in here 4 " << i << limit << std::endl;
+                if (limit == 0){
+                    start_coverage = 0;
+                    end_coverage = 0;
+                }
+                else {
+                    start_coverage = start_coverage / limit;
+                    end_coverage = end_coverage / limit;
+                }
+            }
+
+//            if (i == 152034){
+//                std::cout << i << "\t" << start_coverage << "\t" << end_coverage << std::endl;
+//            }
+            if (delete_telomere) {
+                if ((start_coverage >= 10 * end_coverage) or (end_coverage >= 10 * start_coverage)) {
+                    maxend = 0;
+                    maxstart = 0;
+                    QV_mask[i].second = 0;
+                    QV_mask[i].first = 0;
+                }
             }
 
             if (reads_to_keep.size()>0) {
-                if ((reads_to_keep.find(i) == reads_to_keep.end()) or
-                        (start_coverage > 10*end_coverage) or (end_coverage > 10*start_coverage) ){
+                if (reads_to_keep.find(i) == reads_to_keep.end()) {
 //                std::cout<<"setting masks equal";
                     maxend=maxstart;
                     QV_mask[i].second=QV_mask[i].first;
