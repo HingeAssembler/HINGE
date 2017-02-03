@@ -440,6 +440,10 @@ void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<st
 
 
         for (int i = 0; i < aln.size(); i++) {
+
+            if (aln[i]->read_A_id_ == aln[i]->read_B_id_) {
+                aln[i]->active = false;
+            }
             if ((reads[aln[i]->read_A_id_]->active) and
                     ((reads[aln[i]->read_B_id_]->active) and KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS)) {
                 idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();

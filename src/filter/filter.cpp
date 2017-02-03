@@ -469,6 +469,7 @@ int main(int argc, char *argv[]) {
         std::vector<std::vector <LOverlap * > > idx_pileup; // this is the pileup
         std::vector<std::vector <LOverlap * > > idx_pileup_dedup; // this is the deduplicated pileup
         std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx_ab; //unordered_map from (aid, bid) to alignments in a vector
+        std::unordered_map<int, std::vector<std::pair<int, int> > > self_aln_list;
 
 
 
@@ -481,9 +482,25 @@ int main(int argc, char *argv[]) {
         }
 
         for (int i = 0; i < aln.size(); i++) {
+            if (aln[i]->read_A_id_ == aln[i]->read_B_id_) {
+                aln[i]->active = false;
+                if (self_aln_list.find(aln[i]->read_A_id_) == self_aln_list.end())
+                    self_aln_list[aln[i]->read_A_id_] = std::vector<std::pair<int, int>>();
+                self_aln_list[aln[i]->read_A_id_].push_back(std::pair<int, int>(aln[i]->read_A_match_start_, aln[i]->read_A_match_end_));
+                self_aln_list[aln[i]->read_A_id_].push_back(std::pair<int, int>(aln[i]->read_B_match_start_, aln[i]->read_B_match_end_));
+            }
             if (aln[i]->active) {
                 idx_pileup[aln[i]->read_A_id_].push_back(aln[i]);
             }
+        }
+
+        for (auto it : self_aln_list) {
+            float cov = 0.0;
+            for (int i = 0; i < it.second.size(); i++)
+                cov += it.second[i].second - it.second[i].first;
+            cov /= float(reads[it.first]->len);
+            std::cout << "selfcov: " <<  it.first << " " << cov << " " << reads[it.first]->len << std::endl;
+
         }
 
 

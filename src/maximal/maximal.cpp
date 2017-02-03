@@ -581,6 +581,9 @@ int main(int argc, char *argv[]) {
         }
 
         for (int i = 0; i < aln.size(); i++) {
+            if (aln[i]->read_A_id_ == aln[i]->read_B_id_) {
+                aln[i]->active = false;
+            }
             if (aln[i]->active) {
                 idx_pileup[aln[i]->read_A_id_].push_back(aln[i]);
             }
