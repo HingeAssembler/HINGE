@@ -17,6 +17,8 @@ import matplotlib.colors
 
 # In[3]:
 
+MAX_PLASMID_LENGTH = 500000
+
 def write_graph(G,flname):
     with open(flname,'w') as f:
         for edge in G.edges_iter():
@@ -704,6 +706,7 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
             print '----'
             print st_node
 
+        loop_len = 0
 
         for first_node in g.successors(st_node):
 
@@ -721,12 +724,22 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
             if print_debug:
                 print 'going on loop'
 
+            loop_len = 0
+            prev_edge = g[st_node][next_node]
             node_cnt = 0
             while g.in_degree(next_node) == 1 and g.out_degree(next_node) == 1 and node_cnt < max_nodes:
                 node_cnt += 1
                 in_node = next_node
                 next_node = g.successors(next_node)[0]
+                loop_len += abs(g[in_node][next_node]['read_a_match_start'] - prev_edge['read_b_match_start'])
+                prev_edge = g[in_node][next_node]
 
+            if node_cnt >= max_nodes:
+                continue
+
+            if print_debug:
+                print "length in loop " + str(loop_len)
+            len_in_loop = loop_len
             first_node_of_repeat = next_node
 
             if g.in_degree(next_node) == 2:
@@ -760,18 +773,29 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
             if g.in_degree(next_node) == 2 and g.out_degree(next_node) == 1:
                 next_double_node = g.successors(next_node)[0]
                 rep.append(next_double_node)
+                prev_edge = g[next_node][next_double_node]
             else:
                 next_double_node = next_node
+                try:
+                    assert not (g.in_degree(next_double_node) == 1 and g.out_degree(next_double_node) == 1)
+                except:
+                    print str(g.in_degree(next_node))
+                    print str(g.out_degree(next_node))
+                    raise
 
             while g.in_degree(next_double_node) == 1 and g.out_degree(next_double_node) == 1 and node_cnt < max_nodes:
                 node_cnt += 1
+                loop_len += abs(g[next_double_node][g.successors(next_double_node)[0]]['read_a_match_start'] - prev_edge['read_b_match_start'])
                 next_double_node = g.successors(next_double_node)[0]
                 rep.append(next_double_node)
 
+            if print_debug:
+                print "length in repeat " + str(loop_len-len_in_loop)
 
-            if next_double_node == st_node:
+            if next_double_node == st_node and loop_len > MAX_PLASMID_LENGTH:
                 if print_debug:
                     print 'success!'
+                    print "length in loop " + str(loop_len)
                     print 'rep is:'
                     print rep
                     print 'in_node and other_successor:'
