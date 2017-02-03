@@ -12,12 +12,13 @@ import ujson
 from colormap import rgb2hex
 import operator
 import matplotlib.colors
+import configparser
 # print G.number_of_edges(),G.number_of_nodes()
 
 
 # In[3]:
 
-MAX_PLASMID_LENGTH = 500000
+
 
 def write_graph(G,flname):
     with open(flname,'w') as f:
@@ -1123,8 +1124,24 @@ hingesname = sys.argv[2]
 
 suffix = sys.argv[3]
 
-if len(sys.argv)==5:
-    json_file = open(sys.argv[4])
+if len(sys.argv) >= 5:
+    ini_file_path = sys.argv[4]
+    config = configparser.ConfigParser()
+    config.read(ini_file_path)
+    try:
+        MAX_PLASMID_LENGTH = config.getint('layout', 'max_plasmid_length')
+        # print 'MAX_PLASMID_LENGTH in config '+str(MAX_PLASMID_LENGTH)
+    except:
+        MAX_PLASMID_LENGTH = 500000
+        # print 'MAX_PLASMID_LENGTH '+str(MAX_PLASMID_LENGTH)
+
+else:
+    MAX_PLASMID_LENGTH = 500000
+
+
+
+if len(sys.argv)==6:
+    json_file = open(sys.argv[5])
 else:
     json_file = None
 # path = '../pb_data/ecoli_shortened/ecoli4/'
