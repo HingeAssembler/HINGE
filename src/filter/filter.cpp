@@ -494,13 +494,15 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        std::set<int> self_match_reads;
         for (auto it : self_aln_list) {
             float cov = 0.0;
             for (int i = 0; i < it.second.size(); i++)
                 cov += it.second[i].second - it.second[i].first;
             cov /= float(reads[it.first]->len);
             std::cout << "selfcov: " <<  it.first << " " << cov << " " << reads[it.first]->len << std::endl;
-
+            if ((cov > 4.5) and (reads[it.first]->len > 10000))
+                self_match_reads.insert(it.first);
         }
 
 
@@ -713,6 +715,14 @@ int main(int argc, char *argv[]) {
 //            }
             if (delete_telomere) {
                 if ((start_coverage >= 10 * end_coverage) or (end_coverage >= 10 * start_coverage)) {
+                    maxend = 0;
+                    maxstart = 0;
+                    QV_mask[i].second = 0;
+                    QV_mask[i].first = 0;
+                }
+
+                if (self_match_reads.find(i) != self_match_reads.end()) {
+
                     maxend = 0;
                     maxstart = 0;
                     QV_mask[i].second = 0;
