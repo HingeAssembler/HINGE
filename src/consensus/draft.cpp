@@ -88,7 +88,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
 }
 
 
-int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::vector<LOverlap *> & aln,
+int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::vector<LAlignment *> & full_aln,
                        std::unordered_map<int, std::vector<LOverlap *> > &idx3,
                        std::unordered_map<int, std::unordered_map<int, std::vector<LOverlap *> > > & idx,
                        std::vector<Read *> & reads, int TSPACE, int EDGE_SAFE, int MIN_COV2,
@@ -110,10 +110,10 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
 
 
 
-    std::vector<LAlignment *> full_alns;
+    //std::vector<LAlignment *> full_alns;
     std::vector<LAlignment *> selected;
     std::unordered_map<int, std::vector<LAlignment *>> idx_aln;
-    la.resetAlignment();
+    //la.resetAlignment();
     std::vector<int> range;
 
     for (int i = 0; i < edgelist.size(); i++) {
@@ -123,9 +123,9 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
 
     std::sort(range.begin(), range.end());
 
-    la.getAlignment(full_alns, range);
+    //la.getAlignment(full_alns, range);
 
-    for (auto i:full_alns) {
+    for (auto i:full_aln) {
         idx_aln[i->read_A_id_].push_back(i);
     }
 
@@ -134,7 +134,7 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
         int bid = std::get<1>(edgelist[i]).id;
         bool found = false;
         for (int j = 0; j < idx_aln[std::get<0>(edgelist[i]).id].size(); j++) {
-            printf("%d %d %d %d\n",bid, idx_aln[aid][j]->read_B_id_, idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos + idx_aln[aid][j]->bepos - idx_aln[aid][j]->bbpos, std::get<2>(edgelist[i]));
+            //printf("%d %d %d %d\n",bid, idx_aln[aid][j]->read_B_id_, idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos + idx_aln[aid][j]->bepos - idx_aln[aid][j]->bbpos, std::get<2>(edgelist[i]));
             if ((idx_aln[aid][j]->read_B_id_ == bid) and \
             (idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos + idx_aln[aid][j]->bepos - idx_aln[aid][j]->bbpos == std::get<2>(edgelist[i]))) {
                 selected.push_back(idx_aln[aid][j]);
@@ -181,8 +181,8 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
 
     for (int i = 0; i < selected.size(); i++) {
         la.recoverAlignment(selected[i]);
-        printf("%d %d %d %d %d\n", selected[i]->read_A_id_, selected[i]->read_B_id_,
-                selected[i]->alen, selected[i]->blen, selected[i]->tlen);
+        //printf("%d %d %d %d %d\n", selected[i]->read_A_id_, selected[i]->read_B_id_,
+        //        selected[i]->alen, selected[i]->blen, selected[i]->tlen);
         //printf("%d %d\n",selected[i]->tlen, selected[i]->trace_pts_len);
         std::pair<std::string, std::string> res = la.getAlignmentTags(selected[i]);
         aln_tags_map[selected[i]->read_A_id_][selected[i]->read_B_id_] = res;
@@ -351,11 +351,11 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     << aln_tags_list.size() << " " << pitfalls.size() << " " << aln_tags_list_true_strand.size()
     << " " << mappings.size() << " " << coverages.size() << std::endl;
 
-    for (int i = 0; i < bedges.size() - 1; i++) {
+    /*for (int i = 0; i < bedges.size() - 1; i++) {
         printf("%d %d %d %d %d\n", bedges[i]->read_B_match_start_, bedges[i]->read_B_match_end_,
                 bedges[i+1]->read_A_match_start_, bedges[i+1]->read_A_match_end_,
                 bedges[i]->read_B_match_end_ - bedges[i+1]->read_A_match_start_);
-    }
+    }*/
 
 
     int tspace = TSPACE; // set lane length to be 500
@@ -398,7 +398,7 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
             while ((waypoint > bedges[currentread]->read_A_match_start_) and
                    (waypoint < bedges[currentread]->read_A_match_end_)) {
 
-                printf("%d %d\n", currentread, waypoint);
+                //printf("%d %d\n", currentread, waypoint);
                 trace_pts[currentread].push_back(waypoint);
 
 
@@ -731,7 +731,7 @@ int main(int argc, char *argv[]) {
 
 
     std::string name_mask = out + ".mas";
-//    std::string name_max = out + ".max";
+	std::string name_max = out + ".max";
     std::string name_homo = out + ".homologous.txt";
     std::string name_rep = out + ".repeat.txt";
     std::string name_hg = out + ".hinges.txt";
@@ -742,7 +742,6 @@ int main(int argc, char *argv[]) {
 
 
     std::ofstream deadend_out(name_deadend);
-//    std::ofstream maximal_reads(name_max);
     std::ofstream garbage_out(name_garbage);
     std::ofstream contained_out(name_contained);
     std::ifstream homo(name_homo);
@@ -817,11 +816,49 @@ int main(int argc, char *argv[]) {
 
     console->info("# Reads: {}", n_read); // output some statistics
 
+
+
+    if (strlen(name_db) > 0) {
+        la.getRead(reads, 0, n_read);
+    }
+
+	std::ifstream max_reads_file(name_max);
+
+    std::vector<bool> maximal_read;
+    maximal_read.resize(n_read, false);
+    std::string read_line;
+	int num_active_reads = 0;
+    while(std::getline(max_reads_file, read_line))
+    {
+        int read_number;
+        read_number = atoi(read_line.c_str());
+        maximal_read[read_number] = true;
+        num_active_reads++;
+    }
+    console->info("Total number of active reads: {}/{}", num_active_reads, n_read);
+
+    for (int i = 0; i < n_read; i++){
+        reads[i]->active = maximal_read[i];
+    }
+
+
+    std::vector<int> range;
+
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->active) range.push_back(i);
+    }
+
+    std::sort(range.begin(), range.end());
+
     std::vector<LOverlap *> aln;//Vector of pointers to all alignments
+    std::vector<LAlignment *> full_aln;//Vector of pointers to all alignments
+
 
     if (strlen(name_las) > 0) {
         la.resetAlignment();
-        la.getOverlap(aln, 0, n_aln);
+        la.getOverlap(aln, range);
+        la.resetAlignment();
+		la.getAlignment(full_aln, range);
     }
 
     if (strlen(name_paf) > 0) {
@@ -835,10 +872,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-
-    if (strlen(name_db) > 0) {
-        la.getRead(reads, 0, n_read);
-    }
 
     console->info("Input data finished");
 
@@ -901,6 +934,9 @@ int main(int argc, char *argv[]) {
     omp_set_num_threads(N_PROC);
     std::vector<Edge_w> edgelist, edgelist_ms; // save output to edgelist
     std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx_ab;
+
+
+
 
 
     for (int i = 0; i < n_read; i++) {
@@ -999,7 +1035,7 @@ int main(int argc, char *argv[]) {
 
             if (edgelist.size() > 0)
             {
-                draft_assembly_ctg(edgelist, la, aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2, cut_start, cut_end, one_read_contig, two_read_contig, contig);
+                draft_assembly_ctg(edgelist, la, full_aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2, cut_start, cut_end, one_read_contig, two_read_contig, contig);
                 out_fa << current_name << std::endl;
                 out_fa << contig << std::endl;
             }
@@ -1016,7 +1052,7 @@ int main(int argc, char *argv[]) {
             // process edges list
             std::cout << current_name << std::endl;
 
-            draft_assembly_ctg(edgelist, la, aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2, cut_start, cut_end, one_read_contig, two_read_contig, contig);
+            draft_assembly_ctg(edgelist, la, full_aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2, cut_start, cut_end, one_read_contig, two_read_contig, contig);
             out_fa << current_name << std::endl;
             out_fa << contig << std::endl;
 
