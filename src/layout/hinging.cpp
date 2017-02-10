@@ -396,7 +396,7 @@ void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<st
     console->info("Total number of active reads: {}/{}", num_active_reads, n_read);
 
     for (int i = 0; i < n_read; i++){
-        reads[i]->active = maximal_read[i];
+        reads[i]->active = (reads[i]->active) and (maximal_read[i]);
     }
 
 

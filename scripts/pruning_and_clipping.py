@@ -1230,9 +1230,9 @@ G1,G0 = z_clipping_sym(G0,6,set(),set())
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 
 
-G1 = bubble_bursting_sym(G1,10)
+G1 = bubble_bursting_sym(G1,20)
 
-G1 = dead_end_clipping_sym(G1,5)
+G1 = dead_end_clipping_sym(G1,20)
 
 nx.write_graphml(G0, prefix+suffix+'.'+'G0'+'.graphml')
 nx.write_graphml(G1, prefix+suffix+'.'+'G1'+'.graphml')
