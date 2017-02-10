@@ -1123,6 +1123,7 @@ hingesname = sys.argv[2]
 
 
 suffix = sys.argv[3]
+DEL_TELOMERE=False
 
 if len(sys.argv) >= 5:
     ini_file_path = sys.argv[4]
@@ -1134,6 +1135,10 @@ if len(sys.argv) >= 5:
     except:
         MAX_PLASMID_LENGTH = 500000
         # print 'MAX_PLASMID_LENGTH '+str(MAX_PLASMID_LENGTH)
+    try: 
+        DEL_TELOMERE = config.getbool('layout','del_telomere')
+    except:
+        DEL_TELOMERE = False
 
 else:
     MAX_PLASMID_LENGTH = 500000
@@ -1270,10 +1275,12 @@ G1,G0 = z_clipping_sym(G0,6,set(),set())
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 
-
-G1 = bubble_bursting_sym(G1,20)
-
-G1 = dead_end_clipping_sym(G1,20)
+if DEL_TELOMERE:
+    G1 = bubble_bursting_sym(G1,20)
+    G1 = dead_end_clipping_sym(G1,20)
+else:
+    G1 = bubble_bursting_sym(G1,10)
+    G1 = dead_end_clipping_sym(G1,5)
 
 nx.write_graphml(G0, prefix+suffix+'.'+'G0'+'.graphml')
 nx.write_graphml(G1, prefix+suffix+'.'+'G1'+'.graphml')
