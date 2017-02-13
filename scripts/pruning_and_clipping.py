@@ -829,10 +829,11 @@ def y_pruning(G,flank):
 
     y_nodes = set([x for x in H.nodes() if H.out_degree(x) > 1 and H.in_degree(x) == 1])
 
+    pruned_count = 0
+
     for st_node in y_nodes:
 
         pruned = 0
-        pruned_count = 0
 
         try:  
             H.predecessors(st_node)
@@ -854,19 +855,19 @@ def y_pruning(G,flank):
         # if we got here, we probably have a Y, and not a collapsed repeat
         for vert in H.successors(st_node):
             if H.node[vert]['CFLAG'] == True:
-                print "went in here"
+                
                 try:
                     H.remove_edge(st_node,vert)
                     H.remove_edge(rev_node(vert),rev_node(st_node))
                     pruned = 1
-                    print "pruned!"
+    
                 except:
                     pass
 
         if pruned == 1:
             pruned_count += 1
 
-    print "Number of pruned Y's: "+str(pruned_count)
+    # print "Number of pruned Y's: "+str(pruned_count)
 
 
     return H
