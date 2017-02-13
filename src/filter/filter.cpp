@@ -423,6 +423,8 @@ int main(int argc, char *argv[]) {
     std::ofstream hg(out + ".hinges.txt");
     std::ofstream mask(out + ".mas");
     std::ofstream comask(out + ".cmas");
+    std::ofstream covflag(out + ".cov.flag");
+    std::ofstream selfflag(out + ".self.flag");
 
     for (int part = 0; part < name_las_list.size(); part++) {
 
@@ -715,18 +717,11 @@ int main(int argc, char *argv[]) {
 //            }
             if (delete_telomere) {
                 if ((start_coverage >= 10 * end_coverage) or (end_coverage >= 10 * start_coverage)) {
-                    maxend = 0;
-                    maxstart = 0;
-                    QV_mask[i].second = 0;
-                    QV_mask[i].first = 0;
+                    covflag << i << std::endl;
                 }
 
                 if (self_match_reads.find(i) != self_match_reads.end()) {
-
-                    maxend = 0;
-                    maxstart = 0;
-                    QV_mask[i].second = 0;
-                    QV_mask[i].first = 0;
+                    selfflag << i << std::endl;
                 }
             }
 
