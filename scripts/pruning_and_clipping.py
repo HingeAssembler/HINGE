@@ -1413,7 +1413,7 @@ G3 = y_pruning(G2,10)
 
 G3 = dead_end_clipping_sym(G3,10)
 
-G3s = random_condensation(G3,1000)
+G3s = random_condensation_sym(G3,1000)
 
 
 
