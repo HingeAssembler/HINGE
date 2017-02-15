@@ -1,8 +1,8 @@
-#wget http://gembox.cbcb.umd.edu/mhap/raw/ecoli_p4_filtered.fastq.gz
+wget http://s3.climb.ac.uk/nanopore/R9_Ecoli_K12_MG1655_lambda_MinKNOW_0.51.1.62.all.fasta
 #gunzip ecoli_p4_filtered.fastq.gz
 
 #seqtk seq -a ecoli_p4_filtered.fastq > reads.fasta
-hinge correct-head reads.fasta reads.pb.fasta map.txt
+hinge correct-head R9_Ecoli_K12_MG1655_lambda_MinKNOW_0.51.1.62.all.fasta reads.pb.fasta map.txt
 fasta2DB ecoli reads.pb.fasta
 
 
@@ -19,12 +19,9 @@ mkdir log
 
 
 hinge filter --db ecoli --las ecoli --mlas -x ecoli --config ../../utils/nominal.ini
-
-hinge maximal --db ecoli --las ecoli --mlas -x ecoli --config ../../utils/nominal.ini
-
 hinge layout --db ecoli --las ecoli.las -x ecoli --config ../../utils/nominal.ini -o ecoli
 
-hinge clip ecoli.edges.hinges ecoli.hinge.list demo
+hinge clip-nanopore ecoli.edges.hinges ecoli.hinge.list demo
 
 hinge draft-path $PWD ecoli ecolidemo.G2.graphml
 hinge draft --db ecoli --las ecoli.las --prefix ecoli --config ../../utils/nominal.ini --out ecoli.draft

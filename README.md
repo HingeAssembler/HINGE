@@ -47,34 +47,8 @@ It can be analyzed and visualized, etc.
 
 ## Parameters
 
-In the pipeline described above, most programs not only takes the input file and output file as arguments, but also require a configuration file in ini format. This consists parameters for each step in the pipeline, and their usage and effects are explained below:
+In the pipeline described above, several programs load their parameters from a configuration file in the ini format.  All tunable parameters are described in [this document](parameter_description.md).
 
-
-###[filter]
-- length_threshold = 6500; // Length threshold for reads to be considered in the backbone
-- quality_threshold = 0.23; // Quality threshold for edges to be considered in the backbone 
-- n_iter = 2; // iterations of filtering, the filtering needs several iterations, because when filter reads, you got rid of some edges; when filter edges, you got rid of some reads (if the last edge is filtered.) Typically 2-3 iterations will be enough.
-- aln_threshold = 2500; // Length of alignment for edges to be considered in the backbone
-- min_cov = 5; // Minimal coverage for a segment to be considered not chimer/adaptor
-- cut_off = 200; // A parameter for identifying long chimer in the middle of a read
-- theta = 300; // A parameter for tolerance of the overhang length when looking for right extension.
-
-
-###[running]
-- n_proc = 12; // number of CPUs for layout step
-
-###[draft]
-- min_cov = 10; //obsolete
-- trim = 200; //obsolete
-- edge_safe = 100; //obsolete
-- tspace = 900; //space between new "trace points"
-
-
-###[consensus]
-- min_length = 2000; // Minimal length of reads used for final consensus
-- trim_end = 200; // Trim ends for alignments for final consensus
-- best_n = 1; // If one read has multiple alignments with the bacbone assembly, choose the longest n segments for consensus.
-- quality_threshold = 0.23; // alignment quality threshold
 
 # Installation
 
@@ -125,30 +99,30 @@ DASqv -c100 ecoli ecoli.las
 # Run filter
 
 mkdir log
-Reads_filter --db ecoli --las ecoli.las -x ecoli --config <path-to-nominal.ini>
+hinge filter --db ecoli --las ecoli.las -x ecoli --config <path-to-nominal.ini>
 
 # Run layout
 
-hinging --db ecoli --las ecoli.las -x ecoli --config <path-to-nominal.ini> -o ecoli
+hinge layout --db ecoli --las ecoli.las -x ecoli --config <path-to-nominal.ini> -o ecoli
 
 # Run postprocessing
 
-python pruning_and_clipping.py ecoli.edges.hinges ecoli.hinge.list <identifier-of-run>
+hinge clip ecoli.edges.hinges ecoli.hinge.list <identifier-of-run>
 
 
 # get draft assembly 
 
-get_draft_path.py <working directory> ecoli ecoli<identifier-of-run>.G2.graphml
-draft_assembly --db ecoli --las ecoli.las --prefix ecoli --config <path-to-nominal.ini> --out ecoli.draft
+hinge draft-path <working directory> ecoli ecoli<identifier-of-run>.G2.graphml
+hinge draft --db ecoli --las ecoli.las --prefix ecoli --config <path-to-nominal.ini> --out ecoli.draft
 
 
 # get consensus assembly
 
-correct_head.py ecoli.draft.fasta ecoli.draft.pb.fasta draft_map.txt
+hinge correct-head ecoli.draft.fasta ecoli.draft.pb.fasta draft_map.txt
 fasta2DB draft ecoli.draft.pb.fasta 
 HPC.daligner ecoli draft | zsh -v  
-consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta utils/nominal.ini
-get_consensus_gfa.py <working directory> ecoli ecoli.consensus.fasta
+hinge consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta <path-to-nominal.ini>
+hinge gfa <working directory> ecoli ecoli.consensus.fasta
 
 #results should be in ecoli_consensus.gfa
 ```

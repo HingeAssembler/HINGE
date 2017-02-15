@@ -33,10 +33,27 @@ add_subdirectory(spdlog)
 
 #add_subdirectory(ogdf)
 
+find_program(PANDOC pandoc)
+
+if(PANDOC)
+  add_custom_command(
+    OUTPUT hinge.1
+    COMMAND ${PANDOC} --from markdown --to man -s ${CMAKE_CURRENT_SOURCE_DIR}/hinge.1.md -o hinge.1
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/hinge.1.md
+    VERBATIM
+    )
+
+  add_custom_target(man ALL DEPENDS hinge.1)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hinge.1 DESTINATION share/man/man1)
+endif()
+
+install(PROGRAMS hinge DESTINATION bin)
 
 ## Executables
 
 add_subdirectory(filter filter)
+
+add_subdirectory(maximal maximal)
 
 add_subdirectory(consensus consensus)
 

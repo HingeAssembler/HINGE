@@ -22,18 +22,11 @@ hinge draft-path $PWD NCTC9657 NCTC9657demo.G2.graphml
 hinge draft --db NCTC9657 --las NCTC9657.las --prefix NCTC9657 --config ../../utils/nominal.ini --out NCTC9657.draft
 
 
+hinge fasta2q reads.pb.fasta reads.fastq
+minimap NCTC9657.draft.fasta reads.fastq > NCTC9657.paf
+racon reads.fastq NCTC9657.paf NCTC9657.draft.fasta NCTC9657.consensus.fasta
 
 
-
-
-hinge correct-head NCTC9657.draft.fasta NCTC9657.draft.pb.fasta draft_map.txt 
-fasta2DB draft NCTC9657.draft.pb.fasta
-HPC.daligner NCTC9657 draft | bash -v 
-
-# rm draft.*.NCTC9657.*.las
-# LAmerge draft.NCTC9657.las draft.NCTC9657.*.las
-
-hinge consensus draft NCTC9657 draft.NCTC9657.las NCTC9657.consensus.fasta ../../utils/nominal.ini
 
 hinge gfa $PWD NCTC9657 NCTC9657.consensus.fasta
 

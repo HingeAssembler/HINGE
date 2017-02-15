@@ -12,13 +12,10 @@ import ujson
 from colormap import rgb2hex
 import operator
 import matplotlib.colors
-import configparser
 # print G.number_of_edges(),G.number_of_nodes()
 
 
 # In[3]:
-
-
 
 def write_graph(G,flname):
     with open(flname,'w') as f:
@@ -707,7 +704,6 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
             print '----'
             print st_node
 
-        loop_len = 0
 
         for first_node in g.successors(st_node):
 
@@ -725,22 +721,12 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
             if print_debug:
                 print 'going on loop'
 
-            loop_len = 0
-            prev_edge = g[st_node][next_node]
             node_cnt = 0
             while g.in_degree(next_node) == 1 and g.out_degree(next_node) == 1 and node_cnt < max_nodes:
                 node_cnt += 1
                 in_node = next_node
                 next_node = g.successors(next_node)[0]
-                loop_len += abs(g[in_node][next_node]['read_a_match_start'] - prev_edge['read_b_match_start'])
-                prev_edge = g[in_node][next_node]
 
-            if node_cnt >= max_nodes:
-                continue
-
-            if print_debug:
-                print "length in loop " + str(loop_len)
-            len_in_loop = loop_len
             first_node_of_repeat = next_node
 
             if g.in_degree(next_node) == 2:
@@ -774,29 +760,18 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
             if g.in_degree(next_node) == 2 and g.out_degree(next_node) == 1:
                 next_double_node = g.successors(next_node)[0]
                 rep.append(next_double_node)
-                prev_edge = g[next_node][next_double_node]
             else:
                 next_double_node = next_node
-                try:
-                    assert not (g.in_degree(next_double_node) == 1 and g.out_degree(next_double_node) == 1)
-                except:
-                    print str(g.in_degree(next_node))
-                    print str(g.out_degree(next_node))
-                    raise
 
             while g.in_degree(next_double_node) == 1 and g.out_degree(next_double_node) == 1 and node_cnt < max_nodes:
                 node_cnt += 1
-                loop_len += abs(g[next_double_node][g.successors(next_double_node)[0]]['read_a_match_start'] - prev_edge['read_b_match_start'])
                 next_double_node = g.successors(next_double_node)[0]
                 rep.append(next_double_node)
 
-            if print_debug:
-                print "length in repeat " + str(loop_len-len_in_loop)
 
-            if next_double_node == st_node and loop_len > MAX_PLASMID_LENGTH:
+            if next_double_node == st_node:
                 if print_debug:
                     print 'success!'
-                    print "length in loop " + str(loop_len)
                     print 'rep is:'
                     print rep
                     print 'in_node and other_successor:'
@@ -821,56 +796,6 @@ def loop_resolution(g,max_nodes,flank,print_debug = False):
     return g
 
 
-
-
-def y_pruning(G,flank):
-
-    H = G.copy()
-
-    y_nodes = set([x for x in H.nodes() if H.out_degree(x) > 1 and H.in_degree(x) == 1])
-
-    pruned_count = 0
-
-    for st_node in y_nodes:
-
-        pruned = 0
-
-        try:  
-            H.predecessors(st_node)
-        except:
-            continue
-
-        prev_node = H.predecessors(st_node)[0]
-
-        node_cnt = 0
-    
-        while H.in_degree(prev_node) == 1 and H.out_degree(prev_node) == 1:
-            node_cnt += 1
-            prev_node = H.predecessors(prev_node)[0]
-            if node_cnt >= flank:
-                break
-        if node_cnt < flank: # and prev_node != st_node:
-            continue
-
-        # if we got here, we probably have a Y, and not a collapsed repeat
-        for vert in H.successors(st_node):
-            if H.node[vert]['CFLAG'] == True:
-                
-                try:
-                    H.remove_edge(st_node,vert)
-                    H.remove_edge(rev_node(vert),rev_node(st_node))
-                    pruned = 1
-    
-                except:
-                    pass
-
-        if pruned == 1:
-            pruned_count += 1
-
-    # print "Number of pruned Y's: "+str(pruned_count)
-
-
-    return H
 
 
 # In[72]:
@@ -1037,57 +962,6 @@ def add_annotation(g,in_hinges,out_hinges):
 
 
 
-
-def add_chimera_flags(g,prefix):
-
-    cov_flags = prefix + '.cov.flag'
-    slf_flags = None
-
-    for node in g.nodes():
-        g.node[node]['CFLAG'] = False
-    if slf_flags != None:
-        g.node[node]['SFLAG'] = False
-
-    node_set = set(g.nodes())
-    num_bad_cov_reads = 0
-    if cov_flags != None:
-        with open(cov_flags,'r') as f:
-            for line in f:
-                node_name = line.strip()
-                try: 
-                    assert not ((node_name+'_0' in node_set and node_name+'_1' not in node_set)
-                        or (node_name+'_0' not in node_set and node_name+'_1'  in node_set))
-                except:
-                    print node_name + ' is not symmetrically present in the graph input.'
-                    raise
-                if node_name+'_0' in node_set:
-                    g.node[node_name+'_0']['CFLAG'] = True
-                    g.node[node_name+'_1']['CFLAG'] = True
-                    num_bad_cov_reads += 1
-    print str(num_bad_cov_reads) + ' bad coverage reads.'
-
-    num_bad_slf_reads = 0
-    if slf_flags != None:
-        with open(slf_flags,'r') as f:
-            for line in f:
-                node_name = line.strip()
-                try: 
-                    assert not ((node_name+'_0' in node_set and node_name+'_1' not in node_set)
-                        or (node_name+'_0' not in node_set and node_name+'_1'  in node_set))
-                except:
-                    print node_name + ' is not symmetrically present in the graph input.'
-                    raise
-                if node_name+'_0' in node_set:
-                    g.node[node_name+'_0']['SFLAG'] = True
-                    g.node[node_name+'_1']['SFLAG'] = True
-                    num_bad_slf_reads += 1
-    print str(num_bad_slf_reads) + ' bad self aligned reads.'            
-
-
-
-
-
-
 def connect_strands(g):
 
     for node in g.nodes():
@@ -1224,36 +1098,13 @@ hingesname = sys.argv[2]
 
 
 suffix = sys.argv[3]
-DEL_TELOMERE=False
 
-if len(sys.argv) >= 5:
-    ini_file_path = sys.argv[4]
-    config = configparser.ConfigParser()
-    config.read(ini_file_path)
-    try:
-        MAX_PLASMID_LENGTH = config.getint('layout', 'max_plasmid_length')
-        # print 'MAX_PLASMID_LENGTH in config '+str(MAX_PLASMID_LENGTH)
-    except:
-        MAX_PLASMID_LENGTH = 500000
-        # print 'MAX_PLASMID_LENGTH '+str(MAX_PLASMID_LENGTH)
-    try: 
-        DEL_TELOMERE = config.getbool('layout','del_telomere')
-    except:
-        DEL_TELOMERE = False
-
-else:
-    MAX_PLASMID_LENGTH = 500000
-
-
-
-if len(sys.argv)>=6:
-    json_file = open(sys.argv[5])
+if len(sys.argv)==5:
+    json_file = open(sys.argv[4])
 else:
     json_file = None
 # path = '../pb_data/ecoli_shortened/ecoli4/'
 # suffix = 'i2'
-
-
 
 
 
@@ -1348,19 +1199,11 @@ with open (hingesname) as f:
 
 add_annotation(G,in_hinges,out_hinges)
 
-
-add_chimera_flags(G,prefix)
-
-
-
 # try:
 mark_skipped_edges(G,flname.split('.')[0] + '.edges.skipped')
 # except:
 #     print "some error here"
 #     pass
-
-
-
 
 
 
@@ -1386,12 +1229,10 @@ G1,G0 = z_clipping_sym(G0,6,set(),set())
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 
-if DEL_TELOMERE:
-    G1 = bubble_bursting_sym(G1,20)
-    G1 = dead_end_clipping_sym(G1,20)
-else:
-    G1 = bubble_bursting_sym(G1,10)
-    G1 = dead_end_clipping_sym(G1,5)
+
+G1 = bubble_bursting_sym(G1,20)
+
+G1 = dead_end_clipping_sym(G1,20)
 
 nx.write_graphml(G0, prefix+suffix+'.'+'G0'+'.graphml')
 nx.write_graphml(G1, prefix+suffix+'.'+'G1'+'.graphml')
@@ -1402,7 +1243,6 @@ G2 = G1.copy()
 Gs = random_condensation_sym(G1,1000)
 
 
-
 loop_resolution(G2,500,50)
 
 G2s = random_condensation_sym(G2,1000)
@@ -1410,19 +1250,8 @@ G2s = random_condensation_sym(G2,1000)
 
 
 
-G3 = y_pruning(G2,10)
-
-G3 = dead_end_clipping_sym(G3,10)
-
-G3s = random_condensation_sym(G3,1000)
-
-
 
 nx.write_graphml(G2, prefix+suffix+'.'+'G2'+'.graphml')
-
-nx.write_graphml(G3, prefix+suffix+'.'+'G3'+'.graphml')
-
-nx.write_graphml(G3s, prefix+suffix+'.'+'G3s'+'.graphml')
 
 nx.write_graphml(Gs, prefix+suffix+'.'+'Gs'+'.graphml')
 
@@ -1435,12 +1264,6 @@ nx.write_graphml(Gc, prefix+suffix+'.'+'Gc'+'.graphml')
 G2c = connect_strands(G2s)
 
 nx.write_graphml(G2c, prefix+suffix+'.'+'G2c'+'.graphml')
-
-G3c = connect_strands(G3s)
-
-nx.write_graphml(G3c, prefix+suffix+'.'+'G3c'+'.graphml')
-
-
 
 # G2b = create_bidirected2(G2)
 

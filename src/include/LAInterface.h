@@ -103,6 +103,7 @@ public:
 	void TrimOverlapNaive();
     int eff_start_trace_point_index_, eff_end_trace_point_index_;
     int weight;
+    int length;
 };
 
 
@@ -139,7 +140,7 @@ public:
     int openAlignmentFile(std::string filename); // open .las Alignment file
 
     void showRead(int from, int to); // show reads in a range
-	
+
     void showRead2(int from, int to); // show reads in a range
 
     void showAlignment(int from, int to); // show alignment with 'A read' in a range
@@ -153,13 +154,15 @@ public:
     Read *getRead2(int number); //get one read
 
     void getRead(std::vector<Read *> &reads, int from, int to); // get reads within a range
-	
-	void getQV(std::vector<std::vector<int> > & QV, int from, int to);
+
+    int getQV(std::vector<std::vector<int> > & QV, int from, int to);
 
     void getRead2(std::vector<Read *> &reads, int from, int to); // get reads within a range
 
 
     void getAlignmentB(std::vector<int> &, int n); // get all b reads aligned with a read
+
+    void getOverlap(std::vector<LOverlap *> &, std::vector<int> &range); // get overlap(simplified version of alignment) with a read in a range
 
     void getOverlap(std::vector<LOverlap *> &, int from, int64 to); // get overlap(simplified version of alignment) with a read in a range
 
@@ -230,5 +233,24 @@ public:
 };
 
 
+
+
+bool pairAscend(const std::pair<int, int>& firstElem,  const std::pair<int, int>& secondElem);
+
+bool pairDescend(const std::pair<int, int>& firstElem,  const std::pair<int, int>& secondElem);
+
+bool compare_overlap(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_sum_overlaps(const std::vector<LOverlap * > * ovl1, const std::vector<LOverlap *> * ovl2);
+
+bool compare_pos(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_overlap_abpos(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_overlap_aepos(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_overlap_weight(LOverlap * ovl1, LOverlap * ovl2);
+
+bool compare_overlap_aln(LAlignment * ovl1, LAlignment * ovl2);
 
 #endif

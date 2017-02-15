@@ -26,9 +26,9 @@
 #include "cmdline.h"
 
 std::string lastN(std::string input, int n)
-    {
+{
     return input.substr(input.size() - n);
-    }
+}
 
 inline std::vector<std::string> glob(const std::string& pat){
     using namespace std;
@@ -60,6 +60,76 @@ inline std::vector<std::string> glob(const std::string& pat){
     return ret;
 }
 
+bool ProcessAlignment(LOverlap * match, Read * read_A, Read * read_B, int ALN_THRESHOLD,
+                      int THETA, int THETA2, bool trim){
+    //Function takes as input pointers to a match, and the read_A and read_B of that match, set constants
+    //ALN_THRESHOLD and THETA
+    //It inputs the effective read start and end into the match class object
+    //Next it trims match
+    //Finally it figures out the type of match we have here by calling AddTypesAsymmetric() on the
+    //class object
+    //std::cout<<" In ProcessAlignment"<<std::endl;
+    bool contained=false;
+    match->eff_read_A_read_start_ = read_A->effective_start;
+    match->eff_read_A_read_end_ = read_A->effective_end;
+
+    // removed the following if, so that things agree with the convention for reverse complement matches
+
+    match->eff_read_B_read_start_ = read_B->effective_start;
+    match->eff_read_B_read_end_ = read_B->effective_end;
+
+//    if (match->reverse_complement_match_ == 0) {
+//        match->eff_read_B_read_start_ = read_B->effective_start;
+//        match->eff_read_B_read_end_ = read_B->effective_end;
+//    } else {
+//        match->eff_read_B_read_start_ = read_B->len - read_B->effective_end;
+//        match->eff_read_B_read_end_ = read_B->len - read_B->effective_start;
+//    }
+
+    /*printf("bef %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_,
+     * match->reverse_complement_match_,
+        match->read_A_match_start_, match->read_A_match_end_, match->read_B_match_start_, match->read_B_match_end_,
+           match->eff_read_A_read_start_, match->eff_read_A_read_end_, match->eff_read_B_read_start_, match->eff_read_B_read_end_
+    );*/
+
+    if (trim)
+        match->trim_overlap();
+    else {
+        match->eff_read_B_match_start_ = match->read_B_match_start_;
+        match->eff_read_B_match_end_ = match->read_B_match_end_;
+        match->eff_read_A_match_start_ = match->read_A_match_start_;
+        match->eff_read_A_match_end_ = match->read_A_match_end_;
+    }
+    /*printf("aft %d %d %d [%d %d] [%d %d] [%d %d] [%d %d]\n", match->read_A_id_, match->read_B_id_,
+     * match->reverse_complement_match_,
+           match->eff_read_A_match_start_, match->eff_read_A_match_end_, match->eff_read_B_match_start_,
+           match->eff_read_B_match_end_,
+           match->eff_read_A_read_start_, match->eff_read_A_read_end_, match->eff_read_B_read_start_, match->eff_read_B_read_end_
+    );*/
+    //std::cout<< contained<<std::endl;
+    if (((match->eff_read_B_match_end_ - match->eff_read_B_match_start_) < ALN_THRESHOLD)
+        or ((match->eff_read_A_match_end_ - match->eff_read_A_match_start_) < ALN_THRESHOLD) or (!match->active))
+
+    {
+        match->active = false;
+        match->match_type_ = NOT_ACTIVE;
+    } else {
+        match->AddTypesAsymmetric(THETA,THETA2);
+        if (match->match_type_ == BCOVERA) {
+            contained = true;
+        }
+        //std::cout<< contained<< std::endl;
+    }
+
+    match->weight =
+            match->eff_read_A_match_end_ - match->eff_read_A_match_start_
+            + match->eff_read_B_match_end_ - match->eff_read_B_match_start_;
+
+    match->length = match->read_A_match_end_ - match->read_A_match_start_
+                    + match->read_B_match_end_ - match->read_B_match_start_;
+
+    return contained;
+}
 
 std::vector<std::pair<int,int>> Merge(std::vector<LOverlap *> & intervals, int cutoff)
 //Returns sections of read a which are covered by overlaps. Each overlap is considered as
@@ -138,7 +208,7 @@ float number_of_bridging_reads(std::vector<LOverlap *> ovl_reads, int hinge_loca
     if (hinge_type==1){
         for (int i=0; i < ovl_reads.size(); i++){
             if ((ovl_reads[i]->read_A_match_start_ > hinge_location-threshold ) and
-                        (ovl_reads[i]->read_A_match_start_ < hinge_location+threshold ))
+                (ovl_reads[i]->read_A_match_start_ < hinge_location+threshold ))
                 read_ends.push_back(ovl_reads[i]->read_A_match_end_);
         }
     }
@@ -189,6 +259,7 @@ int main(int argc, char *argv[]) {
     std::string out = cmdp.get<std::string>("prefix");
     bool has_qv = true;
     const char * name_restrict = cmdp.get<std::string>("restrictreads").c_str();
+    std::string name_mask = out + ".mas";
 
     std::string name_las_string;
     if (cmdp.exist("mlas"))
@@ -202,7 +273,6 @@ int main(int argc, char *argv[]) {
 
 
     const char * name_las = name_las_string.c_str();
-
     /**
      * There are two sets of input, the first is db+las, which corresponds to daligner as an overlapper,
      * the other is fasta + paf, which corresponds to minimap as an overlapper.
@@ -220,7 +290,7 @@ int main(int argc, char *argv[]) {
     //auto console = std::make_shared<spdlog::logger>("name", begin(sinks), end(sinks));
 
 
-    console->info("Reads filtering");
+    console->info("Getting maximal reads");
 
 
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
@@ -274,6 +344,7 @@ int main(int argc, char *argv[]) {
         if (la.getQV(QV,0,n_read) != 0) // load QV track from .db file
             has_qv = false;
     }
+
 
 
     if (has_qv)
@@ -351,6 +422,7 @@ int main(int argc, char *argv[]) {
     int MIN_COV = reader.GetInteger("filter", "min_cov", -1);
     int CUT_OFF = reader.GetInteger("filter", "cut_off", -1);
     int THETA = reader.GetInteger("filter", "theta", -1);
+    int THETA2 = (int) reader.GetInteger("filter", "theta2", 0);
     int N_PROC = reader.GetInteger("running", "n_proc", 4);
     int EST_COV = reader.GetInteger("filter", "ec", 0); // load the estimated coverage (probably from other programs) from ini file, if it is zero, then estimate it
     int reso = 40; // resolution of masks, repeat annotation, coverage, etc  = 40 basepairs
@@ -371,9 +443,10 @@ int main(int argc, char *argv[]) {
     int HINGE_BIN_LENGTH = (int) reader.GetInteger("filter", "hinge_bin", 100);
     //Physical length of the bins considered
     const int HINGE_TOLERANCE_LENGTH = (int) reader.GetInteger("filter", "hinge_tolerance_length", 100);
+    bool USE_TWO_MATCHES = (int) reader.GetInteger("layout", "use_two_matches", 1);
+
     //Reads starting at +/- HINGE_TOLERANCE_LENGTH are considered reads starting at hinges
     HINGE_BIN_LENGTH=2*HINGE_TOLERANCE_LENGTH;
-    bool delete_telomere = (int) reader.GetInteger("layout", "del_telomere", 0);
 
     console->info("use_qv_mask set to {}",use_qv_mask);
     use_qv_mask = use_qv_mask and has_qv;
@@ -418,13 +491,38 @@ int main(int argc, char *argv[]) {
 
     std::ofstream cov(out + ".coverage.txt");
     std::ofstream homo(out + ".homologous.txt");
-    std::ofstream rep(out + ".repeat.txt");
     std::ofstream filtered(out + ".filtered.fasta");
-    std::ofstream hg(out + ".hinges.txt");
-    std::ofstream mask(out + ".mas");
-    std::ofstream comask(out + ".cmas");
-    std::ofstream covflag(out + ".cov.flag");
-    std::ofstream selfflag(out + ".self.flag");
+    std::ofstream contained_out(out + ".contained.txt");
+    std::ofstream maximal_reads(out + ".max");
+
+
+    FILE *mask_file;
+    mask_file = fopen(name_mask.c_str(), "r");
+    int read, rs, re;
+
+    while (fscanf(mask_file, "%d %d %d", &read, &rs, &re) != EOF) {
+        reads[read]->effective_start = rs;
+        reads[read]->effective_end = re;
+    }
+    console->info("read mask finished");
+
+    int num_active_read = 0;
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->active) num_active_read++;
+    }
+    console->info("active reads at start: {}", num_active_read);
+
+
+    num_active_read = 0;
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->effective_end - reads[i]->effective_start < LENGTH_THRESHOLD) {
+            reads[i]->active = false;
+        }
+        else num_active_read++;
+    }
+    console->info("active reads after correcting for read lengths: {}", num_active_read);
+
+    console->info("number of las files: {}", name_las_list.size());
 
     for (int part = 0; part < name_las_list.size(); part++) {
 
@@ -437,14 +535,14 @@ int main(int argc, char *argv[]) {
 
         int64 n_aln = 0;
 
-        if (strlen(name_las) > 0) {
+        if (strlen(name_las_list[part].c_str()) > 0) {
             n_aln = la.getAlignmentNumber();
             console->info("Load alignments from {}", name_las_list[part]);
             console->info("# Alignments: {}", n_aln);
         }
 
 
-        if (strlen(name_las) > 0) {
+        if (strlen(name_las_list[part].c_str()) > 0) {
             la.resetAlignment();
             la.getOverlap(aln, 0, n_aln);
         }
@@ -471,7 +569,6 @@ int main(int argc, char *argv[]) {
         std::vector<std::vector <LOverlap * > > idx_pileup; // this is the pileup
         std::vector<std::vector <LOverlap * > > idx_pileup_dedup; // this is the deduplicated pileup
         std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx_ab; //unordered_map from (aid, bid) to alignments in a vector
-        std::unordered_map<int, std::vector<std::pair<int, int> > > self_aln_list;
 
 
 
@@ -486,25 +583,10 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < aln.size(); i++) {
             if (aln[i]->read_A_id_ == aln[i]->read_B_id_) {
                 aln[i]->active = false;
-                if (self_aln_list.find(aln[i]->read_A_id_) == self_aln_list.end())
-                    self_aln_list[aln[i]->read_A_id_] = std::vector<std::pair<int, int>>();
-                self_aln_list[aln[i]->read_A_id_].push_back(std::pair<int, int>(aln[i]->read_A_match_start_, aln[i]->read_A_match_end_));
-                self_aln_list[aln[i]->read_A_id_].push_back(std::pair<int, int>(aln[i]->read_B_match_start_, aln[i]->read_B_match_end_));
             }
             if (aln[i]->active) {
                 idx_pileup[aln[i]->read_A_id_].push_back(aln[i]);
             }
-        }
-
-        std::set<int> self_match_reads;
-        for (auto it : self_aln_list) {
-            float cov = 0.0;
-            for (int i = 0; i < it.second.size(); i++)
-                cov += it.second[i].second - it.second[i].first;
-            cov /= float(reads[it.first]->len);
-            std::cout << "selfcov: " <<  it.first << " " << cov << " " << reads[it.first]->len << std::endl;
-            if ((cov > 4.5) and (reads[it.first]->len > 10000))
-                self_match_reads.insert(it.first);
         }
 
 
@@ -606,6 +688,7 @@ int main(int argc, char *argv[]) {
 
 
 
+
         size_t median_id = read_coverage.size() / 2;
         if (median_id > 0)
             std::nth_element(read_coverage.begin(), read_coverage.begin()+median_id, read_coverage.end());
@@ -642,484 +725,126 @@ int main(int argc, char *argv[]) {
             console->info("After accounting for neighbours of reads selected, have {} reads", reads_to_keep.size());
         }
 
-        for (int i = r_begin; i <= r_end; i++) {
-            for (int j = 0; j < cutoff_coverages[i].size(); j++) {
-                cutoff_coverages[i][j].second -= MIN_COV;
-                if (cutoff_coverages[i][j].second < 0) cutoff_coverages[i][j].second = 0;
-            }
-//            std::cout << "in here " << i << std::endl;
-            //get the longest consecutive region that has decent coverage, decent coverage = estimated coverage / 3
-            int start = 0;
-            int end = start;
-            int maxlen = 0, maxstart = 0, maxend = 0;
-            int start_coord = 0, end_coord = 0;
-            int max_start_coord = 0, max_end_coord = 0;
-            for (int j = 0; j < cutoff_coverages[i].size(); j++) {
-                if (cutoff_coverages[i][j].second > 0) {
-                    end = cutoff_coverages[i][j].first;
-                    end_coord = j;
-                } else {
-                    if (end > start) {
-                        //std::cout<<"read" << i << " "<<start+reso << "->" << end << std::endl;
-                        if (end - start - reso > maxlen) {
-                            maxlen = end - start - reso;
-                            maxstart = start + reso;
-                            maxend = end;
-                            max_start_coord = start_coord + 1;
-                            max_end_coord = end_coord;
-                        }
-                    }
-                    start = cutoff_coverages[i][j].first;
-                    start_coord =j;
-                    end_coord = start_coord;
-                    end = start;
-                }
-            }
-//            std::cout << "in here 2 " << i  << std::endl;
+        std::unordered_map<int, std::vector<LOverlap *> > matches_forward, matches_backward;
 
-            //std::cout << i << " " << maxstart << " " << maxend << std::endl;
-            //int s = std::max(maxstart, QV_mask[i].first);
-            //int l = std::min(maxend, QV_mask[i].second) - std::max(maxstart, QV_mask[i].first);
-            //if (l < 0) l = 0;
-            //filtered << ">read_" << i << std::endl;
-            //filtered << reads[i]->bases.substr(s,l) << std::endl;
-
-            int start_coverage = 0, end_coverage = 0;
-            if (max_end_coord - max_start_coord + 1 > 20){
-                for (int dummy_index = 0; dummy_index < 10; dummy_index ++){
-                    start_coverage += cutoff_coverages[i][max_start_coord + dummy_index].second + MIN_COV;
-                    end_coverage += cutoff_coverages[i][max_end_coord - dummy_index].second + MIN_COV;
-                }
-//                std::cout << "in here 3 " << i  << std::endl;
-                start_coverage = start_coverage/10;
-                end_coverage = end_coverage/10;
-
-            }
-            else{
-                int limit = (max_end_coord - max_start_coord)/2;
-                for (int dummy_index = 0; dummy_index < limit; dummy_index ++){
-                    start_coverage += cutoff_coverages[i][max_start_coord + dummy_index].second + MIN_COV;
-                    end_coverage += cutoff_coverages[i][max_end_coord - dummy_index].second + MIN_COV;
-                }
-//                std::cout << "in here 4 " << i << limit << std::endl;
-                if (limit == 0){
-                    start_coverage = 0;
-                    end_coverage = 0;
-                }
-                else {
-                    start_coverage = start_coverage / limit;
-                    end_coverage = end_coverage / limit;
-                }
-            }
-
-//            if (i == 152034){
-//                std::cout << i << "\t" << start_coverage << "\t" << end_coverage << std::endl;
-//            }
-            if (delete_telomere) {
-                if ((start_coverage >= 10 * end_coverage) or (end_coverage >= 10 * start_coverage)) {
-                    covflag << i << std::endl;
-                }
-
-                if (self_match_reads.find(i) != self_match_reads.end()) {
-                    selfflag << i << std::endl;
-                }
-            }
-
-            if (reads_to_keep.size()>0) {
-                if (reads_to_keep.find(i) == reads_to_keep.end()) {
-//                std::cout<<"setting masks equal";
-                    maxend=maxstart;
-                    QV_mask[i].second=QV_mask[i].first;
-                }
-            }
-
-            comask << i << " " << max_start_coord << " " << max_end_coord << std::endl;
-
-            if ((use_qv_mask) and (use_coverage_mask)) {
-                maskvec[i] = (
-                        std::pair<int, int>(std::max(maxstart, QV_mask[i].first), std::min(maxend, QV_mask[i].second)));
-                //get the interestion of two masks
-                mask << i << " " << std::max(maxstart, QV_mask[i].first) << " " << std::min(maxend, QV_mask[i].second) << std::endl;
-            } else if ((use_coverage_mask) and (not use_qv_mask)) {
-                maskvec[i] = (std::pair<int, int>(maxstart, maxend));
-                mask << i << " " << maxstart << " " << maxend << std::endl;
-            } else {
-                maskvec[i] = (std::pair<int, int>(QV_mask[i].first, QV_mask[i].second));
-                mask << i << " " << QV_mask[i].first << " " << QV_mask[i].second << std::endl;
-            }
-        }
-
-        /*FILE* temp_out1;
-        FILE* temp_out2;
-        temp_out1=fopen("coverage.debug.txt","w");
-        temp_out2=fopen("coverage_gradient.debug.txt","w");
-
-        for (int i=0; i< n_read ; i++) {
-            fprintf(temp_out1,"%d \t", i);
-            for (int j=0; j < coverages[i].size(); j++){
-                fprintf(temp_out1,"%d:%d \t", coverages[i][j].first,coverages[i][j].second);
-            }
-            fprintf(temp_out1,"\n");
-        }
-
-        for (int i=0; i< n_read ; i++) {
-            fprintf(temp_out2,"%d \t", i);
-            for (int j=0; j < cgs[i].size(); j++){
-                fprintf(temp_out2,"%d:%d \t", cgs[i][j].first,cgs[i][j].second);
-            }
-            fprintf(temp_out2,"\n");
-        }
-        fclose(temp_out1);
-        fclose(temp_out2);*/
-
-        /*for (int i = 0; i < maskvec.size(); i++) {
-            printf("read %d %d %d\n", i, maskvec[i].first, maskvec[i].second);
-            printf("QV: read %d %d %d\n", i, QV_mask[i].first, QV_mask[i].second);
-        }*/
-
-
-        //binarize coverage gradient;
-
-
-
-
-
-
-        //detect repeats based on coverage gradient, mark it has rising (1) or falling (-1)
-        for (int i = r_begin; i <= r_end; i++) {
-            std::vector<std::pair<int, int> > anno;
-            for (int j = 0; j < cgs[i].size()-1; j++) { // changed, remove the last one
-                //std::cout<< i << " " << cgs[i][j].first << " " << cgs[i][j].second << std::endl;
-
-                if ((cgs[i][j].first >= maskvec[i].first + NO_HINGE_REGION) and (cgs[i][j].first <= maskvec[i].second - NO_HINGE_REGION)) {
-                    if (cgs[i][j].second > std::min(
-                            std::max((coverages[i][j].second+MIN_COV)/COVERAGE_FRACTION, MIN_REPEAT_ANNOTATION_THRESHOLD),
-                            MAX_REPEAT_ANNOTATION_THRESHOLD))
-                        anno.push_back(std::pair<int, int>(cgs[i][j].first, 1));
-                    else if (cgs[i][j].second < - std::min(
-                            std::max((coverages[i][j].second+MIN_COV)/COVERAGE_FRACTION, MIN_REPEAT_ANNOTATION_THRESHOLD),
-                            MAX_REPEAT_ANNOTATION_THRESHOLD))
-                        anno.push_back(std::pair<int, int>(cgs[i][j].first, -1));
-                }
-            }
-            repeat_annotation[i] = (anno);
-        }
-
-
-        // clean it a bit, merge consecutive 1, or consecutive -1, or adjacent 1 and -1 if their position is within gap_threshold (could be bursty error)
-        for (int i = r_begin; i <= r_end; i++) {
-            for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end(); ) {
-                if (iter+1 < repeat_annotation[i].end()){
-                    if (((iter->second == 1) and ((iter + 1)->second == 1)) and
-                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)) {
-                        repeat_annotation[i].erase((iter + 1));
-                    } else if (((iter->second == -1) and ((iter + 1)->second == -1)) and
-                               ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)) {
-                        iter = repeat_annotation[i].erase(iter);
-                    } else iter++;
-                } else iter ++;
-            }
+        for (int i = r_begin; i <= r_end; i ++) {
+            //An initialisation for loop
+            //TODO Preallocate memory. Much more efficient.
+            //idx2.push_back(std::vector<LOverlap *>());
+            matches_forward[i] = std::vector<LOverlap *>();
+            matches_backward[i] = std::vector<LOverlap *>();
         }
 
 
 
 
-        //remove gaps
-//    for (int i = 0; i < n_read; i++) {
-//        for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end(); ) {
-//            if (iter+1 < repeat_annotation[i].end()){
-//                if ((iter->second == -1) and ((iter+1)->second == 1) and
-//                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)){
-//                    iter = repeat_annotation[i].erase(iter);
-//                    iter = repeat_annotation[i].erase(iter); // fill gaps
-//                } else if ((iter->second == 1) and ((iter+1)->second == -1) and
-//                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)) {
-//                    iter = repeat_annotation[i].erase(iter);
-//                    iter = repeat_annotation[i].erase(iter);
-//                } else iter++;
-//            } else iter ++;
-//        }
-//    }
-
-
-        /*temp_out1=fopen("repeat_annotation.debug.txt","w");
-        for (int i = 0; i < n_read; i++) {
-            fprintf(temp_out1,"%d \t%d\t",i,repeat_annotation[i].size());
-            for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end();iter++) {
-                fprintf(temp_out1,"%d:%d\t",iter->first,iter->second);
-            }
-            fprintf(temp_out1,"\n");
-        }
-        fclose(temp_out1);*/
-        // need a better hinge detection
-
-        // get hinges from repeat annotation information
-
-        // n_read pos -1 = in_hinge 1 = out_hinge
-        std::ofstream  debug_file("debug.txt");
-        for (int i = r_begin; i <= r_end; i++) {
-            //std::cout << i <<std::endl;
-            hinges[i] = std::vector<std::pair<int, int>>();
-
-            int coverage_at_start(0);
-            int num_at_start(0);
-            int num_at_end(0);
-            int coverage_at_end(0);
-            float avg_coverage_at_start;
-            float avg_coverage_at_end;
-            for (int j = 0; j < coverages[i].size(); j++){
-                if ((coverages[i][j].first <= maskvec[i].first + NO_HINGE_REGION) and
-                    (coverages[i][j].first >= maskvec[i].first )){
-                    coverage_at_start += coverages[i][j].second;
-                    num_at_start++;
-                }
-                if ((coverages[i][j].first <= maskvec[i].second ) and
-                    (coverages[i][j].first >= maskvec[i].second - NO_HINGE_REGION )){
-                    coverage_at_end += coverages[i][j].second;
-                    num_at_end++;
-                }
-            }
-
-            avg_coverage_at_end = (float)coverage_at_end/num_at_end;
-            avg_coverage_at_start = (float)coverage_at_start/num_at_start;
-            if (std::abs(avg_coverage_at_end-avg_coverage_at_start) < 10){
+        for (int i = r_begin; i <= r_end; i ++) {
+            bool contained = false;
+            //std::cout<< "Testing opt " << i << std::endl;
+            if (reads[i]->active == false) {
                 continue;
             }
 
-            for (int j = 0; j < repeat_annotation[i].size(); j++) {
-                if (repeat_annotation[i][j].second == -1) { // look for out hinges, negative gradient
+            int containing_read;
 
-                    bool bridged = true;
-                    int support = 0;
-                    int num_reads_at_end=1;
+            for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx_ab[i].begin();
+                 it != idx_ab[i].end(); it++) {
+                std::sort(it->second.begin(), it->second.end(), compare_overlap);//Sort overlaps by lengths
+                //std::cout<<"Giving input to ProcessAlignment "<<it->second.size() <<std::endl;
 
-                    std::vector<std::pair<int,int> > read_other_ends;
+                if (it->second.size() > 0) {
+                    //Figure out if read is contained
+                    LOverlap *ovl = it->second[0];
+                    bool contained_alignment;
 
-
-                    for (int k = 0; k < idx_pileup[i].size(); k++) {
-
-                        int left_overhang, right_overhang;
-                        int temp_id;
-                        temp_id=idx_pileup[i][k]->read_B_id_;
-
-                        if (idx_pileup[i][k]->reverse_complement_match_==0){
-                            right_overhang= std::max(maskvec[temp_id].second-idx_pileup[i][k]->read_B_match_end_,0);
-                            left_overhang= std::max(idx_pileup[i][k]->read_B_match_start_- maskvec[temp_id].first,0);
-                        }
-                        else if (idx_pileup[i][k]->reverse_complement_match_==1) {
-                            right_overhang= std::max(idx_pileup[i][k]->read_B_match_start_- maskvec[temp_id].first,0);
-                            left_overhang= std::max(maskvec[temp_id].second-idx_pileup[i][k]->read_B_match_end_,0);
-                        }
-
-
-
-                        if (right_overhang > THETA) {
-                            if ((idx_pileup[i][k]->read_A_match_end_ >
-                                 repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
-                                and (idx_pileup[i][k]->read_A_match_end_ <
-                                     repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
-
-
-                                std::pair <int,int> other_end;
-                                other_end.first=idx_pileup[i][k]->read_A_match_start_;
-                                other_end.second=left_overhang;
-                                read_other_ends.push_back(other_end);
-                                support++;
-                            }
-                        }
+                    if (strlen(name_db) > 0)
+                        contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                               reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, true);
+                    else
+                        contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                               reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, false);
+                    if (contained_alignment == true) {
+                        containing_read = ovl->read_B_id_;
                     }
 
-                    if (support < HINGE_MIN_SUPPORT){
-                        continue;
-                    }
+                    if (reads[ovl->read_B_id_]->active == true)
+                        contained = contained or contained_alignment;
 
-                    std::sort(read_other_ends.begin(),read_other_ends.end(), pairAscend);
-
-                    int num_reads_considered=0;
-                    int num_reads_extending_to_end=0;
-                    int num_reads_with_internal_overlaps=0;
-
-                    for (int id = 0; id < read_other_ends.size() ; ++id) {
-                        if (read_other_ends[id].first -maskvec[i].first < HINGE_BIN_LENGTH){
-                            num_reads_considered++;
-                            num_reads_extending_to_end++;
-
-                            if ((num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD) or
-                                ((num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) and
-                                 (read_other_ends[id].first - read_other_ends[0].first > HINGE_BIN_LENGTH))) {
-                                bridged=false;
-                                break;
-                            }
-                        }
-                        else if  (read_other_ends[id].second < THETA){
-                            num_reads_considered++;
-
-                            if ((num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD) or
-                                ((num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) and
-                                 (read_other_ends[id].first - read_other_ends[0].first > HINGE_BIN_LENGTH))) {
-                                bridged=false;
-                                break;
-                            }
-                        }
-                        else if (read_other_ends[id].second > THETA) {
-                            num_reads_with_internal_overlaps++;
-                            num_reads_considered++;
-                            int id1=id+1;
-                            int pileup_length=1;
-
-                            while (id1 < read_other_ends.size()){
-                                if (read_other_ends[id1].first - read_other_ends[id].first  < HINGE_BIN_LENGTH){
-                                    pileup_length++;
-                                    id1++;
-                                }
-                                else{
-                                    break;
-                                }
-                            }
-
-                            if (pileup_length > HINGE_BIN_PILEUP_THRESHOLD){
-                                bridged=true;
-                                break;
-                            }
-                        }
-                    }
-                    if ((not bridged) and (support > HINGE_MIN_SUPPORT))
-                        hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first,-1));
-
-
-                } else { // look for in_hinges, positive gradient
-                    bool bridged = true;
-                    int support = 0;
-                    int num_reads_at_end=1;
-
-                    std::vector<std::pair<int,int> > read_other_ends;
-
-
-                    for (int k = 0; k < idx_pileup[i].size(); k++) {
-                        int left_overhang, right_overhang;
-                        int temp_id;
-                        temp_id=idx_pileup[i][k]->read_B_id_;
-
-                        if (idx_pileup[i][k]->reverse_complement_match_==0){
-                            right_overhang= std::max(maskvec[temp_id].second-idx_pileup[i][k]->read_B_match_end_,0);
-                            left_overhang= std::max(idx_pileup[i][k]->read_B_match_start_- maskvec[temp_id].first,0);
-                        }
-                        else if (idx_pileup[i][k]->reverse_complement_match_==1) {
-                            right_overhang= std::max(idx_pileup[i][k]->read_B_match_start_- maskvec[temp_id].first,0);
-                            left_overhang= std::max(maskvec[temp_id].second-idx_pileup[i][k]->read_B_match_end_,0);
-                        }
-
-
-                        if (left_overhang > THETA) {
-                            if ((idx_pileup[i][k]->read_A_match_start_ >
-                                 repeat_annotation[i][j].first - HINGE_TOLERANCE_LENGTH)
-                                and (idx_pileup[i][k]->read_A_match_start_ <
-                                     repeat_annotation[i][j].first + HINGE_TOLERANCE_LENGTH)) {
-
-                                std::pair <int,int> other_end;
-                                other_end.first=idx_pileup[i][k]->read_A_match_end_;
-                                other_end.second=right_overhang;
-                                read_other_ends.push_back(other_end);
-                                support++;
-                            }
-                        }
-                    }
-                    if (support < HINGE_MIN_SUPPORT){
-                        continue;
-                    }
-
-
-                    std::sort(read_other_ends.begin(),read_other_ends.end(),pairDescend);//Sort in descending order
-
-
-                    int num_reads_considered=0;
-                    int num_reads_extending_to_end=0;
-                    int num_reads_with_internal_overlaps=0;
-
-
-
-                    for (int id = 0; id < read_other_ends.size() ; ++id) {
-                        if (maskvec[i].second-read_other_ends[id].first < HINGE_BIN_LENGTH){
-                            num_reads_considered++;
-                            num_reads_extending_to_end++;
-
-                            if ((num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD) or
-                                ((num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) and
-                                 (read_other_ends[0].first - read_other_ends[id].first > HINGE_BIN_LENGTH))) {
-                                bridged=false;
-                                break;
-                            }
-                        }
-                        else if  (read_other_ends[id].second < THETA){
-                            num_reads_considered++;
-
-                            if ((num_reads_extending_to_end > HINGE_READ_UNBRIDGED_THRESHOLD) or
-                                ((num_reads_considered > HINGE_READ_UNBRIDGED_THRESHOLD) and
-                                 (read_other_ends[0].first - read_other_ends[id].first > HINGE_BIN_LENGTH))) {
-                                bridged=false;
-                                break;
-                            }
-                        }
-                        else if (read_other_ends[id].second > THETA) {
-                            num_reads_with_internal_overlaps++;
-                            num_reads_considered++;
-                            int id1=id+1;
-                            int pileup_length=1;
-
-                            while (id1 < read_other_ends.size()){
-                                if (read_other_ends[id].first - read_other_ends[id1].first  < HINGE_BIN_LENGTH){
-                                    pileup_length++;
-                                    id1++;
-                                }
-                                else{
-                                    break;
-                                }
-                            }
-
-                            if (pileup_length > HINGE_BIN_PILEUP_THRESHOLD){
-                                bridged=true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if ((not bridged) and (support > HINGE_MIN_SUPPORT))
-                        hinges[i].push_back(std::pair<int, int>(repeat_annotation[i][j].first, 1));
-
+                    //Filter matches that matter.
+                    //TODO Figure out a way to do this more efficiently
+                    if ((ovl->match_type_ == FORWARD) or (ovl->match_type_ == FORWARD_INTERNAL))
+                        matches_forward[i].push_back(it->second[0]);
+                    else if ((ovl->match_type_ == BACKWARD) or (ovl->match_type_ == BACKWARD_INTERNAL))
+                        matches_backward[i].push_back(it->second[0]);
 
                 }
+
+
+                if ((it->second.size() > 1) and (USE_TWO_MATCHES)) {
+                    //Figure out if read is contained
+                    LOverlap *ovl = it->second[1];
+                    bool contained_alignment;
+
+                    if (strlen(name_db) > 0)
+                        contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                               reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, true);
+                    else
+                        contained_alignment = ProcessAlignment(ovl, reads[ovl->read_A_id_],
+                                                               reads[ovl->read_B_id_], ALN_THRESHOLD, THETA, THETA2, false);
+                    if (contained_alignment == true) {
+                        containing_read = ovl->read_B_id_;
+                    }
+
+                    if (reads[ovl->read_B_id_]->active == true)
+                        contained = contained or contained_alignment;
+
+                    //Filter matches that matter.
+                    //TODO Figure out a way to do this more efficiently
+                    if ((ovl->match_type_ == FORWARD) or (ovl->match_type_ == FORWARD_INTERNAL))
+                        matches_forward[i].push_back(it->second[1]);
+                    else if ((ovl->match_type_ == BACKWARD) or (ovl->match_type_ == BACKWARD_INTERNAL))
+                        matches_backward[i].push_back(it->second[1]);
+
+                }
+
+
+
+
+            }
+            if (contained) {
+                reads[i]->active = false;
+                contained_out << i << "\t" << containing_read << std::endl;
+
             }
         }
-
-        //output hinges
-
-        int ra_cnt = 0;
-
-        for (int i = r_begin; i <= r_end; i++) {
-            rep << i << " ";
-            for (int j = 0; j < repeat_annotation[i].size(); j++) {
-                rep << repeat_annotation[i][j].first << " " << repeat_annotation[i][j].second << " ";
-            }
-            ra_cnt += repeat_annotation[i].size();
-            rep << std::endl;
+        int num_overlaps = 0;
+        int num_forward_overlaps(0), num_forward_internal_overlaps(0), num_reverse_overlaps(0),
+                num_reverse_internal_overlaps(0), rev_complemented_matches(0);
+        for (int i = 0; i < n_read; i++) {//Isn't this just 0 or 1?
+            num_overlaps += matches_forward[i].size() + matches_backward[i].size();
+            for (int j = 0; j < matches_forward[i].size(); j++)
+                rev_complemented_matches += matches_forward[i][j]->reverse_complement_match_;
+            for (int j = 0; j < matches_backward[i].size(); j++)
+                rev_complemented_matches += matches_backward[i][j]->reverse_complement_match_;
         }
-        rep.close();
-        console->info("Number of hinges before filtering: {}", ra_cnt);
+        console->info("{} overlaps", num_overlaps);
+        console->info("{} rev overlaps", rev_complemented_matches);
 
-        int hg_cnt = 0;
-
-        for (int i = r_begin; i < r_end; i++) {
-            hg << i << " ";
-            for (int j = 0; j < hinges[i].size(); j++) {
-                hg << hinges[i][j].first << " " << hinges[i][j].second << " ";
+        num_active_read = 0;
+        for (int i = r_begin; i <= r_end; i ++) {
+            if (reads[i]->active) {
+                num_active_read++;
+                maximal_reads << i << std::endl;
             }
-            hg_cnt += hinges[i].size();
-            hg << std::endl;
         }
+        console->info("removed contained reads, active reads: {}", num_active_read);
 
-
-        console->info("Number of hinges: {}", hg_cnt);
-
+        num_active_read = 0;
+        for (int i = r_begin; i <= r_end; i ++) {
+            if (reads[i]->active) num_active_read++;
+        }
+        console->info("active reads: {}", num_active_read);
+        console->info("total reads: {}", r_end-r_begin+1);
 
 
         for (int i = 0; i < aln.size(); i++) {
@@ -1128,9 +853,6 @@ int main(int argc, char *argv[]) {
         aln.clear();
     }
 
-
-
-    hg.close();
 
 
     if (strlen(name_db)>0)

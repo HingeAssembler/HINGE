@@ -6,5 +6,4 @@ target_link_libraries(draft_assembly LAInterface ini falcon spdlog)
 add_executable(consensus consensus.cpp)
 target_link_libraries(consensus LAInterface falcon ini)
 
-add_executable(io io_base)
-target_link_libraries(io LAInterface ini spdlog)
+install(TARGETS draft_assembly consensus DESTINATION ${libexec})

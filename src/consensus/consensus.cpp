@@ -24,21 +24,41 @@ extern "C" {
 #include "INIReader.h"
 
 
-#define LAST_READ_SYMBOL  '$'
-
-bool compare_overlap(LAlignment * ovl1, LAlignment * ovl2) {
-    return ((ovl1->aepos - ovl1->abpos + ovl1->bepos - ovl1->bbpos) > (ovl2->aepos - ovl2->abpos + ovl2->bepos - ovl2->bbpos));
-}
-
-
-static int ORDER(const void *l, const void *r) {
-    int x = *((int32 *) l);
-    int y = *((int32 *) r);
-    return (x - y);
-}
-
-
 static char ToU[4] = { 'A', 'C', 'G', 'T' };
+int chop_end(std::pair<std::string, std::string> * alignment, int chop) {
+    int len = alignment->first.size();
+    if (len < chop*2 + 10)
+        return 0;
+
+    int start = chop;
+    while (alignment->first[start] == '-') start++;
+    int offset = 0;
+    for (int i =0; i < start; i++)
+        if (alignment->first[i]!= '-')
+            offset++;
+
+    alignment->first = alignment->first.substr(start, len-start-chop);
+    alignment->second = alignment->second.substr(start, len-start-chop);
+
+    return offset;
+
+}
+
+char toLower(char c) {
+
+    char base = c;
+
+    switch (c) {
+        case 'A': base = 'a'; break;
+        case 'C': base = 'c'; break;
+        case 'G': base = 'g'; break;
+        case 'T': base = 't'; break;
+    }
+
+    return base;
+
+}
+
 
 int main(int argc, char *argv[]) {
 
@@ -89,7 +109,7 @@ int main(int argc, char *argv[]) {
 
 	std::vector<std::vector<LAlignment *>> idx;
 
-    printf("%d\n", res.size());
+    printf("%lu\n", res.size());
 
 	for (int i = 0; i < n_contigs; i++)
 		idx.push_back(std::vector<LAlignment *>());
@@ -99,8 +119,8 @@ int main(int argc, char *argv[]) {
     }
 
 	for (int i = 0; i < n_contigs; i++) {
-        std::sort(idx[i].begin(), idx[i].end(), compare_overlap);
-        printf("%d %d\n", i, idx[i].size());
+        std::sort(idx[i].begin(), idx[i].end(), compare_overlap_aln);
+        printf("%d %lu\n", i, idx[i].size());
     }
 
     std::cout << "Getting read lengths" << std::endl;
@@ -148,12 +168,19 @@ int main(int argc, char *argv[]) {
 
             la.recoverAlignment(idx[i][j]);
             std::pair<std::string, std::string>  alignment = la.getAlignmentTags(idx[i][j]);
+            //std::cout<<"before:" << alignment.first.substr(0,200) << std::endl;
 
-            int pos_in_contig = idx[i][j]->abpos;
+            int offset = chop_end(&alignment,100);
+            std::cout << offset<<std::endl;
+
+            //std::cout<<"after:" << alignment.first.substr(0,200) << std::endl;
+
+            int pos_in_contig = idx[i][j]->abpos + offset;
+
 
             for (int m = 0; m < alignment.first.length(); m++) {
 
-                unsigned int base = -1;
+                int base = -1;
                 switch (alignment.second[m]) {
                     case 'A': base = 0; break;
                     case 'C': base = 1; break;
@@ -163,11 +190,15 @@ int main(int argc, char *argv[]) {
                 }
 
                 if (alignment.first[m] != '-') {
-                    contig_base_scores[pos_in_contig][base]++;
-                    cov_depth[pos_in_contig]++;
+
+                    if (base != -1) {
+                        contig_base_scores[pos_in_contig][base]++;
+                        cov_depth[pos_in_contig]++;
+                    }
+
                     pos_in_contig++;
                 }
-                else {
+                else if (base != -1) {
                     insertion_score[pos_in_contig]++;
                     insertion_base_scores[pos_in_contig][base]++;
                 }
@@ -182,15 +213,41 @@ int main(int argc, char *argv[]) {
 
         int consensus_length = 0;
 
+        int low_coverage_bases = 0;
+
+        long int sum_coverage = 0;
+
         out << ">Consensus" << i << std::endl;
+
 
         for (int j=0; j < idx[i][0]->alen ; j++) {
 
-            unsigned int max_base = 0;
+            sum_coverage += cov_depth[j];
+
+            if (cov_depth[j] < 3) {
+//                std::cout << "Low coverage." << std::endl;
+
+                low_coverage_bases++;
+                out << toLower(reads_vec[i]->bases[j]);
+                continue;
+            }
+
+            if (insertion_score[j] > cov_depth[j]/2) {
+                int max_insertion_base = 0;
+                for (int b=1; b<4; b++) {
+                    if (insertion_base_scores[j][b] > insertion_base_scores[j][max_insertion_base]) max_insertion_base = b;
+                }
+                out << ToU[max_insertion_base];
+                consensus_length++;
+                insertions++;
+            }
+
+            int max_base = 0;
 
             for (int b=1; b<5; b++) {
                 if (contig_base_scores[j][b] > contig_base_scores[j][max_base]) max_base = b;
             }
+
             if (max_base < 4) {
                 out << ToU[max_base];
                 good_bases++;
@@ -200,23 +257,16 @@ int main(int argc, char *argv[]) {
                 deletions++;
             }
 
-            if (insertion_score[j] > cov_depth[j]/2) {
-                unsigned int max_insertion_base = 0;
-                for (int b=1; b<4; b++) {
-                    if (insertion_base_scores[j][b] > insertion_base_scores[j][max_insertion_base]) max_insertion_base = b;
-                }
-                out << ToU[max_insertion_base];
-                consensus_length++;
-                insertions++;
-            }
 
         }
         out << std::endl;
 
 
+        printf("Average coverage: %f\n",(1.0*sum_coverage)/idx[i][0]->alen);
         printf("Good bases: %d/%d\n",good_bases,idx[i][0]->alen);
         printf("Insertions: %d/%d\n",insertions,idx[i][0]->alen);
         printf("Deletions: %d/%d\n",deletions,idx[i][0]->alen);
+        printf("Low coverage bases: %d/%d\n",low_coverage_bases,idx[i][0]->alen);
         printf("Consensus length: %d\n",consensus_length);
 
 

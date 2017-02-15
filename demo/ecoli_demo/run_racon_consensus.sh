@@ -19,9 +19,6 @@ mkdir log
 
 
 hinge filter --db ecoli --las ecoli --mlas -x ecoli --config ../../utils/nominal.ini
-
-hinge maximal --db ecoli --las ecoli --mlas -x ecoli --config ../../utils/nominal.ini
-
 hinge layout --db ecoli --las ecoli.las -x ecoli --config ../../utils/nominal.ini -o ecoli
 
 hinge clip ecoli.edges.hinges ecoli.hinge.list demo
@@ -31,14 +28,8 @@ hinge draft --db ecoli --las ecoli.las --prefix ecoli --config ../../utils/nomin
 
 
 
-hinge correct-head ecoli.draft.fasta ecoli.draft.pb.fasta draft_map.txt 
-fasta2DB draft ecoli.draft.pb.fasta
 
-HPC.daligner ecoli draft | bash -v 
-
-#rm draft.*.ecoli.*.las
-#LAmerge draft.ecoli.las draft.ecoli.*.las
-
-hinge consensus draft ecoli draft.ecoli.las ecoli.consensus.fasta ../../utils/nominal.ini
+minimap ecoli.draft.fasta ecoli_p4_filtered.fastq > ecoli.paf
+racon ecoli_p4_filtered.fastq ecoli.paf ecoli.draft.fasta ecoli.consensus.fasta
 
 hinge gfa $PWD ecoli  ecoli.consensus.fasta
