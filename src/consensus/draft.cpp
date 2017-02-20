@@ -9,6 +9,7 @@
 #include <omp.h>
 #include <tuple>
 #include <iomanip>
+#include <glob.h>
 
 #include "spdlog/spdlog.h"
 #include "cmdline.h"
@@ -87,7 +88,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
 }
 
 
-int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::vector<LOverlap *> & aln,
+int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::vector<LAlignment *> & full_aln,
                        std::unordered_map<int, std::vector<LOverlap *> > &idx3,
                        std::unordered_map<int, std::unordered_map<int, std::vector<LOverlap *> > > & idx,
                        std::vector<Read *> & reads, int TSPACE, int EDGE_SAFE, int MIN_COV2,
@@ -102,18 +103,17 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
         if (std::get<0>(edgelist[0]).strand == 0) draft_assembly = reads[std::get<0>(edgelist[0]).id]->bases;
         else draft_assembly = reverse_complement(reads[std::get<0>(edgelist[0]).id]->bases);
         std::cout << cut_start << " " << cut_end << " " << reads[std::get<0>(edgelist[0]).id]->len << std::endl;
-        assert(cut_start <= draft_assembly.size());
-        assert(cut_end <= draft_assembly.size());
-        contig = draft_assembly.substr(cut_start, cut_end-cut_start);
+        if ((cut_start <= draft_assembly.size()) and (cut_end <= draft_assembly.size()))
+            contig = draft_assembly.substr(cut_start, cut_end-cut_start);
         return 1;
     }
 
 
 
-    std::vector<LAlignment *> full_alns;
+    //std::vector<LAlignment *> full_alns;
     std::vector<LAlignment *> selected;
     std::unordered_map<int, std::vector<LAlignment *>> idx_aln;
-    la.resetAlignment();
+    //la.resetAlignment();
     std::vector<int> range;
 
     for (int i = 0; i < edgelist.size(); i++) {
@@ -123,9 +123,9 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
 
     std::sort(range.begin(), range.end());
 
-    la.getAlignment(full_alns, range);
+    //la.getAlignment(full_alns, range);
 
-    for (auto i:full_alns) {
+    for (auto i:full_aln) {
         idx_aln[i->read_A_id_].push_back(i);
     }
 
@@ -134,7 +134,7 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
         int bid = std::get<1>(edgelist[i]).id;
         bool found = false;
         for (int j = 0; j < idx_aln[std::get<0>(edgelist[i]).id].size(); j++) {
-            //printf("%d %d %d %d\n",bid, idx_aln[aid][j]->bid, idx_aln[aid][j]->read_A_match_end_ - idx_aln[aid][j]->read_A_match_start_, std::get<2>(edgelist[i]));
+            //printf("%d %d %d %d\n",bid, idx_aln[aid][j]->read_B_id_, idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos + idx_aln[aid][j]->bepos - idx_aln[aid][j]->bbpos, std::get<2>(edgelist[i]));
             if ((idx_aln[aid][j]->read_B_id_ == bid) and \
             (idx_aln[aid][j]->aepos - idx_aln[aid][j]->abpos + idx_aln[aid][j]->bepos - idx_aln[aid][j]->bbpos == std::get<2>(edgelist[i]))) {
                 selected.push_back(idx_aln[aid][j]);
@@ -168,9 +168,8 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
         draft_assembly += readB.substr(bstart);
 
         std::cout << cut_start << " " << cut_end << " " << reads[std::get<0>(edgelist[0]).id]->len << std::endl;
-        assert(cut_start <= draft_assembly.size());
-        assert(cut_end <= draft_assembly.size());
-        contig = draft_assembly.substr(cut_start, cut_end-cut_start);
+        if ((cut_start <= draft_assembly.size()) and (cut_end <= draft_assembly.size()))
+            contig = draft_assembly.substr(cut_start, cut_end-cut_start);
         return 2;
     }
 
@@ -182,8 +181,8 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
 
     for (int i = 0; i < selected.size(); i++) {
         la.recoverAlignment(selected[i]);
-        printf("%d %d %d %d %d\n", selected[i]->read_A_id_, selected[i]->read_B_id_,
-                selected[i]->alen, selected[i]->blen, selected[i]->tlen);
+        //printf("%d %d %d %d %d\n", selected[i]->read_A_id_, selected[i]->read_B_id_,
+        //        selected[i]->alen, selected[i]->blen, selected[i]->tlen);
         //printf("%d %d\n",selected[i]->tlen, selected[i]->trace_pts_len);
         std::pair<std::string, std::string> res = la.getAlignmentTags(selected[i]);
         aln_tags_map[selected[i]->read_A_id_][selected[i]->read_B_id_] = res;
@@ -227,6 +226,8 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
      * Prepare the data
      */
 
+    std::string overhang;
+    int len_overhang = 0;
     for (int i = 0; i < edgelist.size(); i++) {
 
         std::vector<LOverlap *> currentalns = idx[std::get<0>(edgelist[i]).id][std::get<1>(edgelist[i]).id];
@@ -330,12 +331,16 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
 
         bedges.push_back(new_ovl);
         breads.push_back(current_seq);
-
+        overhang = next_seq;
+        len_overhang = new_ovl->blen - new_ovl->read_B_match_end_ - (new_ovl->alen - new_ovl->read_A_match_end_);
 
     }
     //need to trim the end
 
 
+    if ((len_overhang > 0) and (len_overhang < overhang.size())) {
+        overhang = overhang.substr(overhang.size()-len_overhang);
+    } else overhang = "";
 
     std::vector<std::vector<int> > mappings;
     for (int i = 0; i < range.size(); i++) {
@@ -346,11 +351,11 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     << aln_tags_list.size() << " " << pitfalls.size() << " " << aln_tags_list_true_strand.size()
     << " " << mappings.size() << " " << coverages.size() << std::endl;
 
-    for (int i = 0; i < bedges.size() - 1; i++) {
+    /*for (int i = 0; i < bedges.size() - 1; i++) {
         printf("%d %d %d %d %d\n", bedges[i]->read_B_match_start_, bedges[i]->read_B_match_end_,
                 bedges[i+1]->read_A_match_start_, bedges[i+1]->read_A_match_end_,
                 bedges[i]->read_B_match_end_ - bedges[i+1]->read_A_match_start_);
-    }
+    }*/
 
 
     int tspace = TSPACE; // set lane length to be 500
@@ -393,7 +398,7 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
             while ((waypoint > bedges[currentread]->read_A_match_start_) and
                    (waypoint < bedges[currentread]->read_A_match_end_)) {
 
-                printf("%d %d\n", currentread, waypoint);
+                //printf("%d %d\n", currentread, waypoint);
                 trace_pts[currentread].push_back(waypoint);
 
 
@@ -670,16 +675,28 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
     //    out_fa << draft_assembly << std::endl;
     //}
     //num_contig++;
-    contig = prefix + draft_assembly + suffix;
+    contig = prefix + draft_assembly + suffix + overhang;
 
 	std::cout << "ctg size:" << contig.size() << "cut_start:" << cut_start << "cut_end:" << cut_end << std::endl;
 
-    assert(cut_start <= contig.size());
-    assert(cut_end <= contig.size());
+    if ((cut_start <= contig.size()) and (cut_end <= contig.size()))
     contig = contig.substr(cut_start, contig.size() - cut_end - cut_start);
     return 0;
 }
 
+
+
+inline std::vector<std::string> glob(const std::string& pat){
+    using namespace std;
+    glob_t glob_result;
+    glob(pat.c_str(),GLOB_TILDE,NULL,&glob_result);
+    vector<string> ret;
+    for(unsigned int i=0;i<glob_result.gl_pathc;++i){
+        ret.push_back(string(glob_result.gl_pathv[i]));
+    }
+    globfree(&glob_result);
+    return ret;
+};
 
 
 int main(int argc, char *argv[]) {
@@ -714,7 +731,7 @@ int main(int argc, char *argv[]) {
 
 
     std::string name_mask = out + ".mas";
-    std::string name_max = out + ".max";
+	std::string name_max = out + ".max";
     std::string name_homo = out + ".homologous.txt";
     std::string name_rep = out + ".repeat.txt";
     std::string name_hg = out + ".hinges.txt";
@@ -725,7 +742,6 @@ int main(int argc, char *argv[]) {
 
 
     std::ofstream deadend_out(name_deadend);
-    std::ofstream maximal_reads(name_max);
     std::ofstream garbage_out(name_garbage);
     std::ofstream contained_out(name_contained);
     std::ifstream homo(name_homo);
@@ -767,6 +783,15 @@ int main(int argc, char *argv[]) {
         la.openDB(name_db);
 
 
+    std::vector<std::string> name_las_list;
+    std::string name_las_str(name_las);
+
+    if (name_las_str.find('*') != -1)
+        name_las_list = glob(name_las_str);
+    else
+        name_las_list.push_back(name_las_str);
+
+
     if (strlen(name_las) > 0)
         la.openAlignmentFile(name_las);
 
@@ -779,10 +804,11 @@ int main(int argc, char *argv[]) {
     }
 
     int n_read;
-    if (strlen(name_db) > 0)
+    if (strlen(name_db) > 0) {
         n_read = la.getReadNumber();
+    }
 
-                    std::vector<Read *> reads; //Vector of pointers to all reads
+    std::vector<Read *> reads; //Vector of pointers to all reads
 
     if (strlen(name_fasta) > 0) {
         n_read = la.loadFASTA(name_fasta, reads);
@@ -790,11 +816,49 @@ int main(int argc, char *argv[]) {
 
     console->info("# Reads: {}", n_read); // output some statistics
 
+
+
+    if (strlen(name_db) > 0) {
+        la.getRead(reads, 0, n_read);
+    }
+
+	std::ifstream max_reads_file(name_max);
+
+    std::vector<bool> maximal_read;
+    maximal_read.resize(n_read, false);
+    std::string read_line;
+	int num_active_reads = 0;
+    while(std::getline(max_reads_file, read_line))
+    {
+        int read_number;
+        read_number = atoi(read_line.c_str());
+        maximal_read[read_number] = true;
+        num_active_reads++;
+    }
+    console->info("Total number of active reads: {}/{}", num_active_reads, n_read);
+
+    for (int i = 0; i < n_read; i++){
+        reads[i]->active = maximal_read[i];
+    }
+
+
+    std::vector<int> range;
+
+    for (int i = 0; i < n_read; i++) {
+        if (reads[i]->active) range.push_back(i);
+    }
+
+    std::sort(range.begin(), range.end());
+
     std::vector<LOverlap *> aln;//Vector of pointers to all alignments
+    std::vector<LAlignment *> full_aln;//Vector of pointers to all alignments
+
 
     if (strlen(name_las) > 0) {
         la.resetAlignment();
-        la.getOverlap(aln, 0, n_aln);
+        la.getOverlap(aln, range);
+        la.resetAlignment();
+		la.getAlignment(full_aln, range);
     }
 
     if (strlen(name_paf) > 0) {
@@ -808,10 +872,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-
-    if (strlen(name_db) > 0) {
-        la.getRead(reads, 0, n_read);
-    }
 
     console->info("Input data finished");
 
@@ -874,6 +934,9 @@ int main(int argc, char *argv[]) {
     omp_set_num_threads(N_PROC);
     std::vector<Edge_w> edgelist, edgelist_ms; // save output to edgelist
     std::vector<std::unordered_map<int, std::vector<LOverlap *> > > idx_ab;
+
+
+
 
 
     for (int i = 0; i < n_read; i++) {
@@ -948,6 +1011,22 @@ int main(int argc, char *argv[]) {
     bool two_read_contig = false;
     int cut_start = 0, cut_end = 0;
 
+    while (!edges_file.eof()) {
+        std::getline(edges_file, edge_line);
+        std::cout << edge_line << std::endl;
+        if (edge_line.size() == 0) continue;
+        if (edge_line[0] == '>') continue;
+        std::vector<std::string> tokens = split(edge_line, ' ');
+        if (tokens.size() < 6) std::cout << "Error! Wrong format." << std::endl;
+
+        Node node0;
+        Node node1;
+        node0.id = std::stoi(tokens[1]);
+        node1.id = std::stoi(tokens[3]);
+    }
+
+    edges_file.clear();
+    edges_file.seekg(0, std::ios::beg);
 
     while (!edges_file.eof()) {
         std::getline(edges_file, edge_line);
@@ -956,7 +1035,7 @@ int main(int argc, char *argv[]) {
 
             if (edgelist.size() > 0)
             {
-                draft_assembly_ctg(edgelist, la, aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2, cut_start, cut_end, one_read_contig, two_read_contig, contig);
+                draft_assembly_ctg(edgelist, la, full_aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2, cut_start, cut_end, one_read_contig, two_read_contig, contig);
                 out_fa << current_name << std::endl;
                 out_fa << contig << std::endl;
             }
@@ -973,7 +1052,7 @@ int main(int argc, char *argv[]) {
             // process edges list
             std::cout << current_name << std::endl;
 
-            draft_assembly_ctg(edgelist, la, aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2, cut_start, cut_end, one_read_contig, two_read_contig, contig);
+            draft_assembly_ctg(edgelist, la, full_aln, idx3, idx, reads, TSPACE, EDGE_SAFE, MIN_COV2, cut_start, cut_end, one_read_contig, two_read_contig, contig);
             out_fa << current_name << std::endl;
             out_fa << contig << std::endl;
 
@@ -1018,9 +1097,6 @@ int main(int argc, char *argv[]) {
              cut_start = std::stoi(tokens[6]);
              cut_end = std::stoi(tokens[7]);
         }
-
-
-
     }
 
     if (strlen(name_db) > 0)

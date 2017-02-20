@@ -5,7 +5,7 @@ set(libexec "lib/hinge")
 add_subdirectory(src bin)
 
 install(
-DIRECTORY scripts/ 
+DIRECTORY scripts/
 DESTINATION ${libexec}
 USE_SOURCE_PERMISSIONS
 )

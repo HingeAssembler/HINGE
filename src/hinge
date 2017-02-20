@@ -12,9 +12,15 @@ case "$subcommand" in
     layout)
 	hinging $*
 	;;
+	maximal)
+	get_maximal_reads $*
+	;;
     clip)
 	pruning_and_clipping.py $*
 	;;
+    clip-nanopore)
+    pruning_and_clipping_nanopore.py $*
+    ;;
     draft-path)
 	get_draft_path.py $*
 	;;
@@ -26,6 +32,9 @@ case "$subcommand" in
 	;;
     consensus)
 	consensus $*
+	;;
+    fasta2q)
+        fasta_to_fastq.py $*
 	;;
     gfa)
 	get_consensus_gfa.py $*

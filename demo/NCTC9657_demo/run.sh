@@ -13,7 +13,7 @@ mkdir log
 
 
 
-hinge filter --db NCTC9657 --las "NCTC9657.*.las" -x NCTC9657 --config ../../utils/nominal.ini
+hinge filter --db NCTC9657 --las NCTC9657 --mlas -x NCTC9657 --config ../../utils/nominal.ini
 hinge layout --db NCTC9657 --las NCTC9657.las -x NCTC9657 --config ../../utils/nominal.ini -o NCTC9657
 
 hinge clip NCTC9657.edges.hinges NCTC9657.hinge.list demo
