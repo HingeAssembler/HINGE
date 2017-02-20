@@ -675,14 +675,7 @@ int main(int argc, char *argv[]) {
                     end = start;
                 }
             }
-//            std::cout << "in here 2 " << i  << std::endl;
 
-            //std::cout << i << " " << maxstart << " " << maxend << std::endl;
-            //int s = std::max(maxstart, QV_mask[i].first);
-            //int l = std::min(maxend, QV_mask[i].second) - std::max(maxstart, QV_mask[i].first);
-            //if (l < 0) l = 0;
-            //filtered << ">read_" << i << std::endl;
-            //filtered << reads[i]->bases.substr(s,l) << std::endl;
 
             int start_coverage = 0, end_coverage = 0;
             if (max_end_coord - max_start_coord + 1 > 20){
@@ -690,7 +683,6 @@ int main(int argc, char *argv[]) {
                     start_coverage += cutoff_coverages[i][max_start_coord + dummy_index].second + MIN_COV;
                     end_coverage += cutoff_coverages[i][max_end_coord - dummy_index].second + MIN_COV;
                 }
-//                std::cout << "in here 3 " << i  << std::endl;
                 start_coverage = start_coverage/10;
                 end_coverage = end_coverage/10;
 
@@ -701,7 +693,6 @@ int main(int argc, char *argv[]) {
                     start_coverage += cutoff_coverages[i][max_start_coord + dummy_index].second + MIN_COV;
                     end_coverage += cutoff_coverages[i][max_end_coord - dummy_index].second + MIN_COV;
                 }
-//                std::cout << "in here 4 " << i << limit << std::endl;
                 if (limit == 0){
                     start_coverage = 0;
                     end_coverage = 0;
@@ -712,9 +703,6 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-//            if (i == 152034){
-//                std::cout << i << "\t" << start_coverage << "\t" << end_coverage << std::endl;
-//            }
             if (delete_telomere) {
                 if ((start_coverage >= 10 * end_coverage) or (end_coverage >= 10 * start_coverage)) {
                     covflag << i << std::endl;
@@ -749,40 +737,8 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        /*FILE* temp_out1;
-        FILE* temp_out2;
-        temp_out1=fopen("coverage.debug.txt","w");
-        temp_out2=fopen("coverage_gradient.debug.txt","w");
-
-        for (int i=0; i< n_read ; i++) {
-            fprintf(temp_out1,"%d \t", i);
-            for (int j=0; j < coverages[i].size(); j++){
-                fprintf(temp_out1,"%d:%d \t", coverages[i][j].first,coverages[i][j].second);
-            }
-            fprintf(temp_out1,"\n");
-        }
-
-        for (int i=0; i< n_read ; i++) {
-            fprintf(temp_out2,"%d \t", i);
-            for (int j=0; j < cgs[i].size(); j++){
-                fprintf(temp_out2,"%d:%d \t", cgs[i][j].first,cgs[i][j].second);
-            }
-            fprintf(temp_out2,"\n");
-        }
-        fclose(temp_out1);
-        fclose(temp_out2);*/
-
-        /*for (int i = 0; i < maskvec.size(); i++) {
-            printf("read %d %d %d\n", i, maskvec[i].first, maskvec[i].second);
-            printf("QV: read %d %d %d\n", i, QV_mask[i].first, QV_mask[i].second);
-        }*/
-
 
         //binarize coverage gradient;
-
-
-
-
 
 
         //detect repeats based on coverage gradient, mark it has rising (1) or falling (-1)
@@ -823,34 +779,6 @@ int main(int argc, char *argv[]) {
 
 
 
-
-        //remove gaps
-//    for (int i = 0; i < n_read; i++) {
-//        for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end(); ) {
-//            if (iter+1 < repeat_annotation[i].end()){
-//                if ((iter->second == -1) and ((iter+1)->second == 1) and
-//                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)){
-//                    iter = repeat_annotation[i].erase(iter);
-//                    iter = repeat_annotation[i].erase(iter); // fill gaps
-//                } else if ((iter->second == 1) and ((iter+1)->second == -1) and
-//                        ((iter+1)->first - iter->first < REPEAT_ANNOTATION_GAP_THRESHOLD)) {
-//                    iter = repeat_annotation[i].erase(iter);
-//                    iter = repeat_annotation[i].erase(iter);
-//                } else iter++;
-//            } else iter ++;
-//        }
-//    }
-
-
-        /*temp_out1=fopen("repeat_annotation.debug.txt","w");
-        for (int i = 0; i < n_read; i++) {
-            fprintf(temp_out1,"%d \t%d\t",i,repeat_annotation[i].size());
-            for (std::vector<std::pair<int, int> >::iterator iter = repeat_annotation[i].begin(); iter < repeat_annotation[i].end();iter++) {
-                fprintf(temp_out1,"%d:%d\t",iter->first,iter->second);
-            }
-            fprintf(temp_out1,"\n");
-        }
-        fclose(temp_out1);*/
         // need a better hinge detection
 
         // get hinges from repeat annotation information

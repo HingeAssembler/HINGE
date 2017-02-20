@@ -18,6 +18,9 @@ Run each subcommand without arguments for usage information.
 **filter**
 :    filter out short reads and long chimeric reads.
 
+**maximal**
+:    get maximal reads.
+
 **layout**
 :    generate a layout for assembly
 
@@ -41,4 +44,3 @@ Run each subcommand without arguments for usage information.
 
 **visualize** **visualise**
 
-**condense**
