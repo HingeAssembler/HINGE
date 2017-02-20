@@ -1224,7 +1224,8 @@ hingesname = sys.argv[2]
 
 
 suffix = sys.argv[3]
-DEL_TELOMERE=False
+DEL_TELOMERE = False
+AGGRESSIVE_PRUNING = False
 
 if len(sys.argv) >= 5:
     ini_file_path = sys.argv[4]
@@ -1240,6 +1241,10 @@ if len(sys.argv) >= 5:
         DEL_TELOMERE = config.getbool('layout','del_telomere')
     except:
         DEL_TELOMERE = False
+    try: 
+        AGGRESSIVE_PRUNING = config.getbool('layout','aggressive_pruning')
+    except:
+        AGGRESSIVE_PRUNING = False
 
 else:
     MAX_PLASMID_LENGTH = 500000
@@ -1407,22 +1412,9 @@ loop_resolution(G2,500,50)
 
 G2s = random_condensation_sym(G2,1000)
 
-
-
-
-G3 = y_pruning(G2,10)
-
-G3 = dead_end_clipping_sym(G3,10)
-
-G3s = random_condensation_sym(G3,1000)
-
-
-
 nx.write_graphml(G2, prefix+suffix+'.'+'G2'+'.graphml')
 
-nx.write_graphml(G3, prefix+suffix+'.'+'G3'+'.graphml')
 
-nx.write_graphml(G3s, prefix+suffix+'.'+'G3s'+'.graphml')
 
 nx.write_graphml(Gs, prefix+suffix+'.'+'Gs'+'.graphml')
 
@@ -1436,9 +1428,29 @@ G2c = connect_strands(G2s)
 
 nx.write_graphml(G2c, prefix+suffix+'.'+'G2c'+'.graphml')
 
-G3c = connect_strands(G3s)
 
-nx.write_graphml(G3c, prefix+suffix+'.'+'G3c'+'.graphml')
+
+
+if AGGRESSIVE_PRUNING:
+
+    G3 = y_pruning(G2,10)
+
+    G3 = dead_end_clipping_sym(G3,10)
+
+    G3s = random_condensation_sym(G3,1000)
+
+    G3c = connect_strands(G3s)
+
+    nx.write_graphml(G3, prefix+suffix+'.'+'G2'+'.graphml')
+
+    nx.write_graphml(G3s, prefix+suffix+'.'+'G3s'+'.graphml')
+
+    nx.write_graphml(G3c, prefix+suffix+'.'+'G3c'+'.graphml')
+
+
+
+
+
 
 
 
