@@ -55,7 +55,8 @@ or if there is a forward_internal (backward_internal) extension read that starts
 
 - num_events_telomere = 7; 
 - del_telomeres = 0; // If set to 1, any read with more than num_events_telomere repeat annotations will be classified as a telomere read and will be deleted.
-
+- aggressive_pruning = 0; //If set to 1, the pruning will be more aggressive. We recommend it be set to 1 for large
+genome.
 - use_two_matches = 1; // Allow the HINGE algorithm to consider the top two matches between a pair of reads (as opposed to just the longest match)
 
 
