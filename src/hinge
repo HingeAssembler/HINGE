@@ -48,6 +48,9 @@ case "$subcommand" in
     correct_head)
         correct_head.py $*
 	;;
+    split_las)
+        split_las.py $*
+    ;;
     *)
 	echo "See hinge(1) for usage information."
 	exit 1
