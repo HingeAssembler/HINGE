@@ -101,6 +101,10 @@ DASqv -c100 ecoli ecoli.las
 mkdir log
 hinge filter --db ecoli --las ecoli.las -x ecoli --config <path-to-nominal.ini>
 
+# Get maximal reads
+
+hinge maximal --db ecoli --las ecoli.las -x ecoli --config <path-to-nominal.ini>
+
 # Run layout
 
 hinge layout --db ecoli --las ecoli.las -x ecoli --config <path-to-nominal.ini> -o ecoli
