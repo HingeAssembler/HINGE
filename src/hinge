@@ -7,49 +7,49 @@ shift
 
 case "$subcommand" in
     filter)
-	Reads_filter $*
+	Reads_filter "$@"
 	;;
     layout)
-	hinging $*
+	hinging "$@"
 	;;
 	maximal)
-	get_maximal_reads $*
+	get_maximal_reads "$@"
 	;;
     clip)
-	pruning_and_clipping.py $*
+	pruning_and_clipping.py "$@"
 	;;
     clip-nanopore)
-    pruning_and_clipping_nanopore.py $*
+    pruning_and_clipping_nanopore.py "$@"
     ;;
     draft-path)
-	get_draft_path.py $*
+	get_draft_path.py "$@"
 	;;
     draft)
-	draft_assembly $*
+	draft_assembly "$@"
 	;;
     correct-head)
-	correct_head.py $*
+	correct_head.py "$@"
 	;;
     consensus)
-	consensus $*
+	consensus "$@"
 	;;
     fasta2q)
-        fasta_to_fastq.py $*
+        fasta_to_fastq.py "$@"
 	;;
     gfa)
-	get_consensus_gfa.py $*
+	get_consensus_gfa.py "$@"
 	;;
     visualize|visualise)
-	Visualise_graph.py $*
+	Visualise_graph.py "$@"
 	;;
     condense)
-	condense_graph.py $*
+	condense_graph.py "$@"
 	;;
     correct_head)
-        correct_head.py $*
+        correct_head.py "$@"
 	;;
     split_las)
-        split_las.py $*
+        split_las.py "$@"
     ;;
     *)
 	echo "See hinge(1) for usage information."
