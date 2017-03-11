@@ -42,5 +42,5 @@ Run each subcommand without arguments for usage information.
 **gfa**
 :    Create a graphical fragment assembly file from **consensus** output
 
-**visualize** **visualise**
+**visualize**, **visualise**
 
