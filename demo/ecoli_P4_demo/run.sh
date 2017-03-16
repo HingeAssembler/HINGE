@@ -1,9 +1,8 @@
-wget http://gembox.cbcb.umd.edu/mhap/raw/ecoli_p4_filtered.fastq.gz
-gunzip ecoli_p4_filtered.fastq.gz
+wget -nv http://files.pacb.com/datasets/secondary-analysis/ecoli-k12-P4C2-20KSS/ecoliK12.tar.gz
+tar -zxf ecoliK12.tar.gz
 
-seqtk seq -a ecoli_p4_filtered.fastq > reads.fasta
-hinge correct-head reads.fasta reads.pb.fasta map.txt
-fasta2DB ecoli reads.pb.fasta
+dextract -o ecoliK12/Analysis_Results/*.bax.h5
+fasta2DB ecoli m130404_014004_sidney_c100506902550000001823076808221337_s1_p0.fasta
 
 
 DBsplit ecoli
@@ -18,10 +17,7 @@ mkdir log
 
 
 
-hinge filter --db ecoli --las ecoli --mlas -x ecoli --config ../../utils/nominal.ini
-
-hinge maximal --db ecoli --las ecoli --mlas -x ecoli --config ../../utils/nominal.ini
-
+hinge filter --db ecoli --las "ecoli.*.las" -x ecoli --config ../../utils/nominal.ini
 hinge layout --db ecoli --las ecoli.las -x ecoli --config ../../utils/nominal.ini -o ecoli
 
 hinge clip ecoli.edges.hinges ecoli.hinge.list demo
