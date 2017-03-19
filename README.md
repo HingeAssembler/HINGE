@@ -62,6 +62,7 @@ In the pipeline described above, several programs load their parameters from a c
 The following python packages are necessary:
 - numpy
 - ujson
+- configparser
 - colormap
 - easydev.tools
 
