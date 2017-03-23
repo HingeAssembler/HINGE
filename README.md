@@ -7,7 +7,7 @@ Software accompanying  "HINGE: Long-Read Assembly Achieves Optimal Repeat Resolu
 
 - An ipython notebook to reproduce results in the paper can be found in this [repository](https://github.com/govinda-kamath/HINGE-analyses).
 
-CI Status: ![image](https://travis-ci.org/fxia22/HINGE.svg?branch=master)
+CI Status: ![image](https://travis-ci.org/HingeAssembler/HINGE.svg?branch=master)
 
 
 
