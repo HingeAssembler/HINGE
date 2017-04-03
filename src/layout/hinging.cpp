@@ -1000,7 +1000,6 @@ int main(int argc, char *argv[]) {
     << rev_complemented_bck_matches << " rev cmplment bck matches "
     << rev_complemented_bck_int_matches << " rev cmplement bck int matches " << std::endl;*/
 
-# pragma omp parallel for
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
             std::sort(matches_forward[i].begin(), matches_forward[i].end(), compare_overlap_weight);

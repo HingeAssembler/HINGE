@@ -592,24 +592,19 @@ int main(int argc, char *argv[]) {
 
 
 
-# pragma omp parallel for
         for (int i = 0; i < n_read; i++) {// sort overlaps of a reads
             std::sort(idx_pileup[i].begin(), idx_pileup[i].end(), compare_overlap);
         }
 
-# pragma omp parallel for
         for (int i = 0; i < aln.size(); i++) {
             idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
         }
 
-# pragma omp parallel for
         for (int i = 0; i < aln.size(); i++) {
             idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
         }
 
 
-
-# pragma omp parallel for
         for (int i = 0; i < n_read; i++) {
             for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx_ab[i].begin(); it!= idx_ab[i].end(); it++) {
                 std::sort(it->second.begin(), it->second.end(), compare_overlap);
