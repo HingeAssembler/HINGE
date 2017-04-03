@@ -544,7 +544,7 @@ int main(int argc, char *argv[]) {
 
         if (strlen(name_las_list[part].c_str()) > 0) {
             la.resetAlignment();
-            la.getOverlap(aln, 0, n_aln);
+            la.getOverlap(aln, 0, n_read);
         }
 
         if (strlen(name_paf) > 0) {

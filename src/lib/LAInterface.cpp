@@ -1537,6 +1537,8 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int6
     pts[1] = to + 0;
     pts[2] = INT32_MAX;
 
+    //printf("from to %d %d\n",pts[0], pts[1]);
+
     npt = pts[0];
     idx = 1;
 
@@ -1560,6 +1562,9 @@ void LAInterface::getOverlap(std::vector<LOverlap *> &result_vec, int from, int6
         //  Determine if it should be displayed
 
         ar = ovl->aread + 1;
+        //printf("ar %d\n", ar);
+
+
         if (in) {
             while (ar > npt) {
                 npt = pts[idx++];

@@ -446,7 +446,7 @@ int main(int argc, char *argv[]) {
 
         if (strlen(name_las) > 0) {
             la.resetAlignment();
-            la.getOverlap(aln, 0, n_aln);
+            la.getOverlap(aln, 0, n_read);
         }
 
         if (strlen(name_paf) > 0) {
@@ -463,9 +463,13 @@ int main(int argc, char *argv[]) {
         console->info("Input data finished, part {}/{}", part + 1, name_las_list.size());
 
 
+        console->info("length of alignments {}", aln.size());
+        //if (aln.size() == 0) continue;
 
         int r_begin = aln.front()->read_A_id_;
         int r_end = aln.back()->read_A_id_;
+
+        console->info("begin {} end {}", r_begin, r_end);
 
 
         std::vector<std::vector <LOverlap * > > idx_pileup; // this is the pileup
@@ -509,25 +513,18 @@ int main(int argc, char *argv[]) {
 
 
 
-
-# pragma omp parallel for
         for (int i = 0; i < n_read; i++) {// sort overlaps of a reads
             std::sort(idx_pileup[i].begin(), idx_pileup[i].end(), compare_overlap);
         }
 
-# pragma omp parallel for
         for (int i = 0; i < aln.size(); i++) {
             idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_] = std::vector<LOverlap *>();
         }
 
-# pragma omp parallel for
         for (int i = 0; i < aln.size(); i++) {
             idx_ab[aln[i]->read_A_id_][aln[i]->read_B_id_].push_back(aln[i]);
         }
 
-
-
-# pragma omp parallel for
         for (int i = 0; i < n_read; i++) {
             for (std::unordered_map<int, std::vector<LOverlap *> >::iterator it = idx_ab[i].begin(); it!= idx_ab[i].end(); it++) {
                 std::sort(it->second.begin(), it->second.end(), compare_overlap);
