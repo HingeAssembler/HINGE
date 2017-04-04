@@ -422,7 +422,7 @@ void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<st
 
         if (strlen(name_las_list[part].c_str()) > 0) {
             la.resetAlignment();
-            la.getOverlap(aln, 0, n_aln);
+            la.getOverlap(aln, 0, n_read);
         }
 
         int r_begin = aln.front()->read_A_id_;
@@ -1000,7 +1000,6 @@ int main(int argc, char *argv[]) {
     << rev_complemented_bck_matches << " rev cmplment bck matches "
     << rev_complemented_bck_int_matches << " rev cmplement bck int matches " << std::endl;*/
 
-# pragma omp parallel for
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) {
             std::sort(matches_forward[i].begin(), matches_forward[i].end(), compare_overlap_weight);
