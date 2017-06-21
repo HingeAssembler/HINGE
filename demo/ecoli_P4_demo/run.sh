@@ -17,7 +17,10 @@ mkdir log
 
 
 
-hinge filter --db ecoli --las "ecoli.*.las" -x ecoli --config ../../utils/nominal.ini
+hinge filter --db ecoli --las ecoli --mlas -x ecoli --config ../../utils/nominal.ini
+
+hinge maximal --db ecoli --las ecoli --mlas -x ecoli --config ../../utils/nominal.ini
+
 hinge layout --db ecoli --las ecoli.las -x ecoli --config ../../utils/nominal.ini -o ecoli
 
 hinge clip ecoli.edges.hinges ecoli.hinge.list demo
