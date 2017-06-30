@@ -466,6 +466,13 @@ void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<st
             n_rev_overlaps += aln[i]->reverse_complement_match_;
         }
 
+
+        for (int i = 0; i < aln.size(); i++) {
+            if ( not ((reads[aln[i]->read_A_id_]->active) and
+                ((reads[aln[i]->read_B_id_]->active) and KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS)))
+                delete aln[i];
+        }
+
         console->info("kept {}/{} overlaps,  {}/{} rev_overlaps in part {}/{}",n_aln_accept,
                       n_overlaps, n_aln_rcomp_accept,
                       n_rev_overlaps,
