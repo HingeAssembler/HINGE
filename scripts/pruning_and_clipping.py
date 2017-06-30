@@ -835,7 +835,7 @@ def y_pruning(G,flank):
 
         pruned = 0
 
-        try:  
+        try:
             H.predecessors(st_node)
         except:
             continue
@@ -843,7 +843,7 @@ def y_pruning(G,flank):
         prev_node = H.predecessors(st_node)[0]
 
         node_cnt = 0
-    
+
         while H.in_degree(prev_node) == 1 and H.out_degree(prev_node) == 1:
             node_cnt += 1
             prev_node = H.predecessors(prev_node)[0]
@@ -855,12 +855,12 @@ def y_pruning(G,flank):
         # if we got here, we probably have a Y, and not a collapsed repeat
         for vert in H.successors(st_node):
             if H.node[vert]['CFLAG'] == True:
-                
+
                 try:
                     H.remove_edge(st_node,vert)
                     H.remove_edge(rev_node(vert),rev_node(st_node))
                     pruned = 1
-    
+
                 except:
                     pass
 
@@ -1054,7 +1054,7 @@ def add_chimera_flags(g,prefix):
         with open(cov_flags,'r') as f:
             for line in f:
                 node_name = line.strip()
-                try: 
+                try:
                     assert not ((node_name+'_0' in node_set and node_name+'_1' not in node_set)
                         or (node_name+'_0' not in node_set and node_name+'_1'  in node_set))
                 except:
@@ -1071,7 +1071,7 @@ def add_chimera_flags(g,prefix):
         with open(slf_flags,'r') as f:
             for line in f:
                 node_name = line.strip()
-                try: 
+                try:
                     assert not ((node_name+'_0' in node_set and node_name+'_1' not in node_set)
                         or (node_name+'_0' not in node_set and node_name+'_1'  in node_set))
                 except:
@@ -1081,7 +1081,7 @@ def add_chimera_flags(g,prefix):
                     g.node[node_name+'_0']['SFLAG'] = True
                     g.node[node_name+'_1']['SFLAG'] = True
                     num_bad_slf_reads += 1
-    print str(num_bad_slf_reads) + ' bad self aligned reads.'            
+    print str(num_bad_slf_reads) + ' bad self aligned reads.'
 
 
 
@@ -1237,11 +1237,11 @@ if len(sys.argv) >= 5:
     except:
         MAX_PLASMID_LENGTH = 500000
         # print 'MAX_PLASMID_LENGTH '+str(MAX_PLASMID_LENGTH)
-    try: 
+    try:
         DEL_TELOMERE = config.getbool('layout','del_telomere')
     except:
         DEL_TELOMERE = False
-    try: 
+    try:
         AGGRESSIVE_PRUNING = config.getbool('layout','aggressive_pruning')
     except:
         AGGRESSIVE_PRUNING = False
@@ -1383,20 +1383,24 @@ G0 = G.copy()
 # Actual pruning, clipping and z deletion occurs below
 
 
-G0 = dead_end_clipping_sym(G0,10)
+#G0 = dead_end_clipping_sym(G0,10)
+G0 = dead_end_clipping_sym(G0,0)
 
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
-G1,G0 = z_clipping_sym(G0,6,set(),set())
+#G1,G0 = z_clipping_sym(G0,6,set(),set())
+G1,G0 = z_clipping_sym(G0,0,set(),set())
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 # G1=z_clipping_sym(G1,5,in_hinges,out_hinges)
 
-if DEL_TELOMERE:
-    G1 = bubble_bursting_sym(G1,20)
-    G1 = dead_end_clipping_sym(G1,20)
-else:
-    G1 = bubble_bursting_sym(G1,10)
-    G1 = dead_end_clipping_sym(G1,5)
+G1 = bubble_bursting_sym(G1,0)
+G1 = dead_end_clipping_sym(G1,0)
+#if DEL_TELOMERE:
+#    G1 = bubble_bursting_sym(G1,20)
+#    G1 = dead_end_clipping_sym(G1,20)
+#else:
+#    G1 = bubble_bursting_sym(G1,10)
+#    G1 = dead_end_clipping_sym(G1,5)
 
 nx.write_graphml(G0, prefix+suffix+'.'+'G0'+'.graphml')
 nx.write_graphml(G1, prefix+suffix+'.'+'G1'+'.graphml')
