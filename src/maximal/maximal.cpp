@@ -843,7 +843,7 @@ int main(int argc, char *argv[]) {
 
 
         for (int i = 0; i < aln.size(); i++) {
-            free(aln[i]);
+            delete aln[i];
         }
         aln.clear();
     }
