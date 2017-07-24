@@ -180,6 +180,8 @@ int main(int argc, char *argv[]) {
     cmdp.add("debug", '\0', "debug mode");
     cmdp.parse_check(argc, argv);
 
+
+
     LAInterface la;
     const char * name_db = cmdp.get<std::string>("db").c_str(); //.db file of reads to load
     const char * name_las_base = cmdp.get<std::string>("las").c_str();//.las file of alignments
@@ -189,24 +191,6 @@ int main(int argc, char *argv[]) {
     std::string out = cmdp.get<std::string>("prefix");
     bool has_qv = true;
     const char * name_restrict = cmdp.get<std::string>("restrictreads").c_str();
-
-    std::string name_las_string;
-    if (cmdp.exist("mlas"))
-        name_las_string =  std::string(name_las_base);
-    else {
-        if (lastN(std::string(name_las_base), 4) == ".las")
-            name_las_string = std::string(name_las_base);
-        else
-            name_las_string = std::string(name_las_base) + ".las";
-    }
-
-
-    const char * name_las = name_las_string.c_str();
-
-    /**
-     * There are two sets of input, the first is db+las, which corresponds to daligner as an overlapper,
-     * the other is fasta + paf, which corresponds to minimap as an overlapper.
-     */
 
     namespace spd = spdlog;
 
@@ -223,8 +207,52 @@ int main(int argc, char *argv[]) {
     console->info("Reads filtering");
 
 
+    bool db_and_las, db_or_las, fa_and_paf, fa_or_paf;
+    db_and_las = (strlen(name_db) > 0) and (strlen(name_las_base) > 0);
+    db_or_las = (strlen(name_db) > 0) or (strlen(name_las_base) > 0);
+    fa_and_paf = (strlen(name_fasta) > 0) and (strlen(name_paf) > 0);
+    fa_or_paf = (strlen(name_fasta) > 0) or (strlen(name_paf) > 0);
+
+    if (db_or_las and fa_or_paf){
+        console->error("Pass in either a db and a las or a fasta and a paf");
+        return 1;
+    }
+
+    if (( not fa_and_paf) and (not db_and_las)){
+        console->error("Pass in at least one of the following two combinations: a db and a las or a fasta and a paf");
+        return 1;
+    }
+
+    std::string name_las_string;
+    if (cmdp.exist("mlas")) {
+        if (not db_and_las){
+            console->error("--mlas works only with db and las");
+            return 1;
+        }
+        name_las_string = std::string(name_las_base);
+    }
+    else if (strlen(name_las_base) > 0) {
+        if (lastN(std::string(name_las_base), 4) == ".las")
+            name_las_string = std::string(name_las_base);
+        else
+            name_las_string = std::string(name_las_base) + ".las";
+    }
+
+
+    const char * name_las = name_las_string.c_str();
+
+    /**
+     * There are two sets of input, the first is db+las, which corresponds to daligner as an overlapper,
+     * the other is fasta + paf, which corresponds to minimap as an overlapper.
+     */
+
+
+
+//    std::cout << "here now " <<  std::endl;
+
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
     console->info("name of fasta: {}, name of .paf file {}", name_fasta, name_paf);
+
 
 
     std::ifstream ini_file(name_config);
@@ -426,14 +454,31 @@ int main(int argc, char *argv[]) {
     std::ofstream covflag(out + ".cov.flag");
     std::ofstream selfflag(out + ".self.flag");
 
-    for (int part = 0; part < name_las_list.size(); part++) {
+//    std::cout << "LAS list length "<<  name_las_list.size() << std::endl;
+
+//    for (int ind = 0; ind < name_las_list.size() ; ind ++)
+//        std::cout << "name of las: "<< name_las_list[ind] << std::endl;
+
+    int number_of_parts;
+    if (strlen(name_las) > 0)
+        number_of_parts = name_las_list.size();
+    else if(strlen(name_paf) > 0)
+        number_of_parts = 1;
+    else {
+        console->error("Need to provide either las and db or paf and fasta");
+        return 1;
+    }
+
+    for (int part = 0; part < number_of_parts; part++)
+    {
+        console->info("part: {}", part);
 
 
-        console->info("name of las: {}", name_las_list[part]);
-
-
-        if (strlen(name_las_list[part].c_str()) > 0)
-            la.openAlignmentFile(name_las_list[part]);
+        if (strlen(name_las) > 0) {
+            console->info("name of las: {}", name_las_list[part]);
+            if (strlen(name_las_list[part].c_str()) > 0)
+                la.openAlignmentFile(name_las_list[part]);
+        }
 
         int64 n_aln = 0;
 
@@ -460,7 +505,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        console->info("Input data finished, part {}/{}", part + 1, name_las_list.size());
+        console->info("Input data finished, part {}/{}", part + 1, number_of_parts);
 
 
         console->info("length of alignments {}", aln.size());
@@ -500,13 +545,15 @@ int main(int argc, char *argv[]) {
             }
         }
 
+
+
         std::set<int> self_match_reads;
         for (auto it : self_aln_list) {
             float cov = 0.0;
             for (int i = 0; i < it.second.size(); i++)
                 cov += it.second[i].second - it.second[i].first;
             cov /= float(reads[it.first]->len);
-            std::cout << "selfcov: " <<  it.first << " " << cov << " " << reads[it.first]->len << std::endl;
+//            std::cout << "selfcov: " <<  it.first << " " << cov << " " << reads[it.first]->len << std::endl;
             if ((cov > 4.5) and (reads[it.first]->len > 10000))
                 self_match_reads.insert(it.first);
         }
@@ -564,7 +611,7 @@ int main(int argc, char *argv[]) {
             cgs[i] = (cg);
         }
 
-        console->info("profile coverage done part {}/{}", part + 1, name_las_list.size());
+        console->info("profile coverage done part {}/{}", part + 1, number_of_parts);
 
 
         std::set<int> rand_reads;
@@ -773,7 +820,6 @@ int main(int argc, char *argv[]) {
                 } else iter ++;
             }
         }
-
 
 
         // need a better hinge detection
@@ -1016,6 +1062,8 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        console->info("reached end of loop");
+
         //output hinges
 
         int ra_cnt = 0;
@@ -1042,22 +1090,26 @@ int main(int argc, char *argv[]) {
             hg << std::endl;
         }
 
-
+//        std::cout << "igkjsdhflkhjdaskljhfa1323" << std::endl;
         console->info("Number of hinges: {}", hg_cnt);
 
+//        std::cout << "igkjsdhflkhjdaskljhfa1323" << std::endl;
 
-
-        for (int i = 0; i < aln.size(); i++) {
-            delete aln[i];
+        if (strlen(name_las) > 0) {
+            for (int i = 0; i < aln.size(); i++) {
+                delete aln[i];
+            }
+            aln.clear();
         }
-        aln.clear();
+        console->info("part: {}", part);
+//        console->info("going through: {}", part+1 < name_las_list.size());
     }
 
 
-
+//    std::cout << "igkjsdhflkhjdaskljhfa1323sadljfaslkdja43" << std::endl;
     hg.close();
 
-
+//    std::cout << "igkjsdhflkhjdaskljhfa" << std::endl;
     if (strlen(name_db)>0)
         la.closeDB(); //close database
     return 0;
