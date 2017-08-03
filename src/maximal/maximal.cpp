@@ -688,10 +688,14 @@ int main(int argc, char *argv[]) {
         std::set<int> rand_reads;
         srand(time(NULL));
         rand_reads.insert(0);
+        int temp_index(0);
         while (rand_reads.size() < (r_end - r_begin)/500){
+            temp_index ++;
             int rd_id=rand()%(r_end - r_begin) + r_begin;
             if (reads[rd_id]->len > 5000)
                 rand_reads.insert(rd_id);
+            if (temp_index > 20000)
+                break;
         }
 
         int num_slot = 0;
