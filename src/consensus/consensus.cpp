@@ -59,6 +59,20 @@ char toLower(char c) {
 
 }
 
+int remove_multialign(std::vector<LAlignment *> idx, int idx_size, int LENGTH_THRESHOLD)
+{
+    int i, j, r=0; 
+     
+    for(i = 0; i < idx_size; i ++) {
+        if (idx[i]->aepos - idx[i]->abpos >= LENGTH_THRESHOLD) {
+            for(j = 0; j < r; j ++)
+                if(idx[j]->read_B_id_ == idx[i]->read_B_id_) break;
+            if(j == r) 
+                idx[r++] = idx[i];
+        }
+    }     
+    return r;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -135,13 +149,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < n_contigs; i++) {
 
 
-
-        int k = 0;
-        for (k = 0; k < idx[i].size(); k++)
-            if (idx[i][k]->aepos - idx[i][k]->abpos < LENGTH_THRESHOLD)
-                break;
-
-        int seq_count = k;
+        int seq_count = remove_multialign(idx[i], idx[i].size(),LENGTH_THRESHOLD);
 
         std::cout << "Contig " << i << ": " << seq_count << " reads" << std::endl;
 
