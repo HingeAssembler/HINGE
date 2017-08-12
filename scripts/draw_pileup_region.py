@@ -43,13 +43,13 @@ for i,item in enumerate(util.get_alignments_mapping3(ref, read, las, contig)):
 
     if item[3] >= left and item[4] <= right and item[4] - item[3] > length_th:
         aln.append(item)
-        
-        
-        
+
+
+
 covy = np.zeros((right - left, ))
 for item in aln:
     covy[item[3] - left : item[4] - left] += 1
-    
+
 covx = np.arange(left, right)
 
 
@@ -69,7 +69,8 @@ for item in aln:
     else:
         aln_group.append(item)
 
-num = len(alns)
+#num = len(alns)
+num = len(aln)
 
 print len(aln), len(alns)
 
@@ -102,7 +103,15 @@ ax1.add_line(dotted_line)
 dotted_line2 = plt.Line2D((right, right), (0, num*grid_size ),ls='-.')
 ax1.add_line(dotted_line2)
 
-for i,aln_group in enumerate(alns):
+alns_all = []
+for item in alns:
+    for aln in item:
+        alns_all.append([aln])
+
+alns_all.sort(key = lambda x:min([item[3] for item in x]))
+
+
+for i,aln_group in enumerate(alns_all):
     for item in aln_group:
         abpos = item[3]
         aepos = item[4]

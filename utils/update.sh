@@ -17,7 +17,7 @@ then rsync -rizP --delete --exclude '.*' --exclude 'build' $1@shannon.stanford.e
 fi
 
 if [ "$2" == "update" ];
-then ssh -t $1@shannon.stanford.edu "cd /home/$1/AwesomeAssembler && ./utils/build.sh"
+then ssh -t $1@shannon.stanford.edu "export TEMP=/home/$1/tmp && cd /home/$1/AwesomeAssembler && ./utils/build.sh"
 fi
 
 if [ "$2" == "all" ];

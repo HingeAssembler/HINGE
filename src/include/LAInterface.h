@@ -76,6 +76,9 @@ public:
 class LOverlap { // LOverlap is a simplified version of LAlignment, no trace
 public:
     LOverlap() { };
+	
+	~LOverlap() {free(trace_pts); };
+	
 	void show() {printf("%d %d %d [%d...%d]/%d x [%d...%d]/%d %d diffs, %d type\n", read_A_id_, read_B_id_,
 						reverse_complement_match_,
 						read_A_match_start_, read_A_match_end_, alen, read_B_match_start_, read_B_match_end_, blen, diffs,

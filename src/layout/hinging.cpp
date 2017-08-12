@@ -344,7 +344,8 @@ void PrintOverlapToFile2(FILE * file_pointer, LOverlap * match, int hinge_pos) {
 
 void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<std::unordered_map<int, std::vector<LOverlap *> > > & idx_ab,
                     std::vector<std::vector<LOverlap *>> & matches_forward, std::vector<std::vector<LOverlap *>>& matches_backward,
-                    int n_read, const char *name_db, const char *name_las_base, bool mult_las,
+                    int n_read, const char *name_db, const char *name_las_base,
+                    const char *name_paf, bool mult_las,
                     int ALN_THRESHOLD, int THETA, int THETA2, bool USE_TWO_MATCHES, int64 n_aln_full,
                     const std::shared_ptr<spdlog::logger> console,
                     std::string name_maximal_reads, bool KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS ){
@@ -357,14 +358,18 @@ void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<st
     int64 n_rev_aln_kept_full(0);
     std::string name_las_string;
     console->info("Multiple las files: {}", mult_las);
+    if (strlen(name_paf) > 0)
+        console->info("Loading from paf: {}", name_paf);
 
-    if (mult_las)
-        name_las_string =  std::string(name_las_base);
-    else {
-        if (lastN(std::string(name_las_base), 4) == ".las")
+    if (strlen(name_las_base) > 0) {
+        if (mult_las)
             name_las_string = std::string(name_las_base);
-        else
-            name_las_string = std::string(name_las_base) + ".las";
+        else {
+            if (lastN(std::string(name_las_base), 4) == ".las")
+                name_las_string = std::string(name_las_base);
+            else
+                name_las_string = std::string(name_las_base) + ".las";
+        }
     }
 
     n_aln_full = 0;
@@ -374,12 +379,17 @@ void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<st
     std::string name_las_str(name_las);
     console->info("Las files: {}", name_las_str);
 
-    if (mult_las) {
+    if (mult_las and strlen(name_las_base) > 0) {
         console->info("Calling glob.");
         name_las_list = glob(name_las_str);
     }
-    else
+    else if (strlen(name_las_base) > 0)
         name_las_list.push_back(name_las_str);
+    else{
+        name_las_str = std::string(name_paf);
+        name_las_list.push_back(name_las_str);
+    }
+
 
     console->info("number of las files: {}", name_las_list.size());
 
@@ -399,31 +409,50 @@ void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<st
         reads[i]->active = (reads[i]->active) and (maximal_read[i]);
     }
 
+    int number_of_parts;
+    if (strlen(name_las) > 0)
+        number_of_parts = name_las_list.size();
+    else if(strlen(name_paf) > 0)
+        number_of_parts = 1;
+    else {
+        console->error("Need to provide either las and db or paf and fasta");
+    }
 
-    for (int part = 0; part < name_las_list.size(); part++) {
+    for (int part = 0; part < number_of_parts; part++) {
 
-        console->info("name of las: {}", name_las_list[part]);
+        if (strlen(name_las_base) > 0) {
+            console->info("name of las: {}", name_las_list[part]);
 
-        if (strlen(name_las_list[part].c_str()) > 0)
-            la.openAlignmentFile(name_las_list[part]);
+            if (strlen(name_las_list[part].c_str()) > 0)
+                la.openAlignmentFile(name_las_list[part]);
+        }
 
         int64 n_aln = 0;
         int64 n_aln_accept = 0;
         int64 n_aln_rcomp_accept = 0;
+        std::vector<LOverlap *> aln;//Vector of pointers to all alignments
 
-        if (strlen(name_las_list[part].c_str()) > 0) {
-            n_aln = la.getAlignmentNumber();
-            console->info("Load alignments from {}", name_las_list[part]);
+        if (strlen(name_las_base) > 0) {
+            if (strlen(name_las_list[part].c_str()) > 0) {
+                n_aln = la.getAlignmentNumber();
+                console->info("Load alignments from {}", name_las_list[part]);
+                console->info("# Alignments: {}", n_aln);
+            }
+            if (strlen(name_las_list[part].c_str()) > 0) {
+                la.resetAlignment();
+                la.getOverlap(aln, 0, n_read);
+            }
+        }
+
+        if (strlen(name_paf) > 0){
+            n_aln = la.loadPAF(std::string(name_paf), aln);
+            console->info("Load alignments from {}", name_paf);
             console->info("# Alignments: {}", n_aln);
         }
 
-        std::vector<LOverlap *> aln;//Vector of pointers to all alignments
 
 
-        if (strlen(name_las_list[part].c_str()) > 0) {
-            la.resetAlignment();
-            la.getOverlap(aln, 0, n_read);
-        }
+
 
         int r_begin = aln.front()->read_A_id_;
         int r_end = aln.back()->read_A_id_;
@@ -464,6 +493,14 @@ void GetAlignment ( LAInterface &la, std::vector<Read *> & reads, std::vector<st
         for (int i = 0; i < aln.size(); i++) {
             n_overlaps++;
             n_rev_overlaps += aln[i]->reverse_complement_match_;
+        }
+
+
+        for (int i = 0; i < aln.size(); i++) {
+            if ( not ((reads[aln[i]->read_A_id_]->active) and
+                ((reads[aln[i]->read_B_id_]->active) and KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS)))
+                if (strlen(name_las_base) > 0)
+                    delete aln[i];
         }
 
         console->info("kept {}/{} overlaps,  {}/{} rev_overlaps in part {}/{}",n_aln_accept,
@@ -646,6 +683,7 @@ int main(int argc, char *argv[]) {
 
     console->info("Hinging layout");
 
+
     bool mult_las;
     mult_las = cmdp.exist("mlas");
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
@@ -654,6 +692,30 @@ int main(int argc, char *argv[]) {
     console->info("output prefix: {}", out_name);
     console->info("Multiple las files: {}", mult_las);
     console->info("Multiple las files: {}", cmdp.exist("mlas"));
+
+    bool db_and_las, db_or_las, fa_and_paf, fa_or_paf;
+    db_and_las = (strlen(name_db) > 0) and (strlen(name_las) > 0);
+    db_or_las = (strlen(name_db) > 0) or (strlen(name_las) > 0);
+    fa_and_paf = (strlen(name_fasta) > 0) and (strlen(name_paf) > 0);
+    fa_or_paf = (strlen(name_fasta) > 0) or (strlen(name_paf) > 0);
+
+    if (db_or_las and fa_or_paf){
+        console->error("Pass in either a db and a las or a fasta and a paf");
+        return 1;
+    }
+
+    if (( not fa_and_paf) and (not db_and_las)){
+        console->error("Pass in at least one of the following two combinations: a db and a las or a fasta and a paf");
+        return 1;
+    }
+
+    if (cmdp.exist("mlas")) {
+        if (not db_and_las) {
+            console->error("--mlas works only with db and las");
+            return 1;
+        }
+    }
+
 
     std::ifstream ini_file(name_config);
     std::string str((std::istreambuf_iterator<char>(ini_file)),
@@ -919,7 +981,8 @@ int main(int argc, char *argv[]) {
 
 
     GetAlignment ( la, reads,  idx_ab, matches_forward, matches_backward,
-            n_read,  name_db, name_las, mult_las, ALN_THRESHOLD,  THETA,  THETA2,
+            n_read,  name_db, name_las, name_paf,
+                   mult_las, ALN_THRESHOLD,  THETA,  THETA2,
                    USE_TWO_MATCHES, n_aln, console, name_max,
                    KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS);
 

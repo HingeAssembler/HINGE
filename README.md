@@ -79,6 +79,8 @@ git submodule update
 ./utils/build.sh
 ```
 
+Alternatively, you can use docker to build and use HINGE, see [this guide](https://github.com/HingeAssembler/HINGE/tree/master/docker) for more information. 
+
 # Running
 
 In order to call the programs from anywhere, I suggest one export the directory of binary file to system environment, you can do that by using the script `setup.sh`. The parameters are initialised in `utils/nominal.ini`. The path to nominal.ini has to be specified to run the scripts.

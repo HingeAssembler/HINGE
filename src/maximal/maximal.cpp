@@ -261,23 +261,6 @@ int main(int argc, char *argv[]) {
     const char * name_restrict = cmdp.get<std::string>("restrictreads").c_str();
     std::string name_mask = out + ".mas";
 
-    std::string name_las_string;
-    if (cmdp.exist("mlas"))
-        name_las_string =  std::string(name_las_base);
-    else {
-        if (lastN(std::string(name_las_base), 4) == ".las")
-            name_las_string = std::string(name_las_base);
-        else
-            name_las_string = std::string(name_las_base) + ".las";
-    }
-
-
-    const char * name_las = name_las_string.c_str();
-    /**
-     * There are two sets of input, the first is db+las, which corresponds to daligner as an overlapper,
-     * the other is fasta + paf, which corresponds to minimap as an overlapper.
-     */
-
     namespace spd = spdlog;
 
     //auto console = spd::stdout_logger_mt("console",true);
@@ -291,6 +274,46 @@ int main(int argc, char *argv[]) {
 
 
     console->info("Getting maximal reads");
+
+    bool db_and_las, db_or_las, fa_and_paf, fa_or_paf;
+    db_and_las = (strlen(name_db) > 0) and (strlen(name_las_base) > 0);
+    db_or_las = (strlen(name_db) > 0) or (strlen(name_las_base) > 0);
+    fa_and_paf = (strlen(name_fasta) > 0) and (strlen(name_paf) > 0);
+    fa_or_paf = (strlen(name_fasta) > 0) or (strlen(name_paf) > 0);
+
+    if (db_or_las and fa_or_paf){
+        console->error("Pass in either a db and a las or a fasta and a paf");
+        return 1;
+    }
+
+    if (( not fa_and_paf) and (not db_and_las)){
+        console->error("Pass in at least one of the following two combinations: a db and a las or a fasta and a paf");
+        return 1;
+    }
+
+    std::string name_las_string;
+    if (cmdp.exist("mlas")) {
+        if (not db_and_las){
+            console->error("--mlas works only with db and las");
+            return 1;
+        }
+        name_las_string = std::string(name_las_base);
+    }
+    else if (strlen(name_las_base) > 0) {
+        if (lastN(std::string(name_las_base), 4) == ".las")
+            name_las_string = std::string(name_las_base);
+        else
+            name_las_string = std::string(name_las_base) + ".las";
+    }
+
+
+    const char * name_las = name_las_string.c_str();
+    /**
+     * There are two sets of input, the first is db+las, which corresponds to daligner as an overlapper,
+     * the other is fasta + paf, which corresponds to minimap as an overlapper.
+     */
+
+
 
 
     console->info("name of db: {}, name of .las file {}", name_db, name_las);
@@ -522,7 +545,17 @@ int main(int argc, char *argv[]) {
     }
     console->info("active reads after correcting for read lengths: {}", num_active_read);
 
-    console->info("number of las files: {}", name_las_list.size());
+    int number_of_parts;
+    if (strlen(name_las) > 0)
+        number_of_parts = name_las_list.size();
+    else if(strlen(name_paf) > 0)
+        number_of_parts = 1;
+    else {
+        console->error("Need to provide either las and db or paf and fasta");
+        return 1;
+    }
+
+    console->info("number of las files: {}", number_of_parts);
 
     for (int part = 0; part < name_las_list.size(); part++) {
 
@@ -530,22 +563,27 @@ int main(int argc, char *argv[]) {
         console->info("name of las: {}", name_las_list[part]);
 
 
-        if (strlen(name_las_list[part].c_str()) > 0)
-            la.openAlignmentFile(name_las_list[part]);
+
 
         int64 n_aln = 0;
 
-        if (strlen(name_las_list[part].c_str()) > 0) {
-            n_aln = la.getAlignmentNumber();
-            console->info("Load alignments from {}", name_las_list[part]);
-            console->info("# Alignments: {}", n_aln);
+        if(strlen(name_las_base)> 0) {
+
+            if (strlen(name_las_list[part].c_str()) > 0)
+                la.openAlignmentFile(name_las_list[part]);
+            if (strlen(name_las_list[part].c_str()) > 0) {
+                n_aln = la.getAlignmentNumber();
+                console->info("Load alignments from {}", name_las_list[part]);
+                console->info("# Alignments: {}", n_aln);
+            }
+            if (strlen(name_las_list[part].c_str()) > 0) {
+                la.resetAlignment();
+                la.getOverlap(aln, 0, n_read);
+            }
         }
 
 
-        if (strlen(name_las_list[part].c_str()) > 0) {
-            la.resetAlignment();
-            la.getOverlap(aln, 0, n_read);
-        }
+
 
         if (strlen(name_paf) > 0) {
             n_aln = la.loadPAF(std::string(name_paf), aln);
@@ -558,7 +596,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        console->info("Input data finished, part {}/{}", part + 1, name_las_list.size());
+        console->info("Input data finished, part {}/{}", part + 1, number_of_parts);
 
 
 
@@ -644,16 +682,20 @@ int main(int argc, char *argv[]) {
             cgs[i] = (cg);
         }
 
-        console->info("profile coverage done part {}/{}", part + 1, name_las_list.size());
+        console->info("profile coverage done part {}/{}", part + 1, number_of_parts);
 
 
         std::set<int> rand_reads;
         srand(time(NULL));
         rand_reads.insert(0);
+        int temp_index(0);
         while (rand_reads.size() < (r_end - r_begin)/500){
+            temp_index ++;
             int rd_id=rand()%(r_end - r_begin) + r_begin;
             if (reads[rd_id]->len > 5000)
                 rand_reads.insert(rd_id);
+            if (temp_index > 20000)
+                break;
         }
 
         int num_slot = 0;
@@ -841,11 +883,12 @@ int main(int argc, char *argv[]) {
         console->info("active reads: {}", num_active_read);
         console->info("total reads: {}", r_end-r_begin+1);
 
-
-        for (int i = 0; i < aln.size(); i++) {
-            free(aln[i]);
+        if (strlen(name_las) > 0) {
+            for (int i = 0; i < aln.size(); i++) {
+                delete aln[i];
+            }
+            aln.clear();
         }
-        aln.clear();
     }
 
 
