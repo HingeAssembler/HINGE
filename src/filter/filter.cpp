@@ -1095,10 +1095,8 @@ int main(int argc, char *argv[]) {
             hg << std::endl;
         }
 
-//        std::cout << "igkjsdhflkhjdaskljhfa1323" << std::endl;
         console->info("Number of hinges: {}", hg_cnt);
 
-//        std::cout << "igkjsdhflkhjdaskljhfa1323" << std::endl;
 
         if (strlen(name_las) > 0) {
             for (int i = 0; i < aln.size(); i++) {
@@ -1111,10 +1109,8 @@ int main(int argc, char *argv[]) {
     }
 
 
-//    std::cout << "igkjsdhflkhjdaskljhfa1323sadljfaslkdja43" << std::endl;
     hg.close();
 
-//    std::cout << "igkjsdhflkhjdaskljhfa" << std::endl;
     if (strlen(name_db)>0)
         la.closeDB(); //close database
     return 0;

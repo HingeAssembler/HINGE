@@ -40,6 +40,34 @@ typedef adjacency_list <vecS, vecS, undirectedS> Graph;
 typedef std::tuple<Node, Node, int> Edge_w;
 
 
+inline std::vector<std::string> glob(const std::string& pat){
+    using namespace std;
+    glob_t glob_result;
+    int i = 1;
+    std::string search_name;
+    search_name = pat + "."+std::to_string(i)+".las";
+    std::cout << search_name << endl;
+    glob(search_name.c_str(),GLOB_TILDE,NULL,&glob_result);
+
+    vector<string> ret;
+
+    while (glob_result.gl_pathc != 0){
+        ret.push_back(string(glob_result.gl_pathv[0]));
+        i ++;
+        search_name = pat + "."+std::to_string(i)+".las";
+        glob(search_name.c_str(),GLOB_TILDE,NULL,&glob_result);
+//        std::cout << "Number of files " << glob_result.gl_pathc << std::endl;
+    }
+
+    std::cout << "-------------------------"<< std::endl;
+    std::cout << "Number of files " << i-1 << std::endl;
+    std::cout << "Input string " << pat.c_str() << std::endl;
+    std::cout << "-------------------------"<< std::endl;
+
+    globfree(&glob_result);
+    return ret;
+}
+
 std::vector<int> get_mapping(std::string aln_tag1, std::string aln_tag2) {
     int pos = 0;
     int count = 0;
@@ -686,18 +714,6 @@ int draft_assembly_ctg(std::vector<Edge_w> & edgelist, LAInterface & la, std::ve
 
 
 
-inline std::vector<std::string> glob(const std::string& pat){
-    using namespace std;
-    glob_t glob_result;
-    glob(pat.c_str(),GLOB_TILDE,NULL,&glob_result);
-    vector<string> ret;
-    for(unsigned int i=0;i<glob_result.gl_pathc;++i){
-        ret.push_back(string(glob_result.gl_pathv[i]));
-    }
-    globfree(&glob_result);
-    return ret;
-};
-
 
 int main(int argc, char *argv[]) {
 
@@ -712,6 +728,7 @@ int main(int argc, char *argv[]) {
     cmdp.add<std::string>("log", 'g', "log folder name", false, "log");
     cmdp.add<std::string>("path", 0, "path file name", false, "path");
     cmdp.add("debug", '\0', "debug mode");
+    cmdp.add("mlas", '\0', "multiple las files");
 
 //    cmdp.add<std::string>("restrictreads",'r',"restrict to reads in the file",false,"");
 
@@ -786,22 +803,24 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> name_las_list;
     std::string name_las_str(name_las);
 
-    if (name_las_str.find('*') != -1)
+    if (cmdp.exist("mlas")) {
         name_las_list = glob(name_las_str);
+        console->info("calling glob.");
+    }
     else
         name_las_list.push_back(name_las_str);
 
 
-    if (strlen(name_las) > 0)
-        la.openAlignmentFile(name_las);
+    //if (strlen(name_las) > 0)
+    //    la.openAlignmentFile(name_las);
 
     int64 n_aln = 0;
 
-    if (strlen(name_las) > 0) {
-        n_aln = la.getAlignmentNumber();
-        console->info("Load alignments from {}", name_las);
-        console->info("# Alignments: {}", n_aln);
-    }
+    //if (strlen(name_las) > 0) {
+    //    n_aln = la.getAlignmentNumber();
+    //    console->info("Load alignments from {}", name_las);
+    //    console->info("# Alignments: {}", n_aln);
+    //}
 
     int n_read;
     if (strlen(name_db) > 0) {
@@ -815,8 +834,6 @@ int main(int argc, char *argv[]) {
     }
 
     console->info("# Reads: {}", n_read); // output some statistics
-
-
 
     if (strlen(name_db) > 0) {
         la.getRead(reads, 0, n_read);
@@ -841,25 +858,64 @@ int main(int argc, char *argv[]) {
         reads[i]->active = maximal_read[i];
     }
 
+    // start loading and cleaning
+    int number_of_parts;
+    number_of_parts = name_las_list.size();
 
     std::vector<int> range;
 
     for (int i = 0; i < n_read; i++) {
         if (reads[i]->active) range.push_back(i);
     }
-
     std::sort(range.begin(), range.end());
 
     std::vector<LOverlap *> aln;//Vector of pointers to all alignments
     std::vector<LAlignment *> full_aln;//Vector of pointers to all alignments
+    std::vector<LOverlap *> aln_to_remove;//Vector of pointers to all alignments
+    std::vector<LAlignment *> full_aln_to_remove;//Vector of pointers to all alignments
 
 
-    if (strlen(name_las) > 0) {
+    for (int part = 0; part < number_of_parts; part++) {
+        console->info("part:{}", part);
+        console->info("name of las {}", name_las_list[part]);
+        la.openAlignmentFile(name_las_list[part]);
+        int64 n_aln_part = 0;
+        n_aln_part = la.getAlignmentNumber();
+        n_aln += n_aln_part;
+        console->info("Load alignment from {}", name_las_list[part]);
+        console->info("# Alignments: {}", n_aln_part);
         la.resetAlignment();
-        la.getOverlap(aln, range);
+        la.getOverlap(aln_to_remove, range);
         la.resetAlignment();
-		la.getAlignment(full_aln, range);
+        la.getAlignment(full_aln_to_remove, range);
+
+        for (int j = 0; j < aln_to_remove.size(); j++) {
+            if ((reads[aln_to_remove[j]->read_A_id_]->active) && (reads[aln_to_remove[j]->read_B_id_]->active)) {
+                aln.push_back(aln_to_remove[j]);
+            }
+            else delete aln_to_remove[j];
+        }
+
+        for (int j = 0; j < full_aln_to_remove.size(); j++) {
+            if ((reads[full_aln_to_remove[j]->read_A_id_]->active) && (reads[full_aln_to_remove[j]->read_B_id_]->active)) {
+                full_aln.push_back(full_aln_to_remove[j]);
+            }
+            else delete full_aln_to_remove[j];
+        }
+
+        //need to do some cleaning here
+        aln_to_remove.clear();
+        full_aln_to_remove.clear();
+
+
     }
+
+    //if (strlen(name_las) > 0) {
+    //    la.resetAlignment();
+    //    la.getOverlap(aln, range);
+    //    la.resetAlignment();
+	//	la.getAlignment(full_aln, range);
+    //}
 
     if (strlen(name_paf) > 0) {
         n_aln = la.loadPAF(std::string(name_paf), aln);
@@ -871,7 +927,6 @@ int main(int argc, char *argv[]) {
         console->error("No alignments!");
         return 1;
     }
-
 
     console->info("Input data finished");
 

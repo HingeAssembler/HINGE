@@ -22,12 +22,12 @@ hinge filter --db ecoli --las ecoli --mlas -x ecoli --config ../../utils/nominal
 
 hinge maximal --db ecoli --las ecoli --mlas -x ecoli --config ../../utils/nominal.ini
 
-hinge layout --db ecoli --las ecoli.las -x ecoli --config ../../utils/nominal.ini -o ecoli
+hinge layout --db ecoli --las ecoli --mlas -x ecoli --config ../../utils/nominal.ini -o ecoli
 
 hinge clip ecoli.edges.hinges ecoli.hinge.list demo
 
 hinge draft-path $PWD ecoli ecolidemo.G2.graphml
-hinge draft --db ecoli --las ecoli.las --prefix ecoli --config ../../utils/nominal.ini --out ecoli.draft
+hinge draft --db ecoli --las ecoli --mlas --prefix ecoli --config ../../utils/nominal.ini --out ecoli.draft
 
 
 
