@@ -871,6 +871,8 @@ int main(int argc, char *argv[]) {
 
     std::vector<LOverlap *> aln;//Vector of pointers to all alignments
     std::vector<LAlignment *> full_aln;//Vector of pointers to all alignments
+    std::vector<LOverlap *> aln_to_remove;//Vector of pointers to all alignments
+    std::vector<LAlignment *> full_aln_to_remove;//Vector of pointers to all alignments
 
 
     for (int part = 0; part < number_of_parts; part++) {
@@ -883,9 +885,29 @@ int main(int argc, char *argv[]) {
         console->info("Load alignment from {}", name_las_list[part]);
         console->info("# Alignments: {}", n_aln_part);
         la.resetAlignment();
-        la.getOverlap(aln, range);
+        la.getOverlap(aln_to_remove, range);
         la.resetAlignment();
-	    la.getAlignment(full_aln, range);
+        la.getAlignment(full_aln_to_remove, range);
+
+        for (int j = 0; j < aln_to_remove.size(); j++) {
+            if ((reads[aln_to_remove[j]->read_A_id_]->active) && (reads[aln_to_remove[j]->read_B_id_]->active)) {
+                aln.push_back(aln_to_remove[j]);
+            }
+            else delete aln_to_remove[j];
+        }
+
+        for (int j = 0; j < full_aln_to_remove.size(); j++) {
+            if ((reads[full_aln_to_remove[j]->read_A_id_]->active) && (reads[full_aln_to_remove[j]->read_B_id_]->active)) {
+                full_aln.push_back(full_aln_to_remove[j]);
+            }
+            else delete full_aln_to_remove[j];
+        }
+
+        //need to do some cleaning here
+        aln_to_remove.clear();
+        full_aln_to_remove.clear();
+
+
     }
 
     //if (strlen(name_las) > 0) {
