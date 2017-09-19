@@ -1409,6 +1409,8 @@ else:
 nx.write_graphml(G0, prefix+suffix+'.'+'G0'+'.graphml')
 nx.write_graphml(G1, prefix+suffix+'.'+'G1'+'.graphml')
 
+print prefix+suffix+'.'+'G1'+'.graphml'+' built.'
+
 
 G2 = G1.copy()
 
@@ -1436,6 +1438,7 @@ G2c = connect_strands(G2s)
 
 nx.write_graphml(G2c, prefix+suffix+'.'+'G2c'+'.graphml')
 
+print prefix+suffix+'.'+'G2'+'.graphml'+' built.'
 
 
 
@@ -1455,7 +1458,7 @@ if AGGRESSIVE_PRUNING:
 
     nx.write_graphml(G3c, prefix+suffix+'.'+'G3c'+'.graphml')
 
-
+    print prefix+suffix+'.'+'G3'+'.graphml'+' built.'
 
 
 
