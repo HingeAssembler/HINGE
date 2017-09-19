@@ -1358,15 +1358,19 @@ with open (hingesname) as f:
 add_annotation(G,in_hinges,out_hinges)
 
 
-add_chimera_flags(G,prefix)
+try:
+    add_chimera_flags(G,prefix)
+except:
+    print "No flags file provided."
+    pass
 
 
 
-# try:
-mark_skipped_edges(G,flname.split('.')[0] + '.edges.skipped')
-# except:
-#     print "some error here"
-#     pass
+try:
+    mark_skipped_edges(G,flname.split('.')[0] + '.edges.skipped')
+except:
+    print "No skipped edges file provided."
+    pass
 
 
 
