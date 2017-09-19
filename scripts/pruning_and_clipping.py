@@ -1231,6 +1231,9 @@ if len(sys.argv) >= 5:
     ini_file_path = sys.argv[4]
     config = configparser.ConfigParser()
     config.read(ini_file_path)
+
+    print 'Reading from config file '+ini_file_path
+
     try:
         MAX_PLASMID_LENGTH = config.getint('layout', 'max_plasmid_length')
         # print 'MAX_PLASMID_LENGTH in config '+str(MAX_PLASMID_LENGTH)
@@ -1238,15 +1241,16 @@ if len(sys.argv) >= 5:
         MAX_PLASMID_LENGTH = 500000
         # print 'MAX_PLASMID_LENGTH '+str(MAX_PLASMID_LENGTH)
     try: 
-        DEL_TELOMERE = config.getbool('layout','del_telomere')
+        DEL_TELOMERE = config.getboolean('layout','del_telomere')
     except:
         DEL_TELOMERE = False
     try: 
-        AGGRESSIVE_PRUNING = config.getbool('layout','aggressive_pruning')
+        AGGRESSIVE_PRUNING = config.getboolean('layout','aggressive_pruning')
     except:
         AGGRESSIVE_PRUNING = False
 
 else:
+    print 'No ini file provided. Using default configurations.'
     MAX_PLASMID_LENGTH = 500000
 
 
