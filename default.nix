@@ -26,9 +26,7 @@ in
 
       (boost.override { enableStatic = true;}) 
 
-      #numpy
-      scipy
-
+      python.packages.numpy
       python.packages.networkx
       python.packages.easydev
       python.packages.colormap

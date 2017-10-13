@@ -2,7 +2,7 @@
 # See more at: https://github.com/garbas/pypi2nix
 #
 # COMMAND:
-#   pypi2nix -V 3 -e ujson -e colormap -e easydev -e networkx
+#   pypi2nix -V 3 -e numpy -e networkx -e ujson -e colormap -e easydev -E openblas
 #
 
 { pkgs ? import <nixpkgs> {}
@@ -20,7 +20,7 @@ let
     python = pkgs.python3;
   };
 
-  commonBuildInputs = [];
+  commonBuildInputs = with pkgs; [ openblas ];
   commonDoCheck = false;
 
   withPackages = pkgs':
@@ -135,11 +135,27 @@ let
       buildInputs = commonBuildInputs;
       propagatedBuildInputs = [
       self."decorator"
+      self."numpy"
     ];
       meta = with pkgs.stdenv.lib; {
         homepage = "";
         license = licenses.bsdOriginal;
         description = "Python package for creating and manipulating graphs and networks";
+      };
+    };
+
+
+
+    "numpy" = python.mkDerivation {
+      name = "numpy-1.13.3";
+      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/bf/2d/005e45738ab07a26e621c9c12dc97381f372e06678adf7dc3356a69b5960/numpy-1.13.3.zip"; sha256 = "36ee86d5adbabc4fa2643a073f93d5504bdfed37a149a3a49f4dde259f35a750"; };
+      doCheck = commonDoCheck;
+      buildInputs = commonBuildInputs;
+      propagatedBuildInputs = [ ];
+      meta = with pkgs.stdenv.lib; {
+        homepage = "";
+        license = licenses.bsdOriginal;
+        description = "NumPy: array processing for numbers, strings, records, and objects.";
       };
     };
 

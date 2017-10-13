@@ -4,6 +4,7 @@ colormap==1.0.1
 decorator==4.1.2
 easydev==0.9.35
 networkx==2.0
+numpy==1.13.3
 packaging==16.8
 pexpect==4.2.1
 ptyprocess==0.5.2
