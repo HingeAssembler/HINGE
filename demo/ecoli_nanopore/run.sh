@@ -1,5 +1,6 @@
+
+# use R9 2D data from Loman Lab, link http://lab.loman.net/2016/07/30/nanopore-r9-data-release/
 wget http://s3.climb.ac.uk/nanopore/R9_Ecoli_K12_MG1655_lambda_MinKNOW_0.51.1.62.all.fasta
-#gunzip ecoli_p4_filtered.fastq.gz
 
 #seqtk seq -a ecoli_p4_filtered.fastq > reads.fasta
 hinge correct-head R9_Ecoli_K12_MG1655_lambda_MinKNOW_0.51.1.62.all.fasta reads.pb.fasta map.txt
