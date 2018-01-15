@@ -55,7 +55,7 @@ In the pipeline described above, several programs load their parameters from a c
 # Installation
 
 ## Dependencies
-- g++ 4.9
+- g++ 4.8
 - cmake 3.x
 - libhdf5
 - boost
