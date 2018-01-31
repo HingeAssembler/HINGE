@@ -1523,7 +1523,7 @@ if AGGRESSIVE_PRUNING:
 
     G3c = connect_strands(G3s)
 
-    nx.write_graphml(G3, prefix+suffix+'.'+'G2'+'.graphml')
+    nx.write_graphml(G3, prefix+suffix+'.'+'G3'+'.graphml')
 
     nx.write_graphml(G3s, prefix+suffix+'.'+'G3s'+'.graphml')
 
