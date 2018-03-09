@@ -798,9 +798,7 @@ int main(int argc, char *argv[]) {
     bool USE_TWO_MATCHES = (int) reader.GetInteger("layout", "use_two_matches", 1);
     bool KEEP_ONLY_MATCHES_BETWEEN_MAXIMAL_READS = (int) reader.GetInteger("layout",
                                                     "keep_only_matches_between_maximal_reads", 1);
-    bool delete_telomere = (int) reader.GetInteger("layout", "del_telomere", 0);
-
-
+    bool delete_telomere = (int) reader.GetInteger("layout", "del_telomeres", 0);
 
 
     console->info("LENGTH_THRESHOLD = {}", LENGTH_THRESHOLD);
