@@ -67,6 +67,7 @@ The following python packages are necessary:
 - configparser
 - colormap
 - easydev.tools
+- pbcore
 
 This software is still at prototype stage so it is not well packaged, however it is designed in a modular flavor so different combinations of methods can be tested. 
 
