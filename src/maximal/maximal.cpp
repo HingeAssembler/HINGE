@@ -20,6 +20,8 @@
 
 #include "INIReader.h"
 #include "spdlog/spdlog.h"
+#include "spdlog/sinks/daily_file_sink.h"
+#include "spdlog/sinks/stdout_sinks.h"
 #include "DB.h"
 #include "align.h"
 #include "LAInterface.h"

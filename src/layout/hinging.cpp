@@ -13,6 +13,8 @@
 
 
 #include "spdlog/spdlog.h"
+#include "spdlog/sinks/daily_file_sink.h"
+#include "spdlog/sinks/stdout_sinks.h"
 #include "cmdline.h"
 #include "INIReader.h"
 #include "DB.h"
